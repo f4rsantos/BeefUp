@@ -1,122 +1,110 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { AppProvider, useApp } from "./context/AppContext";
+import WorkoutPage from "./pages/WorkoutPage";
+import ActiveWorkout from "./pages/ActiveWorkout";
+import HistoryPage from "./pages/HistoryPage";
+import SettingsPage from "./pages/SettingsPage";
+import WorkoutPicker from "./pages/WorkoutPicker";
+import PlanSettings from "./pages/PlanSettings";
+import { useState } from "react";
+import { Dumbbell, History, Settings } from "lucide-react";
 
-function App() {
-  const [count, setCount] = useState(0)
+const TABS = [
+  { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
+  {
+    id: "settings",
+    Icon: Settings,
+    labelPt: "Definições",
+    labelEn: "Settings",
+  },
+];
+
+function AppInner() {
+  const [tab, setTab] = useState("home"); // bottom nav tab
+  const [overlay, setOverlay] = useState(null); // 'active' | 'pickWorkout' | 'planSettings' | null
+  const { setActiveWorkout, lang } = useApp();
+
+  function goActive(workoutInfo) {
+    setActiveWorkout(workoutInfo);
+    setOverlay("active");
+  }
+
+  function endWorkout() {
+    setActiveWorkout(null);
+    setOverlay(null);
+  }
+
+  function closeOverlay() {
+    setOverlay(null);
+  }
+
+  const showNav = overlay === null;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div
+      style={{
+        height: "100%",
+        maxWidth: 480,
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+        background: "var(--bg)",
+      }}
+    >
+      {/* Main content area */}
+      <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+        {/* Tab views */}
+        {overlay === null && tab === "home" && (
+          <WorkoutPage
+            onStartWorkout={goActive}
+            onPickWorkout={() => setOverlay("pickWorkout")}
+            onManageWorkouts={() => setOverlay("planSettings")}
+            onViewHistory={() => setTab("history")}
+          />
+        )}
+        {overlay === null && tab === "history" && <HistoryPage />}
+        {overlay === null && tab === "settings" && <SettingsPage />}
 
-      <div className="ticks"></div>
+        {/* Overlays (full-screen, cover nav) */}
+        {overlay === "active" && <ActiveWorkout onEnd={endWorkout} />}
+        {overlay === "pickWorkout" && (
+          <WorkoutPicker
+            onSelect={(w) =>
+              goActive({
+                workoutId: w.id,
+                workoutName: lang === "pt" ? w.namePt || w.name : w.name,
+              })
+            }
+            onBack={closeOverlay}
+          />
+        )}
+        {overlay === "planSettings" && <PlanSettings onBack={closeOverlay} />}
+      </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* Bottom nav — hidden during active workout */}
+      {showNav && (
+        <nav className="bottom-nav">
+          {TABS.map(({ id, Icon, labelPt, labelEn }) => (
+            <button
+              key={id}
+              className={tab === id ? "active" : ""}
+              onClick={() => setTab(id)}
+            >
+              <Icon size={22} />
+              <span>{lang === "pt" ? labelPt : labelEn}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <AppProvider>
+      <AppInner />
+    </AppProvider>
+  );
+}
