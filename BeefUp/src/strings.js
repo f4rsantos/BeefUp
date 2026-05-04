@@ -62,6 +62,7 @@ const strings = {
     historyEmpty: 'Completa um treino para começar.',
     volume: 'volume',
     sets: 'séries',
+    exercises: 'exercícios',
 
     // Plan settings
     plans: 'Planos',
@@ -169,6 +170,7 @@ const strings = {
     historyEmpty: 'Complete a workout to get started.',
     volume: 'volume',
     sets: 'sets',
+    exercises: 'exercises',
 
     plans: 'Plans',
     newPlan: 'New plan',

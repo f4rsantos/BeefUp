@@ -20,6 +20,10 @@ function countSets(session) {
   return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.length ?? 0), 0) ?? 0
 }
 
+function countExercises(session) {
+  return session.exercises?.length ?? 0
+}
+
 export default function HistoryPage() {
   const { t, lang, sessions } = useApp()
   const [expanded, setExpanded] = useState(null)
@@ -53,6 +57,7 @@ export default function HistoryPage() {
                     <div className="text-right">
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>{calcVolume(s).toFixed(0)} kg</p>
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>{countSets(s)} {t.sets}</p>
+                      <p className='text-xs' style={{ color: 'var(--muted)' }}>{countExercises(s)} {t.exercises}</p>
                     </div>
                     {isOpen
                       ? <ChevronUp  size={15} style={{ color: 'var(--muted)' }} />
