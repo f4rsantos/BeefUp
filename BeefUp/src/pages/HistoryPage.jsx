@@ -307,6 +307,8 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
   )
 }
 
+{/* Teste */}
+
 export default function HistoryPage() {
   const { t, lang, sessions } = useApp()
   const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date))
