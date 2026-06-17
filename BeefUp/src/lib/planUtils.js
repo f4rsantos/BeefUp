@@ -20,6 +20,10 @@ export function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
+export function nowISO() {
+  return new Date().toISOString()
+}
+
 // Build streak: count consecutive days (going backwards from today)
 // that have either a completed session OR are marked rest days in the active plan.
 export function computeStreak(sessions, plans, activePlanId) {

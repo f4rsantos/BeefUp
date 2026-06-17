@@ -50,7 +50,11 @@ function getSessionBodyAreas(session) {
 }
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  const d = new Date(iso)
+  const dateStr = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  // If the ISO string has time (longer than 10 chars), show it
+  return iso.length > 10 ? `${dateStr} · ${timeStr}` : dateStr
 }
 
 function calcVolume(session) {
@@ -323,7 +327,12 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
 
 export default function HistoryPage() {
   const { t, lang, sessions } = useApp()
-  const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const sorted = [...sessions].sort((a, b) => {
+    const da = new Date(a.date).getTime()
+    const db = new Date(b.date).getTime()
+    if (db !== da) return db - da
+    return b.id.localeCompare(a.id)
+  })
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
