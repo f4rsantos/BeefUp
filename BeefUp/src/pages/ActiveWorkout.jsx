@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO } from "../lib/planUtils";
+import { uid, todayISO, nowISO } from "../lib/planUtils";
 import exercisesData from "../data/exercises.json";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
@@ -146,7 +146,7 @@ export default function ActiveWorkout({ onEnd }) {
 
     const session = {
       id: uid(),
-      date: todayISO(),
+      date: nowISO(),
       workoutId: activeWorkout?.workoutId ?? null,
       workoutName: activeWorkout?.workoutName ?? "",
       duration,

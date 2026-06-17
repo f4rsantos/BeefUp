@@ -1,0 +1,59 @@
+.human-body-complete {
+  --body-highlight: #38bdf8;
+  --body-neutral: rgba(255, 255, 255, 0.16);
+  --body-outline: rgba(255, 255, 255, 0.52);
+  width: 207px;
+  height: 500px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.human-body-complete svg {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  overflow: visible;
+}
+
+.human-body-complete #Artboard1 {
+  fill: none;
+}
+
+.human-body-complete .body-outline {
+  fill: none !important;
+  stroke: var(--body-outline) !important;
+  stroke-width: 1px;
+}
+
+.human-body-complete .muscle-region path {
+  fill: var(--body-neutral) !important;
+  opacity: 0.24;
+  transition: fill 150ms ease, opacity 150ms ease;
+}
+
+.human-body-complete.highlight-Abs #Abs path,
+.human-body-complete.highlight-Adductors #Adductors path,
+.human-body-complete.highlight-Biceps #Biceps path,
+.human-body-complete.highlight-Calves #Calves path,
+.human-body-complete.highlight-Deltoids #Deltoids path,
+.human-body-complete.highlight-Forearms #Forearms path,
+.human-body-complete.highlight-Glutes #Glutes path,
+.human-body-complete.highlight-Hamstrings #Hamstrings path,
+.human-body-complete.highlight-Lats #Lats path,
+.human-body-complete.highlight-Obliques #Obliques path,
+.human-body-complete.highlight-Pectorals #Pectorals path,
+.human-body-complete.highlight-Quads #Quads path,
+.human-body-complete.highlight-Trapezius #Trapezius path,
+.human-body-complete.highlight-Triceps #Triceps path {
+  fill: var(--body-highlight) !important;
+  opacity: 1;
+}
+
+.human-body-complete.front #Back,
+.human-body-complete.front #Back-Muscles,
+.human-body-complete.back #Front,
+.human-body-complete.back #Front-Muscles {
+  display: none;
+}
