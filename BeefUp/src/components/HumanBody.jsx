@@ -12,6 +12,19 @@ function muscleStyle(highlightedMuscles, muscleId) {
   }
 }
 
+function MuscleOverlay({ className, muscleId, highlightedMuscles, children }) {
+  return (
+    <svg
+      data-position={muscleId}
+      className={`muscle-overlay ${className}`}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+    >
+      <path d={children} style={muscleStyle(highlightedMuscles, muscleId)} />
+    </svg>
+  )
+}
+
 function FrontBody({ highlightedMuscles }) {
   return (
     <div className="human-body front" aria-hidden="true">
@@ -196,6 +209,31 @@ function FrontBody({ highlightedMuscles }) {
           style={muscleStyle(highlightedMuscles, 'left-foot')}
         />
       </svg>
+
+      <MuscleOverlay className="left-biceps" muscleId="left-biceps" highlightedMuscles={highlightedMuscles}>
+        M60 2C83 18 88 58 61 98C30 78 29 24 60 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-biceps" muscleId="right-biceps" highlightedMuscles={highlightedMuscles}>
+        M40 2C17 18 12 58 39 98C70 78 71 24 40 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-forearm-front" muscleId="left-forearm-front" highlightedMuscles={highlightedMuscles}>
+        M58 4C76 26 72 64 43 96C30 72 34 30 58 4Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-forearm-front" muscleId="right-forearm-front" highlightedMuscles={highlightedMuscles}>
+        M42 4C24 26 28 64 57 96C70 72 66 30 42 4Z
+      </MuscleOverlay>
+      <MuscleOverlay className="upper-abs" muscleId="upper-abs" highlightedMuscles={highlightedMuscles}>
+        M26 10H74L82 48L66 90H34L18 48Z
+      </MuscleOverlay>
+      <MuscleOverlay className="lower-abs" muscleId="lower-abs" highlightedMuscles={highlightedMuscles}>
+        M30 8H70L82 58L62 96H38L18 58Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-quad" muscleId="left-quad" highlightedMuscles={highlightedMuscles}>
+        M54 2C83 34 83 70 58 98C25 70 23 30 54 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-quad" muscleId="right-quad" highlightedMuscles={highlightedMuscles}>
+        M46 2C17 34 17 70 42 98C75 70 77 30 46 2Z
+      </MuscleOverlay>
     </div>
   )
 }
@@ -398,6 +436,46 @@ function BackBody({ highlightedMuscles }) {
           style={muscleStyle(highlightedMuscles, 'left-foot')}
         />
       </svg>
+
+      <MuscleOverlay className="left-trap" muscleId="left-trap" highlightedMuscles={highlightedMuscles}>
+        M10 84C22 44 45 14 78 2C88 30 74 66 38 98Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-trap" muscleId="right-trap" highlightedMuscles={highlightedMuscles}>
+        M90 84C78 44 55 14 22 2C12 30 26 66 62 98Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-lat" muscleId="left-lat" highlightedMuscles={highlightedMuscles}>
+        M72 2C88 30 80 76 28 98C12 56 28 16 72 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-lat" muscleId="right-lat" highlightedMuscles={highlightedMuscles}>
+        M28 2C12 30 20 76 72 98C88 56 72 16 28 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="lumbar" muscleId="lumbar" highlightedMuscles={highlightedMuscles}>
+        M24 10H76L86 70L66 96H34L14 70Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-triceps" muscleId="left-triceps" highlightedMuscles={highlightedMuscles}>
+        M58 2C84 20 84 66 50 98C27 72 29 22 58 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-triceps" muscleId="right-triceps" highlightedMuscles={highlightedMuscles}>
+        M42 2C16 20 16 66 50 98C73 72 71 22 42 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-forearm-back" muscleId="left-forearm-back" highlightedMuscles={highlightedMuscles}>
+        M58 4C77 30 70 68 42 96C28 68 34 28 58 4Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-forearm-back" muscleId="right-forearm-back" highlightedMuscles={highlightedMuscles}>
+        M42 4C23 30 30 68 58 96C72 68 66 28 42 4Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-hamstring" muscleId="left-hamstring" highlightedMuscles={highlightedMuscles}>
+        M54 2C82 32 80 72 52 98C24 68 25 28 54 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-hamstring" muscleId="right-hamstring" highlightedMuscles={highlightedMuscles}>
+        M46 2C18 32 20 72 48 98C76 68 75 28 46 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="left-calf" muscleId="left-calf" highlightedMuscles={highlightedMuscles}>
+        M48 2C78 30 76 72 50 98C20 72 23 30 48 2Z
+      </MuscleOverlay>
+      <MuscleOverlay className="right-calf" muscleId="right-calf" highlightedMuscles={highlightedMuscles}>
+        M52 2C22 30 24 72 50 98C80 72 77 30 52 2Z
+      </MuscleOverlay>
     </div>
   )
 }

@@ -21,6 +21,17 @@
   fill: #57c9d5;
 }
 
+.human-body svg.muscle-overlay {
+  z-index: 10050;
+  pointer-events: none;
+}
+
+.human-body svg.muscle-overlay path {
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-width: 4;
+  vector-effect: non-scaling-stroke;
+}
+
 .human-body svg.head {
   margin-left: -28.5px;
   top: -6px;
@@ -93,6 +104,62 @@
   top: 455px;
 }
 
+.human-body.front svg.left-biceps {
+  width: 24px;
+  height: 68px;
+  margin-left: -72px;
+  top: 116px;
+}
+
+.human-body.front svg.right-biceps {
+  width: 24px;
+  height: 68px;
+  margin-left: 48px;
+  top: 116px;
+}
+
+.human-body.front svg.left-forearm-front {
+  width: 18px;
+  height: 66px;
+  margin-left: -83px;
+  top: 174px;
+}
+
+.human-body.front svg.right-forearm-front {
+  width: 18px;
+  height: 66px;
+  margin-left: 66px;
+  top: 174px;
+}
+
+.human-body.front svg.upper-abs {
+  width: 34px;
+  height: 44px;
+  margin-left: -17px;
+  top: 145px;
+}
+
+.human-body.front svg.lower-abs {
+  width: 32px;
+  height: 52px;
+  margin-left: -16px;
+  top: 180px;
+}
+
+.human-body.front svg.left-quad {
+  width: 28px;
+  height: 94px;
+  margin-left: -36px;
+  top: 232px;
+}
+
+.human-body.front svg.right-quad {
+  width: 28px;
+  height: 94px;
+  margin-left: 8px;
+  top: 232px;
+}
+
 .human-body.back {
   margin: 0 auto;
 }
@@ -110,4 +177,95 @@
 .human-body.back svg.glutes {
   margin-left: -35px;
   top: 214px;
+}
+
+.human-body.back svg.left-trap {
+  width: 38px;
+  height: 48px;
+  margin-left: -38px;
+  top: 78px;
+}
+
+.human-body.back svg.right-trap {
+  width: 38px;
+  height: 48px;
+  margin-left: 0;
+  top: 78px;
+}
+
+.human-body.back svg.left-lat {
+  width: 36px;
+  height: 82px;
+  margin-left: -43px;
+  top: 111px;
+}
+
+.human-body.back svg.right-lat {
+  width: 36px;
+  height: 82px;
+  margin-left: 7px;
+  top: 111px;
+}
+
+.human-body.back svg.lumbar {
+  width: 42px;
+  height: 54px;
+  margin-left: -21px;
+  top: 174px;
+}
+
+.human-body.back svg.left-triceps {
+  width: 25px;
+  height: 72px;
+  margin-left: -73px;
+  top: 114px;
+}
+
+.human-body.back svg.right-triceps {
+  width: 25px;
+  height: 72px;
+  margin-left: 48px;
+  top: 114px;
+}
+
+.human-body.back svg.left-forearm-back {
+  width: 18px;
+  height: 66px;
+  margin-left: -83px;
+  top: 174px;
+}
+
+.human-body.back svg.right-forearm-back {
+  width: 18px;
+  height: 66px;
+  margin-left: 66px;
+  top: 174px;
+}
+
+.human-body.back svg.left-hamstring {
+  width: 28px;
+  height: 88px;
+  margin-left: -36px;
+  top: 242px;
+}
+
+.human-body.back svg.right-hamstring {
+  width: 28px;
+  height: 88px;
+  margin-left: 8px;
+  top: 242px;
+}
+
+.human-body.back svg.left-calf {
+  width: 24px;
+  height: 92px;
+  margin-left: -32px;
+  top: 333px;
+}
+
+.human-body.back svg.right-calf {
+  width: 24px;
+  height: 92px;
+  margin-left: 8px;
+  top: 333px;
 }

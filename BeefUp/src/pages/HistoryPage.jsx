@@ -5,18 +5,24 @@ import HumanBody from '../components/HumanBody'
 
 const muscleTagToBodyAreas = {
   chest: { front: ['chest'], back: [] },
-  back: { front: [], back: ['upper-back', 'lower-back', 'left-shoulder-back', 'right-shoulder-back'] },
+  back: { front: [], back: ['left-trap', 'right-trap', 'left-lat', 'right-lat', 'lumbar'] },
   shoulders: { front: ['left-shoulder-front', 'right-shoulder-front'], back: ['left-shoulder-back', 'right-shoulder-back'] },
   rear_delt: { front: [], back: ['left-shoulder-back', 'right-shoulder-back'] },
-  arms: { front: ['left-arm-front', 'right-arm-front'], back: ['left-arm-back', 'right-arm-back'] },
-  biceps: { front: ['left-arm-front', 'right-arm-front'], back: [] },
-  triceps: { front: [], back: ['left-arm-back', 'right-arm-back'] },
-  legs: { front: ['left-leg-front', 'right-leg-front'], back: ['left-leg-back', 'right-leg-back'] },
-  quads: { front: ['left-leg-front', 'right-leg-front'], back: [] },
-  hamstrings: { front: [], back: ['left-leg-back', 'right-leg-back'] },
-  calves: { front: [], back: ['left-leg-back', 'right-leg-back'] },
+  arms: {
+    front: ['left-forearm-front', 'right-forearm-front'],
+    back: ['left-forearm-back', 'right-forearm-back'],
+  },
+  biceps: { front: ['left-biceps', 'right-biceps'], back: [] },
+  triceps: { front: [], back: ['left-triceps', 'right-triceps'] },
+  legs: {
+    front: ['left-quad', 'right-quad'],
+    back: ['left-hamstring', 'right-hamstring', 'left-calf', 'right-calf'],
+  },
+  quads: { front: ['left-quad', 'right-quad'], back: [] },
+  hamstrings: { front: [], back: ['left-hamstring', 'right-hamstring'] },
+  calves: { front: [], back: ['left-calf', 'right-calf'] },
   glutes: { front: [], back: ['glutes'] },
-  core: { front: ['stomach'], back: [] },
+  core: { front: ['upper-abs', 'lower-abs'], back: [] },
 }
 
 function formatDuration(s) {
@@ -106,7 +112,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
     }
   }
 
-  const onTouchEnd = (e) => {
+  const onTouchEnd = () => {
     if (!sliderRef.current) {
       isDragging.current = false
       lockedAxis.current = null
@@ -129,7 +135,13 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
   return (
     <div
       className="card overflow-hidden"
-      style={{ padding: 0, height: `${CARD_HEIGHT}px` }}
+      style={{
+        padding: 0,
+        height: `${CARD_HEIGHT}px`,
+        minHeight: `${CARD_HEIGHT}px`,
+        maxHeight: `${CARD_HEIGHT}px`,
+        flexShrink: 0,
+      }}
     >
       <div
         ref={sliderRef}
