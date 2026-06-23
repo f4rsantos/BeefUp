@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
 import { Trash2, Plus, Check } from "lucide-react";
+import ProgressRing from "./ProgressRing";
 
 export default function ExerciseCard({
   exercise,
@@ -12,20 +12,35 @@ export default function ExerciseCard({
   onRemoveExercise,
 }) {
   const exLabel = lang === "pt" ? exercise.namePt : exercise.name;
-  const allDone = exercise.sets.every((s) => s.done);
+  const addSetLabel = lang === "pt" ? "Série" : "Set";
+  const doneCount = exercise.sets.filter((s) => s.done).length;
+  const allDone = doneCount === exercise.sets.length && exercise.sets.length > 0;
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-3">
-        <p
-          className="font-semibold text-sm"
-          style={{
-            color: allDone ? "var(--muted)" : "var(--text)",
-            textDecoration: allDone ? "line-through" : "none",
-          }}
-        >
-          {exLabel}
-        </p>
+    <div className="card" style={allDone ? { borderColor: "var(--accent)" } : undefined}>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
+          <ProgressRing
+            value={doneCount}
+            max={exercise.sets.length}
+            size={34}
+            stroke={4}
+            color="var(--accent)"
+          >
+            <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text)" }}>
+              {doneCount}/{exercise.sets.length}
+            </span>
+          </ProgressRing>
+          <p
+            className="font-bold text-sm truncate"
+            style={{
+              color: allDone ? "var(--muted)" : "var(--text)",
+              textDecoration: allDone ? "line-through" : "none",
+            }}
+          >
+            {exLabel}
+          </p>
+        </div>
         <button
           className="btn btn-ghost p-1.5"
           onClick={() => onRemoveExercise(exIdx)}
@@ -92,25 +107,26 @@ export default function ExerciseCard({
             style={{ padding: "6px 8px" }}
           />
           <button
-            className="flex items-center justify-center rounded-lg"
+            className={set.done ? "flex items-center justify-center rounded-lg pop" : "flex items-center justify-center rounded-lg"}
             style={{
               width: 28,
               height: 28,
-              background: set.done ? "var(--accent)" : "var(--surface2)",
-              border: "1px solid var(--border)",
+              background: set.done ? "var(--grad-accent)" : "var(--surface2)",
+              border: set.done ? "none" : "1px solid var(--border)",
             }}
             onClick={() => onToggleSet(exIdx, setIdx)}
           >
-            {set.done && <Check size={14} style={{ color: "var(--bg)" }} />}
+            {set.done && <Check size={15} strokeWidth={3} style={{ color: "#fff" }} />}
           </button>
         </div>
       ))}
 
       <button
         className="btn btn-ghost w-full mt-2 text-xs py-2"
+        style={{ borderStyle: "dashed" }}
         onClick={() => onAddSet(exIdx)}
       >
-        <Plus size={12} /> Set
+        <Plus size={13} /> {addSetLabel}
       </button>
     </div>
   );

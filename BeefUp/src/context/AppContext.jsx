@@ -18,6 +18,14 @@ export function AppProvider({ children }) {
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
 
+  // Nutrition
+  const [foodLog, setFoodLog] = useState([])
+  const [customFoods, setCustomFoods] = useState([])
+  const [waterMap, setWaterMap] = useState({}) // { date: ml }
+  const [nutritionGoals, setNutritionGoalsState] = useState(() =>
+    getLS('nutritionGoals', { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 }),
+  )
+
   const t = strings[lang] || strings.pt
 
   // Theme
@@ -37,13 +45,16 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, allMeasurements] = await Promise.all([
+      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
         db.getAllSteps(),
         db.getSetting('activePlanId', null),
         db.getAllMeasurements(),
+        db.getAllFoodLog(),
+        db.getAllFoods(),
+        db.getAllWater(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -53,6 +64,11 @@ export function AppProvider({ children }) {
       allSteps.forEach(e => { map[e.date] = e.count })
       setStepsMap(map)
       setMeasurements(allMeasurements)
+      setFoodLog(log)
+      setCustomFoods(foods)
+      const wmap = {}
+      water.forEach(e => { wmap[e.date] = e.ml })
+      setWaterMap(wmap)
     }
     load()
   }, [])
@@ -115,6 +131,36 @@ export function AppProvider({ children }) {
     setLS('pbConfig', config)
   }, [])
 
+  // Nutrition: food log
+  const addFoodLog = useCallback(async (entry) => {
+    await db.addFoodLog(entry)
+    setFoodLog(prev => [...prev, entry])
+  }, [])
+
+  const deleteFoodLog = useCallback(async (id) => {
+    await db.removeFoodLog(id)
+    setFoodLog(prev => prev.filter(e => e.id !== id))
+  }, [])
+
+  const saveCustomFood = useCallback(async (food) => {
+    await db.saveFood(food)
+    setCustomFoods(prev => {
+      const idx = prev.findIndex(f => f.id === food.id)
+      if (idx >= 0) { const n = [...prev]; n[idx] = food; return n }
+      return [...prev, food]
+    })
+  }, [])
+
+  const setWaterToday = useCallback(async (date, ml) => {
+    await db.setWater(date, ml)
+    setWaterMap(prev => ({ ...prev, [date]: ml }))
+  }, [])
+
+  const setNutritionGoals = useCallback((goals) => {
+    setNutritionGoalsState(goals)
+    setLS('nutritionGoals', goals)
+  }, [])
+
   // Favourites
   const toggleFavouriteExercise = useCallback((id) => {
     setFavouriteExercises(prev => {
@@ -136,6 +182,10 @@ export function AppProvider({ children }) {
     pbConfig, savePbConfig,
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,
+    foodLog, addFoodLog, deleteFoodLog,
+    customFoods, saveCustomFood,
+    waterMap, setWaterToday,
+    nutritionGoals, setNutritionGoals,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -22,14 +22,14 @@ export default function WorkoutTopBar({ elapsed, onOneRM, onRest, onEnd }) {
       </div>
 
       <div
-        className="font-mono text-lg font-semibold"
-        style={{ color: "var(--text)" }}
+        className="display font-mono"
+        style={{ color: "var(--text)", fontSize: 22, fontWeight: 900, letterSpacing: "0.02em" }}
       >
         {formatTime(elapsed)}
       </div>
 
-      <button className="btn btn-ghost p-2.5" title="End" onClick={onEnd}>
-        <Square size={16} />
+      <button className="btn btn-danger p-2.5" title="End" onClick={onEnd}>
+        <Square size={16} fill="currentColor" />
       </button>
     </div>
   );

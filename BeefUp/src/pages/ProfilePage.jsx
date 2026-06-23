@@ -12,7 +12,7 @@ function dayOffsetISO(daysBack) {
   return date.toISOString().slice(0, 10);
 }
 
-export default function ProfilePage({ onOpenStatistics, onOpenMeasures }) {
+export default function ProfilePage({ onOpenStatistics, onOpenMeasures, onViewHistory }) {
   const { t, lang, plans, activePlanId, sessions, stepsMap } = useApp();
 
   const [showSteps, setShowSteps] = useState(false);
@@ -49,13 +49,13 @@ export default function ProfilePage({ onOpenStatistics, onOpenMeasures }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="px-5 pt-10 pb-6">
-        <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
+      <div style={{ padding: "38px 20px 16px" }}>
+        <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
           {t.profileTitle}
         </h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4 scrollbar-hide fade-in">
         <div className="flex gap-3">
           <button
             className="btn btn-ghost flex-1 py-3 text-sm flex items-center gap-2"
@@ -71,6 +71,15 @@ export default function ProfilePage({ onOpenStatistics, onOpenMeasures }) {
             <Ruler size={15} />
             {t.measures}
           </button>
+          {onViewHistory && (
+            <button
+              className="btn btn-ghost flex-1 py-3 text-sm flex items-center gap-2"
+              onClick={onViewHistory}
+            >
+              <BarChart3 size={15} />
+              {t.history}
+            </button>
+          )}
         </div>
 
         <div className="card">

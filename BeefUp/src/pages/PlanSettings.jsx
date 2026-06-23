@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Trash2, CheckCircle2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import WorkoutEditor from "../components/WorkoutEditor";
 import PlanEditor from "../components/PlanEditor";
@@ -51,23 +51,21 @@ export default function PlanSettings({ onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
-        <button className="btn-back" onClick={onBack}>
-          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
+      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
+        <button className="btn-back" onClick={onBack} aria-label={t.back}>
+          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
         </button>
-        <span
-          className="font-semibold text-base"
-          style={{ color: "var(--text)" }}
-        >
-          {t.settingsTitle}
-        </span>
+        <h1 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
+          {t.manageWorkouts}
+        </h1>
       </div>
 
-      <div className="flex gap-2 px-4 mb-4">
+      <div className="flex gap-2 px-4 mb-3">
         {["plans", "workouts"].map((tab_) => (
           <button
             key={tab_}
-            className={`btn ${tab === tab_ ? "btn-primary" : "btn-ghost"} text-sm px-4 py-2`}
+            className={`chip ${tab === tab_ ? "active" : ""}`}
+            style={{ flex: 1, justifyContent: "center", padding: "10px" }}
             onClick={() => setTab(tab_)}
           >
             {tab_ === "plans" ? t.plans : t.workouts}
@@ -78,32 +76,34 @@ export default function PlanSettings({ onBack }) {
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-3 scrollbar-hide">
         {tab === "plans" && (
           <>
-            {plans.map((plan) => (
-              <div key={plan.id} className="card flex flex-col gap-3">
+            {plans.map((plan) => {
+              const isActive = activePlanId === plan.id;
+              return (
+              <div key={plan.id} className="card flex flex-col gap-3" style={isActive ? { borderColor: "var(--accent)" } : undefined}>
                 <div>
                   <p
-                    className="font-semibold text-sm"
+                    className="font-bold text-sm"
                     style={{ color: "var(--text)" }}
                   >
                     {plan.name}
                   </p>
                   <p
-                    className="text-xs mt-1"
+                    className="text-xs mt-0.5"
                     style={{ color: "var(--muted)" }}
                   >
-                    {plan.days?.length ?? 0} dias
+                    {plan.days?.length ?? 0} {lang === "pt" ? "dias" : "days"}
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  {activePlanId === plan.id ? (
+                  {isActive ? (
                     <span
-                      className="text-xs px-2.5 py-1 rounded-lg font-medium"
+                      className="text-xs px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1"
                       style={{
                         background: "var(--accent-soft)",
                         color: "var(--accent)",
                       }}
                     >
-                      {t.activePlan}
+                      <CheckCircle2 size={13} /> {t.activePlan}
                     </span>
                   ) : (
                     <button
@@ -132,15 +132,17 @@ export default function PlanSettings({ onBack }) {
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
             <button
               className="btn btn-ghost w-full py-3.5 text-sm flex items-center justify-center gap-2"
+              style={{ borderStyle: "dashed" }}
               onClick={() => {
                 setEditingPlan(null);
                 setView("editPlan");
               }}
             >
-              <Plus size={14} /> {t.newPlan}
+              <Plus size={15} /> {t.newPlan}
             </button>
           </>
         )}
@@ -149,18 +151,18 @@ export default function PlanSettings({ onBack }) {
           <>
             {workouts.map((w) => (
               <div key={w.id} className="card flex items-center justify-between gap-3">
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <p
-                    className="font-semibold text-sm"
+                    className="font-bold text-sm truncate"
                     style={{ color: "var(--text)" }}
                   >
                     {lang === "pt" ? w.namePt || w.name : w.name}
                   </p>
                   <p
-                    className="text-xs mt-1"
+                    className="text-xs mt-0.5"
                     style={{ color: "var(--muted)" }}
                   >
-                    {w.exercises?.length ?? 0} exercícios
+                    {w.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -184,12 +186,13 @@ export default function PlanSettings({ onBack }) {
             ))}
             <button
               className="btn btn-ghost w-full py-3.5 text-sm flex items-center justify-center gap-2"
+              style={{ borderStyle: "dashed" }}
               onClick={() => {
                 setEditingWorkout(null);
                 setView("editWorkout");
               }}
             >
-              <Plus size={14} /> {t.newWorkout}
+              <Plus size={15} /> {t.newWorkout}
             </button>
           </>
         )}

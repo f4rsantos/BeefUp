@@ -46,8 +46,8 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="px-5 pt-10 pb-6">
-        <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
+      <div style={{ padding: "38px 20px 16px" }}>
+        <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
           {t.settingsTitle}
         </h1>
       </div>
@@ -63,10 +63,10 @@ export default function SettingsPage() {
                 onClick={() => setTheme(id)}
                 className="btn flex-1 flex-col gap-1 py-3 text-xs"
                 style={{
-                  background: theme === id ? "var(--text)" : "transparent",
-                  color: theme === id ? "var(--bg)" : "var(--muted)",
+                  background: theme === id ? "var(--grad-accent)" : "transparent",
+                  color: theme === id ? "#fff" : "var(--muted)",
                   border: theme === id ? "none" : "1px solid var(--border)",
-                  borderRadius: 9,
+                  borderRadius: 12,
                 }}
               >
                 <Icon size={16} />
@@ -89,10 +89,10 @@ export default function SettingsPage() {
                 onClick={() => setLang(id)}
                 className="btn flex-1 py-3 text-sm"
                 style={{
-                  background: lang === id ? "var(--text)" : "transparent",
-                  color: lang === id ? "var(--bg)" : "var(--muted)",
+                  background: lang === id ? "var(--grad-accent)" : "transparent",
+                  color: lang === id ? "#fff" : "var(--muted)",
                   border: lang === id ? "none" : "1px solid var(--border)",
-                  borderRadius: 9,
+                  borderRadius: 12,
                 }}
               >
                 {label}

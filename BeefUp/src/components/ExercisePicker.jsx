@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { X, Search, Star } from "lucide-react";
+import { Search, Star, Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import exercisesData from "../data/exercises.json";
 
@@ -36,28 +36,18 @@ export default function ExercisePicker({ onSelect, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet fade-in" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <span
-            className="font-semibold text-base"
-            style={{ color: "var(--text)" }}
-          >
-            {t.addExercise}
-          </span>
-          <button className="btn btn-ghost p-2" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
+      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-handle" />
+        <h3 className="display mb-3" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>
+          {t.addExercise}
+        </h3>
 
         {/* Search */}
-        <div className="relative mb-4">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: "var(--muted)" }}
-          />
+        <div className="mb-3" style={{ position: "relative" }}>
+          <Search size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--muted)" }} />
           <input
-            className="field w-full pl-8"
+            className="field"
+            style={{ paddingLeft: 36 }}
             type="text"
             placeholder={t.searchExercises}
             value={query}
@@ -67,17 +57,12 @@ export default function ExercisePicker({ onSelect, onClose }) {
         </div>
 
         {/* Tag filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-3">
           {["all", "favourites", ...ALL_TAGS].map((tag) => (
             <button
               key={tag}
-              className="btn text-xs px-3 py-1.5 whitespace-nowrap"
-              style={{
-                background:
-                  activeTag === tag ? "var(--text)" : "var(--surface2)",
-                color: activeTag === tag ? "var(--bg)" : "var(--muted)",
-                flexShrink: 0,
-              }}
+              className={`chip ${activeTag === tag ? "active" : ""}`}
+              style={{ flexShrink: 0, textTransform: "capitalize" }}
               onClick={() => setActiveTag(tag)}
             >
               {tag === "all"
@@ -90,12 +75,9 @@ export default function ExercisePicker({ onSelect, onClose }) {
         </div>
 
         {/* Exercise list */}
-        <div className="flex flex-col gap-2 max-h-80 overflow-y-auto scrollbar-hide">
+        <div className="flex flex-col gap-2" style={{ maxHeight: "52vh", overflowY: "auto" }}>
           {filtered.length === 0 ? (
-            <p
-              className="text-center py-6 text-sm"
-              style={{ color: "var(--muted)" }}
-            >
+            <p className="text-center py-6 text-sm" style={{ color: "var(--muted)" }}>
               {t.noResults}
             </p>
           ) : (
@@ -104,40 +86,40 @@ export default function ExercisePicker({ onSelect, onClose }) {
               return (
                 <div
                   key={ex.id}
-                  className="flex items-center justify-between px-4 py-3.5 rounded-xl hover:opacity-80 transition-opacity"
-                  style={{ background: "var(--surface)" }}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+                  style={{ background: "var(--surface2)" }}
                 >
                   <button
-                    className="flex-1 text-left"
-                    onClick={() => onSelect(ex)}
-                  >
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {lang === "pt" ? ex.namePt : ex.name}
-                    </p>
-                    <p
-                      className="text-xs mt-1"
-                      style={{ color: "var(--muted)" }}
-                    >
-                      {ex.tags.join(" · ")}
-                    </p>
-                  </button>
-                  <button
-                    className="p-2.5 ml-1"
+                    className="p-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFavouriteExercise(ex.id);
                     }}
+                    aria-label="favourite"
                   >
                     <Star
-                      size={16}
+                      size={17}
                       style={{
-                        color: isFav ? "var(--text)" : "var(--border)",
-                        fill: isFav ? "var(--text)" : "none",
+                        color: isFav ? "var(--accent-2)" : "var(--border)",
+                        fill: isFav ? "var(--accent-2)" : "none",
                       }}
                     />
+                  </button>
+                  <button className="flex-1 text-left" style={{ minWidth: 0 }} onClick={() => onSelect(ex)}>
+                    <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
+                      {lang === "pt" ? ex.namePt : ex.name}
+                    </p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--muted)", textTransform: "capitalize" }}>
+                      {ex.tags.join(" · ")}
+                    </p>
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: 8 }}
+                    onClick={() => onSelect(ex)}
+                    aria-label={t.add}
+                  >
+                    <Plus size={16} />
                   </button>
                 </div>
               );
