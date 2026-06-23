@@ -1,7 +1,7 @@
 .human-body-complete {
-  --body-highlight: #38bdf8;
-  --body-neutral: rgba(255, 255, 255, 0.16);
-  --body-outline: rgba(255, 255, 255, 0.52);
+  --body-highlight: var(--accent);
+  --body-neutral: var(--surface2);
+  --body-outline: var(--muted);
   width: 207px;
   height: 500px;
   display: flex;

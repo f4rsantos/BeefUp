@@ -1,5 +1,5 @@
 const DB_NAME = 'beefup'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 const STORES = {
   workouts: 'workouts',       // custom workout definitions
@@ -7,6 +7,7 @@ const STORES = {
   sessions: 'sessions',       // completed workout sessions
   steps: 'steps',             // daily step entries { date, count }
   settings: 'settings',       // key/value app settings
+  measurements: 'measurements', // body measurement entries { id, date, weight }
 }
 
 export { STORES }
@@ -32,6 +33,10 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains(STORES.settings)) {
         db.createObjectStore(STORES.settings, { keyPath: 'key' })
+      }
+      if (!db.objectStoreNames.contains(STORES.measurements)) {
+        const m = db.createObjectStore(STORES.measurements, { keyPath: 'id' })
+        m.createIndex('date', 'date', { unique: false })
       }
     }
     req.onsuccess = e => resolve(e.target.result)
@@ -90,4 +95,8 @@ export const db = {
       return d.getFullYear() === year && d.getMonth() === month
     })
   },
+
+  // Measurements helpers
+  addMeasurement: (entry) => tx(STORES.measurements, 'readwrite', s => s.put(entry)),
+  getAllMeasurements: () => tx(STORES.measurements, 'readonly', s => s.getAll()),
 }

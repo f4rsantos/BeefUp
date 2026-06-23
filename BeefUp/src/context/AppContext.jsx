@@ -12,6 +12,7 @@ export function AppProvider({ children }) {
   const [workouts, setWorkouts] = useState([])
   const [sessions, setSessions] = useState([])
   const [stepsMap, setStepsMap] = useState({})
+  const [measurements, setMeasurements] = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
   const [pbConfig, setPbConfig] = useState(() => getLS('pbConfig', ['steps', null, null]))
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
@@ -36,12 +37,13 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid] = await Promise.all([
+      const [p, w, s, allSteps, apid, allMeasurements] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
         db.getAllSteps(),
         db.getSetting('activePlanId', null),
+        db.getAllMeasurements(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -50,6 +52,7 @@ export function AppProvider({ children }) {
       const map = {}
       allSteps.forEach(e => { map[e.date] = e.count })
       setStepsMap(map)
+      setMeasurements(allMeasurements)
     }
     load()
   }, [])
@@ -101,6 +104,11 @@ export function AppProvider({ children }) {
     setStepsMap(prev => ({ ...prev, [date]: count }))
   }, [])
 
+  const addMeasurement = useCallback(async (entry) => {
+    await db.addMeasurement(entry)
+    setMeasurements(prev => [...prev, entry])
+  }, [])
+
   // PBs
   const savePbConfig = useCallback((config) => {
     setPbConfig(config)
@@ -124,6 +132,7 @@ export function AppProvider({ children }) {
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession,
     stepsMap, saveSteps,
+    measurements, addMeasurement,
     pbConfig, savePbConfig,
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,

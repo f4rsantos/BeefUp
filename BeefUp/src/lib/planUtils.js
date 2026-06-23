@@ -89,3 +89,67 @@ export function getMonthActivity(year, month, sessions, plans, activePlanId) {
 export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
+
+function sessionVolume(session) {
+  return session.exercises?.reduce((acc, ex) =>
+    acc + (ex.sets?.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+}
+
+function sessionReps(session) {
+  return session.exercises?.reduce((acc, ex) =>
+    acc + (ex.sets?.reduce((a, s) => a + (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+}
+
+export function computeOverallStats(sessions) {
+  const daysTrained = new Set(sessions.map((s) => s.date?.slice(0, 10))).size
+  const totalSessions = sessions.length
+  const totalVolume = sessions.reduce((acc, s) => acc + sessionVolume(s), 0)
+  const totalDuration = sessions.reduce((acc, s) => acc + (s.duration ?? 0), 0)
+  const totalReps = sessions.reduce((acc, s) => acc + sessionReps(s), 0)
+  const totalSets = sessions.reduce(
+    (acc, s) => acc + (s.exercises?.reduce((a, ex) => a + (ex.sets?.length ?? 0), 0) ?? 0),
+    0,
+  )
+  return { daysTrained, totalSessions, totalVolume, totalDuration, totalReps, totalSets }
+}
+
+// Bucket sessions into ISO week starts, summing the given metric, for the last `weeks` weeks.
+export function aggregateSessionsByWeek(sessions, metric, weeks = 10) {
+  const metricFn = {
+    duration: (s) => s.duration ?? 0,
+    volume: sessionVolume,
+    reps: sessionReps,
+  }[metric]
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const weekStart = new Date(today)
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
+
+  const buckets = []
+  for (let i = weeks - 1; i >= 0; i--) {
+    const start = new Date(weekStart)
+    start.setDate(start.getDate() - i * 7)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 7)
+    buckets.push({ start, end, value: 0 })
+  }
+
+  sessions.forEach((s) => {
+    const d = new Date(s.date)
+    const bucket = buckets.find((b) => d >= b.start && d < b.end)
+    if (bucket) bucket.value += metricFn(s)
+  })
+
+  return buckets.map((b) => ({
+    weekLabel: `${b.start.getDate()}/${b.start.getMonth() + 1}`,
+    value: Math.round(b.value),
+  }))
+}
+
+export function measurementsForType(measurements, type) {
+  return measurements
+    .filter((m) => m.type === type)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((m) => ({ dateLabel: m.date.slice(5), value: m.value }))
+}

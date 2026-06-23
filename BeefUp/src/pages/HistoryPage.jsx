@@ -145,8 +145,45 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
         minHeight: `${CARD_HEIGHT}px`,
         maxHeight: `${CARD_HEIGHT}px`,
         flexShrink: 0,
+        position: 'relative',
       }}
     >
+      {activeSlide === 1 && (
+        <button
+          type="button"
+          aria-label="previous"
+          onClick={() => showSlide(0)}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 40,
+            width: '30%',
+            background: 'transparent',
+            border: 'none',
+            zIndex: 1,
+            cursor: 'pointer',
+          }}
+        />
+      )}
+      {activeSlide === 0 && (
+        <button
+          type="button"
+          aria-label="next"
+          onClick={() => showSlide(1)}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 40,
+            width: '30%',
+            background: 'transparent',
+            border: 'none',
+            zIndex: 1,
+            cursor: 'pointer',
+          }}
+        />
+      )}
       <div
         ref={sliderRef}
         onTouchStart={onTouchStart}
@@ -218,7 +255,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
                 height: 4,
                 borderRadius: 9999,
                 border: 'none',
-                background: activeSlide === 0 ? 'var(--accent, #38bdf8)' : 'var(--muted)',
+                background: activeSlide === 0 ? 'var(--accent)' : 'var(--muted)',
                 opacity: activeSlide === 0 ? 1 : 0.35,
                 cursor: 'pointer',
               }}
@@ -231,7 +268,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
                 height: 4,
                 borderRadius: 9999,
                 border: 'none',
-                background: activeSlide === 1 ? 'var(--accent, #38bdf8)' : 'var(--muted)',
+                background: activeSlide === 1 ? 'var(--accent)' : 'var(--muted)',
                 opacity: activeSlide === 1 ? 1 : 0.35,
                 cursor: 'pointer',
               }}
@@ -273,8 +310,12 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
             ))}
           </div>
 
-          {/* Exercise list */}
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, scrollbarWidth: 'none' }}>
+            {s.notes && (
+              <p style={{ color: 'var(--muted)', fontSize: 12, fontStyle: 'italic', marginBottom: 4 }}>
+                {s.notes}
+              </p>
+            )}
             {s.exercises?.map((ex, i) => (
               <div key={i}>
                 <p style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>
@@ -297,7 +338,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
                 height: 4,
                 borderRadius: 9999,
                 border: 'none',
-                background: activeSlide === 0 ? 'var(--accent, #38bdf8)' : 'var(--muted)',
+                background: activeSlide === 0 ? 'var(--accent)' : 'var(--muted)',
                 opacity: activeSlide === 0 ? 1 : 0.35,
                 cursor: 'pointer',
               }}
@@ -310,7 +351,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
                 height: 4,
                 borderRadius: 9999,
                 border: 'none',
-                background: activeSlide === 1 ? 'var(--accent, #38bdf8)' : 'var(--muted)',
+                background: activeSlide === 1 ? 'var(--accent)' : 'var(--muted)',
                 opacity: activeSlide === 1 ? 1 : 0.35,
                 cursor: 'pointer',
               }}
@@ -323,8 +364,6 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas }) {
   )
 }
 
-{/* Teste */}
-
 export default function HistoryPage() {
   const { t, lang, sessions } = useApp()
   const sorted = [...sessions].sort((a, b) => {
@@ -336,7 +375,7 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
-      <div className="px-5 pt-6 pb-3">
+      <div className="px-5 pt-10 pb-6">
         <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{t.history}</h1>
       </div>
 

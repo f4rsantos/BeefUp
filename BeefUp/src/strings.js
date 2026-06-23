@@ -3,6 +3,7 @@ const strings = {
     // Nav
     history: 'Histórico',
     settings: 'Definições',
+    profile: 'Perfil',
 
     // Home
     today: 'Hoje',
@@ -34,6 +35,7 @@ const strings = {
     removeExercise: 'Remover exercício',
     reps: 'Reps',
     weight: 'Peso (kg)',
+    notesPlaceholder: 'Adicionar notas...',
     done: 'Feito',
     rest: 'Descanso',
     restTimer: 'Temporizador de descanso',
@@ -94,6 +96,31 @@ const strings = {
     choosePBs: 'Escolher recordes a mostrar',
     pbSteps: 'Passos diários',
 
+    // Profile
+    profileTitle: 'Perfil',
+    statistics: 'Estatísticas',
+    measures: 'Medidas',
+    previousWorkouts: 'Treinos anteriores',
+    duration: 'Duração',
+    weeklyProgress: 'Progresso semanal',
+
+    // Statistics page
+    daysTrained: 'Dias treinados',
+    totalSessions: 'Treinos totais',
+    totalReps: 'Reps totais',
+
+    // Measures page
+    measureValuePlaceholder: 'Valor',
+    saveMeasure: 'Guardar',
+    noMeasures: 'Sem medidas registadas',
+    progression: 'Progressão',
+    measureType_weight: 'Peso',
+    measureType_height: 'Altura',
+    measureType_chest: 'Peito',
+    measureType_arms: 'Braços',
+    measureType_legs: 'Pernas',
+    measureType_belly: 'Barriga',
+
     // Themes / lang
     theme: 'Tema',
     themeLight: 'Claro',
@@ -115,6 +142,7 @@ const strings = {
   en: {
     history: 'History',
     settings: 'Settings',
+    profile: 'Profile',
 
     today: 'Today',
       homeTitle: 'Workout',
@@ -144,6 +172,7 @@ const strings = {
     removeExercise: 'Remove exercise',
     reps: 'Reps',
     weight: 'Weight (kg)',
+    notesPlaceholder: 'Add notes...',
     done: 'Done',
     rest: 'Rest',
     restTimer: 'Rest timer',
@@ -198,6 +227,31 @@ const strings = {
 
     choosePBs: 'Choose records to display',
     pbSteps: 'Daily steps',
+
+    // Profile
+    profileTitle: 'Profile',
+    statistics: 'Statistics',
+    measures: 'Measures',
+    previousWorkouts: 'Previous workouts',
+    duration: 'Duration',
+    weeklyProgress: 'Weekly progress',
+
+    // Statistics page
+    daysTrained: 'Days trained',
+    totalSessions: 'Total sessions',
+    totalReps: 'Total reps',
+
+    // Measures page
+    measureValuePlaceholder: 'Value',
+    saveMeasure: 'Save',
+    noMeasures: 'No measurements logged',
+    progression: 'Progression',
+    measureType_weight: 'Weight',
+    measureType_height: 'Height',
+    measureType_chest: 'Chest',
+    measureType_arms: 'Arms',
+    measureType_legs: 'Legs',
+    measureType_belly: 'Belly',
 
     theme: 'Theme',
     themeLight: 'Light',

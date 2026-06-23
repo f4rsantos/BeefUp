@@ -24,9 +24,9 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-7 pb-4">
-        <button className="btn btn-ghost p-2" onClick={onBack}>
-          <ArrowLeft size={18} />
+      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
+        <button className="btn-back" onClick={onBack}>
+          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
         </button>
         <span
           className="font-semibold text-base"

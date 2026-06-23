@@ -12,9 +12,8 @@ html, body, #root { height: 100%; width: 100%; }
   --border:   #d8d8d8;
   --text:     #0a0a0a;
   --muted:    #5f5f5f;
-  --accent:   #0a0a0a;
-  --accent2:  #0a0a0a;
-  --accent3:  #9a9a9a;
+  --accent:      #15803d;
+  --accent-soft: #e8f5e9;
   --danger:   #0a0a0a;
   --success:  #0a0a0a;
 }
@@ -26,9 +25,8 @@ html, body, #root { height: 100%; width: 100%; }
   --border:   #282828;
   --text:     #f7f7f7;
   --muted:    #9d9d9d;
-  --accent:   #f7f7f7;
-  --accent2:  #f7f7f7;
-  --accent3:  #c9c9c9;
+  --accent:      #4ade80;
+  --accent-soft: #122017;
   --danger:   #f7f7f7;
   --success:  #f7f7f7;
 }
@@ -41,9 +39,8 @@ html, body, #root { height: 100%; width: 100%; }
     --border:   #282828;
     --text:     #f7f7f7;
     --muted:    #9d9d9d;
-    --accent:   #f7f7f7;
-    --accent2:  #f7f7f7;
-    --accent3:  #c9c9c9;
+    --accent:      #4ade80;
+    --accent-soft: #122017;
     --danger:   #f7f7f7;
     --success:  #f7f7f7;
   }
@@ -57,9 +54,8 @@ html, body, #root { height: 100%; width: 100%; }
     --border:   #d8d8d8;
     --text:     #0a0a0a;
     --muted:    #5f5f5f;
-    --accent:   #0a0a0a;
-    --accent2:  #0a0a0a;
-    --accent3:  #9a9a9a;
+    --accent:      #15803d;
+    --accent-soft: #e8f5e9;
     --danger:   #0a0a0a;
     --success:  #0a0a0a;
   }
@@ -87,7 +83,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 16px;
   box-shadow: none;
   overflow: hidden;
@@ -99,7 +95,7 @@ input[type="number"] { -moz-appearance: textfield; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -114,10 +110,21 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 .btn:active { transform: scale(0.96); opacity: 0.9; }
 
-.btn-primary { background: var(--text); color: var(--bg); }
+.btn-primary { background: var(--accent); color: #fff; }
 .btn-ghost   { background: transparent; border: 1px solid var(--border); }
-.btn-icon    { padding: 8px; border-radius: 10px; background: transparent; }
+.btn-icon    { padding: 8px; border-radius: 12px; background: transparent; }
 .btn-danger  { background: var(--text); color: var(--bg); }
+.btn-back    { background: transparent; border: none; padding: 8px; margin-left: -8px; }
+
+.stat-circle {
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
 .btn:focus-visible,
 .bottom-nav button:focus-visible,

@@ -2,14 +2,18 @@ import { AppProvider, useApp } from "./context/AppContext";
 import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
+import ProfilePage from "./pages/ProfilePage";
+import StatisticsPage from "./pages/StatisticsPage";
+import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
 import PlanSettings from "./pages/PlanSettings";
 import { useState } from "react";
-import { Dumbbell, History, Settings } from "lucide-react";
+import { Dumbbell, History, Settings, User } from "lucide-react";
 
 const TABS = [
   { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
+  { id: "profile", Icon: User, labelPt: "Perfil", labelEn: "Profile" },
   {
     id: "settings",
     Icon: Settings,
@@ -64,6 +68,12 @@ function AppInner() {
           />
         )}
         {overlay === null && tab === "history" && <HistoryPage />}
+        {overlay === null && tab === "profile" && (
+          <ProfilePage
+            onOpenStatistics={() => setOverlay("statistics")}
+            onOpenMeasures={() => setOverlay("measures")}
+          />
+        )}
         {overlay === null && tab === "settings" && <SettingsPage />}
 
         {/* Overlays (full-screen, cover nav) */}
@@ -80,6 +90,8 @@ function AppInner() {
           />
         )}
         {overlay === "planSettings" && <PlanSettings onBack={closeOverlay} />}
+        {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
+        {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
       </div>
 
       {/* Bottom nav — hidden during active workout */}

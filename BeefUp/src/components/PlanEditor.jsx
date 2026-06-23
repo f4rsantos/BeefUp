@@ -46,9 +46,9 @@ export default function PlanEditor({
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-7 pb-4">
-        <button className="btn btn-ghost p-2" onClick={onBack}>
-          <ArrowLeft size={18} />
+      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
+        <button className="btn-back" onClick={onBack}>
+          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
         </button>
         <span
           className="font-semibold text-base"
@@ -99,12 +99,7 @@ export default function PlanEditor({
                 {["workout", "rest"].map((type) => (
                   <button
                     key={type}
-                    className="btn text-xs py-1 px-2"
-                    style={{
-                      background:
-                        day.type === type ? "var(--text)" : "var(--surface)",
-                      color: day.type === type ? "var(--bg)" : "var(--muted)",
-                    }}
+                    className={`btn ${day.type === type ? "btn-primary" : "btn-ghost"} text-xs py-1 px-2`}
                     onClick={() =>
                       updateDay(i, {
                         type,

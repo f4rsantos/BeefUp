@@ -43,6 +43,7 @@ export default function ActiveWorkout({ onEnd }) {
 
   const startTime = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
+  const [notes, setNotes] = useState("");
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
   const [restState, setRestState] = useState(null);
@@ -150,6 +151,7 @@ export default function ActiveWorkout({ onEnd }) {
       workoutId: activeWorkout?.workoutId ?? null,
       workoutName: activeWorkout?.workoutName ?? "",
       duration,
+      notes: notes.trim(),
       exercises: exercises
         .map((e) => ({
           exerciseId: e.exerciseId,
@@ -193,6 +195,16 @@ export default function ActiveWorkout({ onEnd }) {
           {workoutName}
         </p>
       )}
+
+      <div className="px-4 pb-2">
+        <textarea
+          className="field"
+          rows={2}
+          placeholder={t.notesPlaceholder}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+      </div>
 
       <div className="px-4 pb-6 flex flex-col gap-4">
         {exercises.map((ex, exIdx) => (

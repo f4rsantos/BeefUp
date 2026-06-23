@@ -46,7 +46,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="px-5 pt-6 pb-3">
+      <div className="px-5 pt-10 pb-6">
         <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
           {t.settingsTitle}
         </h1>

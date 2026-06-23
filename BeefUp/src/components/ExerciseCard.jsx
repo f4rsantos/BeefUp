@@ -96,7 +96,7 @@ export default function ExerciseCard({
             style={{
               width: 28,
               height: 28,
-              background: set.done ? "var(--text)" : "var(--surface2)",
+              background: set.done ? "var(--accent)" : "var(--surface2)",
               border: "1px solid var(--border)",
             }}
             onClick={() => onToggleSet(exIdx, setIdx)}
