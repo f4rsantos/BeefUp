@@ -69,9 +69,8 @@ export default function FoodSearchModal({ meal, onClose }) {
   const mealLabel = t[meal] || meal;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-handle" />
+    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+      <div className="modal-center" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
 
         {/* ── Portion view ── */}
         {selected ? (
@@ -107,15 +106,30 @@ export default function FoodSearchModal({ meal, onClose }) {
             <h3 className="display mb-3" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>
               {t.customFood}
             </h3>
-            <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
+            <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
               {lang === "pt" ? "Valores por 100 g" : "Values per 100 g"}
             </p>
-            <input className="field mb-2" placeholder={t.foodName} value={cf.name} onChange={(e) => setCf({ ...cf, name: e.target.value })} />
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <input className="field" type="number" placeholder={t.kcal} value={cf.kcal} onChange={(e) => setCf({ ...cf, kcal: e.target.value })} />
-              <input className="field" type="number" placeholder={t.protein} value={cf.protein} onChange={(e) => setCf({ ...cf, protein: e.target.value })} />
-              <input className="field" type="number" placeholder={t.carbs} value={cf.carbs} onChange={(e) => setCf({ ...cf, carbs: e.target.value })} />
-              <input className="field" type="number" placeholder={t.fat} value={cf.fat} onChange={(e) => setCf({ ...cf, fat: e.target.value })} />
+            <div className="mb-3">
+              <label className="section-title">{t.foodName}</label>
+              <input className="field mt-1" placeholder={t.foodName} value={cf.name} onChange={(e) => setCf({ ...cf, name: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="section-title">{t.kcal}</label>
+                <input className="field mt-1" type="number" placeholder={t.kcal} value={cf.kcal} onChange={(e) => setCf({ ...cf, kcal: e.target.value })} />
+              </div>
+              <div>
+                <label className="section-title">{t.protein}</label>
+                <input className="field mt-1" type="number" placeholder={t.protein} value={cf.protein} onChange={(e) => setCf({ ...cf, protein: e.target.value })} />
+              </div>
+              <div>
+                <label className="section-title">{t.carbs}</label>
+                <input className="field mt-1" type="number" placeholder={t.carbs} value={cf.carbs} onChange={(e) => setCf({ ...cf, carbs: e.target.value })} />
+              </div>
+              <div>
+                <label className="section-title">{t.fat}</label>
+                <input className="field mt-1" type="number" placeholder={t.fat} value={cf.fat} onChange={(e) => setCf({ ...cf, fat: e.target.value })} />
+              </div>
             </div>
             <button className="btn btn-primary w-full" onClick={createCustom}>{t.add}</button>
           </div>
@@ -145,23 +159,23 @@ export default function FoodSearchModal({ meal, onClose }) {
               <Plus size={15} /> {t.customFood}
             </button>
 
-            <div className="flex flex-col gap-2" style={{ maxHeight: "48vh", overflowY: "auto" }}>
+            <div className="flex flex-col gap-2" style={{ maxHeight: "50vh", overflowY: "auto" }}>
               {results.map((f) => (
                 <button
                   key={f.id}
                   className="card flex items-center justify-between"
-                  style={{ padding: 12, cursor: "pointer", textAlign: "left" }}
+                  style={{ padding: "14px 16px", cursor: "pointer", textAlign: "left" }}
                   onClick={() => pick(f)}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text)", marginBottom: 4 }}>
                       {lang === "pt" ? f.namePt || f.name : f.name}
                     </p>
-                    <p className="text-xs" style={{ color: "var(--muted)" }}>
+                    <p className="text-sm" style={{ color: "var(--muted)" }}>
                       {f.kcal} {t.kcal} · {f.servingLabel}
                     </p>
                   </div>
-                  <Plus size={18} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                  <Plus size={18} style={{ color: "var(--accent)", flexShrink: 0, marginLeft: 12 }} />
                 </button>
               ))}
               {results.length === 0 && (
@@ -183,11 +197,11 @@ function MacroPreview({ macros, t }) {
     { label: t.fat, value: macros.fat, unit: "g", color: "var(--fat)" },
   ];
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       {items.map((it, i) => (
-        <div key={i} className="flex-1 text-center py-2 rounded-2xl" style={{ background: "var(--surface2)" }}>
+        <div key={i} className="flex-1 text-center py-3 rounded-2xl" style={{ background: "var(--surface2)" }}>
           <p className="display" style={{ fontSize: 16, fontWeight: 900, color: it.color }}>{it.value}{it.unit}</p>
-          <p className="text-xs" style={{ color: "var(--muted)" }}>{it.label}</p>
+          <p className="text-xs" style={{ color: "var(--muted)", marginTop: 2 }}>{it.label}</p>
         </div>
       ))}
     </div>

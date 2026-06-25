@@ -80,7 +80,6 @@ export default function WorkoutPage({
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <PageHeader
-        eyebrow={lang === "pt" ? "Bem-vindo de volta" : "Welcome back"}
         title={t.homeTitle}
         action={
           <div className="chip" style={{ pointerEvents: "none" }}>

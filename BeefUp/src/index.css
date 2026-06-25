@@ -218,7 +218,7 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 .btn:active { transform: scale(0.96); opacity: 0.92; }
 
-.btn-primary { background: var(--grad-accent); color: #fff; box-shadow: var(--shadow-glow); }
+.btn-primary { background: var(--grad-accent); color: #fff; }
 .btn-primary:active { box-shadow: var(--shadow-sm); }
 .btn-energy  { background: var(--grad-energy); color: #fff; }
 .btn-ghost   { background: transparent; border: 1px solid var(--border); }
@@ -352,17 +352,16 @@ input.field:focus, select.field:focus, textarea.field:focus {
 /* center start FAB */
 .nav-fab {
   flex-shrink: 0;
-  width: 56px; height: 56px;
-  margin: -20px 8px 0;
-  border-radius: 18px;
-  border: 4px solid var(--bg);
+  width: 48px; height: 48px;
+  margin: 0 8px;
+  border-radius: 14px;
+  border: none;
   cursor: pointer;
   background: var(--grad-accent);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-glow);
   transition: transform 0.14s;
 }
 .nav-fab:active { transform: scale(0.92) translateY(2px); }
@@ -398,6 +397,58 @@ input.field:focus, select.field:focus, textarea.field:focus {
   transition: all 0.14s;
 }
 .chip.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+/* segmented pill toggle (e.g. manual / calculator) */
+.pill-toggle {
+  display: flex;
+  background: var(--surface2);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.pill-toggle .pill-option {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.16s;
+}
+.pill-toggle .pill-option.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* simple icon toggle (e.g. sex male/female) */
+.icon-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.icon-toggle button {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+.icon-toggle button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
 
 /* ── Animations ──────────────────────────────────────── */
 @keyframes fadeUp {

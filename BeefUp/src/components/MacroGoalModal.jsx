@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Mars, Venus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 const ACTIVITY = [
@@ -8,6 +9,16 @@ const ACTIVITY = [
   { id: "actActive", f: 1.725 },
   { id: "actVeryActive", f: 1.9 },
 ];
+
+function activityFromSessions(sessions) {
+  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const count = sessions.filter((s) => new Date(s.date).getTime() >= since).length;
+  if (count >= 7) return 1.9;
+  if (count >= 6) return 1.725;
+  if (count >= 4) return 1.55;
+  if (count >= 2) return 1.375;
+  return 1.2;
+}
 const OBJECTIVE = [
   { id: "objCut", d: -0.18 },
   { id: "objMaintain", d: 0 },
@@ -22,7 +33,7 @@ function latestWeight(measurements) {
 }
 
 export default function MacroGoalModal({ onClose }) {
-  const { t, nutritionGoals, setNutritionGoals, measurements } = useApp();
+  const { t, nutritionGoals, setNutritionGoals, measurements, sessions } = useApp();
   const [mode, setMode] = useState("manual");
 
   // manual
@@ -37,6 +48,9 @@ export default function MacroGoalModal({ onClose }) {
     activity: 1.55,
     obj: 0,
   });
+  const [activityFromWorkout, setActivityFromWorkout] = useState(false);
+
+  const effectiveActivity = activityFromWorkout ? activityFromSessions(sessions) : c.activity;
 
   function saveManual() {
     setNutritionGoals({
@@ -53,7 +67,7 @@ export default function MacroGoalModal({ onClose }) {
     // Mifflin-St Jeor BMR
     const bmr =
       10 * c.weight + 6.25 * c.height - 5 * c.age + (c.sex === "male" ? 5 : -161);
-    const tdee = bmr * c.activity;
+    const tdee = bmr * effectiveActivity;
     const kcal = Math.round(tdee * (1 + c.obj));
     // macro split: protein 2g/kg, fat 25% kcal, rest carbs
     const protein = Math.round(c.weight * 2);
@@ -70,12 +84,11 @@ export default function MacroGoalModal({ onClose }) {
           {t.nutritionGoals}
         </h3>
 
-        <div className="flex gap-2 mb-4">
+        <div className="pill-toggle mb-5">
           {[["manual", t.manual], ["calc", t.calculator]].map(([id, label]) => (
             <button
               key={id}
-              className={`chip ${mode === id ? "active" : ""}`}
-              style={{ flex: 1, justifyContent: "center", padding: "9px" }}
+              className={`pill-option ${mode === id ? "active" : ""}`}
               onClick={() => setMode(id)}
             >
               {label}
@@ -96,10 +109,10 @@ export default function MacroGoalModal({ onClose }) {
           </div>
         ) : (
           <div className="fade-in flex flex-col gap-3">
-            <div className="flex gap-2">
-              {[["male", t.male], ["female", t.female]].map(([id, label]) => (
-                <button key={id} className={`chip ${c.sex === id ? "active" : ""}`} style={{ flex: 1, justifyContent: "center", padding: 9 }} onClick={() => setC({ ...c, sex: id })}>
-                  {label}
+            <div className="icon-toggle">
+              {[["male", Mars, t.male], ["female", Venus, t.female]].map(([id, Icon, label]) => (
+                <button key={id} className={c.sex === id ? "active" : ""} onClick={() => setC({ ...c, sex: id })} aria-label={label} title={label}>
+                  <Icon size={20} />
                 </button>
               ))}
             </div>
@@ -110,9 +123,23 @@ export default function MacroGoalModal({ onClose }) {
             </div>
             <div>
               <label className="section-title">{t.activity}</label>
-              <select className="field mt-1" value={c.activity} onChange={(e) => setC({ ...c, activity: +e.target.value })}>
-                {ACTIVITY.map((a) => <option key={a.id} value={a.f}>{t[a.id]}</option>)}
-              </select>
+              <div className="flex gap-2 mt-1" style={{ flexWrap: "wrap" }}>
+                {ACTIVITY.map((a) => (
+                  <button
+                    key={a.id}
+                    className={`chip ${!activityFromWorkout && c.activity === a.f ? "active" : ""}`}
+                    onClick={() => { setActivityFromWorkout(false); setC({ ...c, activity: a.f }); }}
+                  >
+                    {t[a.id]}
+                  </button>
+                ))}
+                <button
+                  className={`chip ${activityFromWorkout ? "active" : ""}`}
+                  onClick={() => setActivityFromWorkout(true)}
+                >
+                  {t.actFromWorkout}
+                </button>
+              </div>
             </div>
             <div>
               <label className="section-title">{t.objective}</label>

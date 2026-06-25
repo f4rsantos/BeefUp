@@ -16,7 +16,7 @@ const MEALS = [
 const GLASS_ML = 250;
 
 export default function NutritionPage() {
-  const { t, lang, foodLog, deleteFoodLog, nutritionGoals, waterMap, setWaterToday } = useApp();
+  const { t, foodLog, deleteFoodLog, nutritionGoals, waterMap, setWaterToday } = useApp();
   const today = todayISO();
   const [addMeal, setAddMeal] = useState(null);
   const [showGoals, setShowGoals] = useState(false);
@@ -50,7 +50,6 @@ export default function NutritionPage() {
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <PageHeader
-        eyebrow={lang === "pt" ? "Hoje" : "Today"}
         title={t.nutrition}
         action={
           <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={t.editGoals}>
@@ -60,47 +59,47 @@ export default function NutritionPage() {
       />
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide fade-in">
-        {/* ── Calorie hero ── */}
-        <div className="card card-elevated flex items-center gap-5" style={{ padding: 20 }}>
-          <ProgressRing
-            value={totals.kcal}
-            max={nutritionGoals.kcal || 1}
-            size={128}
-            stroke={12}
-            gradientId="kcalRing"
-            gradientFrom="#22c55e"
-            gradientTo="#16a34a"
-          >
-            <span className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
-              {kcalLeft}
-            </span>
-            <span className="text-xs" style={{ color: "var(--muted)" }}>{t.remaining}</span>
-          </ProgressRing>
-          <div style={{ flex: 1 }}>
-            <Row label={t.goal} value={`${nutritionGoals.kcal} ${t.kcal}`} />
-            <Row label={t.consumed} value={`${Math.round(totals.kcal)} ${t.kcal}`} accent />
-            <div className="divider" style={{ margin: "8px 0" }} />
-            <Row label={t.remaining} value={`${kcalLeft} ${t.kcal}`} />
+        {/* ── Calorie hero + macros ── */}
+        <div className="card card-elevated flex flex-col gap-4" style={{ padding: 20 }}>
+          <div className="flex items-center justify-center">
+            <ProgressRing
+              value={totals.kcal}
+              max={nutritionGoals.kcal || 1}
+              size={128}
+              stroke={12}
+              gradientId="kcalRing"
+              gradientFrom="#22c55e"
+              gradientTo="#16a34a"
+            >
+              <span className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
+                {kcalLeft}
+              </span>
+              <span className="text-xs" style={{ color: "var(--muted)" }}>{t.remaining}</span>
+            </ProgressRing>
           </div>
-        </div>
 
-        {/* ── Macro rings ── */}
-        <div className="card flex justify-around" style={{ padding: "20px 12px" }}>
-          {macros.map((m) => (
-            <div key={m.key} className="flex flex-col items-center gap-2">
-              <ProgressRing value={m.val} max={m.goal || 1} size={72} stroke={7} color={m.color}>
-                <span className="display" style={{ fontSize: 14, fontWeight: 900, color: "var(--text)" }}>{m.val}</span>
-                <span style={{ fontSize: 9, color: "var(--muted)" }}>/{m.goal}g</span>
-              </ProgressRing>
-              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{m.label}</span>
-            </div>
-          ))}
+          <div className="flex gap-3">
+            {macros.map((m) => {
+              const pct = m.goal > 0 ? Math.min(1, m.val / m.goal) : 0;
+              return (
+                <div key={m.key} style={{ flex: 1, minWidth: 0 }}>
+                  <div className="flex flex-col mb-1">
+                    <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{m.label}</span>
+                    <span className="text-xs font-bold" style={{ color: "var(--text)" }}>{m.val}/{m.goal}g</span>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 999, background: "var(--ring-track)", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct * 100}%`, borderRadius: 999, background: m.color, transition: "width 0.4s ease" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Water ── */}
         <div className="card flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div style={{ padding: 10, borderRadius: 12, background: "var(--accent-2-soft)", display: "flex" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface2)", display: "flex" }}>
               <Droplet size={18} style={{ color: "var(--fat)" }} fill="var(--fat)" />
             </div>
             <div>
@@ -117,7 +116,7 @@ export default function NutritionPage() {
             <span className="text-sm font-bold" style={{ color: "var(--text)", minWidth: 56, textAlign: "center" }}>
               {waterGlasses}/{goalGlasses}
             </span>
-            <button className="btn btn-energy" style={{ padding: 8 }} onClick={() => setWaterToday(today, water + GLASS_ML)} aria-label="+">
+            <button className="btn btn-primary" style={{ padding: 8 }} onClick={() => setWaterToday(today, water + GLASS_ML)} aria-label="+">
               <Plus size={16} />
             </button>
           </div>
@@ -165,15 +164,6 @@ export default function NutritionPage() {
 
       {addMeal && <FoodSearchModal meal={addMeal} onClose={() => setAddMeal(null)} />}
       {showGoals && <MacroGoalModal onClose={() => setShowGoals(false)} />}
-    </div>
-  );
-}
-
-function Row({ label, value, accent }) {
-  return (
-    <div className="flex items-center justify-between" style={{ padding: "2px 0" }}>
-      <span className="text-xs" style={{ color: "var(--muted)" }}>{label}</span>
-      <span className="text-sm font-bold" style={{ color: accent ? "var(--accent)" : "var(--text)" }}>{value}</span>
     </div>
   );
 }
