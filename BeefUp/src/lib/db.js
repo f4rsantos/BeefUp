@@ -1,5 +1,5 @@
 const DB_NAME = 'beefup'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 const STORES = {
   workouts: 'workouts',       // custom workout definitions
@@ -11,6 +11,7 @@ const STORES = {
   foods: 'foods',             // custom/cached food items { id, name, namePt, kcal, protein, carbs, fat, serving }
   foodLog: 'foodLog',         // diary entries { id, date, meal, name, qty, kcal, protein, carbs, fat }
   water: 'water',             // daily water { date, ml }
+  clients: 'clients',
 }
 
 export { STORES }
@@ -50,6 +51,9 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains(STORES.water)) {
         db.createObjectStore(STORES.water, { keyPath: 'date' })
+      }
+      if (!db.objectStoreNames.contains(STORES.clients)) {
+        db.createObjectStore(STORES.clients, { keyPath: 'id' })
       }
     }
     req.onsuccess = e => resolve(e.target.result)
@@ -125,4 +129,8 @@ export const db = {
   // Water helpers
   setWater: (date, ml) => tx(STORES.water, 'readwrite', s => s.put({ date, ml })),
   getAllWater: () => tx(STORES.water, 'readonly', s => s.getAll()),
+
+  getAllClients: () => tx(STORES.clients, 'readonly', s => s.getAll()),
+  saveClient: (client) => tx(STORES.clients, 'readwrite', s => s.put(client)),
+  removeClient: (id) => tx(STORES.clients, 'readwrite', s => s.delete(id)),
 }

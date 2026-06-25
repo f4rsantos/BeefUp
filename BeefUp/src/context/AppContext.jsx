@@ -8,6 +8,9 @@ const AppContext = createContext(null)
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
   const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
+  const [onboarded, setOnboardedState] = useState(() => getLS('onboarded', false))
+  const [appMode, setAppModeState] = useState(() => getLS('appMode', 'solo'))
+  const [focus, setFocusState] = useState(() => getLS('focus', 'both'))
   const [plans, setPlans] = useState([])
   const [workouts, setWorkouts] = useState([])
   const [sessions, setSessions] = useState([])
@@ -17,6 +20,7 @@ export function AppProvider({ children }) {
   const [pbConfig, setPbConfig] = useState(() => getLS('pbConfig', ['steps', null, null]))
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
+  const [clients, setClients] = useState([])
 
   // Nutrition
   const [foodLog, setFoodLog] = useState([])
@@ -36,6 +40,18 @@ export function AppProvider({ children }) {
 
   const setTheme = useCallback((v) => setThemeState(v), [])
 
+  const completeOnboarding = useCallback(({ mode, focus }) => {
+    setLS('appMode', mode); setAppModeState(mode)
+    if (focus) { setLS('focus', focus); setFocusState(focus) }
+    setLS('onboarded', true); setOnboardedState(true)
+  }, [])
+
+  const resetOnboarding = useCallback(() => {
+    setLS('onboarded', false); setOnboardedState(false)
+    setLS('appMode', 'solo'); setAppModeState('solo')
+    setLS('focus', 'both'); setFocusState('both')
+  }, [])
+
   // Lang
   const setLang = useCallback((v) => {
     setLangState(v)
@@ -45,7 +61,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water] = await Promise.all([
+      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water, cli] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -55,6 +71,7 @@ export function AppProvider({ children }) {
         db.getAllFoodLog(),
         db.getAllFoods(),
         db.getAllWater(),
+        db.getAllClients(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -69,6 +86,7 @@ export function AppProvider({ children }) {
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
+      setClients(cli)
     }
     load()
   }, [])
@@ -161,6 +179,20 @@ export function AppProvider({ children }) {
     setLS('nutritionGoals', goals)
   }, [])
 
+  const saveClient = useCallback(async (client) => {
+    await db.saveClient(client)
+    setClients(prev => {
+      const idx = prev.findIndex(c => c.id === client.id)
+      if (idx >= 0) { const n = [...prev]; n[idx] = client; return n }
+      return [...prev, client]
+    })
+  }, [])
+
+  const deleteClient = useCallback(async (id) => {
+    await db.removeClient(id)
+    setClients(prev => prev.filter(c => c.id !== id))
+  }, [])
+
   // Favourites
   const toggleFavouriteExercise = useCallback((id) => {
     setFavouriteExercises(prev => {
@@ -174,6 +206,7 @@ export function AppProvider({ children }) {
     theme, setTheme,
     lang, setLang,
     t,
+    onboarded, appMode, focus, completeOnboarding, resetOnboarding,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession,
@@ -186,6 +219,7 @@ export function AppProvider({ children }) {
     customFoods, saveCustomFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
+    clients, saveClient, deleteClient,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -1,56 +1,9 @@
 import { useState } from "react";
-import { Mars, Venus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
-const ACTIVITY = [
-  { id: "actSedentary", f: 1.2 },
-  { id: "actLight", f: 1.375 },
-  { id: "actModerate", f: 1.55 },
-  { id: "actActive", f: 1.725 },
-  { id: "actVeryActive", f: 1.9 },
-];
-
-function activityFromSessions(sessions) {
-  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const count = sessions.filter((s) => new Date(s.date).getTime() >= since).length;
-  if (count >= 7) return 1.9;
-  if (count >= 6) return 1.725;
-  if (count >= 4) return 1.55;
-  if (count >= 2) return 1.375;
-  return 1.2;
-}
-const OBJECTIVE = [
-  { id: "objCut", d: -0.18 },
-  { id: "objMaintain", d: 0 },
-  { id: "objBulk", d: 0.12 },
-];
-
-function latestWeight(measurements) {
-  const w = measurements
-    .filter((m) => m.type === "weight")
-    .sort((a, b) => b.date.localeCompare(a.date))[0];
-  return w ? w.value : "";
-}
-
 export default function MacroGoalModal({ onClose }) {
-  const { t, nutritionGoals, setNutritionGoals, measurements, sessions } = useApp();
-  const [mode, setMode] = useState("manual");
-
-  // manual
+  const { t, nutritionGoals, setNutritionGoals } = useApp();
   const [g, setG] = useState(nutritionGoals);
-
-  // calculator
-  const [c, setC] = useState({
-    sex: "male",
-    age: 28,
-    height: 175,
-    weight: latestWeight(measurements) || 75,
-    activity: 1.55,
-    obj: 0,
-  });
-  const [activityFromWorkout, setActivityFromWorkout] = useState(false);
-
-  const effectiveActivity = activityFromWorkout ? activityFromSessions(sessions) : c.activity;
 
   function saveManual() {
     setNutritionGoals({
@@ -63,20 +16,6 @@ export default function MacroGoalModal({ onClose }) {
     onClose();
   }
 
-  function calcAndSave() {
-    // Mifflin-St Jeor BMR
-    const bmr =
-      10 * c.weight + 6.25 * c.height - 5 * c.age + (c.sex === "male" ? 5 : -161);
-    const tdee = bmr * effectiveActivity;
-    const kcal = Math.round(tdee * (1 + c.obj));
-    // macro split: protein 2g/kg, fat 25% kcal, rest carbs
-    const protein = Math.round(c.weight * 2);
-    const fat = Math.round((kcal * 0.25) / 9);
-    const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
-    setNutritionGoals({ kcal, protein, carbs, fat, waterMl: g.waterMl || 2500 });
-    onClose();
-  }
-
   return (
     <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
@@ -84,76 +23,16 @@ export default function MacroGoalModal({ onClose }) {
           {t.nutritionGoals}
         </h3>
 
-        <div className="pill-toggle mb-5">
-          {[["manual", t.manual], ["calc", t.calculator]].map(([id, label]) => (
-            <button
-              key={id}
-              className={`pill-option ${mode === id ? "active" : ""}`}
-              onClick={() => setMode(id)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="fade-in flex flex-col gap-3">
+          <Field label={`${t.calories} (${t.kcal})`} value={g.kcal} onChange={(v) => setG({ ...g, kcal: v })} />
+          <div className="grid grid-cols-3 gap-2">
+            <Field label={`${t.protein} (g)`} value={g.protein} onChange={(v) => setG({ ...g, protein: v })} />
+            <Field label={`${t.carbs} (g)`} value={g.carbs} onChange={(v) => setG({ ...g, carbs: v })} />
+            <Field label={`${t.fat} (g)`} value={g.fat} onChange={(v) => setG({ ...g, fat: v })} />
+          </div>
+          <Field label={`${t.water} (ml)`} value={g.waterMl} onChange={(v) => setG({ ...g, waterMl: v })} />
+          <button className="btn btn-primary w-full mt-1" onClick={saveManual}>{t.save}</button>
         </div>
-
-        {mode === "manual" ? (
-          <div className="fade-in flex flex-col gap-3">
-            <Field label={`${t.calories} (${t.kcal})`} value={g.kcal} onChange={(v) => setG({ ...g, kcal: v })} />
-            <div className="grid grid-cols-3 gap-2">
-              <Field label={`${t.protein} (g)`} value={g.protein} onChange={(v) => setG({ ...g, protein: v })} />
-              <Field label={`${t.carbs} (g)`} value={g.carbs} onChange={(v) => setG({ ...g, carbs: v })} />
-              <Field label={`${t.fat} (g)`} value={g.fat} onChange={(v) => setG({ ...g, fat: v })} />
-            </div>
-            <Field label={`${t.water} (ml)`} value={g.waterMl} onChange={(v) => setG({ ...g, waterMl: v })} />
-            <button className="btn btn-primary w-full mt-1" onClick={saveManual}>{t.save}</button>
-          </div>
-        ) : (
-          <div className="fade-in flex flex-col gap-3">
-            <div className="icon-toggle">
-              {[["male", Mars, t.male], ["female", Venus, t.female]].map(([id, Icon, label]) => (
-                <button key={id} className={c.sex === id ? "active" : ""} onClick={() => setC({ ...c, sex: id })} aria-label={label} title={label}>
-                  <Icon size={20} />
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Field label={t.age} value={c.age} onChange={(v) => setC({ ...c, age: +v })} />
-              <Field label={t.height} value={c.height} onChange={(v) => setC({ ...c, height: +v })} />
-              <Field label={t.bodyWeight} value={c.weight} onChange={(v) => setC({ ...c, weight: +v })} />
-            </div>
-            <div>
-              <label className="section-title">{t.activity}</label>
-              <div className="flex gap-2 mt-1" style={{ flexWrap: "wrap" }}>
-                {ACTIVITY.map((a) => (
-                  <button
-                    key={a.id}
-                    className={`chip ${!activityFromWorkout && c.activity === a.f ? "active" : ""}`}
-                    onClick={() => { setActivityFromWorkout(false); setC({ ...c, activity: a.f }); }}
-                  >
-                    {t[a.id]}
-                  </button>
-                ))}
-                <button
-                  className={`chip ${activityFromWorkout ? "active" : ""}`}
-                  onClick={() => setActivityFromWorkout(true)}
-                >
-                  {t.actFromWorkout}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="section-title">{t.objective}</label>
-              <div className="flex gap-2 mt-1">
-                {OBJECTIVE.map((o) => (
-                  <button key={o.id} className={`chip ${c.obj === o.d ? "active" : ""}`} style={{ flex: 1, justifyContent: "center", padding: 9 }} onClick={() => setC({ ...c, obj: o.d })}>
-                    {t[o.id]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button className="btn btn-primary w-full mt-1" onClick={calcAndSave}>{t.calculate}</button>
-          </div>
-        )}
       </div>
     </div>
   );
