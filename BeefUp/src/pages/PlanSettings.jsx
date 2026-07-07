@@ -6,7 +6,7 @@ import PlanEditor from "../components/PlanEditor";
 
 // ─── Main PlanSettings page ────────────────────────────────────────────────────
 
-export default function PlanSettings({ onBack }) {
+export default function PlanSettings({ onBack, initialPlanId = null }) {
   const {
     t,
     lang,
@@ -19,8 +19,11 @@ export default function PlanSettings({ onBack }) {
     saveWorkout,
     deleteWorkout,
   } = useApp();
-  const [view, setView] = useState("main"); // 'main' | 'editPlan' | 'editWorkout'
-  const [editingPlan, setEditingPlan] = useState(null);
+  const initialPlan = initialPlanId
+    ? plans.find((plan) => plan.id === initialPlanId) ?? null
+    : null;
+  const [view, setView] = useState(initialPlan ? "editPlan" : "main"); // 'main' | 'editPlan' | 'editWorkout'
+  const [editingPlan, setEditingPlan] = useState(initialPlan);
   const [editingWorkout, setEditingWorkout] = useState(null);
   const [tab, setTab] = useState("plans"); // 'plans' | 'workouts'
 

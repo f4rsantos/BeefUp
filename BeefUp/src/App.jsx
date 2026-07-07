@@ -25,7 +25,8 @@ const TABS = [
 function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
   const [overlay, setOverlay] = useState(null); // 'active' | 'pickWorkout' | 'planSettings' | null
-  const { setActiveWorkout, lang } = useApp();
+  const [planSettingsPlanId, setPlanSettingsPlanId] = useState(null);
+  const { setActiveWorkout, lang, activePlanId } = useApp();
 
   function goActive(workoutInfo) {
     setActiveWorkout(workoutInfo);
@@ -38,6 +39,7 @@ function AppInner() {
   }
 
   function closeOverlay() {
+    setPlanSettingsPlanId(null);
     setOverlay(null);
   }
 
@@ -63,7 +65,14 @@ function AppInner() {
           <WorkoutPage
             onStartWorkout={goActive}
             onPickWorkout={() => setOverlay("pickWorkout")}
-            onManageWorkouts={() => setOverlay("planSettings")}
+            onManageWorkouts={() => {
+              setPlanSettingsPlanId(null);
+              setOverlay("planSettings");
+            }}
+            onViewPlanDetails={() => {
+              setPlanSettingsPlanId(activePlanId);
+              setOverlay("planSettings");
+            }}
             onViewHistory={() => setTab("history")}
           />
         )}
@@ -89,7 +98,9 @@ function AppInner() {
             onBack={closeOverlay}
           />
         )}
-        {overlay === "planSettings" && <PlanSettings onBack={closeOverlay} />}
+        {overlay === "planSettings" && (
+          <PlanSettings onBack={closeOverlay} initialPlanId={planSettingsPlanId} />
+        )}
         {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
       </div>

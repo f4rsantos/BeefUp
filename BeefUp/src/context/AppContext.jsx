@@ -124,13 +124,18 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const deleteSession = useCallback(async (sessionId) => {
+    await db.remove(STORES.sessions, sessionId)
+    setSessions(prev => prev.filter(s => s.id !== sessionId))
+  }, [])
+
   const value = {
     theme, setTheme,
     lang, setLang,
     t,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
-    sessions, addSession,
+    sessions, addSession, deleteSession,
     stepsMap, saveSteps,
     measurements, addMeasurement,
     pbConfig, savePbConfig,
