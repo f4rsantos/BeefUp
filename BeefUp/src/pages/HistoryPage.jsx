@@ -26,11 +26,6 @@ const muscleTagToBodyAreas = {
   core: { front: ['upper-abs', 'lower-abs'], back: [] },
 }
 
-function formatDuration(s) {
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
-
 function getSessionBodyAreas(session) {
   const front = new Set()
   const back = new Set()
@@ -71,7 +66,6 @@ function countExercises(session) {
 }
 
 const EXPANDED_HEIGHT = 460
-const HEADER_HEIGHT = 76
 const BODY_NATURAL_HEIGHT = 500
 const BODY_NATURAL_WIDTH = 207
 const SCALE = (EXPANDED_HEIGHT - 60) / BODY_NATURAL_HEIGHT
@@ -310,25 +304,25 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                       borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
                     }}
                   >
-                    <p style={{ color: 'var(--muted)', fontSize: 10 }}>{stat.label}</p>
-                    <p style={{ color: 'var(--text)', fontSize: 14, fontWeight: 700 }}>{stat.value}</p>
+                    <p style={{ color: 'var(--muted)', fontSize: 11 }}>{stat.label}</p>
+                    <p style={{ color: 'var(--text)', fontSize: 16, fontWeight: 700 }}>{stat.value}</p>
                   </div>
                 ))}
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, scrollbarWidth: 'none' }}>
                 {s.notes && (
-                  <p style={{ color: 'var(--muted)', fontSize: 12, fontStyle: 'italic', marginBottom: 4 }}>
+                  <p style={{ color: 'var(--muted)', fontSize: 13, fontStyle: 'italic', marginBottom: 4 }}>
                     {s.notes}
                   </p>
                 )}
                 {s.exercises?.map((ex, i) => (
                   <div key={i}>
-                    <p style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>
+                    <p style={{ color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>
                       {lang === 'pt' ? ex.namePt : ex.name}
                     </p>
-                    <p style={{ color: 'var(--muted)', fontSize: 11, marginTop: 2, lineHeight: 1.5 }}>
-                      {ex.sets?.map(set => `${set.weight || '—'}kg × ${set.reps || '—'}`).join('  ·  ')}
+                    <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>
+                      {ex.sets?.map(set => `${set.weight || '—'}kg × ${set.reps || '—'}`).join('    ·    ')}
                     </p>
                   </div>
                 ))}

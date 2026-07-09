@@ -8,8 +8,9 @@ import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
 import PlanSettings from "./pages/PlanSettings";
+import WorkoutSettings from "./pages/WorkoutSettings";
 import { useState } from "react";
-import { Dumbbell, History, Settings, User } from "lucide-react";
+import { Dumbbell, Settings, User } from "lucide-react";
 
 const TABS = [
   { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
@@ -65,9 +66,13 @@ function AppInner() {
           <WorkoutPage
             onStartWorkout={goActive}
             onPickWorkout={() => setOverlay("pickWorkout")}
-            onManageWorkouts={() => {
+            onManagePlans={() => {
               setPlanSettingsPlanId(null);
               setOverlay("planSettings");
+            }}
+            onManageWorkouts={() => {
+              setPlanSettingsPlanId(null);
+              setOverlay("workoutSettings");
             }}
             onViewPlanDetails={() => {
               setPlanSettingsPlanId(activePlanId);
@@ -100,6 +105,9 @@ function AppInner() {
         )}
         {overlay === "planSettings" && (
           <PlanSettings onBack={closeOverlay} initialPlanId={planSettingsPlanId} />
+        )}
+        {overlay === "workoutSettings" && (
+          <WorkoutSettings onBack={closeOverlay} />
         )}
         {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}

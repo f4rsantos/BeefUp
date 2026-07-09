@@ -320,10 +320,20 @@ export default function WorkoutPage({
         </div>
 
         {/* Plano ativo */}
-        <p className="text-sm font-semibold" style={{ color: "var(--muted)", marginBottom: 16 }}>
-          {lang === "pt" ? "Plano Atual" : "Current Plan"}
-        </p>
-
+        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--muted)", marginBottom: 16 }}>
+            {lang === "pt" ? "Plano Atual" : "Current Plan"}
+          </p>
+          <div className="flex items-center" style={{ gap: 12 }}>
+              <button
+                aria-label="more"
+                onClick={onManagePlans}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}
+              >
+                <MoreHorizontal size={18} />
+              </button>
+            </div>
+        </div>
         <button
           className="card w-full flex items-center justify-between text-left"
           style={{ cursor: "pointer", marginBottom: 40 }}
@@ -347,9 +357,9 @@ export default function WorkoutPage({
         </button>
 
         {/* Outros Treinos */}
-        <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-          <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>
-            {lang === "pt" ? "Outros Treinos" : "Other Training"}
+        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+          <p className="text-sm font-bold" style={{ color: "var(--text)", marginBottom: 20 }}>
+          {lang === "pt" ? "Os meus Treinos" : "My Workouts"} ({workouts.length})
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
             <button
@@ -368,10 +378,6 @@ export default function WorkoutPage({
             </button>
           </div>
         </div>
-
-        <p className="text-sm font-bold" style={{ color: "var(--text)", marginBottom: 20 }}>
-          {lang === "pt" ? "Os meus Treinos" : "My Workouts"} ({workouts.length})
-        </p>
 
         <div
           className="grid"
