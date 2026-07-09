@@ -415,7 +415,12 @@ export default function WorkoutPage({
                 key={w.id}
                 className="card"
                 style={{ cursor: "pointer", position: "relative" }}
-                onClick={() => onEditWorkout(w.id)}
+                onClick={() =>
+                  onStartWorkout({
+                    workoutId: w.id,
+                    workoutName: lang === "pt" ? w.namePt || w.name : w.name,
+                  })
+                }
               >
                 <div className="flex items-start justify-between" style={{ marginBottom: 8 }}>
                   <p className="text-base font-bold truncate" style={{ color: "var(--text)", minWidth: 0 }}>

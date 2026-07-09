@@ -23,7 +23,7 @@ export default function WorkoutTopBar({ elapsed, onOneRM, onRest, onEnd }) {
 
       <div
         className="font-mono text-lg font-semibold"
-        style={{ color: "var(--text)" }}
+        style={{ color: "var(--text)", transform: "translateX(-24px)" }}
       >
         {formatTime(elapsed)}
       </div>
