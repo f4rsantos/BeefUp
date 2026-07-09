@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play } from "lucide-react";
+import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todaysPlanEntry } from "../lib/planUtils";
 
@@ -27,7 +27,7 @@ function formatLastDate(iso, lang) {
 }
 
 
-function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete }) {
+function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete, onEdit }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -95,6 +95,28 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete }) {
           <button
             onClick={() => {
               setOpen(false);
+              onEdit(workout);}}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text)",
+              fontSize: 13,
+              textAlign: "left",
+            }}
+          >
+            <Pencil size={14} />
+            {lang === "pt" ? "Editar" : "Edit"}
+          </button>
+
+          <button
+            onClick={() => {
+              setOpen(false);
               onRename(workout);
             }}
             style={{
@@ -111,7 +133,7 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete }) {
               textAlign: "left",
             }}
           >
-            <Pencil size={14} />
+            <FilePenLine size={14} />
             {lang === "pt" ? "Renomear" : "Rename"}
           </button>
 
@@ -402,6 +424,7 @@ export default function WorkoutPage({
                   <WorkoutCardMenu
                     workout={w}
                     lang={lang}
+                    onEdit={onEditWorkout}
                     onRename={handleRename}
                     onDuplicate={handleDuplicate}
                     onDelete={handleDelete}

@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import WorkoutEditor from "../components/WorkoutEditor";
 
-export default function WorkoutSettings({ onBack }) {
+export default function WorkoutSettings({ onBack, initialView = "main", initialWorkout = null }) {
   const {
     t,
     lang,
@@ -12,15 +12,15 @@ export default function WorkoutSettings({ onBack }) {
     deleteWorkout,
   } = useApp();
 
-  const [view, setView] = useState("main"); // 'main' | 'editWorkout'
-  const [editingWorkout, setEditingWorkout] = useState(null);
+  const [view, setView] = useState(initialView); // 'main' | 'editWorkout'
+  const [editingWorkout, setEditingWorkout] = useState(initialWorkout);
 
   if (view === "editWorkout") {
     return (
       <WorkoutEditor
         workout={editingWorkout}
         onSave={saveWorkout}
-        onBack={() => setView("main")}
+        onBack={() => (initialView === "editWorkout" ? onBack() : setView("main"))}
         lang={lang}
         t={t}
       />

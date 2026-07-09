@@ -27,6 +27,8 @@ function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
   const [overlay, setOverlay] = useState(null); // 'active' | 'pickWorkout' | 'planSettings' | null
   const [planSettingsPlanId, setPlanSettingsPlanId] = useState(null);
+  const [workoutSettingsView, setWorkoutSettingsView] = useState("main");
+  const [workoutSettingsWorkout, setWorkoutSettingsWorkout] = useState(null);
   const { setActiveWorkout, lang, activePlanId } = useApp();
 
   function goActive(workoutInfo) {
@@ -41,6 +43,8 @@ function AppInner() {
 
   function closeOverlay() {
     setPlanSettingsPlanId(null);
+    setWorkoutSettingsView("main");
+    setWorkoutSettingsWorkout(null);
     setOverlay(null);
   }
 
@@ -70,8 +74,20 @@ function AppInner() {
               setPlanSettingsPlanId(null);
               setOverlay("planSettings");
             }}
+            onCreateWorkout={() => {
+              setWorkoutSettingsView("editWorkout");
+              setWorkoutSettingsWorkout(null);
+              setOverlay("workoutSettings");
+            }}
             onManageWorkouts={() => {
+              setWorkoutSettingsView("main");
               setPlanSettingsPlanId(null);
+              setWorkoutSettingsWorkout(null);
+              setOverlay("workoutSettings");
+            }}
+            onEditWorkout={(workout) => {
+              setWorkoutSettingsWorkout(workout);
+              setWorkoutSettingsView("editWorkout");
               setOverlay("workoutSettings");
             }}
             onViewPlanDetails={() => {
@@ -107,7 +123,11 @@ function AppInner() {
           <PlanSettings onBack={closeOverlay} initialPlanId={planSettingsPlanId} />
         )}
         {overlay === "workoutSettings" && (
-          <WorkoutSettings onBack={closeOverlay} />
+          <WorkoutSettings
+            onBack={closeOverlay}
+            initialView={workoutSettingsView}
+            initialWorkout={workoutSettingsWorkout}
+          />
         )}
         {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
