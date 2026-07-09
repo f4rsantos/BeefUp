@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, nowISO } from "../lib/planUtils";
+import { uid, nowISO } from "../lib/planUtils";
 import exercisesData from "../data/exercises.json";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
@@ -44,7 +44,7 @@ export default function ActiveWorkout({ onEnd }) {
       .filter(Boolean);
   });
 
-  const startTime = useRef(Date.now());
+  const startTime = useRef(0);
   const [elapsed, setElapsed] = useState(0);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
@@ -55,6 +55,7 @@ export default function ActiveWorkout({ onEnd }) {
   const [setTimer, setSetTimer] = useState(null);
 
   useEffect(() => {
+    startTime.current = Date.now();
     const id = setInterval(
       () => setElapsed(Math.floor((Date.now() - startTime.current) / 1000)),
       1000,
@@ -63,24 +64,19 @@ export default function ActiveWorkout({ onEnd }) {
   }, []);
 
   useEffect(() => {
-    if (restState?.done && !showRestModal) {
-      setShowRestModal(true);
-    }
-  }, [restState?.done]);
-
-  useEffect(() => {
     if (!setTimer) return;
+    const currentEndsAt = setTimer.endsAt;
     const tick = () => {
       const remaining = Math.max(
         0,
-        Math.round((setTimer.endsAt - Date.now()) / 1000),
+        Math.round((currentEndsAt - Date.now()) / 1000),
       );
       if (remaining <= 0) {
         setSetTimer(null);
         return;
       }
       setSetTimer((prev) =>
-        prev && prev.endsAt === setTimer.endsAt
+        prev && prev.endsAt === currentEndsAt
           ? { ...prev, remaining }
           : prev,
       );
@@ -88,7 +84,7 @@ export default function ActiveWorkout({ onEnd }) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [setTimer?.endsAt]);
+  }, [setTimer]);
 
   const updateSet = useCallback((exIdx, setIdx, field, val) => {
     setExercises((prev) =>
@@ -213,7 +209,6 @@ export default function ActiveWorkout({ onEnd }) {
       workoutId: activeWorkout?.workoutId ?? null,
       workoutName: activeWorkout?.workoutName ?? "",
       duration,
-      notes: notes.trim(),
       exercises: exercises
         .map((e) => ({
           exerciseId: e.exerciseId,
