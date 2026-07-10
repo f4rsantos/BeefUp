@@ -12,8 +12,6 @@ import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 
-const REST_AFTER_SET = 120;
-
 function buildExerciseEntry(ex) {
   return {
     id: uid(),
@@ -34,6 +32,7 @@ export default function ActiveWorkout({ onEnd }) {
   const { t, lang, activeWorkout, workouts, addSession } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
+  const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
   const [exercises, setExercises] = useState(() => {
     if (!sourceWorkout) return [];
     return sourceWorkout.exercises
@@ -127,8 +126,8 @@ export default function ActiveWorkout({ onEnd }) {
         setSetTimer({
           exIdx,
           setIdx,
-          endsAt: now + REST_AFTER_SET * 1000,
-          remaining: REST_AFTER_SET,
+          endsAt: now + restAfterSet * 1000,
+          remaining: restAfterSet,
         });
       } else {
         setSetTimer((prevTimer) =>
@@ -138,7 +137,7 @@ export default function ActiveWorkout({ onEnd }) {
         );
       }
     },
-    [exercises],
+    [exercises, restAfterSet],
   );
 
   const dismissSetTimer = useCallback(() => setSetTimer(null), []);
