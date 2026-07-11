@@ -37,6 +37,7 @@ html, body, #root { height: 100%; width: 100%; }
   --shadow-glow:0 8px 28px -6px rgba(22, 163, 74, 0.45);
 
   --ring-track: #e6e9ee;
+  --card-inner: #eef0f3;
 
   --font-display: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
 }
@@ -72,6 +73,7 @@ html, body, #root { height: 100%; width: 100%; }
   --shadow-glow:0 8px 30px -6px rgba(34, 197, 94, 0.5);
 
   --ring-track: #232a35;
+  --card-inner: #171d26;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -100,6 +102,7 @@ html, body, #root { height: 100%; width: 100%; }
     --shadow-lg:  0 22px 48px -14px rgba(0, 0, 0, 0.7);
     --shadow-glow:0 8px 30px -6px rgba(34, 197, 94, 0.5);
     --ring-track: #232a35;
+    --card-inner: #171d26;
   }
 }
 
@@ -129,6 +132,7 @@ html, body, #root { height: 100%; width: 100%; }
     --shadow-lg:  0 18px 40px -12px rgba(12, 15, 20, 0.22);
     --shadow-glow:0 8px 28px -6px rgba(22, 163, 74, 0.45);
     --ring-track: #e6e9ee;
+    --card-inner: #eef0f3;
   }
 }
 

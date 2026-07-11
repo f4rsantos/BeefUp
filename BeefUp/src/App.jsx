@@ -7,6 +7,7 @@ import StatisticsPage from "./pages/StatisticsPage";
 import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
+import WorkoutSettings from "./pages/WorkoutSettings";
 import PlanSettings from "./pages/PlanSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
@@ -25,6 +26,8 @@ const TABS = [
 function AppInner() {
   const [tab, setTab] = useState("home");
   const [overlay, setOverlay] = useState(null);
+  const [workoutSettingsView, setWorkoutSettingsView] = useState("main");
+  const [workoutSettingsWorkout, setWorkoutSettingsWorkout] = useState(null);
   const { setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t } = useApp();
   const isDesktop = useIsDesktop();
 
@@ -96,8 +99,24 @@ function AppInner() {
         {overlay === null && tab2 === "home" && showGym && (
           <WorkoutPage
             onStartWorkout={goActive}
-            onPickWorkout={() => setOverlay("pickWorkout")}
-            onManageWorkouts={() => setOverlay("planSettings")}
+            onStartEmpty={() => setOverlay("pickWorkout")}
+            onCreateWorkout={() => {
+              setWorkoutSettingsView("editWorkout");
+              setWorkoutSettingsWorkout(null);
+              setOverlay("workoutSettings");
+            }}
+            onEditWorkout={(workout) => {
+              setWorkoutSettingsWorkout(workout);
+              setWorkoutSettingsView("editWorkout");
+              setOverlay("workoutSettings");
+            }}
+            onManageWorkouts={() => {
+              setWorkoutSettingsView("main");
+              setWorkoutSettingsWorkout(null);
+              setOverlay("workoutSettings");
+            }}
+            onManagePlans={() => setOverlay("planSettings")}
+            onViewPlanDetails={() => setOverlay("planSettings")}
             onViewHistory={() => setOverlay("history")}
           />
         )}
@@ -123,6 +142,13 @@ function AppInner() {
               })
             }
             onBack={closeOverlay}
+          />
+        )}
+        {overlay === "workoutSettings" && (
+          <WorkoutSettings
+            onBack={closeOverlay}
+            initialView={workoutSettingsView}
+            initialWorkout={workoutSettingsWorkout}
           />
         )}
         {overlay === "planSettings" && <PlanSettings onBack={closeOverlay} />}

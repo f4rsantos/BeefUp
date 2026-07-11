@@ -132,6 +132,11 @@ export function AppProvider({ children }) {
     setSessions(prev => [...prev, session])
   }, [])
 
+  const deleteSession = useCallback(async (id) => {
+    await db.remove(STORES.sessions, id)
+    setSessions(prev => prev.filter(s => s.id !== id))
+  }, [])
+
   // Steps
   const saveSteps = useCallback(async (date, count) => {
     await db.setSteps(date, count)
@@ -209,7 +214,7 @@ export function AppProvider({ children }) {
     onboarded, appMode, focus, completeOnboarding, resetOnboarding,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
-    sessions, addSession,
+    sessions, addSession, deleteSession,
     stepsMap, saveSteps,
     measurements, addMeasurement,
     pbConfig, savePbConfig,

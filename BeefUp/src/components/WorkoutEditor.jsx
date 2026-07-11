@@ -8,6 +8,7 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
   const [name, setName] = useState(workout?.name ?? "");
   const [namePt, setNamePt] = useState(workout?.namePt ?? "");
   const [exIds, setExIds] = useState(workout?.exercises ?? []);
+  const [restAfterSet, setRestAfterSet] = useState(workout?.restAfterSet ?? 120);
   const [showPicker, setShowPicker] = useState(false);
 
   function save() {
@@ -18,6 +19,7 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
       name: name.trim(),
       namePt: namePt.trim() || name.trim(),
       exercises: exIds,
+      restAfterSet: Math.max(0, parseInt(restAfterSet) || 120),
     });
     onBack();
   }
@@ -55,6 +57,20 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
               value={namePt}
               onChange={(e) => setNamePt(e.target.value)}
               placeholder="e.g. Dia de Pernas"
+            />
+          </div>
+          <div>
+            <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
+              {lang === "pt" ? "Tempo entre sets (s)" : "Rest between sets (s)"}
+            </label>
+            <input
+              className="field"
+              type="number"
+              min="0"
+              step="1"
+              value={restAfterSet}
+              onChange={(e) => setRestAfterSet(e.target.value)}
+              placeholder="120"
             />
           </div>
         </div>

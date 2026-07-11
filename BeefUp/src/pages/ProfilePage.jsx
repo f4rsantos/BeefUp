@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { Footprints, Flame, Plus, Ruler, BarChart3 } from "lucide-react";
+import { Footprints, Flame, Plus, Ruler, BarChart3, Pencil } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
 import { computeStreak, getMonthActivity, aggregateSessionsByWeek, todayISO } from "../lib/planUtils";
 import StepsModal from "../components/StepsModal";
+import PBEditModal from "../components/PBEditModal";
+import exercisesData from "../data/exercises.json";
 
 function dayOffsetISO(daysBack) {
   const date = new Date();
@@ -13,9 +15,10 @@ function dayOffsetISO(daysBack) {
 }
 
 export default function ProfilePage({ onOpenStatistics, onOpenMeasures, onViewHistory }) {
-  const { t, lang, plans, activePlanId, sessions, stepsMap } = useApp();
+  const { t, lang, plans, activePlanId, sessions, stepsMap, pbConfig } = useApp();
 
   const [showSteps, setShowSteps] = useState(false);
+  const [showPBEdit, setShowPBEdit] = useState(false);
   const [metric, setMetric] = useState("volume");
 
   const today = todayISO();
@@ -45,6 +48,36 @@ export default function ProfilePage({ onOpenStatistics, onOpenMeasures, onViewHi
   const chartData = useMemo(
     () => aggregateSessionsByWeek(sessions, metric),
     [sessions, metric],
+  );
+
+  const pbItems = useMemo(
+    () =>
+      pbConfig.map((slot) => {
+        if (!slot) return null;
+        if (slot === "steps") {
+          const vals = Object.values(stepsMap);
+          const best = vals.length ? Math.max(...vals) : 0;
+          return { label: t.pbSteps, value: best > 0 ? best.toLocaleString() : "—", unit: "" };
+        }
+        const ex = exercisesData.find((e) => e.id === slot);
+        if (!ex) return null;
+        let best = 0;
+        sessions.forEach((s) =>
+          s.exercises?.forEach((e) => {
+            if (e.exerciseId === slot)
+              e.sets?.forEach((set) => {
+                const rm = (parseFloat(set.weight) || 0) * (1 + (parseInt(set.reps) || 0) / 30);
+                if (rm > best) best = rm;
+              });
+          }),
+        );
+        return {
+          label: lang === "pt" ? ex.namePt : ex.name,
+          value: best > 0 ? best.toFixed(1) : "—",
+          unit: best > 0 ? "kg" : "",
+        };
+      }),
+    [pbConfig, stepsMap, sessions, lang, t],
   );
 
   return (
@@ -120,6 +153,36 @@ export default function ProfilePage({ onOpenStatistics, onOpenMeasures, onViewHi
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <p className="section-title" style={{ marginBottom: 0 }}>{t.personalBests}</p>
+            <button className="btn-icon" onClick={() => setShowPBEdit(true)}>
+              <Pencil size={15} style={{ color: "var(--muted)" }} />
+            </button>
+          </div>
+          <div className="flex justify-around gap-2">
+            {pbItems.map((item, i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5" style={{ flex: 1 }}>
+                <div className="stat-circle" style={{ width: 76, height: 76 }}>
+                  {item ? (
+                    <>
+                      <span className="display" style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
+                        {item.value}
+                      </span>
+                      {item.unit && <span className="text-xs" style={{ color: "var(--muted)" }}>{item.unit}</span>}
+                    </>
+                  ) : (
+                    <span className="text-lg" style={{ color: "var(--border)" }}>—</span>
+                  )}
+                </div>
+                <p className="text-xs text-center leading-tight" style={{ color: "var(--muted)", maxWidth: 72 }}>
+                  {item ? item.label : "—"}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -200,6 +263,7 @@ export default function ProfilePage({ onOpenStatistics, onOpenMeasures, onViewHi
       </div>
 
       {showSteps && <StepsModal onClose={() => setShowSteps(false)} />}
+      {showPBEdit && <PBEditModal onClose={() => setShowPBEdit(false)} />}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, nowISO } from "../lib/planUtils";
+import { uid, nowISO } from "../lib/planUtils";
 import exercisesData from "../data/exercises.json";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
@@ -18,6 +18,7 @@ function buildExerciseEntry(ex) {
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
+    note: "",
     sets: Array.from({ length: ex.defaultSets }, () => ({
       id: uid(),
       weight: ex.defaultWeight > 0 ? String(ex.defaultWeight) : "",
@@ -33,6 +34,7 @@ export default function ActiveWorkout({ onEnd }) {
   const { t, lang, activeWorkout, workouts, addSession, sessions } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
+  const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
   const [exercises, setExercises] = useState(() => {
     if (!sourceWorkout) return [];
     return sourceWorkout.exercises
@@ -43,17 +45,18 @@ export default function ActiveWorkout({ onEnd }) {
       .filter(Boolean);
   });
 
-  const startTime = useRef(Date.now());
+  const startTime = useRef(0);
   const [elapsed, setElapsed] = useState(0);
-  const [notes, setNotes] = useState("");
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
   const [restState, setRestState] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
+  const [setTimer, setSetTimer] = useState(null);
 
   useEffect(() => {
+    startTime.current = Date.now();
     const id = setInterval(
       () => setElapsed(Math.floor((Date.now() - startTime.current) / 1000)),
       1000,
@@ -61,11 +64,23 @@ export default function ActiveWorkout({ onEnd }) {
     return () => clearInterval(id);
   }, []);
 
+  const timerEndsAt = setTimer?.endsAt ?? null;
   useEffect(() => {
-    if (restState?.done && !showRestModal) {
-      setShowRestModal(true);
-    }
-  }, [restState?.done]);
+    if (timerEndsAt == null) return;
+    const tick = () => {
+      const remaining = Math.max(0, Math.round((timerEndsAt - Date.now()) / 1000));
+      if (remaining <= 0) {
+        setSetTimer(null);
+        return;
+      }
+      setSetTimer((prev) =>
+        prev && prev.endsAt === timerEndsAt ? { ...prev, remaining } : prev,
+      );
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [timerEndsAt]);
 
   const updateSet = useCallback((exIdx, setIdx, field, val) => {
     setExercises((prev) =>
@@ -81,19 +96,48 @@ export default function ActiveWorkout({ onEnd }) {
     );
   }, []);
 
-  const toggleSet = useCallback((exIdx, setIdx) => {
+  const updateExerciseNote = useCallback((exIdx, val) => {
     setExercises((prev) =>
-      prev.map((e, i) => {
-        if (i !== exIdx) return e;
-        return {
-          ...e,
-          sets: e.sets.map((s, j) =>
-            j === setIdx ? { ...s, done: !s.done } : s,
-          ),
-        };
-      }),
+      prev.map((e, i) => (i === exIdx ? { ...e, note: val } : e)),
     );
   }, []);
+
+  const toggleSet = useCallback(
+    (exIdx, setIdx) => {
+      const wasDone = exercises[exIdx]?.sets[setIdx]?.done;
+
+      setExercises((prev) =>
+        prev.map((e, i) => {
+          if (i !== exIdx) return e;
+          return {
+            ...e,
+            sets: e.sets.map((s, j) =>
+              j === setIdx ? { ...s, done: !s.done } : s,
+            ),
+          };
+        }),
+      );
+
+      if (!wasDone) {
+        const now = Date.now();
+        setSetTimer({
+          exIdx,
+          setIdx,
+          endsAt: now + restAfterSet * 1000,
+          remaining: restAfterSet,
+        });
+      } else {
+        setSetTimer((prevTimer) =>
+          prevTimer?.exIdx === exIdx && prevTimer?.setIdx === setIdx
+            ? null
+            : prevTimer,
+        );
+      }
+    },
+    [exercises, restAfterSet],
+  );
+
+  const dismissSetTimer = useCallback(() => setSetTimer(null), []);
 
   const addSet = useCallback((exIdx) => {
     setExercises((prev) =>
@@ -123,10 +167,16 @@ export default function ActiveWorkout({ onEnd }) {
         return { ...e, sets: e.sets.filter((_, j) => j !== setIdx) };
       }),
     );
+    setSetTimer((prevTimer) =>
+      prevTimer?.exIdx === exIdx && prevTimer?.setIdx === setIdx
+        ? null
+        : prevTimer,
+    );
   }, []);
 
   const removeExercise = useCallback((exIdx) => {
     setExercises((prev) => prev.filter((_, i) => i !== exIdx));
+    setSetTimer((prevTimer) => (prevTimer?.exIdx === exIdx ? null : prevTimer));
   }, []);
 
   const addExercise = useCallback((ex) => {
@@ -153,12 +203,12 @@ export default function ActiveWorkout({ onEnd }) {
       workoutId: activeWorkout?.workoutId ?? null,
       workoutName: activeWorkout?.workoutName ?? "",
       duration,
-      notes: notes.trim(),
       exercises: exercises
         .map((e) => ({
           exerciseId: e.exerciseId,
           name: e.name,
           namePt: e.namePt,
+          note: e.note?.trim() ?? "",
           sets: e.sets
             .filter((s) => s.done)
             .map((s) => ({ weight: s.weight, reps: s.reps })),
@@ -211,10 +261,7 @@ export default function ActiveWorkout({ onEnd }) {
         onEnd={() => setEndModal("confirm")}
       />
 
-      <RestBar
-        restState={restState}
-        onOpenRest={() => setShowRestModal(true)}
-      />
+      <RestBar restState={restState} onOpenRest={() => setShowRestModal(true)} />
 
       {workoutName && (
         <div className="px-4 pt-1 pb-3">
@@ -226,17 +273,6 @@ export default function ActiveWorkout({ onEnd }) {
           </h1>
         </div>
       )}
-
-      <div className="px-4 pb-3">
-        <textarea
-          className="field"
-          rows={2}
-          style={{ resize: "none" }}
-          placeholder={t.notesPlaceholder}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-      </div>
 
       <div className="px-4 pb-8 flex flex-col gap-3">
         {exercises.map((ex, exIdx) => (
@@ -250,6 +286,10 @@ export default function ActiveWorkout({ onEnd }) {
             onAddSet={addSet}
             onRemoveSet={removeSet}
             onRemoveExercise={removeExercise}
+            note={ex.note}
+            onUpdateNote={updateExerciseNote}
+            setTimer={setTimer}
+            onSkipSetTimer={dismissSetTimer}
           />
         ))}
 
