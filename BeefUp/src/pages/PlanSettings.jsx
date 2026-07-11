@@ -1,25 +1,28 @@
 import { useState } from "react";
 import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import WorkoutEditor from "../components/WorkoutEditor";
 import PlanEditor from "../components/PlanEditor";
 
 // ─── Main PlanSettings page ────────────────────────────────────────────────────
 
-export default function PlanSettings({ onBack, initialPlanId = null }) {
+export default function PlanSettings({ onBack }) {
   const {
     t,
+    lang,
     plans,
     savePlan,
     deletePlan,
     activePlanId,
     setActivePlan,
     workouts,
+    saveWorkout,
+    deleteWorkout,
   } = useApp();
-  const initialPlan = initialPlanId
-    ? plans.find((plan) => plan.id === initialPlanId) ?? null
-    : null;
-  const [view, setView] = useState(initialPlan ? "editPlan" : "main"); // 'main' | 'editPlan'
-  const [editingPlan, setEditingPlan] = useState(initialPlan);
+  const [view, setView] = useState("main"); // 'main' | 'editPlan' | 'editWorkout'
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [editingWorkout, setEditingWorkout] = useState(null);
+  const [tab, setTab] = useState("plans"); // 'plans' | 'workouts'
 
   if (view === "editPlan") {
     return (
@@ -28,6 +31,19 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
         workouts={workouts}
         onSave={savePlan}
         onBack={() => setView("main")}
+        lang={lang}
+        t={t}
+      />
+    );
+  }
+
+  if (view === "editWorkout") {
+    return (
+      <WorkoutEditor
+        workout={editingWorkout}
+        onSave={saveWorkout}
+        onBack={() => setView("main")}
+        lang={lang}
         t={t}
       />
     );
