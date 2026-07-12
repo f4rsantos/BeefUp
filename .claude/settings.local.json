@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npx eslint *)"
     ]
   }
 }

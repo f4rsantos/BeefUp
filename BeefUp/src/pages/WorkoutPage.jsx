@@ -1,25 +1,9 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, ListPlus, Moon } from "lucide-react";
+import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { todaysPlanEntry, computeStreak } from "../lib/planUtils";
+import { todaysPlanEntry } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
-import exercisesData from "../data/exercises.json";
 import HumanBody from "../components/HumanBody";
-import PageHeader from "../components/PageHeader";
-import PBEditModal from "../components/PBEditModal";
-
-function getGreeting(lang) {
-  const hour = new Date().getHours();
-  if (lang === "pt") {
-    if (hour < 12) return "Bom dia";
-    if (hour < 19) return "Boa tarde";
-    return "Boa noite";
-  }
-  if (hour < 12) return "Good morning";
-  if (hour < 19) return "Good afternoon";
-  return "Good evening";
-}
-
 
 function formatLastDate(iso, lang) {
   if (!iso) return "-";
@@ -197,7 +181,6 @@ const MINI_SCALE = 0.34;
 
 export default function WorkoutPage({
   onStartWorkout,
-  onStartEmpty,
   onCreateWorkout,
   onManageWorkouts,
   onEditWorkout,
@@ -206,8 +189,7 @@ export default function WorkoutPage({
   onManagePlans,
   onViewPlanDetails,
 }) {
-  const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout, pbConfig, stepsMap } = useApp()
-
+  const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout } = useApp()
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const todayEntry = useMemo(
     () => todaysPlanEntry(activePlan, sessions),
@@ -218,11 +200,6 @@ export default function WorkoutPage({
       ? (workouts.find((w) => w.id === todayEntry.workoutId) ?? null)
       : null;
 
-  const streak = useMemo(
-    () => computeStreak(sessions, plans, activePlanId),
-    [sessions, plans, activePlanId],
-  );
-
   // Muscles trained in the last 7 days, for the home heatmap figure.
   const weekAreas = useMemo(
     () => bodyAreasForSessions(recentSessions(sessions, 7)),
@@ -230,54 +207,11 @@ export default function WorkoutPage({
   );
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
 
-  const pbItems = useMemo(
-    () =>
-      pbConfig.map((slot) => {
-        if (!slot) return null;
-        if (slot === "steps") {
-          const vals = Object.values(stepsMap);
-          const best = vals.length ? Math.max(...vals) : 0;
-          return { label: t.pbSteps, value: best > 0 ? best.toLocaleString() : "—", unit: "" };
-        }
-        const ex = exercisesData.find((e) => e.id === slot);
-        if (!ex) return null;
-        let best = 0;
-        sessions.forEach((s) =>
-          s.exercises?.forEach((e) => {
-            if (e.exerciseId === slot)
-              e.sets?.forEach((set) => {
-                const rm = (parseFloat(set.weight) || 0) * (1 + (parseInt(set.reps) || 0) / 30);
-                if (rm > best) best = rm;
-              });
-          }),
-        );
-        return {
-          label: lang === "pt" ? ex.namePt : ex.name,
-          value: best > 0 ? best.toFixed(1) : "—",
-          unit: best > 0 ? "kg" : "",
-        };
-      }),
-    [pbConfig, stepsMap, sessions, lang, t],
-  );
-  
-
   const workoutLabel = todayWorkout
     ? lang === "pt"
       ? todayWorkout.namePt || todayWorkout.name
       : todayWorkout.name
     : null;
-
-  const greeting = getGreeting(lang);
-
-  const subtitle = !activePlan
-    ? t.noPlan
-    : todayEntry?.type === "rest"
-      ? (lang === "pt" ? "Hoje é dia de descanso" : "Today is a rest day")
-      : todayWorkout
-        ? (lang === "pt" ? `Treino de hoje é ${workoutLabel}` : `Today's workout is ${workoutLabel}`)
-        : (lang === "pt" ? "Sem treino agendado para hoje" : "No workout scheduled today");
-
-  const canQuickStart = !!todayWorkout;
 
   const lastSessionByWorkout = useMemo(() => {
     const map = {};
@@ -401,6 +335,38 @@ export default function WorkoutPage({
           </div>
         )}
 
+        {/* ── Weekly muscle heatmap (signature figure) ── */}
+        <div className="card card-elevated">
+          <div className="section-header">
+            <p className="section-title" style={{ marginBottom: 0 }}>
+              {lang === "pt" ? "Músculos esta semana" : "This week's muscles"}
+            </p>
+            <span className="chip active" style={{ pointerEvents: "none" }}>
+              <Dumbbell size={12} /> {weekSessionCount}
+            </span>
+          </div>
+          {weekSessionCount === 0 ? (
+            <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "20px 0" }}>
+              {lang === "pt" ? "Sem treinos esta semana ainda." : "No workouts logged this week yet."}
+            </p>
+          ) : (
+            <div className="flex justify-center" style={{ gap: 8, overflow: "hidden" }}>
+              {["front", "back"].map((view) => (
+                <div key={view} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>
+                    {view === "front" ? (lang === "pt" ? "Frente" : "Front") : (lang === "pt" ? "Costas" : "Back")}
+                  </div>
+                  <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
+                    <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
+                      <HumanBody view={view} highlightedMuscles={weekAreas[view]} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
         {/* Plano ativo */}
         <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
           <p className="text-sm font-semibold" style={{ color: "var(--muted)", marginBottom: 16 }}>
@@ -437,37 +403,6 @@ export default function WorkoutPage({
           )}
           <ChevronRight size={16} style={{ color: "var(--muted)", flexShrink: 0 }} />
         </button>
-        {/* ── Weekly muscle heatmap (signature figure) ── */}
-        <div className="card card-elevated">
-          <div className="section-header">
-            <p className="section-title" style={{ marginBottom: 0 }}>
-              {lang === "pt" ? "Músculos esta semana" : "This week's muscles"}
-            </p>
-            <span className="chip active" style={{ pointerEvents: "none" }}>
-              <Dumbbell size={12} /> {weekSessionCount}
-            </span>
-          </div>
-          {weekSessionCount === 0 ? (
-            <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "20px 0" }}>
-              {lang === "pt" ? "Sem treinos esta semana ainda." : "No workouts logged this week yet."}
-            </p>
-          ) : (
-            <div className="flex justify-center" style={{ gap: 8, overflow: "hidden" }}>
-              {["front", "back"].map((view) => (
-                <div key={view} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>
-                    {view === "front" ? (lang === "pt" ? "Frente" : "Front") : (lang === "pt" ? "Costas" : "Back")}
-                  </div>
-                  <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
-                    <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
-                      <HumanBody view={view} highlightedMuscles={weekAreas[view]} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Outros Treinos */}
         <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
