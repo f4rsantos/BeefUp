@@ -1,5 +1,5 @@
 const DB_NAME = 'beefup'
-const DB_VERSION = 2
+const DB_VERSION = 4
 
 const STORES = {
   workouts: 'workouts',       // custom workout definitions
