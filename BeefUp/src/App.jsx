@@ -12,7 +12,7 @@ import WorkoutSettings from "./pages/WorkoutSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
 import HelperDashboard from "./dashboard/HelperDashboard";
-import { Dumbbell, Apple, TrendingUp, Settings, Play, User } from "lucide-react";
+import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry } from "./lib/planUtils";
 import { useState, useEffect } from "react";
 

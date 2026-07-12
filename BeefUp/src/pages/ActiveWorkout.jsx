@@ -101,12 +101,6 @@ export default function ActiveWorkout({ onEnd }) {
     );
   }, []);
 
-  const updateExerciseNote = useCallback((exIdx, val) => {
-    setExercises((prev) =>
-      prev.map((e, i) => (i === exIdx ? { ...e, note: val } : e)),
-    );
-  }, []);
-
   const toggleSet = useCallback(
     (exIdx, setIdx) => {
       const wasDone = exercises[exIdx]?.sets[setIdx]?.done;
@@ -130,6 +124,7 @@ export default function ActiveWorkout({ onEnd }) {
           setIdx,
           endsAt: now + restAfterSet * 1000,
           remaining: restAfterSet,
+          total: restAfterSet,
         });
       } else {
         setSetTimer((prevTimer) =>
@@ -295,7 +290,6 @@ export default function ActiveWorkout({ onEnd }) {
             onRemoveSet={removeSet}
             onRemoveExercise={removeExercise}
             note={ex.note}
-            onUpdateNote={updateExerciseNote}
             setTimer={setTimer}
             onSkipSetTimer={dismissSetTimer}
           />

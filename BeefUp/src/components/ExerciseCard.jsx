@@ -1,6 +1,6 @@
 import ProgressRing from "./ProgressRing";
 import { useState, useRef, useCallback } from "react";
-import { Trash2, Plus, Check, X, StickyNote } from "lucide-react";
+import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 
 const SWIPE_THRESHOLD = 90;
 
@@ -98,21 +98,34 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet }) {
   );
 }
 
-function InlineSetTimer({ remaining, onSkip }) {
+function InlineSetTimer({ remaining, total, onSkip }) {
+  const progress = total > 0 ? (total - remaining) / total : 0;
+
   return (
-    <div
-      className="flex items-center justify-between px-3 py-1.5 mb-1 rounded-lg text-xs"
+    <button
+      className="mx-0 mb-1 rounded-xl px-4 py-2 text-xs flex items-center gap-2 w-full"
       style={{
         background: "var(--surface2)",
         border: "1px solid var(--border)",
-        color: "var(--text)",
+        color: "var(--muted)",
       }}
+      onClick={onSkip}
     >
-      <span>Descanso: {remaining}s</span>
-      <button onClick={onSkip} style={{ color: "var(--muted)" }}>
-        <X size={14} />
-      </button>
-    </div>
+      <TimerIcon size={12} />
+      <div
+        className="flex-1 h-1.5 rounded-full overflow-hidden"
+        style={{ background: "var(--border)" }}
+      >
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${Math.min(100, progress * 100)}%`,
+            background: "var(--grad-accent)",
+          }}
+        />
+      </div>
+      <span>{remaining}s</span>
+    </button>
   );
 }
 
@@ -130,13 +143,13 @@ export default function ExerciseCard({
   setTimer,
   onSkipSetTimer,
 }) {
-  const [showNote, setShowNote] = useState(false);
+  const [showNote, setShowNote] = useState(() => !!note);
   const exLabel = lang === "pt" ? exercise.namePt : exercise.name;
   const addSetLabel = lang === "pt" ? "Série" : "Set";
   const doneCount = exercise.sets.filter((s) => s.done).length;
   const allDone = doneCount === exercise.sets.length && exercise.sets.length > 0;
 
-  return (
+  return ( 
     <div className="card" style={allDone ? { borderColor: "var(--accent)" } : undefined}>
       <div className="flex items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
@@ -161,12 +174,24 @@ export default function ExerciseCard({
             {exLabel}
           </p>
         </div>
-        <button
-          className="btn btn-ghost p-1.5"
-          onClick={() => onRemoveExercise(exIdx)}
-        >
-          <Trash2 size={14} style={{ color: "var(--muted)" }} />
-        </button>
+        <div className="flex items-center" style={{ gap: 4, flexShrink: 0 }}>
+          <button
+            className="btn btn-ghost p-1.5"
+            aria-label="note"
+            onClick={() => setShowNote((prev) => !prev)}
+          >
+            <StickyNote
+              size={14}
+              style={{ color: note ? "var(--accent)" : "var(--muted)" }}
+            />
+          </button>
+          <button
+            className="btn btn-ghost p-1.5"
+            onClick={() => onRemoveExercise(exIdx)}
+          >
+            <Trash2 size={14} style={{ color: "var(--muted)" }} />
+          </button>
+        </div>
       </div>
 
       {showNote && (
@@ -210,30 +235,10 @@ export default function ExerciseCard({
           {setTimer?.exIdx === exIdx && setTimer?.setIdx === setIdx && (
             <InlineSetTimer
               remaining={setTimer.remaining}
+              total={setTimer.total}
               onSkip={onSkipSetTimer}
             />
           )}
-          <input
-            className="field text-center text-sm"
-            type="number"
-            value={set.reps}
-            onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", e.target.value)}
-            placeholder="—"
-            disabled={set.done}
-            style={{ padding: "6px 8px" }}
-          />
-          <button
-            className={set.done ? "flex items-center justify-center rounded-lg pop" : "flex items-center justify-center rounded-lg"}
-            style={{
-              width: 28,
-              height: 28,
-              background: set.done ? "var(--grad-accent)" : "var(--surface2)",
-              border: set.done ? "none" : "1px solid var(--border)",
-            }}
-            onClick={() => onToggleSet(exIdx, setIdx)}
-          >
-            {set.done && <Check size={15} strokeWidth={3} style={{ color: "#fff" }} />}
-          </button>
         </div>
       ))}
 
