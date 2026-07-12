@@ -128,7 +128,7 @@ function AppInner() {
               setPlanSettingsPlanId(activePlanId);
               setOverlay("planSettings");
             }}
-            onViewHistory={() => setTab("history")}
+            onViewHistory={() => setOverlay("history")}
           />
         )}
         {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}

@@ -206,7 +206,7 @@ export default function WorkoutPage({
   onManagePlans,
   onViewPlanDetails,
 }) {
-  const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout } = useApp();
+  const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout, pbConfig, stepsMap } = useApp()
 
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const todayEntry = useMemo(
@@ -230,7 +230,7 @@ export default function WorkoutPage({
   );
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
 
-  /* const pbItems = useMemo(
+  const pbItems = useMemo(
     () =>
       pbConfig.map((slot) => {
         if (!slot) return null;
@@ -259,7 +259,7 @@ export default function WorkoutPage({
       }),
     [pbConfig, stepsMap, sessions, lang, t],
   );
-  */
+  
 
   const workoutLabel = todayWorkout
     ? lang === "pt"

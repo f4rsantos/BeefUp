@@ -4,25 +4,6 @@ import { useApp } from '../context/AppContext'
 import HumanBody from '../components/HumanBody'
 import { bodyAreasForSessions } from '../lib/muscles'
 
-function getSessionBodyAreas(session) {
-  const front = new Set()
-  const back = new Set()
-
-  session.exercises?.forEach((exercise) => {
-    const meta = exercisesData.find((item) => item.id === exercise.exerciseId)
-    meta?.tags?.forEach((tag) => {
-      const mapping = muscleTagToBodyAreas[tag]
-      mapping?.front?.forEach((area) => front.add(area))
-      mapping?.back?.forEach((area) => back.add(area))
-    })
-  })
-
-  return {
-    front: [...front],
-    back: [...back],
-  }
-}
-
 function formatDate(iso) {
   const d = new Date(iso)
   const dateStr = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -408,7 +389,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
   )
 }
 
-export default function HistoryPage() {
+export default function HistoryPage({ onBack }) {
   const { t, lang, sessions, deleteSession } = useApp()
   const sorted = [...sessions].sort((a, b) => {
     const da = new Date(a.date).getTime()
