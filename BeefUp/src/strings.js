@@ -4,6 +4,7 @@ const strings = {
     history: 'Histórico',
     settings: 'Definições',
     profile: 'Perfil',
+    exercisesTitle: 'Exercícios',
 
     // Home
     today: 'Hoje',
@@ -252,6 +253,7 @@ const strings = {
     history: 'History',
     settings: 'Settings',
     profile: 'Profile',
+    exercisesTitle: 'Exercises',
 
     today: 'Today',
       homeTitle: 'Workout',

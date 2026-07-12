@@ -3,6 +3,7 @@ import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, C
 import { useApp } from "../context/AppContext";
 import { todaysPlanEntry } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
+import { resolveExercise } from "../lib/exerciseTree";
 import HumanBody from "../components/HumanBody";
 
 function formatLastDate(iso, lang) {
@@ -433,9 +434,16 @@ export default function WorkoutPage({
         >
           {workouts.map((w) => {
             const name = lang === "pt" ? w.namePt || w.name : w.name;
+            const exerciseCount = w.exercises?.length ?? 0;
             const exerciseNames = w.exercises
-              ?.map((ex) => `${ex.sets?.length ?? 3} x ${lang === "pt" ? ex.namePt || ex.name : ex.name}`)
+              ?.slice(0, 3)
+              .map((ref) => {
+                const ex = resolveExercise(ref);
+                return ex ? (lang === "pt" ? ex.namePt || ex.name : ex.name) : null;
+              })
+              .filter(Boolean)
               .join(", ");
+            const extraCount = exerciseCount - 3;
             return (
               <div
                 key={w.id}
@@ -472,7 +480,9 @@ export default function WorkoutPage({
                     overflow: "hidden",
                   }}
                 >
-                  {exerciseNames || "-"}
+                  {exerciseNames
+                    ? `${exerciseNames}${extraCount > 0 ? ` +${extraCount}` : ""}`
+                    : "-"}
                 </p>
                 <div className="flex items-center" style={{ gap: 6 }}>
                   <Clock size={12} style={{ color: "var(--muted)" }} />

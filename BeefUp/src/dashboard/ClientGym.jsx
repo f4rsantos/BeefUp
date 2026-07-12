@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Plus, Trash2, Dumbbell, Moon, Pencil, Play, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid } from "../lib/planUtils";
-import exercisesData from "../data/exercises.json";
-import ExercisePickerModal from "./ExercisePickerModal";
+import { resolveExercise } from "../lib/exerciseTree";
+import ExercisePicker from "../components/ExercisePicker";
 import WorkoutPreview from "./WorkoutPreview";
 
 function exName(id, lang) {
-  const ex = exercisesData.find((e) => e.id === id);
+  const ex = resolveExercise(id);
   return ex ? (lang === "pt" ? ex.namePt : ex.name) : id;
 }
 
@@ -144,11 +144,9 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
     setItems((prev) => prev.map((it, j) => (j === idx ? { ...it, ...patch } : it)));
   }
 
-  function togglePick(id) {
-    setItems((prev) => {
-      const exists = prev.some((it) => it.exerciseId === id);
-      return exists ? prev.filter((it) => it.exerciseId !== id) : [...prev, { exerciseId: id, sets: 3, reps: 10, rest: 90, weight: "" }];
-    });
+  function addPick(ref) {
+    setItems((prev) => [...prev, { exerciseId: ref, sets: 3, reps: 10, rest: 90, weight: "" }]);
+    setPicking(false);
   }
 
   return (
@@ -186,7 +184,7 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
       </div>
 
       {picking && (
-        <ExercisePickerModal lang={lang} t={t} selected={items.map((it) => it.exerciseId)} onToggle={togglePick} onClose={() => setPicking(false)} />
+        <ExercisePicker onSelect={addPick} onClose={() => setPicking(false)} />
       )}
     </div>
   );

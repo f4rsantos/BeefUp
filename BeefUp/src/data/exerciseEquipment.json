@@ -1,0 +1,10 @@
+[
+  { "id": "bodyweight", "name": "Bodyweight", "namePt": "Peso do corpo" },
+  { "id": "barbell", "name": "Barbell", "namePt": "Barra" },
+  { "id": "dumbbell", "name": "Dumbbell", "namePt": "Halteres" },
+  { "id": "cable", "name": "Cable", "namePt": "Cabo" },
+  { "id": "machine", "name": "Machine", "namePt": "Máquina" },
+  { "id": "smith_machine", "name": "Smith machine", "namePt": "Máquina smith" },
+  { "id": "kettlebell", "name": "Kettlebell", "namePt": "Kettlebell" },
+  { "id": "band", "name": "Band", "namePt": "Elástico" }
+]

@@ -2,6 +2,7 @@ import { AppProvider, useApp } from "./context/AppContext";
 import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
+import ExercisesPage from "./pages/ExercisesPage";
 import ProfilePage from "./pages/ProfilePage";
 import StatisticsPage from "./pages/StatisticsPage";
 import MeasuresPage from "./pages/MeasuresPage";
@@ -129,6 +130,7 @@ function AppInner() {
               setOverlay("planSettings");
             }}
             onViewHistory={() => setOverlay("history")}
+            onViewExercises={() => setOverlay("exercises")}
           />
         )}
         {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
@@ -144,6 +146,7 @@ function AppInner() {
         {/* Overlays (full-screen, cover nav) */}
         {overlay === "active" && <ActiveWorkout onEnd={endWorkout} />}
         {overlay === "history" && <HistoryPage onBack={closeOverlay} />}
+        {overlay === "exercises" && <ExercisesPage onBack={closeOverlay} />}
         {overlay === "pickWorkout" && (
           <WorkoutPicker
             onSelect={(w) =>

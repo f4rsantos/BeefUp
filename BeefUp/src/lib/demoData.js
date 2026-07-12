@@ -1,4 +1,4 @@
-import exercisesData from '../data/exercises.json'
+import { buildExerciseRef, resolveExercise } from './exerciseTree'
 import { todayISO } from './planUtils'
 
 function shiftISO(daysBack) {
@@ -12,17 +12,13 @@ function makeSet(weight, reps) {
   return { weight: String(weight), reps: String(reps) }
 }
 
-function exerciseMeta(id) {
-  return exercisesData.find(exercise => exercise.id === id)
-}
-
 export function buildDemoPreset() {
-  const upperA = exerciseMeta('bench_press')
-  const upperB = exerciseMeta('overhead_press')
-  const upperC = exerciseMeta('tricep_pushdown')
-  const lowerA = exerciseMeta('squat')
-  const lowerB = exerciseMeta('rdl')
-  const lowerC = exerciseMeta('calf_raise')
+  const upperA = resolveExercise(buildExerciseRef('bench_press', 'barbell', 'flat'))
+  const upperB = resolveExercise(buildExerciseRef('overhead_press', 'barbell', 'standing'))
+  const upperC = resolveExercise(buildExerciseRef('tricep_pushdown', 'cable'))
+  const lowerA = resolveExercise(buildExerciseRef('squat', 'barbell', 'back'))
+  const lowerB = resolveExercise(buildExerciseRef('deadlift', 'barbell', 'romanian'))
+  const lowerC = resolveExercise(buildExerciseRef('calf_raise', 'bodyweight', 'standing'))
 
   const workouts = [
     {
@@ -59,13 +55,13 @@ export function buildDemoPreset() {
     duration: 2760,
     exercises: [
       {
-        exerciseId: 'squat',
+        exerciseId: lowerA?.id,
         name: lowerA?.name ?? 'Squat',
         namePt: lowerA?.namePt ?? 'Agachamento',
         sets: [makeSet(80, 8), makeSet(85, 8), makeSet(90, 6)],
       },
       {
-        exerciseId: 'rdl',
+        exerciseId: lowerB?.id,
         name: lowerB?.name ?? 'Romanian Deadlift',
         namePt: lowerB?.namePt ?? 'Deadlift Romeno',
         sets: [makeSet(70, 10), makeSet(70, 10)],

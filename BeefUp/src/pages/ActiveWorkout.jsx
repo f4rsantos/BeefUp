@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, nowISO } from "../lib/planUtils";
-import exercisesData from "../data/exercises.json";
+import { resolveExercise } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
 import ExerciseCard from "../components/ExerciseCard";
@@ -38,11 +38,9 @@ export default function ActiveWorkout({ onEnd }) {
   const [exercises, setExercises] = useState(() => {
     if (!sourceWorkout) return [];
     return sourceWorkout.exercises
-      .map((exId) => {
-        const ex = exercisesData.find((e) => e.id === exId);
-        return ex ? buildExerciseEntry(ex) : null;
-      })
-      .filter(Boolean);
+      .map((ref) => resolveExercise(ref))
+      .filter(Boolean)
+      .map(buildExerciseEntry);
   });
 
   const startTime = useRef(0);
@@ -181,8 +179,10 @@ export default function ActiveWorkout({ onEnd }) {
     );
   }, []);
 
-  const addExercise = useCallback((ex) => {
-    setExercises((prev) => [...prev, buildExerciseEntry(ex)]);
+  const addExercise = useCallback((ref) => {
+    const resolved = resolveExercise(ref);
+    if (!resolved) return;
+    setExercises((prev) => [...prev, buildExerciseEntry(resolved)]);
     setShowExPicker(false);
   }, []);
 

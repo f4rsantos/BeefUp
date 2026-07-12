@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ChevronLeft, Plus, Trash2, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
-import exercisesData from "../data/exercises.json";
-import ExercisePickerSimple from "./ExercisePickerSimple";
+import { resolveExercise } from "../lib/exerciseTree";
+import ExercisePicker from "./ExercisePicker";
 
 export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
   const [name, setName] = useState(workout?.name ?? "");
@@ -83,12 +83,12 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
             <p className="section-title" style={{ marginBottom: 0 }}>{t.exercises}</p>
             <span className="chip active" style={{ pointerEvents: "none" }}>{exIds.length}</span>
           </div>
-          {exIds.map((id, i) => {
-            const ex = exercisesData.find((e) => e.id === id);
+          {exIds.map((ref, i) => {
+            const ex = resolveExercise(ref);
             if (!ex) return null;
             return (
               <div
-                key={id}
+                key={`${ref}-${i}`}
                 className="flex items-center gap-2 py-2.5 px-3 rounded-xl"
                 style={{ background: "var(--surface2)" }}
               >
@@ -125,15 +125,11 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
       </div>
 
       {showPicker && (
-        <ExercisePickerSimple
-          lang={lang}
-          t={t}
-          selected={exIds}
-          onToggle={(id) =>
-            setExIds((prev) =>
-              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-            )
-          }
+        <ExercisePicker
+          onSelect={(ref) => {
+            setExIds((prev) => [...prev, ref]);
+            setShowPicker(false);
+          }}
           onClose={() => setShowPicker(false)}
         />
       )}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import exercisesData from '../data/exercises.json'
+import { listBaseExercises } from '../lib/exerciseTree'
 
 export default function PBEditModal({ onClose }) {
   const { t, lang, pbConfig, savePbConfig } = useApp()
@@ -20,7 +20,7 @@ export default function PBEditModal({ onClose }) {
     onClose()
   }
 
-  const exerciseOptions = exercisesData.map(e => ({
+  const exerciseOptions = listBaseExercises().map(e => ({
     id: e.id,
     label: lang === 'pt' ? e.namePt : e.name,
   }))

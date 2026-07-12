@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Timer } from "lucide-react";
-import exercisesData from "../data/exercises.json";
+import { resolveExercise } from "../lib/exerciseTree";
 
 function exName(id, lang) {
-  const ex = exercisesData.find((e) => e.id === id);
+  const ex = resolveExercise(id);
   return ex ? (lang === "pt" ? ex.namePt : ex.name) : id;
 }
 
