@@ -1,30 +1,8 @@
 import { useRef, useState, useEffect } from 'react'
-import { ChevronDown, Trash2 } from 'lucide-react'
+import { ChevronDown, Trash2, ChevronLeft } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import exercisesData from '../data/exercises.json'
 import HumanBody from '../components/HumanBody'
-
-const muscleTagToBodyAreas = {
-  chest: { front: ['chest'], back: [] },
-  back: { front: [], back: ['left-trap', 'right-trap', 'left-lat', 'right-lat', 'lumbar'] },
-  shoulders: { front: ['left-shoulder-front', 'right-shoulder-front'], back: ['left-shoulder-back', 'right-shoulder-back'] },
-  rear_delt: { front: [], back: ['left-shoulder-back', 'right-shoulder-back'] },
-  arms: {
-    front: ['left-forearm-front', 'right-forearm-front'],
-    back: ['left-forearm-back', 'right-forearm-back'],
-  },
-  biceps: { front: ['left-biceps', 'right-biceps'], back: [] },
-  triceps: { front: [], back: ['left-triceps', 'right-triceps'] },
-  legs: {
-    front: ['left-quad', 'right-quad'],
-    back: ['left-hamstring', 'right-hamstring', 'left-calf', 'right-calf'],
-  },
-  quads: { front: ['left-quad', 'right-quad'], back: [] },
-  hamstrings: { front: [], back: ['left-hamstring', 'right-hamstring'] },
-  calves: { front: [], back: ['left-calf', 'right-calf'] },
-  glutes: { front: [], back: ['glutes'] },
-  core: { front: ['upper-abs', 'lower-abs'], back: [] },
-}
+import { bodyAreasForSessions } from '../lib/muscles'
 
 function getSessionBodyAreas(session) {
   const front = new Set()
@@ -445,8 +423,13 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
-      <div className="px-5 pt-10 pb-6">
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{t.history}</h1>
+      <div className="flex items-center gap-1" style={{ padding: '38px 16px 16px' }}>
+        {onBack && (
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: 'var(--text)' }} />
+          </button>
+        )}
+        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: 'var(--text)' }}>{t.history}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-3 scrollbar-hide">
@@ -456,7 +439,7 @@ export default function HistoryPage() {
             <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.historyEmpty}</p>
           </div>
         ) : sorted.map(s => {
-          const sessionBodyAreas = getSessionBodyAreas(s)
+          const sessionBodyAreas = bodyAreasForSessions([s])
           return (
             <SwipeableCard
               key={s.id}

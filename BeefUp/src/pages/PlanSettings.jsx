@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Trash2, CheckCircle2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import WorkoutEditor from "../components/WorkoutEditor";
 import PlanEditor from "../components/PlanEditor";
@@ -51,9 +51,9 @@ export default function PlanSettings({ onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
-        <button className="btn-back" onClick={onBack}>
-          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
+      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
+        <button className="btn-back" onClick={onBack} aria-label={t.back}>
+          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
         </button>
         <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
           {t.settingsTitle}

@@ -1,3 +1,4 @@
+import ProgressRing from "./ProgressRing";
 import { useState, useRef, useCallback } from "react";
 import { Trash2, Plus, Check, X, StickyNote } from "lucide-react";
 
@@ -131,37 +132,41 @@ export default function ExerciseCard({
 }) {
   const [showNote, setShowNote] = useState(false);
   const exLabel = lang === "pt" ? exercise.namePt : exercise.name;
-  const allDone = exercise.sets.every((s) => s.done);
+  const addSetLabel = lang === "pt" ? "Série" : "Set";
+  const doneCount = exercise.sets.filter((s) => s.done).length;
+  const allDone = doneCount === exercise.sets.length && exercise.sets.length > 0;
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-3">
-        <p
-          className="font-semibold text-sm"
-          style={{
-            color: allDone ? "var(--muted)" : "var(--text)",
-            textDecoration: allDone ? "line-through" : "none",
-          }}
-        >
-          {exLabel}
-        </p>
-        <div className="flex items-center gap-1">
-          <button
-            className="btn btn-ghost p-1.5"
-            onClick={() => setShowNote((v) => !v)}
+    <div className="card" style={allDone ? { borderColor: "var(--accent)" } : undefined}>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
+          <ProgressRing
+            value={doneCount}
+            max={exercise.sets.length}
+            size={34}
+            stroke={4}
+            color="var(--accent)"
           >
-            <StickyNote
-              size={14}
-              style={{ color: note ? "var(--accent)" : "var(--muted)" }}
-            />
-          </button>
-          <button
-            className="btn btn-ghost p-1.5"
-            onClick={() => onRemoveExercise(exIdx)}
+            <span style={{ fontSize: 9, fontWeight: 800, color: "var(--text)" }}>
+              {doneCount}/{exercise.sets.length}
+            </span>
+          </ProgressRing>
+          <p
+            className="font-bold text-sm truncate"
+            style={{
+              color: allDone ? "var(--muted)" : "var(--text)",
+              textDecoration: allDone ? "line-through" : "none",
+            }}
           >
-            <Trash2 size={14} style={{ color: "var(--muted)" }} />
-          </button>
+            {exLabel}
+          </p>
         </div>
+        <button
+          className="btn btn-ghost p-1.5"
+          onClick={() => onRemoveExercise(exIdx)}
+        >
+          <Trash2 size={14} style={{ color: "var(--muted)" }} />
+        </button>
       </div>
 
       {showNote && (
@@ -208,14 +213,36 @@ export default function ExerciseCard({
               onSkip={onSkipSetTimer}
             />
           )}
+          <input
+            className="field text-center text-sm"
+            type="number"
+            value={set.reps}
+            onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", e.target.value)}
+            placeholder="—"
+            disabled={set.done}
+            style={{ padding: "6px 8px" }}
+          />
+          <button
+            className={set.done ? "flex items-center justify-center rounded-lg pop" : "flex items-center justify-center rounded-lg"}
+            style={{
+              width: 28,
+              height: 28,
+              background: set.done ? "var(--grad-accent)" : "var(--surface2)",
+              border: set.done ? "none" : "1px solid var(--border)",
+            }}
+            onClick={() => onToggleSet(exIdx, setIdx)}
+          >
+            {set.done && <Check size={15} strokeWidth={3} style={{ color: "#fff" }} />}
+          </button>
         </div>
       ))}
 
       <button
         className="btn btn-ghost w-full mt-2 text-xs py-2"
+        style={{ borderStyle: "dashed" }}
         onClick={() => onAddSet(exIdx)}
       >
-        <Plus size={12} /> Set
+        <Plus size={13} /> {addSetLabel}
       </button>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType } from "../lib/planUtils";
@@ -26,13 +26,13 @@ export default function MeasuresPage({ onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
+      <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
         <button className="btn-back" onClick={onBack}>
-          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
+          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
         </button>
-        <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
           {t.measures}
-        </span>
+        </h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
 import exercisesData from "../data/exercises.json";
 import ExercisePickerSimple from "./ExercisePickerSimple";
@@ -26,43 +26,34 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
-        <button className="btn-back" onClick={onBack}>
-          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
+      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
+        <button className="btn-back" onClick={onBack} aria-label={t.back}>
+          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
         </button>
-        <span
-          className="font-semibold text-base"
-          style={{ color: "var(--text)" }}
-        >
+        <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
           {workout?.id ? t.editWorkout : t.newWorkout}
-        </span>
+        </h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide">
-        <div className="card flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide fade-in">
+        <div className="card flex flex-col gap-3">
           <div>
-            <label
-              className="text-xs mb-1 block"
-              style={{ color: "var(--muted)" }}
-            >
-              Nome (EN)
+            <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
+              {t.workoutName} · EN
             </label>
             <input
-              className="field w-full"
+              className="field"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Leg Day"
             />
           </div>
           <div>
-            <label
-              className="text-xs mb-1 block"
-              style={{ color: "var(--muted)" }}
-            >
-              Nome (PT)
+            <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
+              {t.workoutName} · PT
             </label>
             <input
-              className="field w-full"
+              className="field"
               value={namePt}
               onChange={(e) => setNamePt(e.target.value)}
               placeholder="e.g. Dia de Pernas"
@@ -87,45 +78,48 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
           </div>
         </div>
 
-        <div className="card flex flex-col gap-3">
-          <p
-            className="text-sm font-medium mb-1"
-            style={{ color: "var(--text)" }}
-          >
-            Exercícios
-          </p>
+        <div className="card flex flex-col gap-2">
+          <div className="section-header">
+            <p className="section-title" style={{ marginBottom: 0 }}>{t.exercises}</p>
+            <span className="chip active" style={{ pointerEvents: "none" }}>{exIds.length}</span>
+          </div>
           {exIds.map((id, i) => {
             const ex = exercisesData.find((e) => e.id === id);
             if (!ex) return null;
             return (
               <div
                 key={id}
-                className="flex items-center justify-between py-3 px-3 rounded-lg"
+                className="flex items-center gap-2 py-2.5 px-3 rounded-xl"
                 style={{ background: "var(--surface2)" }}
               >
-                <span className="text-sm" style={{ color: "var(--text)" }}>
+                <GripVertical size={15} style={{ color: "var(--border)", flexShrink: 0 }} />
+                <span className="text-sm flex-1 truncate" style={{ color: "var(--text)" }}>
                   {lang === "pt" ? ex.namePt : ex.name}
                 </span>
                 <button
-                  className="btn btn-ghost p-1"
-                  onClick={() =>
-                    setExIds((prev) => prev.filter((_, j) => j !== i))
-                  }
+                  className="btn-icon p-1"
+                  onClick={() => setExIds((prev) => prev.filter((_, j) => j !== i))}
                 >
                   <Trash2 size={14} style={{ color: "var(--muted)" }} />
                 </button>
               </div>
             );
           })}
+          {exIds.length === 0 && (
+            <p className="text-xs" style={{ color: "var(--muted)", padding: "4px 2px" }}>
+              {lang === "pt" ? "Sem exercícios ainda." : "No exercises yet."}
+            </p>
+          )}
           <button
-            className="btn btn-ghost w-full py-3 text-sm mt-2"
+            className="btn btn-ghost w-full py-2.5 text-sm mt-1"
+            style={{ borderStyle: "dashed" }}
             onClick={() => setShowPicker(true)}
           >
-            <Plus size={14} /> {t.addExercise}
+            <Plus size={15} /> {t.addExercise}
           </button>
         </div>
 
-        <button className="btn btn-primary w-full py-3" onClick={save}>
+        <button className="btn btn-primary w-full py-3.5" onClick={save}>
           {t.save}
         </button>
       </div>

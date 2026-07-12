@@ -1,8 +1,12 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine } from "lucide-react";
+import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, ListPlus, Moon } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { todaysPlanEntry } from "../lib/planUtils";
-
+import { todaysPlanEntry, computeStreak } from "../lib/planUtils";
+import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
+import exercisesData from "../data/exercises.json";
+import HumanBody from "../components/HumanBody";
+import PageHeader from "../components/PageHeader";
+import PBEditModal from "../components/PBEditModal";
 
 function getGreeting(lang) {
   const hour = new Date().getHours();
@@ -189,6 +193,7 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete, onEdi
   );
 }
 
+const MINI_SCALE = 0.34;
 
 export default function WorkoutPage({
   onStartWorkout,
@@ -212,6 +217,49 @@ export default function WorkoutPage({
     todayEntry?.type === "workout"
       ? (workouts.find((w) => w.id === todayEntry.workoutId) ?? null)
       : null;
+
+  const streak = useMemo(
+    () => computeStreak(sessions, plans, activePlanId),
+    [sessions, plans, activePlanId],
+  );
+
+  // Muscles trained in the last 7 days, for the home heatmap figure.
+  const weekAreas = useMemo(
+    () => bodyAreasForSessions(recentSessions(sessions, 7)),
+    [sessions],
+  );
+  const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
+
+  /* const pbItems = useMemo(
+    () =>
+      pbConfig.map((slot) => {
+        if (!slot) return null;
+        if (slot === "steps") {
+          const vals = Object.values(stepsMap);
+          const best = vals.length ? Math.max(...vals) : 0;
+          return { label: t.pbSteps, value: best > 0 ? best.toLocaleString() : "—", unit: "" };
+        }
+        const ex = exercisesData.find((e) => e.id === slot);
+        if (!ex) return null;
+        let best = 0;
+        sessions.forEach((s) =>
+          s.exercises?.forEach((e) => {
+            if (e.exerciseId === slot)
+              e.sets?.forEach((set) => {
+                const rm = (parseFloat(set.weight) || 0) * (1 + (parseInt(set.reps) || 0) / 30);
+                if (rm > best) best = rm;
+              });
+          }),
+        );
+        return {
+          label: lang === "pt" ? ex.namePt : ex.name,
+          value: best > 0 ? best.toFixed(1) : "—",
+          unit: best > 0 ? "kg" : "",
+        };
+      }),
+    [pbConfig, stepsMap, sessions, lang, t],
+  );
+  */
 
   const workoutLabel = todayWorkout
     ? lang === "pt"
@@ -306,40 +354,52 @@ export default function WorkoutPage({
           </div>
         </div>
 
-        {/* Início rápido */}
-        <div className="card" style={{ background: "var(--surface)", marginBottom: 40 }}>
-          <p className="text-xs" style={{ color: "var(--muted)", marginBottom: 4 }}>
-            {greeting}
-          </p>
-          <p className="text-base font-bold" style={{ color: "var(--text)", marginBottom: 12 }}>
-            {subtitle}
-          </p>
-
-          {canQuickStart ? (
-            <button
-              className="w-full rounded-xl flex items-center justify-center gap-2 text-base font-semibold"
-              style={{ background: "var(--accent)", color: "#fff", border: "none", cursor: "pointer", padding: "14px 0" }}
-              onClick={() =>
-                onStartWorkout({
-                  workoutId: todayWorkout.id,
-                  workoutName: workoutLabel,
-                })
-              }
-            >
-              <Play size={18} fill="currentColor" strokeWidth={2.5} />
-              {lang === "pt" ? "Começar treino de hoje" : "Start today's workout"}
+        {/* ── Today's hero ── */}
+        {!activePlan ? (
+          <div className="card">
+            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noPlan}</p>
+            <button className="btn btn-ghost mt-3 w-full py-2.5 text-sm" onClick={onManageWorkouts}>
+              {t.choosePlan}
             </button>
-          ) : (
-            <button
-              className="btn btn-ghost w-full flex items-center justify-center gap-2"
-              style={{ padding: "12px 0" }}
-              onClick={onStartEmpty}
-            >
-              <Plus size={16} />
-              {lang === "pt" ? "Iniciar um treino vazio" : "Start empty workout"}
-            </button>
-          )}
-        </div>
+          </div>
+        ) : todayEntry?.type === "rest" ? (
+          <div className="hero" style={{ background: "var(--grad-energy)" }}>
+            <div className="flex items-center justify-between" style={{ position: "relative" }}>
+              <div>
+                <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
+                <p className="display" style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>{t.restDay}</p>
+                <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+                  {lang === "pt" ? "Recupera e volta mais forte." : "Recover and come back stronger."}
+                </p>
+              </div>
+              <Moon size={40} style={{ opacity: 0.9 }} />
+            </div>
+          </div>
+        ) : todayWorkout ? (
+          <div className="hero">
+            <div style={{ position: "relative" }}>
+              <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
+              <p className="display" style={{ fontSize: 28, fontWeight: 900, marginTop: 2, lineHeight: 1.1 }}>
+                {workoutLabel}
+              </p>
+              <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
+                {todayWorkout.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
+              </p>
+              <button
+                className="btn w-full mt-4 py-3.5 text-base"
+                style={{ background: "#fff", color: "var(--accent)", fontWeight: 800 }}
+                onClick={() => onStartWorkout({ workoutId: todayWorkout.id, workoutName: workoutLabel })}
+              >
+                <Play size={20} fill="currentColor" /> {t.startWorkout}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="card">
+            <p className="text-xs mb-0.5" style={{ color: "var(--muted)" }}>{activePlan.name}</p>
+            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noWorkoutScheduled}</p>
+          </div>
+        )}
 
         {/* Plano ativo */}
         <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
@@ -377,6 +437,37 @@ export default function WorkoutPage({
           )}
           <ChevronRight size={16} style={{ color: "var(--muted)", flexShrink: 0 }} />
         </button>
+        {/* ── Weekly muscle heatmap (signature figure) ── */}
+        <div className="card card-elevated">
+          <div className="section-header">
+            <p className="section-title" style={{ marginBottom: 0 }}>
+              {lang === "pt" ? "Músculos esta semana" : "This week's muscles"}
+            </p>
+            <span className="chip active" style={{ pointerEvents: "none" }}>
+              <Dumbbell size={12} /> {weekSessionCount}
+            </span>
+          </div>
+          {weekSessionCount === 0 ? (
+            <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "20px 0" }}>
+              {lang === "pt" ? "Sem treinos esta semana ainda." : "No workouts logged this week yet."}
+            </p>
+          ) : (
+            <div className="flex justify-center" style={{ gap: 8, overflow: "hidden" }}>
+              {["front", "back"].map((view) => (
+                <div key={view} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>
+                    {view === "front" ? (lang === "pt" ? "Frente" : "Front") : (lang === "pt" ? "Costas" : "Back")}
+                  </div>
+                  <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
+                    <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
+                      <HumanBody view={view} highlightedMuscles={weekAreas[view]} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Outros Treinos */}
         <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>

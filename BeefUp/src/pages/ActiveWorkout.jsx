@@ -28,8 +28,10 @@ function buildExerciseEntry(ex) {
   };
 }
 
+const epley = (w, r) => (parseFloat(w) || 0) * (1 + (parseInt(r) || 0) / 30);
+
 export default function ActiveWorkout({ onEnd }) {
-  const { t, lang, activeWorkout, workouts, addSession } = useApp();
+  const { t, lang, activeWorkout, workouts, addSession, sessions } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
@@ -221,8 +223,32 @@ export default function ActiveWorkout({ onEnd }) {
         .filter((e) => e.sets.length > 0),
     };
 
+    // Detect new 1RM personal records vs all prior sessions.
+    const priorBest = {};
+    sessions.forEach((s) =>
+      s.exercises?.forEach((e) =>
+        e.sets?.forEach((set) => {
+          const rm = epley(set.weight, set.reps);
+          if (rm > (priorBest[e.exerciseId] || 0)) priorBest[e.exerciseId] = rm;
+        }),
+      ),
+    );
+    const prs = [];
+    exercises.forEach((e) => {
+      let best = 0;
+      e.sets.forEach((set) => {
+        if (set.done) {
+          const rm = epley(set.weight, set.reps);
+          if (rm > best) best = rm;
+        }
+      });
+      if (best > 0 && best > (priorBest[e.exerciseId] || 0)) {
+        prs.push(lang === "pt" ? e.namePt : e.name);
+      }
+    });
+
     await addSession(session);
-    setEndModal({ stats: { duration, totalSets, totalVolume } });
+    setEndModal({ stats: { duration, totalSets, totalVolume, prs } });
   }
 
   const workoutName = activeWorkout?.workoutName ?? "";
@@ -256,7 +282,7 @@ export default function ActiveWorkout({ onEnd }) {
         onOpenRest={() => setShowRestModal(true)}
       />
 
-      <div className="px-4 pb-6 flex flex-col gap-4">
+      <div className="px-4 pb-8 flex flex-col gap-3">
         {exercises.map((ex, exIdx) => (
           <ExerciseCard
             key={ex.id}
@@ -276,7 +302,8 @@ export default function ActiveWorkout({ onEnd }) {
         ))}
 
         <button
-          className="btn btn-ghost w-full py-3 text-sm"
+          className="btn btn-ghost w-full py-3.5 text-sm"
+          style={{ borderStyle: "dashed" }}
           onClick={() => setShowExPicker(true)}
         >
           <Plus size={16} /> {t.addExercise}

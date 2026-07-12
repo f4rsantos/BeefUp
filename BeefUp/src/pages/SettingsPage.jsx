@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sun, Moon, Monitor, Activity, Database, Sparkles } from "lucide-react";
+import { Sun, Moon, Monitor, Activity, Database, Sparkles, RotateCcw } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 
@@ -16,6 +16,7 @@ export default function SettingsPage() {
     saveSteps,
     setActivePlan,
     savePbConfig,
+    resetOnboarding,
   } = useApp();
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
@@ -46,8 +47,8 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="px-5 pt-10 pb-6">
-        <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
+      <div style={{ padding: "38px 20px 16px" }}>
+        <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
           {t.settingsTitle}
         </h1>
       </div>
@@ -63,10 +64,10 @@ export default function SettingsPage() {
                 onClick={() => setTheme(id)}
                 className="btn flex-1 flex-col gap-1 py-3 text-xs"
                 style={{
-                  background: theme === id ? "var(--text)" : "transparent",
-                  color: theme === id ? "var(--bg)" : "var(--muted)",
+                  background: theme === id ? "var(--grad-accent)" : "transparent",
+                  color: theme === id ? "#fff" : "var(--muted)",
                   border: theme === id ? "none" : "1px solid var(--border)",
-                  borderRadius: 9,
+                  borderRadius: 12,
                 }}
               >
                 <Icon size={16} />
@@ -89,10 +90,10 @@ export default function SettingsPage() {
                 onClick={() => setLang(id)}
                 className="btn flex-1 py-3 text-sm"
                 style={{
-                  background: lang === id ? "var(--text)" : "transparent",
-                  color: lang === id ? "var(--bg)" : "var(--muted)",
+                  background: lang === id ? "var(--grad-accent)" : "transparent",
+                  color: lang === id ? "#fff" : "var(--muted)",
                   border: lang === id ? "none" : "1px solid var(--border)",
-                  borderRadius: 9,
+                  borderRadius: 12,
                 }}
               >
                 {label}
@@ -156,6 +157,20 @@ export default function SettingsPage() {
               {lang === "pt" ? "Preset carregado." : "Demo preset loaded."}
             </p>
           )}
+
+          <div className="card flex items-center justify-between gap-4 mt-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div style={{ padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" }}>
+                <RotateCcw size={16} style={{ color: "var(--text)" }} />
+              </div>
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                {t.resetOnboarding}
+              </p>
+            </div>
+            <button className="btn btn-ghost px-3 py-2 text-xs" onClick={resetOnboarding}>
+              {lang === "pt" ? "Recomeçar" : "Restart"}
+            </button>
+          </div>
         </section>
 
         {/* Health Connect */}

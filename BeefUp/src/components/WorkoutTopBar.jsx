@@ -28,8 +28,8 @@ export default function WorkoutTopBar({ elapsed, onOneRM, onRest, onEnd }) {
         {formatTime(elapsed)}
       </div>
 
-      <button className="btn btn-ghost p-2.5" title="End" onClick={onEnd}>
-        <Square size={16} />
+      <button className="btn btn-danger p-2.5" title="End" onClick={onEnd}>
+        <Square size={16} fill="currentColor" />
       </button>
     </div>
   );
