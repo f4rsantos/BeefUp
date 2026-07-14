@@ -26,5 +26,4 @@ dist-ssr
 .claude
 .codex
 
-AGENTS.md
-CLAUDE.md
+/graphify-out

@@ -121,3 +121,18 @@ export function getEquipmentOptions(baseId) {
 export function getVariantOptions(baseId) {
   return BASE_BY_ID[baseId]?.variants ?? []
 }
+
+export function listBodyParts() {
+  return [...new Set(exercisesBase.map((b) => b.bodyPart))]
+}
+
+export function listEquipmentUsed() {
+  const used = new Set(exercisesBase.flatMap((b) => b.equipment))
+  return exerciseEquipment.filter((e) => used.has(e.id))
+}
+
+export function getEquipmentLabel(id, lang) {
+  const eq = EQUIPMENT_BY_ID[id]
+  if (!eq) return id
+  return lang === 'pt' ? eq.namePt : eq.name
+}

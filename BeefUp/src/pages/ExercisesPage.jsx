@@ -1,18 +1,27 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { listBaseExercises, getEquipmentOptions, getVariantOptions, getBodyPartLabel } from "../lib/exerciseTree";
+import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, listBodyParts, listEquipmentUsed, getEquipmentLabel,} from "../lib/exerciseTree";
 
 export default function ExercisesPage({ onBack }) {
   const { t, lang } = useApp();
   const [query, setQuery] = useState("");
+  const [bodyPart, setBodyPart] = useState(null);
+  const [equipment, setEquipment] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const bodyParts = useMemo(() => listBodyParts(), []);
+  const equipmentList = useMemo(() => listEquipmentUsed(), []);
+  const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = listBaseExercises().filter((ex) => {
       const label = lang === "pt" ? ex.namePt : ex.name;
-      if (!q) return true;
-      return label.toLowerCase().includes(q);
+      if (q && !label.toLowerCase().includes(q)) return false;
+      if (bodyPart && ex.bodyPart !== bodyPart) return false;
+      if (equipment && !ex.equipment.includes(equipment)) return false;
+      return true;
     });
 
     const sorted = [...filtered].sort((a, b) => {
@@ -32,7 +41,7 @@ export default function ExercisesPage({ onBack }) {
     return Object.keys(byLetter)
       .sort()
       .map((letter) => ({ letter, items: byLetter[letter] }));
-  }, [query, lang]);
+  }, [query, lang, bodyPart, equipment]);
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
@@ -45,8 +54,8 @@ export default function ExercisesPage({ onBack }) {
         </h1>
       </div>
 
-      <div className="px-4" style={{ marginBottom: 8 }}>
-        <div className="relative flex items-center">
+      <div className="px-4 flex items-center gap-2" style={{ marginBottom: 8 }}>
+        <div className="relative flex items-center flex-1">
           <Search size={16} style={{ position: "absolute", left: 12, color: "var(--muted)" }} />
           <input
             className="field w-full"
@@ -56,6 +65,33 @@ export default function ExercisesPage({ onBack }) {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+        <button
+          className="btn btn-ghost relative"
+          style={{ padding: 10 }}
+          onClick={() => setShowFilters(true)}
+          aria-label={t.filters}
+        >
+          <SlidersHorizontal size={18} style={{ color: "var(--text)" }} />
+          {activeFilterCount > 0 && (
+            <span
+              className="flex items-center justify-center"
+              style={{
+                position: "absolute",
+                top: -2,
+                right: -2,
+                width: 16,
+                height: 16,
+                borderRadius: 999,
+                background: "var(--accent)",
+                color: "var(--bg)",
+                fontSize: 10,
+                fontWeight: 700,
+              }}
+            >
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
@@ -145,6 +181,85 @@ export default function ExercisesPage({ onBack }) {
           ))
         )}
       </div>
+
+      {showFilters && (
+        <div className="modal-overlay" onClick={() => setShowFilters(false)}>
+          <div className="modal-sheet fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+                {t.filters}
+              </span>
+              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex flex-col" style={{ gap: 6, marginBottom: 16 }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
+                {t.filterBodyPart}
+              </span>
+              <div className="flex flex-wrap" style={{ gap: 6 }}>
+                <button
+                  className={`chip ${bodyPart === null ? "active" : ""}`}
+                  onClick={() => setBodyPart(null)}
+                >
+                  {t.allTags}
+                </button>
+                {bodyParts.map((bp) => (
+                  <button
+                    key={bp}
+                    className={`chip ${bodyPart === bp ? "active" : ""}`}
+                    onClick={() => setBodyPart(bodyPart === bp ? null : bp)}
+                  >
+                    {getBodyPartLabel(bp, lang)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col" style={{ gap: 6, marginBottom: 20 }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
+                {t.filterEquipment}
+              </span>
+              <div className="flex flex-wrap" style={{ gap: 6 }}>
+                <button
+                  className={`chip ${equipment === null ? "active" : ""}`}
+                  onClick={() => setEquipment(null)}
+                >
+                  {t.allTags}
+                </button>
+                {equipmentList.map((eq) => (
+                  <button
+                    key={eq.id}
+                    className={`chip ${equipment === eq.id ? "active" : ""}`}
+                    onClick={() => setEquipment(equipment === eq.id ? null : eq.id)}
+                  >
+                    {getEquipmentLabel(eq.id, lang)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="btn btn-ghost flex-1 py-3 text-sm"
+                onClick={() => {
+                  setBodyPart(null);
+                  setEquipment(null);
+                }}
+              >
+                {t.clearFilters}
+              </button>
+              <button
+                className="btn btn-primary flex-1 py-3 text-sm"
+                onClick={() => setShowFilters(false)}
+              >
+                {t.applyFilters}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

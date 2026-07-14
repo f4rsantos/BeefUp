@@ -59,6 +59,11 @@ const strings = {
     allTags: 'Todos',
     favourites: 'Favoritos',
     noResults: 'Sem resultados',
+    filters: 'Filtros',
+    filterBodyPart: 'Parte do corpo',
+    filterEquipment: 'Equipamento',
+    clearFilters: 'Limpar',
+    applyFilters: 'Aplicar',
 
     // History
     noHistory: 'Sem histórico ainda',
@@ -305,6 +310,11 @@ const strings = {
     allTags: 'All',
     favourites: 'Favourites',
     noResults: 'No results',
+    filters: 'Filters',
+    filterBodyPart: 'Body part',
+    filterEquipment: 'Equipment',
+    clearFilters: 'Clear',
+    applyFilters: 'Apply',
 
     noHistory: 'No history yet',
     historyEmpty: 'Complete a workout to get started.',
