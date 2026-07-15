@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, Search, SlidersHorizontal, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, listBodyParts, listEquipmentUsed, getEquipmentLabel,} from "../lib/exerciseTree";
+import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, listBodyParts, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
+import ExerciseDetailPage from "./ExerciseDetailPage";
 
 export default function ExercisesPage({ onBack }) {
   const { t, lang } = useApp();
@@ -9,6 +10,7 @@ export default function ExercisesPage({ onBack }) {
   const [bodyPart, setBodyPart] = useState(null);
   const [equipment, setEquipment] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const bodyParts = useMemo(() => listBodyParts(), []);
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
@@ -42,6 +44,11 @@ export default function ExercisesPage({ onBack }) {
       .sort()
       .map((letter) => ({ letter, items: byLetter[letter] }));
   }, [query, lang, bodyPart, equipment]);
+
+  if (selectedId) {
+    const selected = getBaseExercise(selectedId);
+    return <ExerciseDetailPage exercise={selected} onBack={() => setSelectedId(null)} />;
+  }
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
@@ -125,8 +132,10 @@ export default function ExercisesPage({ onBack }) {
                   return (
                     <div
                       key={ex.id}
+                      onClick={() => setSelectedId(ex.id)}
                       style={{
                         padding: "10px 4px",
+                        cursor: "pointer",
                         borderBottom: "1px solid var(--border)",
                       }}
                     >

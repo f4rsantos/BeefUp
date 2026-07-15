@@ -64,6 +64,11 @@ const strings = {
     filterEquipment: 'Equipamento',
     clearFilters: 'Limpar',
     applyFilters: 'Aplicar',
+    noMediaYet: 'Vídeo em breve',
+    instructions: 'Instruções',
+    category: 'Categoria',
+    primaryMuscle: 'Músculo principal',
+    secondaryMusclesLabel: 'Músculos secundários',
 
     // History
     noHistory: 'Sem histórico ainda',
@@ -315,6 +320,11 @@ const strings = {
     filterEquipment: 'Equipment',
     clearFilters: 'Clear',
     applyFilters: 'Apply',
+    noMediaYet: 'Video coming soon',
+    instructions: 'Instructions',
+    category: 'Category',
+    primaryMuscle: 'Primary muscle',
+    secondaryMusclesLabel: 'Secondary muscles',
 
     noHistory: 'No history yet',
     historyEmpty: 'Complete a workout to get started.',
