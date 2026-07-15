@@ -1,18 +1,21 @@
-import { Dumbbell, Square, Timer as TimerIcon } from "lucide-react";
+import { ChevronDown, Dumbbell, Square, Timer as TimerIcon } from "lucide-react";
+import { formatDuration } from "../lib/planUtils";
 
-export default function WorkoutTopBar({ elapsed, onOneRM, onRest, onEnd }) {
-  const formatTime = (s) => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    if (h > 0)
-      return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-    return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-  };
-
+export default function WorkoutTopBar({ elapsed, onOneRM, onRest, onEnd, onMinimize, minimizeLabel }) {
   return (
-    <div className="flex items-center justify-between px-4 pt-5 pb-3 gap-2">
+    <div
+      className="flex items-center justify-between px-4 pt-5 pb-3 gap-2"
+      style={{ position: "relative" }}
+    >
       <div className="flex gap-2">
+        <button
+          className="btn btn-ghost p-2.5"
+          title={minimizeLabel}
+          aria-label={minimizeLabel}
+          onClick={onMinimize}
+        >
+          <ChevronDown size={16} />
+        </button>
         <button className="btn btn-ghost p-2.5" title="1RM" onClick={onOneRM}>
           <Dumbbell size={16} />
         </button>
@@ -23,9 +26,15 @@ export default function WorkoutTopBar({ elapsed, onOneRM, onRest, onEnd }) {
 
       <div
         className="font-mono text-lg font-semibold"
-        style={{ color: "var(--text)", transform: "translateX(-24px)" }}
+        style={{
+          color: "var(--text)",
+          position: "absolute",
+          left: "50%",
+          transform: "translateX(-50%)",
+          pointerEvents: "none",
+        }}
       >
-        {formatTime(elapsed)}
+        {formatDuration(elapsed)}
       </div>
 
       <button className="btn btn-danger p-2.5" title="End" onClick={onEnd}>

@@ -13,6 +13,7 @@ import WorkoutSettings from "./pages/WorkoutSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
 import HelperDashboard from "./dashboard/HelperDashboard";
+import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry } from "./lib/planUtils";
 import { useState, useEffect } from "react";
@@ -26,11 +27,12 @@ const TABS = [
 
 function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
-  const [overlay, setOverlay] = useState(null); // 'active' | 'pickWorkout' | 'planSettings' | null
+  const [overlay, setOverlay] = useState(null); // 'pickWorkout' | 'planSettings' | ... | null
+  const [workoutMinimized, setWorkoutMinimized] = useState(false);
   const [planSettingsPlanId, setPlanSettingsPlanId] = useState(null);
   const [workoutSettingsView, setWorkoutSettingsView] = useState("main");
   const [workoutSettingsWorkout, setWorkoutSettingsWorkout] = useState(null);
-  const { setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t } = useApp();
+  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t } = useApp();
   const isDesktop = useIsDesktop();
 
   if (!onboarded) return <Onboarding />;
@@ -50,13 +52,23 @@ function AppInner() {
   if (tab === "nutrition" && !showNutrition) tab2 = "home";
   if (tab === "home" && !showGym) tab2 = "nutrition";
 
+  // A workout already running wins: starting another would swap activeWorkout
+  // under the still-mounted ActiveWorkout, which keeps the old exercises (its
+  // useState initializer only runs on mount). Re-open the running one instead.
   function goActive(workoutInfo) {
-    setActiveWorkout(workoutInfo);
-    setOverlay("active");
+    if (activeWorkout) {
+      setWorkoutMinimized(false);
+      setOverlay(null);
+      return;
+    }
+    setActiveWorkout({ ...workoutInfo, startedAt: Date.now() });
+    setWorkoutMinimized(false);
+    setOverlay(null);
   }
 
   function endWorkout() {
     setActiveWorkout(null);
+    setWorkoutMinimized(false);
     setOverlay(null);
   }
 
@@ -68,7 +80,7 @@ function AppInner() {
   }
 
   // Start FAB: jump straight into today's scheduled workout if there is one,
-  // otherwise open the workout picker.
+  // otherwise open the workout picker. Only reachable with no workout running the FAB is hidden while one is.
   function handleStart() {
     const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
     const entry = todaysPlanEntry(activePlan, sessions);
@@ -85,7 +97,8 @@ function AppInner() {
     setOverlay("pickWorkout");
   }
 
-  const showNav = overlay === null;
+  const workoutExpanded = activeWorkout !== null && !workoutMinimized;
+  const showNav = overlay === null && !workoutExpanded;
 
   return (
     <div
@@ -144,7 +157,6 @@ function AppInner() {
         {overlay === null && tab2 === "settings" && <SettingsPage />}
 
         {/* Overlays (full-screen, cover nav) */}
-        {overlay === "active" && <ActiveWorkout onEnd={endWorkout} />}
         {overlay === "history" && <HistoryPage onBack={closeOverlay} />}
         {overlay === "exercises" && <ExercisesPage onBack={closeOverlay} />}
         {overlay === "pickWorkout" && (
@@ -170,7 +182,36 @@ function AppInner() {
         )}
         {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
+
+        {/* Stays mounted while minimized: unmounting would drop the logged sets
+            and restart the clock. Hidden with CSS instead. */}
+        {activeWorkout && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 50,
+              background: "var(--bg)",
+              display: workoutMinimized ? "none" : "block",
+            }}
+          >
+            <ActiveWorkout
+              key={activeWorkout.startedAt}
+              onEnd={endWorkout}
+              onMinimize={() => setWorkoutMinimized(true)}
+            />
+          </div>
+        )}
       </div>
+
+      {activeWorkout && workoutMinimized && overlay === null && (
+        <MiniWorkoutBar
+          startedAt={activeWorkout.startedAt}
+          workoutName={activeWorkout.workoutName}
+          onExpand={() => setWorkoutMinimized(false)}
+          label={t.startWorkout}
+        />
+      )}
 
       {/* Bottom nav — hidden during overlays */}
       {showNav && (
@@ -188,7 +229,7 @@ function AppInner() {
               </button>
             ))}
 
-          {showGym && (
+          {showGym && !activeWorkout && (
             <button
               className="nav-fab"
               onClick={handleStart}

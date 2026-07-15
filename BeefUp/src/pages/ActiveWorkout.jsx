@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, nowISO } from "../lib/planUtils";
@@ -30,7 +30,7 @@ function buildExerciseEntry(ex) {
 
 const epley = (w, r) => (parseFloat(w) || 0) * (1 + (parseInt(r) || 0) / 30);
 
-export default function ActiveWorkout({ onEnd }) {
+export default function ActiveWorkout({ onEnd, onMinimize }) {
   const { t, lang, activeWorkout, workouts, addSession, sessions } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
@@ -43,8 +43,13 @@ export default function ActiveWorkout({ onEnd }) {
       .map(buildExerciseEntry);
   });
 
-  const startTime = useRef(0);
-  const [elapsed, setElapsed] = useState(0);
+  // Shared with MiniWorkoutBar so both derive the same elapsed time, and so the
+  // clock survives this component being hidden while the workout stays running.
+  const [fallbackStart] = useState(() => Date.now());
+  const startedAt = activeWorkout?.startedAt ?? fallbackStart;
+  const [elapsed, setElapsed] = useState(() =>
+    Math.floor((Date.now() - startedAt) / 1000),
+  );
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
   const [restState, setRestState] = useState(null);
@@ -54,13 +59,12 @@ export default function ActiveWorkout({ onEnd }) {
   const [setTimer, setSetTimer] = useState(null);
 
   useEffect(() => {
-    startTime.current = Date.now();
     const id = setInterval(
-      () => setElapsed(Math.floor((Date.now() - startTime.current) / 1000)),
+      () => setElapsed(Math.floor((Date.now() - startedAt) / 1000)),
       1000,
     );
     return () => clearInterval(id);
-  }, []);
+  }, [startedAt]);
 
   useEffect(() => {
     if (!setTimer) return;
@@ -190,7 +194,7 @@ export default function ActiveWorkout({ onEnd }) {
   }, []);
 
   async function handleEnd() {
-    const duration = Math.floor((Date.now() - startTime.current) / 1000);
+    const duration = Math.floor((Date.now() - startedAt) / 1000);
     let totalSets = 0;
     let totalVolume = 0;
     exercises.forEach((e) => {
@@ -264,6 +268,8 @@ export default function ActiveWorkout({ onEnd }) {
         onOneRM={() => setShowOneRM(true)}
         onRest={() => setShowRestModal(true)}
         onEnd={() => setEndModal("confirm")}
+        onMinimize={onMinimize}
+        minimizeLabel={t.minimize}
       />
 
       {workoutName && (
