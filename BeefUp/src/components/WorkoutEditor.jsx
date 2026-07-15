@@ -126,8 +126,8 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
 
       {showPicker && (
         <ExercisePicker
-          onSelect={(ref) => {
-            setExIds((prev) => [...prev, ref]);
+          onConfirm={(refs) => {
+            setExIds((prev) => [...prev, ...refs]);
             setShowPicker(false);
           }}
           onClose={() => setShowPicker(false)}

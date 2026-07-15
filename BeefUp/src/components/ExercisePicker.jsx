@@ -1,200 +1,404 @@
-import { useState, useMemo } from "react";
-import { Search, Star, ChevronLeft } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {
   listBaseExercises,
   getEquipmentOptions,
   getVariantOptions,
-  buildExerciseRef,
   getBodyPartLabel,
+  listBodyParts,
+  listEquipmentUsed,
+  getEquipmentLabel,
+  buildExerciseRef,
 } from "../lib/exerciseTree";
 
-// 3-step wizard: pick base movement -> pick equipment (if there's a real choice)
-// -> pick variant (if the movement has any) -> onSelect(ref).
-export default function ExercisePicker({ onSelect, onClose }) {
-  const { t, lang, favouriteExercises, toggleFavouriteExercise } = useApp();
+// Full-screen multi-select picker used while a workout is running: tapping a
+// row customizes it (equipment/variant, same wizard as ExercisePicker) then
+// queues it instead of closing immediately, so several exercises can be added
+// in one go via the floating confirm button.
+export default function AddExercisesPicker({ onConfirm, onClose }) {
+  const { t, lang } = useApp();
   const [query, setQuery] = useState("");
-  const [step, setStep] = useState("base"); // 'base' | 'equipment' | 'variant'
-  const [selectedBase, setSelectedBase] = useState(null);
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
+  const [bodyPart, setBodyPart] = useState(null);
+  const [equipment, setEquipment] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const bases = listBaseExercises();
+  const [step, setStep] = useState("list"); // 'list' | 'equipment' | 'variant'
+  const [activeBase, setActiveBase] = useState(null);
+  const [activeEquipmentId, setActiveEquipmentId] = useState(null);
+  const [queue, setQueue] = useState(() => new Map()); // baseId -> ref
 
-  const filteredBases = useMemo(() => {
-    let list = [...bases];
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(
-        (b) => b.name.toLowerCase().includes(q) || b.namePt.toLowerCase().includes(q),
-      );
-    }
-    list.sort((a, b) => {
-      const aF = favouriteExercises.includes(a.id);
-      const bF = favouriteExercises.includes(b.id);
-      return aF === bF ? 0 : aF ? -1 : 1;
+  const bodyParts = useMemo(() => listBodyParts(), []);
+  const equipmentList = useMemo(() => listEquipmentUsed(), []);
+  const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
+
+  const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = listBaseExercises().filter((ex) => {
+      const label = lang === "pt" ? ex.namePt : ex.name;
+      if (q && !label.toLowerCase().includes(q)) return false;
+      if (bodyPart && ex.bodyPart !== bodyPart) return false;
+      if (equipment && !ex.equipment.includes(equipment)) return false;
+      return true;
     });
-    return list;
-  }, [bases, query, favouriteExercises]);
 
-  function finish(baseId, equipmentId, variantId) {
-    onSelect(buildExerciseRef(baseId, equipmentId, variantId));
+    const sorted = [...filtered].sort((a, b) => {
+      const la = lang === "pt" ? a.namePt : a.name;
+      const lb = lang === "pt" ? b.namePt : b.name;
+      return la.localeCompare(lb);
+    });
+
+    const byLetter = {};
+    sorted.forEach((ex) => {
+      const label = lang === "pt" ? ex.namePt : ex.name;
+      const letter = label[0]?.toUpperCase() ?? "#";
+      if (!byLetter[letter]) byLetter[letter] = [];
+      byLetter[letter].push(ex);
+    });
+
+    return Object.keys(byLetter)
+      .sort()
+      .map((letter) => ({ letter, items: byLetter[letter] }));
+  }, [query, lang, bodyPart, equipment]);
+
+  function addToQueue(baseId, equipmentId, variantId) {
+    setQueue((prev) => {
+      const next = new Map(prev);
+      next.set(baseId, buildExerciseRef(baseId, equipmentId, variantId));
+      return next;
+    });
+    setStep("list");
+    setActiveBase(null);
+    setActiveEquipmentId(null);
   }
 
-  function pickBase(base) {
+  function toggleRow(base) {
+    if (queue.has(base.id)) {
+      setQueue((prev) => {
+        const next = new Map(prev);
+        next.delete(base.id);
+        return next;
+      });
+      return;
+    }
+
     const equipmentOptions = getEquipmentOptions(base.id);
-    setSelectedBase(base);
+    const variantOptions = getVariantOptions(base.id);
+    setActiveBase(base);
     if (equipmentOptions.length > 1) {
       setStep("equipment");
       return;
     }
     const equipmentId = equipmentOptions[0]?.id ?? "";
-    const variantOptions = getVariantOptions(base.id);
     if (variantOptions.length > 0) {
-      setSelectedEquipmentId(equipmentId);
+      setActiveEquipmentId(equipmentId);
       setStep("variant");
       return;
     }
-    finish(base.id, equipmentId, "");
+    addToQueue(base.id, equipmentId, "");
   }
 
   function pickEquipment(equipmentId) {
-    const variantOptions = getVariantOptions(selectedBase.id);
+    const variantOptions = getVariantOptions(activeBase.id);
     if (variantOptions.length > 0) {
-      setSelectedEquipmentId(equipmentId);
+      setActiveEquipmentId(equipmentId);
       setStep("variant");
       return;
     }
-    finish(selectedBase.id, equipmentId, "");
+    addToQueue(activeBase.id, equipmentId, "");
   }
 
   function pickVariant(variantId) {
-    finish(selectedBase.id, selectedEquipmentId, variantId);
+    addToQueue(activeBase.id, activeEquipmentId, variantId);
   }
 
-  function goBack() {
-    if (step === "variant") {
-      setStep(getEquipmentOptions(selectedBase.id).length > 1 ? "equipment" : "base");
+  function backFromCustomize() {
+    if (step === "variant" && getEquipmentOptions(activeBase.id).length > 1) {
+      setStep("equipment");
       return;
     }
-    setStep("base");
+    cancelCustomize();
   }
 
-  const equipmentOptions = selectedBase ? getEquipmentOptions(selectedBase.id) : [];
-  const variantOptions = selectedBase ? getVariantOptions(selectedBase.id) : [];
+  function cancelCustomize() {
+    setStep("list");
+    setActiveBase(null);
+    setActiveEquipmentId(null);
+  }
+
+  const equipmentOptions = activeBase ? getEquipmentOptions(activeBase.id) : [];
+  const variantOptions = activeBase ? getVariantOptions(activeBase.id) : [];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-handle" />
-
-        <div className="flex items-center gap-2 mb-3">
-          {step !== "base" && (
-            <button className="btn btn-ghost p-1.5" onClick={goBack} aria-label={t.back}>
-              <ChevronLeft size={18} style={{ color: "var(--text)" }} />
-            </button>
-          )}
-          <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>
-            {step === "base"
-              ? t.addExercise
-              : lang === "pt"
-                ? selectedBase.namePt
-                : selectedBase.name}
-          </h3>
+    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
+          <button className="btn-back" onClick={onClose} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            {t.addExercise}
+          </h1>
         </div>
 
-        {step === "base" && (
-          <>
-            <div className="mb-3" style={{ position: "relative" }}>
-              <Search size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--muted)" }} />
-              <input
-                className="field"
-                style={{ paddingLeft: 36 }}
-                type="text"
-                placeholder={t.searchExercises}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoFocus
-              />
+        <div className="px-4 flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <div className="relative flex items-center flex-1">
+                <Search size={16} style={{ position: "absolute", left: 12, color: "var(--muted)" }} />
+                <input
+                  className="field w-full"
+                  style={{ paddingLeft: 36 }}
+                  placeholder={t.searchExercises}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <button
+                className="btn btn-ghost relative"
+                style={{ padding: 10 }}
+                onClick={() => setShowFilters(true)}
+                aria-label={t.filters}
+              >
+                <SlidersHorizontal size={18} style={{ color: "var(--text)" }} />
+                {activeFilterCount > 0 && (
+                  <span
+                    className="flex items-center justify-center"
+                    style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      width: 16,
+                      height: 16,
+                      borderRadius: 999,
+                      background: "var(--accent)",
+                      color: "var(--bg)",
+                      fontSize: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
             </div>
 
-            <div className="flex flex-col gap-2" style={{ maxHeight: "52vh", overflowY: "auto" }}>
-              {filteredBases.length === 0 ? (
-                <p className="text-center py-6 text-sm" style={{ color: "var(--muted)" }}>
+            <div className="flex-1 overflow-y-auto px-4 pb-24 scrollbar-hide">
+              {groups.length === 0 ? (
+                <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "40px 0" }}>
                   {t.noResults}
                 </p>
               ) : (
-                filteredBases.map((base) => {
-                  const isFav = favouriteExercises.includes(base.id);
-                  return (
+                groups.map(({ letter, items }) => (
+                  <div key={letter} className="flex flex-col" style={{ marginBottom: 4 }}>
                     <div
-                      key={base.id}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                      style={{ background: "var(--surface2)" }}
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 1,
+                        background: "var(--bg)",
+                        padding: "10px 4px 6px",
+                      }}
                     >
-                      <button
-                        className="p-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavouriteExercise(base.id);
-                        }}
-                        aria-label="favourite"
-                      >
-                        <Star
-                          size={17}
-                          style={{
-                            color: isFav ? "var(--accent-2)" : "var(--border)",
-                            fill: isFav ? "var(--accent-2)" : "none",
-                          }}
-                        />
-                      </button>
-                      <button
-                        className="flex-1 text-left"
-                        style={{ minWidth: 0 }}
-                        onClick={() => pickBase(base)}
-                      >
-                        <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
-                          {lang === "pt" ? base.namePt : base.name}
-                        </p>
-                        <p className="text-xs mt-0.5 truncate" style={{ color: "var(--muted)", textTransform: "capitalize" }}>
-                          {getBodyPartLabel(base.bodyPart, lang)}
-                        </p>
-                      </button>
+                      <span className="font-bold" style={{ fontSize: 13, color: "var(--accent)" }}>
+                        {letter}
+                      </span>
                     </div>
-                  );
-                })
+                    <div className="flex flex-col">
+                      {items.map((ex) => {
+                        const selected = queue.has(ex.id);
+                        return (
+                          <button
+                            key={ex.id}
+                            className="flex items-center gap-3"
+                            onClick={() => toggleRow(ex)}
+                            style={{
+                              padding: "10px 4px",
+                              borderBottom: "1px solid var(--border)",
+                              textAlign: "left",
+                              width: "100%",
+                            }}
+                          >
+                            <div className="flex-1" style={{ minWidth: 0 }}>
+                              <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                                {lang === "pt" ? ex.namePt : ex.name}
+                              </p>
+                              <p
+                                className="text-xs mt-0.5 truncate"
+                                style={{ color: "var(--muted)", textTransform: "capitalize" }}
+                              >
+                                {getBodyPartLabel(ex.bodyPart, lang)}
+                              </p>
+                            </div>
+                            {selected ? (
+                              <CheckCircle2 size={20} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                            ) : (
+                              <Circle size={20} style={{ color: "var(--border)", flexShrink: 0 }} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
-          </>
-        )}
-
-        {step === "equipment" && (
-          <div className="flex flex-wrap gap-2" style={{ paddingBottom: 4 }}>
-            {equipmentOptions.map((eq) => (
-              <button
-                key={eq.id}
-                className="chip"
-                onClick={() => pickEquipment(eq.id)}
-              >
-                {lang === "pt" ? eq.namePt : eq.name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {step === "variant" && (
-          <div className="flex flex-wrap gap-2" style={{ paddingBottom: 4 }}>
-            {variantOptions.map((v) => (
-              <button
-                key={v.id}
-                className="chip"
-                onClick={() => pickVariant(v.id)}
-              >
-                {lang === "pt" ? v.namePt : v.name}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {activeBase && (
+        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={cancelCustomize}>
+          <div className="modal-center" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-4">
+              {step === "variant" && getEquipmentOptions(activeBase.id).length > 1 && (
+                <button className="btn btn-ghost p-1.5" onClick={backFromCustomize} aria-label={t.back}>
+                  <ChevronLeft size={18} style={{ color: "var(--text)" }} />
+                </button>
+              )}
+              <span className="font-semibold text-base flex-1" style={{ color: "var(--text)" }}>
+                {lang === "pt" ? activeBase.namePt : activeBase.name}
+              </span>
+              <button className="btn btn-ghost p-2" onClick={cancelCustomize}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {step === "equipment" && (
+              <div className="flex flex-wrap gap-2">
+                {equipmentOptions.map((eq) => (
+                  <button key={eq.id} className="chip" onClick={() => pickEquipment(eq.id)}>
+                    {lang === "pt" ? eq.namePt : eq.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {step === "variant" && (
+              <div className="flex flex-wrap gap-2">
+                {variantOptions.map((v) => (
+                  <button key={v.id} className="chip" onClick={() => pickVariant(v.id)}>
+                    {lang === "pt" ? v.namePt : v.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {queue.size > 0 && (
+        <button
+          className="btn btn-primary flex items-center justify-center"
+          onClick={() => onConfirm([...queue.values()])}
+          aria-label={t.confirm}
+          style={{
+            position: "absolute",
+            bottom: 24,
+            right: 20,
+            width: 56,
+            height: 56,
+            borderRadius: 999,
+            boxShadow: "var(--shadow-md, 0 4px 16px rgba(0,0,0,0.25))",
+          }}
+        >
+          <Check size={22} />
+          <span
+            className="flex items-center justify-center"
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              width: 20,
+              height: 20,
+              borderRadius: 999,
+              background: "var(--bg)",
+              color: "var(--accent)",
+              fontSize: 11,
+              fontWeight: 800,
+              border: "1px solid var(--border)",
+            }}
+          >
+            {queue.size}
+          </span>
+        </button>
+      )}
+
+      {showFilters && (
+        <div className="modal-overlay" onClick={() => setShowFilters(false)}>
+          <div className="modal-sheet fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+                {t.filters}
+              </span>
+              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex flex-col" style={{ gap: 6, marginBottom: 16 }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
+                {t.filterBodyPart}
+              </span>
+              <div className="flex flex-wrap" style={{ gap: 6 }}>
+                <button
+                  className={`chip ${bodyPart === null ? "active" : ""}`}
+                  onClick={() => setBodyPart(null)}
+                >
+                  {t.allTags}
+                </button>
+                {bodyParts.map((bp) => (
+                  <button
+                    key={bp}
+                    className={`chip ${bodyPart === bp ? "active" : ""}`}
+                    onClick={() => setBodyPart(bodyPart === bp ? null : bp)}
+                  >
+                    {getBodyPartLabel(bp, lang)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col" style={{ gap: 6, marginBottom: 20 }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
+                {t.filterEquipment}
+              </span>
+              <div className="flex flex-wrap" style={{ gap: 6 }}>
+                <button
+                  className={`chip ${equipment === null ? "active" : ""}`}
+                  onClick={() => setEquipment(null)}
+                >
+                  {t.allTags}
+                </button>
+                {equipmentList.map((eq) => (
+                  <button
+                    key={eq.id}
+                    className={`chip ${equipment === eq.id ? "active" : ""}`}
+                    onClick={() => setEquipment(equipment === eq.id ? null : eq.id)}
+                  >
+                    {getEquipmentLabel(eq.id, lang)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="btn btn-ghost flex-1 py-3 text-sm"
+                onClick={() => {
+                  setBodyPart(null);
+                  setEquipment(null);
+                }}
+              >
+                {t.clearFilters}
+              </button>
+              <button
+                className="btn btn-primary flex-1 py-3 text-sm"
+                onClick={() => setShowFilters(false)}
+              >
+                {t.applyFilters}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

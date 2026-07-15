@@ -144,8 +144,11 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
     setItems((prev) => prev.map((it, j) => (j === idx ? { ...it, ...patch } : it)));
   }
 
-  function addPick(ref) {
-    setItems((prev) => [...prev, { exerciseId: ref, sets: 3, reps: 10, rest: 90, weight: "" }]);
+  function addPicks(refs) {
+    setItems((prev) => [
+      ...prev,
+      ...refs.map((ref) => ({ exerciseId: ref, sets: 3, reps: 10, rest: 90, weight: "" })),
+    ]);
     setPicking(false);
   }
 
@@ -184,7 +187,7 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
       </div>
 
       {picking && (
-        <ExercisePicker onSelect={addPick} onClose={() => setPicking(false)} />
+        <ExercisePicker onConfirm={addPicks} onClose={() => setPicking(false)} />
       )}
     </div>
   );

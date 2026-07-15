@@ -179,10 +179,13 @@ export default function ActiveWorkout({ onEnd }) {
     );
   }, []);
 
-  const addExercise = useCallback((ref) => {
-    const resolved = resolveExercise(ref);
-    if (!resolved) return;
-    setExercises((prev) => [...prev, buildExerciseEntry(resolved)]);
+  const addExercises = useCallback((refs) => {
+    const entries = refs
+      .map(resolveExercise)
+      .filter(Boolean)
+      .map(buildExerciseEntry);
+    if (entries.length === 0) return;
+    setExercises((prev) => [...prev, ...entries]);
     setShowExPicker(false);
   }, []);
 
@@ -314,7 +317,7 @@ export default function ActiveWorkout({ onEnd }) {
       )}
       {showExPicker && (
         <ExercisePicker
-          onSelect={addExercise}
+          onConfirm={addExercises}
           onClose={() => setShowExPicker(false)}
         />
       )}
