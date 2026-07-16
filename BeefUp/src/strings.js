@@ -70,6 +70,8 @@ const strings = {
     category: 'Categoria',
     primaryMuscle: 'Músculo principal',
     secondaryMusclesLabel: 'Músculos secundários',
+    toggleCardView: 'Ver em cartões',
+    toggleListView: 'Ver em lista',
 
     // History
     noHistory: 'Sem histórico ainda',
@@ -327,6 +329,8 @@ const strings = {
     category: 'Category',
     primaryMuscle: 'Primary muscle',
     secondaryMusclesLabel: 'Secondary muscles',
+    toggleCardView: 'Card view',
+    toggleListView: 'List view',
 
     noHistory: 'No history yet',
     historyEmpty: 'Complete a workout to get started.',

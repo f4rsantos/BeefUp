@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, listBodyParts, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
+import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listBodyParts, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 
 export default function ExercisesPage({ onBack }) {
@@ -11,12 +11,13 @@ export default function ExercisesPage({ onBack }) {
   const [equipment, setEquipment] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
 
   const bodyParts = useMemo(() => listBodyParts(), []);
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
-  const groups = useMemo(() => {
+  const sortedExercises = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = listBaseExercises().filter((ex) => {
       const label = lang === "pt" ? ex.namePt : ex.name;
@@ -26,12 +27,15 @@ export default function ExercisesPage({ onBack }) {
       return true;
     });
 
-    const sorted = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       const la = lang === "pt" ? a.namePt : a.name;
       const lb = lang === "pt" ? b.namePt : b.name;
       return la.localeCompare(lb);
     });
+  }, [query, lang, bodyPart, equipment]);
 
+  const groups = useMemo(() => {
+    const sorted = sortedExercises;
     const byLetter = {};
     sorted.forEach((ex) => {
       const label = lang === "pt" ? ex.namePt : ex.name;
@@ -43,7 +47,7 @@ export default function ExercisesPage({ onBack }) {
     return Object.keys(byLetter)
       .sort()
       .map((letter) => ({ letter, items: byLetter[letter] }));
-  }, [query, lang, bodyPart, equipment]);
+  }, [sortedExercises, lang]);
 
   if (selectedId) {
     const selected = getBaseExercise(selectedId);
@@ -99,13 +103,67 @@ export default function ExercisesPage({ onBack }) {
             </span>
           )}
         </button>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: 10 }}
+          onClick={() => setViewMode(viewMode === "list" ? "card" : "list")}
+          aria-label={viewMode === "list" ? t.toggleCardView : t.toggleListView}
+        >
+          {viewMode === "list" ? (
+            <LayoutGrid size={18} style={{ color: "var(--text)" }} />
+          ) : (
+            <List size={18} style={{ color: "var(--text)" }} />
+          )}
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
-        {groups.length === 0 ? (
+        {sortedExercises.length === 0 ? (
           <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "40px 0" }}>
             {t.noResults}
           </p>
+        ) : viewMode === "card" ? (
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}
+          >
+            {sortedExercises.map((ex) => (
+              <button
+                key={ex.id}
+                onClick={() => setSelectedId(ex.id)}
+                className="flex flex-col"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    aspectRatio: "1 / 1",
+                    background: "var(--surface2)",
+                    color: "var(--muted)",
+                  }}
+                >
+                  <ImageIcon size={28} />
+                </div>
+                <div style={{ padding: "8px 10px 10px" }}>
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                    {lang === "pt" ? ex.namePt : ex.name}
+                  </p>
+                  <p
+                    className="text-xs mt-0.5 truncate"
+                    style={{ color: "var(--muted)", textTransform: "capitalize" }}
+                  >
+                    {getMuscleLabel(ex.target, lang)}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
         ) : (
           groups.map(({ letter, items }) => (
             <div key={letter} className="flex flex-col" style={{ marginBottom: 4 }}>
@@ -192,8 +250,8 @@ export default function ExercisesPage({ onBack }) {
       </div>
 
       {showFilters && (
-        <div className="modal-overlay" onClick={() => setShowFilters(false)}>
-          <div className="modal-sheet fade-in" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
+          <div className="modal-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
                 {t.filters}
