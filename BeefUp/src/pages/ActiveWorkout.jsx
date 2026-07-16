@@ -95,9 +95,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         if (i !== exIdx) return e;
         return {
           ...e,
-          sets: e.sets.map((s, j) =>
-            j === setIdx ? { ...s, [field]: val } : s,
-          ),
+          sets: e.sets.map((s, j) => {
+            if (j < setIdx || s.done) return s;
+            return { ...s, [field]: val };
+          }),
         };
       }),
     );
