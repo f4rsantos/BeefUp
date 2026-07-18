@@ -24,6 +24,18 @@ export function nowISO() {
   return new Date().toISOString()
 }
 
+// Sessions store only completed sets, in order, and are set as default for the future sets
+export function lastCompletedSets(sessions, exerciseId) {
+  let latest = null
+  for (const s of sessions) {
+    const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
+    if (entry?.sets?.length && (!latest || s.date > latest.date)) {
+      latest = { date: s.date, sets: entry.sets }
+    }
+  }
+  return latest?.sets ?? []
+}
+
 // Elapsed seconds as mm:ss, or h:mm:ss once past an hour.
 export function formatDuration(s) {
   const h = Math.floor(s / 3600)

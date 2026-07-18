@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, nowISO } from "../lib/planUtils";
+import { uid, nowISO, lastCompletedSets } from "../lib/planUtils";
 import { resolveExercise } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
@@ -12,19 +12,23 @@ import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 
-function buildExerciseEntry(ex) {
+// sets from the most recent prior session are filled in by index
+function buildExerciseEntry(ex, lastSets = []) {
   return {
     id: uid(),
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
     note: "",
-    sets: Array.from({ length: ex.defaultSets }, () => ({
-      id: uid(),
-      weight: ex.defaultWeight > 0 ? String(ex.defaultWeight) : "",
-      reps: String(ex.defaultReps),
-      done: false,
-    })),
+    sets: Array.from({ length: ex.defaultSets }, (_, i) => {
+      const last = lastSets[Math.min(i, lastSets.length - 1)];
+      return {
+        id: uid(),
+        weight: last ? last.weight : (ex.defaultWeight > 0 ? String(ex.defaultWeight) : ""),
+        reps: last ? last.reps : String(ex.defaultReps),
+        done: false,
+      };
+    }),
   };
 }
 
@@ -40,7 +44,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     return sourceWorkout.exercises
       .map((ref) => resolveExercise(ref))
       .filter(Boolean)
-      .map(buildExerciseEntry);
+      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
   });
 
   // Shared with MiniWorkoutBar so both derive the same elapsed time, and so the
@@ -188,11 +192,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     const entries = refs
       .map(resolveExercise)
       .filter(Boolean)
-      .map(buildExerciseEntry);
+      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
     if (entries.length === 0) return;
     setExercises((prev) => [...prev, ...entries]);
     setShowExPicker(false);
-  }, []);
+  }, [sessions]);
 
   async function handleEnd() {
     const duration = Math.floor((Date.now() - startedAt) / 1000);
