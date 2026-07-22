@@ -13,7 +13,7 @@ function formatDate(iso) {
 
 function calcVolume(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+    acc + (ex.sets?.reduce((a, s) => s.type === 'warmup' ? a : a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
 function countSets(session) {

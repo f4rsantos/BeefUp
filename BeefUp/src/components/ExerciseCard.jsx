@@ -1,13 +1,96 @@
 import ProgressRing from "./ProgressRing";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 
 const SWIPE_THRESHOLD = 90;
+const SET_TYPES = ["warmup", "dropset", "superset", "failure"];
+const TYPE_COLORS = {
+  normal: "var(--accent)",
+  warmup: "var(--accent-2)",
+  dropset: "#9333ea",
+  superset: "#3b82f6",
+  failure: "var(--danger)",
+};
 
-function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet }) {
+function SetTypeMenu({ exIdx, setIdx, set, onSetType, onClose, coords, t }) {
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
+    };
+    const handleScroll = () => onClose();
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [onClose]);
+
+  function pick(type) {
+    onSetType(exIdx, setIdx, type);
+    onClose();
+  }
+
+  const options = ["normal", ...SET_TYPES];
+
+  return (
+    <div
+      ref={menuRef}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "fixed",
+        top: coords.top,
+        left: coords.left,
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 10,
+        minWidth: 160,
+        zIndex: 1000,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+        overflow: "hidden",
+      }}
+    >
+      {options.map((type) => {
+        const label = type === "normal" ? t.setTypeNormal : t[`setType_${type}`];
+        const active = (set.type ?? "normal") === type;
+        return (
+          <button
+            key={type}
+            onClick={() => pick(type)}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              background: active ? "var(--surface2)" : "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              textAlign: "left",
+            }}
+          >
+            <span style={{ color: TYPE_COLORS[type], fontWeight: 600 }}>{label}</span>
+            <span style={{ color: TYPE_COLORS[type], fontWeight: 700, fontSize: 12 }}>
+              {type === "normal" ? setIdx + 1 : label[0]}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet, onSetType, t }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
   const startX = useRef(0);
+  const typeBtnRef = useRef(null);
 
   const onTouchStart = useCallback((e) => {
     startX.current = e.touches[0].clientX;
@@ -27,6 +110,14 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet }) {
       setDx(0);
     }
   }, [dx, exIdx, setIdx, onRemoveSet]);
+
+  function openTypeMenu() {
+    if (typeBtnRef.current) {
+      const rect = typeBtnRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 4, left: rect.left });
+    }
+    setMenuOpen(true);
+  }
 
   return (
     <div className="relative overflow-hidden rounded-lg mb-0.5">
@@ -57,12 +148,14 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet }) {
           transition: dragging ? "none" : "transform .2s",
         }}
       >
-        <span
-          className="text-xs font-medium text-center"
-          style={{ color: "var(--muted)" }}
+        <button
+          ref={typeBtnRef}
+          className="text-xs font-bold text-center"
+          style={{ color: set.type && set.type !== "normal" ? TYPE_COLORS[set.type] : "var(--muted)" }}
+          onClick={openTypeMenu}
         >
-          {setIdx + 1}
-        </span>
+          {set.type && set.type !== "normal" ? t[`setType_${set.type}`][0] : setIdx + 1}
+        </button>
         <input
           className="field text-center text-sm"
           type="number"
@@ -94,6 +187,18 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet }) {
           {set.done && <Check size={14} style={{ color: "var(--bg)" }} />}
         </button>
       </div>
+
+      {menuOpen && (
+        <SetTypeMenu
+          exIdx={exIdx}
+          setIdx={setIdx}
+          set={set}
+          t={t}
+          coords={coords}
+          onSetType={onSetType}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -133,11 +238,13 @@ export default function ExerciseCard({
   exercise,
   exIdx,
   lang,
+  t,
   onUpdateSet,
   onToggleSet,
   onAddSet,
   onRemoveSet,
   onRemoveExercise,
+  onSetType,
   note,
   onUpdateNote,
   setTimer,
@@ -228,9 +335,11 @@ export default function ExerciseCard({
             exIdx={exIdx}
             setIdx={setIdx}
             set={set}
+            t={t}
             onUpdateSet={onUpdateSet}
             onToggleSet={onToggleSet}
             onRemoveSet={onRemoveSet}
+            onSetType={onSetType}
           />
           {setTimer?.exIdx === exIdx && setTimer?.setIdx === setIdx && (
             <InlineSetTimer

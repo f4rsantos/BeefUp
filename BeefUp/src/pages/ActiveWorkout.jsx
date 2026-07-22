@@ -108,6 +108,15 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     );
   }, []);
 
+  const setSetType = useCallback((exIdx, setIdx, type) => {
+    setExercises((prev) =>
+      prev.map((e, i) => {
+        if (i !== exIdx) return e;
+        return { ...e, sets: e.sets.map((s, j) => (j === setIdx ? { ...s, type } : s)) };
+      }),
+    );
+  }, []);
+
   const toggleSet = useCallback(
     (exIdx, setIdx) => {
       const wasDone = exercises[exIdx]?.sets[setIdx]?.done;
@@ -204,7 +213,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     let totalVolume = 0;
     exercises.forEach((e) => {
       e.sets.forEach((s) => {
-        if (s.done) {
+        if (s.done && s.type !== "warmup") {
           totalSets++;
           totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
         }
@@ -225,7 +234,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           note: e.note?.trim() ?? "",
           sets: e.sets
             .filter((s) => s.done)
-            .map((s) => ({ weight: s.weight, reps: s.reps })),
+            .map((s) => ({ weight: s.weight, reps: s.reps, type: s.type })),
         }))
         .filter((e) => e.sets.length > 0),
     };
@@ -235,6 +244,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     sessions.forEach((s) =>
       s.exercises?.forEach((e) =>
         e.sets?.forEach((set) => {
+          if (set.type === "warmup") return;
           const rm = epley(set.weight, set.reps);
           if (rm > (priorBest[e.exerciseId] || 0)) priorBest[e.exerciseId] = rm;
         }),
@@ -244,7 +254,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     exercises.forEach((e) => {
       let best = 0;
       e.sets.forEach((set) => {
-        if (set.done) {
+        if (set.done && set.type !== "warmup") {
           const rm = epley(set.weight, set.reps);
           if (rm > best) best = rm;
         }
@@ -298,11 +308,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             exercise={ex}
             exIdx={exIdx}
             lang={lang}
+            t={t}
             onUpdateSet={updateSet}
             onToggleSet={toggleSet}
             onAddSet={addSet}
             onRemoveSet={removeSet}
             onRemoveExercise={removeExercise}
+            onSetType={setSetType}
             note={ex.note}
             setTimer={setTimer}
             onSkipSetTimer={dismissSetTimer}

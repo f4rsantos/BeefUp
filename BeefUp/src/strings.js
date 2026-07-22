@@ -82,6 +82,12 @@ const strings = {
     share: 'Partilhar',
     importWorkoutTitle: 'Importar treino?',
     importWorkout: 'Importar',
+    setTypeTitle: 'Tipo de série',
+    setTypeNormal: 'Normal',
+    setType_warmup: 'Aquecimento',
+    setType_dropset: 'Dropset',
+    setType_superset: 'Super-série',
+    setType_failure: 'Falha',
 
     // Plan settings
     plans: 'Planos',
@@ -343,6 +349,12 @@ const strings = {
     share: 'Share',
     importWorkoutTitle: 'Import workout?',
     importWorkout: 'Import',
+    setTypeTitle: 'Set type',
+    setTypeNormal: 'Normal',
+    setType_warmup: 'Warmup',
+    setType_dropset: 'Dropset',
+    setType_superset: 'Superset',
+    setType_failure: 'Failure',
 
     plans: 'Plans',
     newPlan: 'New plan',
