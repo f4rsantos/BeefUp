@@ -1,9 +1,10 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon } from "lucide-react";
+import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todaysPlanEntry } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
 import { resolveExercise } from "../lib/exerciseTree";
+import { encodeWorkoutShare } from "../lib/workoutShare";
 import HumanBody from "../components/HumanBody";
 
 function formatLastDate(iso, lang) {
@@ -16,7 +17,7 @@ function formatLastDate(iso, lang) {
 }
 
 
-function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete, onEdit }) {
+function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDelete, onEdit }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -152,6 +153,29 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onDelete, onEdi
           <button
             onClick={() => {
               setOpen(false);
+              onShare(workout);
+            }}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text)",
+              fontSize: 13,
+              textAlign: "left",
+            }}
+          >
+            <Share2 size={14} />
+            {lang === "pt" ? "Partilhar" : "Share"}
+          </button>
+
+          <button
+            onClick={() => {
+              setOpen(false);
               onDelete(workout);
             }}
             style={{
@@ -251,6 +275,16 @@ export default function WorkoutPage({
         : undefined,
     };
     saveWorkout(copy);
+  };
+
+  const handleShare = (workout) => {
+    const code = encodeWorkoutShare(workout);
+    const url = `${window.location.origin}${window.location.pathname}?w=${code}`;
+    if (navigator.share) {
+      navigator.share({ title: lang === "pt" ? workout.namePt || workout.name : workout.name, url });
+    } else {
+      navigator.clipboard.writeText(url);
+    }
   };
 
   const handleDelete = (workout) => {
@@ -466,6 +500,7 @@ export default function WorkoutPage({
                     onEdit={onEditWorkout}
                     onRename={handleRename}
                     onDuplicate={handleDuplicate}
+                    onShare={handleShare}
                     onDelete={handleDelete}
                   />
                 </div>

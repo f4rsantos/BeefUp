@@ -14,8 +14,10 @@ import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
 import HelperDashboard from "./dashboard/HelperDashboard";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
+import ConfirmModal from "./components/ConfirmModal";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
-import { todaysPlanEntry } from "./lib/planUtils";
+import { todaysPlanEntry, uid } from "./lib/planUtils";
+import { decodeWorkoutShare } from "./lib/workoutShare";
 import { useState, useEffect } from "react";
 
 const TABS = [
@@ -32,8 +34,17 @@ function AppInner() {
   const [planSettingsPlanId, setPlanSettingsPlanId] = useState(null);
   const [workoutSettingsView, setWorkoutSettingsView] = useState("main");
   const [workoutSettingsWorkout, setWorkoutSettingsWorkout] = useState(null);
-  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t } = useApp();
+  const [incomingShare, setIncomingShare] = useState(() => {
+    const code = new URLSearchParams(window.location.search).get("w");
+    return code ? decodeWorkoutShare(code) : null;
+  });
+  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("w")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   if (!onboarded) return <Onboarding />;
 
@@ -210,6 +221,20 @@ function AppInner() {
           workoutName={activeWorkout.workoutName}
           onExpand={() => setWorkoutMinimized(false)}
           label={t.startWorkout}
+        />
+      )}
+
+      {incomingShare && (
+        <ConfirmModal
+          title={t.importWorkoutTitle}
+          message={`${lang === "pt" ? incomingShare.namePt : incomingShare.name} — ${incomingShare.exercises.length} ${t.exercises}`}
+          cancelLabel={t.cancel}
+          confirmLabel={t.importWorkout}
+          onCancel={() => setIncomingShare(null)}
+          onConfirm={async () => {
+            await saveWorkout({ id: uid(), ...incomingShare });
+            setIncomingShare(null);
+          }}
         />
       )}
 

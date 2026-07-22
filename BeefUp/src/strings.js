@@ -79,6 +79,9 @@ const strings = {
     volume: 'volume',
     sets: 'séries',
     exercises: 'exercícios',
+    share: 'Partilhar',
+    importWorkoutTitle: 'Importar treino?',
+    importWorkout: 'Importar',
 
     // Plan settings
     plans: 'Planos',
@@ -337,6 +340,9 @@ const strings = {
     volume: 'volume',
     sets: 'sets',
     exercises: 'exercises',
+    share: 'Share',
+    importWorkoutTitle: 'Import workout?',
+    importWorkout: 'Import',
 
     plans: 'Plans',
     newPlan: 'New plan',
