@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
+import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import strings from '../strings'
 
 const AppContext = createContext(null)
@@ -87,6 +88,14 @@ export function AppProvider({ children }) {
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
       setClients(cli)
+      
+      const migrated = allMeasurements.map(m => (
+        LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m
+      ))
+      migrated.forEach((m, i) => {
+        if (m.type !== allMeasurements[i].type) db.addMeasurement(m)
+      })
+      setMeasurements(migrated)
     }
     load()
   }, [])
