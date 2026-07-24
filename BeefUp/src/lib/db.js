@@ -116,6 +116,7 @@ export const db = {
   // Measurements helpers
   addMeasurement: (entry) => tx(STORES.measurements, 'readwrite', s => s.put(entry)),
   getAllMeasurements: () => tx(STORES.measurements, 'readonly', s => s.getAll()),
+  deleteMeasurement: (id) => tx(STORES.measurements, 'readwrite', s => s.delete(id)),
 
   // Custom foods helpers
   saveFood: (food) => tx(STORES.foods, 'readwrite', s => s.put(food)),

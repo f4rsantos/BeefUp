@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import { Footprints, Flame, Plus, Ruler, BarChart3 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
-import { computeStreak, getMonthActivity, aggregateSessionsByWeek, todayISO } from "../lib/planUtils";
+import { computeStreak, getMonthActivity, aggregateSessionsByWeek, todayISO, toLocalISO } from "../lib/planUtils";
 import StepsModal from "../components/StepsModal";
 
 function dayOffsetISO(daysBack) {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() - daysBack);
-  return date.toISOString().slice(0, 10);
+  return toLocalISO(date);
 }
 
 export default function ProfilePage({ onOpenStatistics, onOpenMeasures, onViewHistory }) {

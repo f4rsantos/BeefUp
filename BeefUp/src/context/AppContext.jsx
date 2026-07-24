@@ -81,19 +81,20 @@ export function AppProvider({ children }) {
       const map = {}
       allSteps.forEach(e => { map[e.date] = e.count })
       setStepsMap(map)
-      setMeasurements(allMeasurements)
       setFoodLog(log)
       setCustomFoods(foods)
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
       setClients(cli)
-      
+
       const migrated = allMeasurements.map(m => (
         LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m
       ))
       migrated.forEach((m, i) => {
-        if (m.type !== allMeasurements[i].type) db.addMeasurement(m)
+        if (m.type !== allMeasurements[i].type) {
+          db.addMeasurement(m).catch(err => console.error('measurement migration failed', err))
+        }
       })
       setMeasurements(migrated)
     }
@@ -150,6 +151,11 @@ export function AppProvider({ children }) {
   const addMeasurement = useCallback(async (entry) => {
     await db.addMeasurement(entry)
     setMeasurements(prev => [...prev, entry])
+  }, [])
+
+  const deleteMeasurement = useCallback(async (id) => {
+    await db.deleteMeasurement(id)
+    setMeasurements(prev => prev.filter(m => m.id !== id))
   }, [])
 
   // PBs
@@ -225,7 +231,7 @@ export function AppProvider({ children }) {
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession, deleteSession,
     stepsMap, saveSteps,
-    measurements, addMeasurement,
+    measurements, addMeasurement, deleteMeasurement,
     pbConfig, savePbConfig,
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,

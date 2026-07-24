@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Dumbbell, Moon, Pencil, Play, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid } from "../lib/planUtils";
+import { uid, todayISO } from "../lib/planUtils";
 import { resolveExercise } from "../lib/exerciseTree";
 import ExercisePicker from "../components/ExercisePicker";
 import WorkoutPreview from "./WorkoutPreview";
@@ -20,7 +20,7 @@ export default function ClientGym({ client }) {
   const [editingWorkout, setEditingWorkout] = useState(null);
   const [previewing, setPreviewing] = useState(null);
 
-  const plan = client.plan || { id: uid(), name: "", startDate: new Date().toISOString().slice(0, 10), days: [] };
+  const plan = client.plan || { id: uid(), name: "", startDate: todayISO(), days: [] };
   const workouts = client.workouts || [];
 
   async function patchClient(patch) {

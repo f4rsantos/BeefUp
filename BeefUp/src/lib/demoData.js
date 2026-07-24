@@ -1,11 +1,11 @@
 import { buildExerciseRef, resolveExercise } from './exerciseTree'
-import { todayISO } from './planUtils'
+import { todayISO, toLocalISO } from './planUtils'
 
 function shiftISO(daysBack) {
   const date = new Date()
   date.setHours(0, 0, 0, 0)
   date.setDate(date.getDate() - daysBack)
-  return date.toISOString().slice(0, 10)
+  return toLocalISO(date)
 }
 
 function makeSet(weight, reps) {

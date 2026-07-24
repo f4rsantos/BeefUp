@@ -1,40 +1,68 @@
-import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType } from "../lib/planUtils";
 import { MEASURE_GROUPS } from "../lib/measureTypes";
 
-function MeasureTypeCard({ type, label, placeholder, saveLabel, noDataLabel, measurements, onSave }) {
-  const [val, setVal] = useState("");
-  const chartData = measurementsForType(measurements, type);
+const MAX_VALUE = 1000;
 
-  function handleSave() {
+function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
+  const [val, setVal] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const chartData = useMemo(
+    () => measurementsForType(measurements, type),
+    [measurements, type],
+  );
+  // Histórico do mais recente para o mais antigo.
+  const history = useMemo(() => [...chartData].reverse(), [chartData]);
+
+  async function handleSave() {
     const n = parseFloat(val);
-    if (isNaN(n) || n <= 0) return;
-    onSave(type, n);
-    setVal("");
+    if (!Number.isFinite(n) || n <= 0 || n > MAX_VALUE) {
+      setError(t.measureInvalidValue);
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    try {
+      await onSave(type, n);
+      setVal("");
+    } catch {
+      // Mantém o valor no input — o utilizador não perde o que escreveu.
+      setError(t.measureSaveFailed);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="card flex flex-col gap-3">
-      <p className="section-title" style={{ margin: 0 }}>{label}</p>
+      <p className="section-title" style={{ margin: 0 }}>{t[`measureType_${type}`]}</p>
       <div className="flex gap-3 items-center">
         <input
           className="field flex-1"
           type="number"
-          placeholder={placeholder}
+          placeholder={t.measureValuePlaceholder}
           value={val}
-          onChange={(e) => setVal(e.target.value)}
+          onChange={(e) => { setVal(e.target.value); setError(null); }}
+          style={error ? { borderColor: "var(--danger)" } : undefined}
         />
-        <button className="btn btn-primary px-5 py-2.5" onClick={handleSave}>
-          {saveLabel}
+        <button className="btn btn-primary px-5 py-2.5" onClick={handleSave} disabled={saving}>
+          {t.saveMeasure}
         </button>
       </div>
 
+      {error && (
+        <p className="text-xs" style={{ color: "var(--danger)", margin: 0 }}>
+          {error}
+        </p>
+      )}
+
       {chartData.length === 0 ? (
         <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
-          {noDataLabel}
+          {t.noMeasures}
         </p>
       ) : (
         <div style={{ width: "100%", height: 140 }}>
@@ -54,13 +82,41 @@ function MeasureTypeCard({ type, label, placeholder, saveLabel, noDataLabel, mea
           </ResponsiveContainer>
         </div>
       )}
+
+      {history.length > 0 && (
+        <div className="flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
+          {history.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-center justify-between text-sm"
+              style={{ padding: "8px 0" }}
+            >
+              <span style={{ color: "var(--muted)" }}>{m.dateLabel}</span>
+              <div className="flex items-center gap-3">
+                <span style={{ color: "var(--text)" }}>{m.value}</span>
+                <button
+                  onClick={() => onDelete(m.id)}
+                  aria-label={t.delete}
+                  title={t.delete}
+                  style={{ color: "var(--muted)", display: "flex" }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function MeasuresPage({ onBack }) {
-  const { t, measurements, addMeasurement } = useApp();
+  const { t, measurements, addMeasurement, deleteMeasurement } = useApp();
   const [activeGroup, setActiveGroup] = useState("general");
+
+  // Fallback caso activeGroup deixe de corresponder a um grupo (evita crash no .types).
+  const group = MEASURE_GROUPS.find((g) => g.key === activeGroup) ?? MEASURE_GROUPS[0];
 
   async function handleSave(type, value) {
     await addMeasurement({ id: uid(), date: todayISO(), type, value });
@@ -90,16 +146,14 @@ export default function MeasuresPage({ onBack }) {
           ))}
         </div>
 
-        {MEASURE_GROUPS.find((g) => g.key === activeGroup).types.map((m) => (
+        {group.types.map((m) => (
           <MeasureTypeCard
             key={m}
+            t={t}
             type={m}
-            label={t[`measureType_${m}`]}
-            placeholder={t.measureValuePlaceholder}
-            saveLabel={t.saveMeasure}
-            noDataLabel={t.noMeasures}
             measurements={measurements}
             onSave={handleSave}
+            onDelete={deleteMeasurement}
           />
         ))}
       </div>

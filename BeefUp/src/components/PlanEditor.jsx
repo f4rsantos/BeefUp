@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Plus, Trash2, Dumbbell, Moon } from "lucide-react";
-import { uid } from "../lib/planUtils";
+import { uid, todayISO } from "../lib/planUtils";
 
 export default function PlanEditor({
   plan,
@@ -39,7 +39,7 @@ export default function PlanEditor({
       id: plan?.id ?? uid(),
       name: name.trim(),
       days,
-      startDate: plan?.startDate ?? new Date().toISOString().slice(0, 10),
+      startDate: plan?.startDate ?? todayISO(),
     });
     onBack();
   }

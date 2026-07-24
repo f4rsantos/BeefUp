@@ -16,8 +16,20 @@ export function todaysPlanEntry(plan, sessions) {
   return plan.days[idx]
 }
 
+export function toLocalISO(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function sessionDay(session) {
+  if (!session?.date) return null
+  return session.date.length > 10 ? toLocalISO(new Date(session.date)) : session.date
+}
+
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  return toLocalISO(new Date())
 }
 
 export function nowISO() {
@@ -49,7 +61,7 @@ export function formatDuration(s) {
 // Build streak: count consecutive days (going backwards from today)
 // that have either a completed session OR are marked rest days in the active plan.
 export function computeStreak(sessions, plans, activePlanId) {
-  const sessionDates = new Set(sessions.map(s => s.date?.slice(0, 10)))
+  const sessionDates = new Set(sessions.map(sessionDay))
   const plan = plans.find(p => p.id === activePlanId)
 
   let streak = 0
@@ -59,7 +71,7 @@ export function computeStreak(sessions, plans, activePlanId) {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const iso = d.toISOString().slice(0, 10)
+    const iso = toLocalISO(d)
 
     const hasSession = sessionDates.has(iso)
     const isRestDay = plan ? isPlannedRestDay(plan, d) : false
@@ -87,14 +99,14 @@ function isPlannedRestDay(plan, date) {
 // Get which days of the current month are rest days or completed sessions
 export function getMonthActivity(year, month, sessions, plans, activePlanId) {
   const plan = plans.find(p => p.id === activePlanId)
-  const sessionDates = new Set(sessions.map(s => s.date?.slice(0, 10)))
+  const sessionDates = new Set(sessions.map(sessionDay))
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const result = {}
 
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d)
-    const iso = date.toISOString().slice(0, 10)
-    const isToday = iso === new Date().toISOString().slice(0, 10)
+    const iso = toLocalISO(date)
+    const isToday = iso === todayISO()
     const future = date > new Date()
 
     if (!future || isToday) {
@@ -123,7 +135,7 @@ function sessionReps(session) {
 }
 
 export function computeOverallStats(sessions) {
-  const daysTrained = new Set(sessions.map((s) => s.date?.slice(0, 10))).size
+  const daysTrained = new Set(sessions.map(sessionDay)).size
   const totalSessions = sessions.length
   const totalVolume = sessions.reduce((acc, s) => acc + sessionVolume(s), 0)
   const totalDuration = sessions.reduce((acc, s) => acc + (s.duration ?? 0), 0)
@@ -173,5 +185,5 @@ export function measurementsForType(measurements, type) {
   return measurements
     .filter((m) => m.type === type)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ dateLabel: m.date.slice(5), value: m.value }))
+    .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value }))
 }
