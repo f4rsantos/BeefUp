@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
+import { DEFAULT_STATS_LAYOUT, normalizeStatsLayout } from '../lib/statsLayout'
 import strings from '../strings'
 
 const AppContext = createContext(null)
@@ -19,6 +20,9 @@ export function AppProvider({ children }) {
   const [measurements, setMeasurements] = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
   const [pbConfig, setPbConfig] = useState(() => getLS('pbConfig', ['steps', null, null]))
+  const [statsLayout, setStatsLayoutState] = useState(() =>
+    normalizeStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT)),
+  )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
   const [clients, setClients] = useState([])
@@ -164,6 +168,11 @@ export function AppProvider({ children }) {
     setLS('pbConfig', config)
   }, [])
 
+  const setStatsLayout = useCallback((layout) => {
+    setStatsLayoutState(layout)
+    setLS('statsLayout', layout)
+  }, [])
+
   // Nutrition: food log
   const addFoodLog = useCallback(async (entry) => {
     await db.addFoodLog(entry)
@@ -233,6 +242,7 @@ export function AppProvider({ children }) {
     stepsMap, saveSteps,
     measurements, addMeasurement, deleteMeasurement,
     pbConfig, savePbConfig,
+    statsLayout, setStatsLayout,
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,

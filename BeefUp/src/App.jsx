@@ -4,7 +4,6 @@ import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
 import ExercisesPage from "./pages/ExercisesPage";
 import ProfilePage from "./pages/ProfilePage";
-import StatisticsPage from "./pages/StatisticsPage";
 import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
@@ -160,7 +159,6 @@ function AppInner() {
         {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
         {overlay === null && tab2 === "progress" && (
           <ProfilePage
-            onOpenStatistics={() => setOverlay("statistics")}
             onOpenMeasures={() => setOverlay("measures")}
             onViewHistory={() => setOverlay("history")}
           />
@@ -191,7 +189,6 @@ function AppInner() {
             initialWorkout={workoutSettingsWorkout}
           />
         )}
-        {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
 
         {/* Stays mounted while minimized: unmounting would drop the logged sets

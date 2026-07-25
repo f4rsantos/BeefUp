@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, nowISO, lastCompletedSets } from "../lib/planUtils";
+import { uid, nowISO, lastCompletedSets, epley } from "../lib/planUtils";
 import { resolveExercise } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
@@ -31,8 +31,6 @@ function buildExerciseEntry(ex, lastSets = []) {
     }),
   };
 }
-
-const epley = (w, r) => (parseFloat(w) || 0) * (1 + (parseInt(r) || 0) / 30);
 
 export default function ActiveWorkout({ onEnd, onMinimize }) {
   const { t, lang, activeWorkout, workouts, addSession, sessions } = useApp();

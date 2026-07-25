@@ -302,7 +302,7 @@ export default function WorkoutPage({
       <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ padding: "40px 20px 16px" }}>
         {/* Header com ícones à direita */}
         <div className="flex items-center justify-between" style={{ marginBottom: 40 }}>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
+          <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
             {t.homeTitle}
           </h1>
           <div className="flex items-center" style={{ gap: 16 }}>

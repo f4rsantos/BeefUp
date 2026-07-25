@@ -25,6 +25,7 @@ function lowerFirst(str) {
 const BODY_PART_LABELS = {
   back: 'Costas',
   chest: 'Peito',
+  legs: 'Pernas',
   'lower legs': 'Pernas inferiores',
   shoulders: 'Ombros',
   'upper arms': 'Braços',
