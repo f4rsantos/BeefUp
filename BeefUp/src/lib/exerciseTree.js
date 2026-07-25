@@ -24,6 +24,7 @@ function lowerFirst(str) {
 // PT labels for body_part / muscleGroup (broad regions).
 const BODY_PART_LABELS = {
   back: 'Costas',
+  cardio: 'Cardio',
   chest: 'Peito',
   legs: 'Pernas',
   'lower legs': 'Pernas inferiores',
@@ -39,6 +40,7 @@ const MUSCLE_LABELS = {
   back: 'Costas',
   biceps: 'Bíceps',
   calves: 'Gémeos',
+  cardio: 'Cardio',
   chest: 'Peito',
   delts: 'Deltoides',
   forearms: 'Antebraços',
@@ -67,6 +69,7 @@ export const BODY_PART_ACCENT = {
   'upper legs': '#14b8a6',
   'lower legs': '#14b8a6',
   waist: '#eab308',
+  cardio: '#ec4899',
 }
 
 export function getMuscleLabel(muscle, lang) {

@@ -325,20 +325,22 @@ export default function WorkoutPage({
           <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
             {t.homeTitle}
           </h1>
-          <div className="flex items-center" style={{ gap: 16 }}>
+          <div className="flex items-center" style={{ gap: 8 }}>
             <button
               aria-label="history"
+              title={t.history}
               onClick={onViewHistory}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}
+              className="btn btn-ghost p-2"
             >
-              <History size={20} />
+              <History size={16} />
             </button>
             <button
               aria-label="exercises"
+              title={t.exercisesTitle}
               onClick={onViewExercises}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}
+              className="btn btn-ghost p-2"
             >
-              <Dumbbell size={20} />
+              <Dumbbell size={16} />
             </button>
           </div>
         </div>

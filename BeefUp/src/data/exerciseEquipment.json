@@ -6,5 +6,8 @@
   { "id": "machine", "name": "Machine", "namePt": "Máquina" },
   { "id": "smith_machine", "name": "Smith machine", "namePt": "Máquina smith" },
   { "id": "kettlebell", "name": "Kettlebell", "namePt": "Kettlebell" },
-  { "id": "band", "name": "Band", "namePt": "Elástico" }
+  { "id": "band", "name": "Band", "namePt": "Elástico" },
+  { "id": "rings", "name": "Rings", "namePt": "Argolas" },
+  { "id": "medicine_ball", "name": "Medicine ball", "namePt": "Bola medicinal" },
+  { "id": "sandbag", "name": "Sandbag", "namePt": "Saco de areia" }
 ]

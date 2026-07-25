@@ -15,7 +15,7 @@ function makeSet(weight, reps) {
 export function buildDemoPreset() {
   const upperA = resolveExercise(buildExerciseRef('bench_press', 'barbell', 'flat'))
   const upperB = resolveExercise(buildExerciseRef('overhead_press', 'barbell', 'standing'))
-  const upperC = resolveExercise(buildExerciseRef('tricep_pushdown', 'cable'))
+  const upperC = resolveExercise(buildExerciseRef('tricep_extension', 'cable', 'lying'))
   const lowerA = resolveExercise(buildExerciseRef('squat', 'barbell', 'back'))
   const lowerB = resolveExercise(buildExerciseRef('deadlift', 'barbell', 'romanian'))
   const lowerC = resolveExercise(buildExerciseRef('calf_raise', 'bodyweight', 'standing'))
