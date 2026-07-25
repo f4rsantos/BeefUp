@@ -5,6 +5,7 @@ import { useApp } from "../context/AppContext";
 import {  computeStreak,  computeBestStreak,  getMonthActivity,  aggregateSessionsByWeek,  computeOverallStats,  computePersonalRecords,  computeMuscleGroupDistribution,  computeMuscleFatigue,  todayISO,  toLocalISO,} from "../lib/planUtils";
 import StepsModal from "../components/StepsModal";
 import StatTile from "../components/StatTile";
+import { BODY_PART_ACCENT } from "../lib/exerciseTree";
 
 function dayOffsetISO(daysBack) {
   const date = new Date();
@@ -80,7 +81,6 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
     streakCalendar: t.statsBlock_streakCalendar,
     steps: t.statsBlock_steps,
     tiles: t.statsBlock_tiles,
-    streak: t.statsBlock_streak,
     weeklyProgress: t.weeklyProgress,
     muscleDistribution: t.muscleDistribution,
     muscleFatigue: t.muscleFatigue,
@@ -162,6 +162,9 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
                 </span>
                 <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
                   {lang === "pt" ? "Série atual" : "Current streak"}
+                </p>
+                <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
+                  {t.bestStreak}: <span style={{ color: "var(--text)", fontWeight: 700 }}>{bestStreak}</span>
                 </p>
               </div>
 
@@ -245,27 +248,8 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
         return (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {items.map((item, i) => (
-              <StatTile key={i} icon={item.icon} label={item.label} value={item.value} unit={item.unit} gradient={i === 0} />
+              <StatTile key={i} icon={item.icon} label={item.label} value={item.value} unit={item.unit} />
             ))}
-          </div>
-        );
-      case "streak":
-        return (
-          <div className="card">
-            <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <div>
-                <span className="text-4xl font-black" style={{ color: "var(--accent)", lineHeight: 1 }}>
-                  {streak}
-                </span>
-                <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>{t.streak}</p>
-              </div>
-              <div>
-                <span className="text-4xl font-black" style={{ color: "var(--text)", lineHeight: 1 }}>
-                  {bestStreak}
-                </span>
-                <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>{t.bestStreak}</p>
-              </div>
-            </div>
           </div>
         );
       case "weeklyProgress":
@@ -318,7 +302,7 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
                       <div
                         style={{
                           width: `${(d.count / maxDistCount) * 100}%`,
-                          background: "var(--accent)",
+                          background: BODY_PART_ACCENT[d.bodyPart] ?? "var(--accent)",
                           borderRadius: 6,
                           height: 8,
                         }}
@@ -430,11 +414,12 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
           {t.profileTitle}
         </h1>
         <button
-          className={`btn ${editMode ? "btn-primary" : "btn-ghost"} text-xs px-3 py-2 flex items-center gap-1`}
+          aria-label={editMode ? t.doneEditing : t.customizeStats}
+          title={editMode ? t.doneEditing : t.customizeStats}
+          className={`btn ${editMode ? "btn-primary" : "btn-ghost"} p-2`}
           onClick={() => (editMode ? setEditMode(false) : enterEditMode())}
         >
-          <SlidersHorizontal size={14} />
-          {editMode ? t.doneEditing : t.customizeStats}
+          <SlidersHorizontal size={16} />
         </button>
       </div>
 
@@ -456,6 +441,26 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
               {t.history}
             </button>
           )}
+        </div>
+
+        <div className="hero">
+          <div className="flex items-center justify-between" style={{ position: "relative" }}>
+            <div>
+              <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>
+                {lang === "pt" ? "Sequência atual" : "Current streak"}
+              </p>
+              <p className="display" style={{ fontSize: 40, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
+                {streak}
+                <span style={{ fontSize: 16, fontWeight: 700, opacity: 0.85, marginLeft: 6 }}>
+                  {lang === "pt" ? "dias" : "days"}
+                </span>
+              </p>
+              <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
+                {lang === "pt" ? `Melhor: ${bestStreak} dias` : `Best: ${bestStreak} days`}
+              </p>
+            </div>
+            <Flame size={40} style={{ opacity: 0.9 }} fill="currentColor" />
+          </div>
         </div>
 
         {editMode ? (

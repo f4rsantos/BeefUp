@@ -19,7 +19,6 @@ export function AppProvider({ children }) {
   const [stepsMap, setStepsMap] = useState({})
   const [measurements, setMeasurements] = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
-  const [pbConfig, setPbConfig] = useState(() => getLS('pbConfig', ['steps', null, null]))
   const [statsLayout, setStatsLayoutState] = useState(() =>
     normalizeStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT)),
   )
@@ -162,12 +161,6 @@ export function AppProvider({ children }) {
     setMeasurements(prev => prev.filter(m => m.id !== id))
   }, [])
 
-  // PBs
-  const savePbConfig = useCallback((config) => {
-    setPbConfig(config)
-    setLS('pbConfig', config)
-  }, [])
-
   const setStatsLayout = useCallback((layout) => {
     setStatsLayoutState(layout)
     setLS('statsLayout', layout)
@@ -241,7 +234,6 @@ export function AppProvider({ children }) {
     sessions, addSession, deleteSession,
     stepsMap, saveSteps,
     measurements, addMeasurement, deleteMeasurement,
-    pbConfig, savePbConfig,
     statsLayout, setStatsLayout,
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,

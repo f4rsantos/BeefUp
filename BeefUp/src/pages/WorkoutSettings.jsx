@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import WorkoutEditor from "../components/WorkoutEditor";
 
@@ -29,13 +29,13 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-3 px-5 pt-10 pb-6">
-        <button className="btn-back" onClick={onBack}>
-          <ArrowLeft size={18} style={{ color: "var(--text)" }} />
+      <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
+        <button className="btn-back" onClick={onBack} aria-label={t.back}>
+          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
         </button>
-        <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
           {t.settingsTitle}
-        </span>
+        </h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-3 scrollbar-hide">
@@ -46,7 +46,7 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
                 {lang === "pt" ? w.namePt || w.name : w.name}
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                {w.exercises?.length ?? 0} exercícios
+                {w.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
               </p>
             </div>
             <div className="flex items-center gap-2">

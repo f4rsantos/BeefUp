@@ -288,7 +288,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       {workoutName && (
         <p
           className="text-center text-lg font-semibold mt-1 mb-2"
-          style={{ color: "var(--fg)" }}
+          style={{ color: "var(--text)" }}
         >
           {workoutName}
         </p>

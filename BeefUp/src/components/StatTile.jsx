@@ -20,7 +20,7 @@ export default function StatTile({
         padding: 14,
         cursor: onClick ? "pointer" : "default",
         ...(gradient
-          ? { background: "var(--grad-accent)", border: "none", color: "#fff", boxShadow: "var(--shadow-glow)" }
+          ? { background: "var(--grad-accent)", border: "none", color: "#fff" }
           : {}),
       }}
     >

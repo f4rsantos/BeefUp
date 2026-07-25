@@ -324,7 +324,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                 minWidth: '100%',
                 height: '100%',
                 scrollSnapAlign: 'start',
-                background: 'var(--card-inner)',
+                background: 'var(--surface2)',
                 display: 'flex',
                 flexDirection: 'column',
                 flexShrink: 0,

@@ -3,7 +3,7 @@ import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, C
 import { useApp } from "../context/AppContext";
 import { todaysPlanEntry } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
-import { resolveExercise } from "../lib/exerciseTree";
+import { resolveExercise, BODY_PART_ACCENT } from "../lib/exerciseTree";
 import { encodeWorkoutShare } from "../lib/workoutShare";
 import HumanBody from "../components/HumanBody";
 
@@ -14,6 +14,26 @@ function formatLastDate(iso, lang) {
     month: "2-digit",
     year: "numeric",
   });
+}
+
+const SPACE = { sm: 8, md: 16, lg: 32 };
+
+function workoutAccentColors(workout) {
+  const counts = {};
+  workout.exercises?.forEach((ref) => {
+    const ex = resolveExercise(ref);
+    if (!ex?.bodyPart) return;
+    counts[ex.bodyPart] = (counts[ex.bodyPart] || 0) + 1;
+  });
+
+  const colors = [];
+  Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([bodyPart]) => {
+      const color = BODY_PART_ACCENT[bodyPart];
+      if (color && !colors.includes(color)) colors.push(color);
+    });
+  return colors;
 }
 
 
@@ -202,7 +222,7 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDele
   );
 }
 
-const MINI_SCALE = 0.34;
+const MINI_SCALE = 0.5;
 
 export default function WorkoutPage({
   onStartWorkout,
@@ -301,7 +321,7 @@ export default function WorkoutPage({
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ padding: "40px 20px 16px" }}>
         {/* Header com ícones à direita */}
-        <div className="flex items-center justify-between" style={{ marginBottom: 40 }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: SPACE.lg }}>
           <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
             {t.homeTitle}
           </h1>
@@ -325,14 +345,14 @@ export default function WorkoutPage({
 
         {/* ── Today's hero ── */}
         {!activePlan ? (
-          <div className="card">
+          <div className="card" style={{ marginBottom: SPACE.md }}>
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noPlan}</p>
             <button className="btn btn-ghost mt-3 w-full py-2.5 text-sm" onClick={onManageWorkouts}>
               {t.choosePlan}
             </button>
           </div>
         ) : todayEntry?.type === "rest" ? (
-          <div className="hero" style={{ background: "var(--grad-energy)" }}>
+          <div className="hero" style={{ background: "var(--grad-energy)", marginBottom: SPACE.md }}>
             <div className="flex items-center justify-between" style={{ position: "relative" }}>
               <div>
                 <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
@@ -345,7 +365,7 @@ export default function WorkoutPage({
             </div>
           </div>
         ) : todayWorkout ? (
-          <div className="hero">
+          <div className="hero" style={{ marginBottom: SPACE.md }}>
             <div style={{ position: "relative" }}>
               <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
               <p className="display" style={{ fontSize: 28, fontWeight: 900, marginTop: 2, lineHeight: 1.1 }}>
@@ -364,14 +384,14 @@ export default function WorkoutPage({
             </div>
           </div>
         ) : (
-          <div className="card">
+          <div className="card" style={{ marginBottom: SPACE.md }}>
             <p className="text-xs mb-0.5" style={{ color: "var(--muted)" }}>{activePlan.name}</p>
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noWorkoutScheduled}</p>
           </div>
         )}
 
         {/* ── Weekly muscle heatmap (signature figure) ── */}
-        <div className="card card-elevated">
+        <div className="card card-elevated" style={{ marginBottom: SPACE.md }}>
           <div className="section-header">
             <p className="section-title" style={{ marginBottom: 0 }}>
               {lang === "pt" ? "Músculos esta semana" : "This week's muscles"}
@@ -385,7 +405,16 @@ export default function WorkoutPage({
               {lang === "pt" ? "Sem treinos esta semana ainda." : "No workouts logged this week yet."}
             </p>
           ) : (
-            <div className="flex justify-center" style={{ gap: 8, overflow: "hidden" }}>
+            <div
+              className="flex justify-center"
+              style={{
+                gap: 24,
+                overflow: "hidden",
+                padding: "12px 0 4px",
+                background: "radial-gradient(60% 80% at 50% 20%, var(--accent-soft), transparent 70%)",
+                borderRadius: 16,
+              }}
+            >
               {["front", "back"].map((view) => (
                 <div key={view} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>
@@ -403,8 +432,8 @@ export default function WorkoutPage({
         </div>
         
         {/* Plano ativo */}
-        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-          <p className="text-sm font-semibold" style={{ color: "var(--muted)", marginBottom: 16 }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>
             {lang === "pt" ? "Plano Atual" : "Current Plan"}
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
@@ -419,7 +448,7 @@ export default function WorkoutPage({
         </div>
         <button
           className="card w-full flex items-center justify-between text-left"
-          style={{ cursor: "pointer", marginBottom: 40 }}
+          style={{ cursor: "pointer", marginBottom: SPACE.lg }}
           onClick={activePlan ? onViewPlanDetails : onManagePlans}
         >
           {activePlan ? (
@@ -440,8 +469,8 @@ export default function WorkoutPage({
         </button>
 
         {/* Outros Treinos */}
-        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-          <p className="text-sm font-bold" style={{ color: "var(--text)", marginBottom: 20 }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
+          <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
           {lang === "pt" ? "Os meus Treinos" : "My Workouts"} ({workouts.length})
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
@@ -464,7 +493,7 @@ export default function WorkoutPage({
 
         <div
           className="grid"
-          style={{ gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}
+          style={{ gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: SPACE.lg }}
         >
           {workouts.map((w) => {
             const name = lang === "pt" ? w.namePt || w.name : w.name;
@@ -478,6 +507,7 @@ export default function WorkoutPage({
               .filter(Boolean)
               .join(", ");
             const extraCount = exerciseCount - 3;
+            const accentColors = workoutAccentColors(w);
             return (
               <div
                 key={w.id}
@@ -490,6 +520,20 @@ export default function WorkoutPage({
                   })
                 }
               >
+                {accentColors.length > 0 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 4,
+                      background: accentColors.length === 1
+                        ? accentColors[0]
+                        : `linear-gradient(90deg, ${accentColors.join(", ")})`,
+                    }}
+                  />
+                )}
                 <div className="flex items-start justify-between" style={{ marginBottom: 8 }}>
                   <p className="text-base font-bold truncate" style={{ color: "var(--text)", minWidth: 0 }}>
                     {name}

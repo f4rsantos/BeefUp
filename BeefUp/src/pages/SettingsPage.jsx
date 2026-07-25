@@ -15,7 +15,6 @@ export default function SettingsPage() {
     addSession,
     saveSteps,
     setActivePlan,
-    savePbConfig,
     resetOnboarding,
   } = useApp();
   const [loadingDemo, setLoadingDemo] = useState(false);
@@ -39,7 +38,6 @@ export default function SettingsPage() {
     );
     await addSession(demo.session);
     await setActivePlan(demo.plan.id);
-    savePbConfig(demo.pbConfig);
 
     setLoadingDemo(false);
     setDemoLoaded(true);

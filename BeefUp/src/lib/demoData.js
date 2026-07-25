@@ -79,6 +79,5 @@ export function buildDemoPreset() {
     plan,
     session,
     steps,
-    pbConfig: ['steps', 'bench_press', 'squat'],
   }
 }

@@ -115,9 +115,6 @@ const strings = {
     stepsPlaceholder: 'ex. 8500',
     saveSteps: 'Guardar',
 
-    // PB edit modal
-    choosePBs: 'Escolher recordes a mostrar',
-    pbSteps: 'Passos diários',
 
     // Profile
     profileTitle: 'Perfil',
@@ -408,9 +405,6 @@ const strings = {
     stepsToday: "Today's steps",
     stepsPlaceholder: 'e.g. 8500',
     saveSteps: 'Save',
-
-    choosePBs: 'Choose records to display',
-    pbSteps: 'Daily steps',
 
     // Profile
     profileTitle: 'Profile',

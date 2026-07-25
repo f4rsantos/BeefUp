@@ -2,7 +2,6 @@ export const DEFAULT_STATS_LAYOUT = [
   { key: 'streakCalendar', enabled: true },
   { key: 'steps', enabled: true },
   { key: 'tiles', enabled: true },
-  { key: 'streak', enabled: true },
   { key: 'weeklyProgress', enabled: true },
   { key: 'muscleDistribution', enabled: true },
   { key: 'muscleFatigue', enabled: true },

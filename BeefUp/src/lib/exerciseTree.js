@@ -57,6 +57,18 @@ export function getBodyPartLabel(bodyPart, lang) {
   return BODY_PART_LABELS[bodyPart] ?? bodyPart
 }
 
+// One accent color per catalog body part
+export const BODY_PART_ACCENT = {
+  chest: '#16a34a',
+  back: '#0ea5e9',
+  shoulders: '#a855f7',
+  'upper arms': '#f97316',
+  legs: '#14b8a6',
+  'upper legs': '#14b8a6',
+  'lower legs': '#14b8a6',
+  waist: '#eab308',
+}
+
 export function getMuscleLabel(muscle, lang) {
   if (lang !== 'pt') return muscle
   return MUSCLE_LABELS[muscle] ?? muscle

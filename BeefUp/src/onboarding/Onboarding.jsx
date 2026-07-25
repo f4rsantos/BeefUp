@@ -17,7 +17,7 @@ export default function Onboarding() {
   const [mode, setMode] = useState(null);
   const [idx, setIdx] = useState(0);
   const [focus, setFocus] = useState("both");
-  const [measures, setMeasures] = useState({ height: "", weight: "", chest: "", arms: "", legs: "", belly: "" });
+  const [measures, setMeasures] = useState({ height: "", weight: "", chest: "", biceps: "", quadriceps: "", waist: "" });
   const [calc, setCalc] = useState({ sex: "male", age: 28, height: 175, weight: 75, activity: 1.55, obj: 0 });
 
   if (mode === null) {
@@ -112,7 +112,7 @@ export default function Onboarding() {
           <h1 className="ob-title">{t.obMeasuresTitle}</h1>
           <p className="ob-sub">{t.obMeasuresSub}</p>
           <div className="grid grid-cols-2 gap-3">
-            {["height", "weight", "chest", "arms", "legs", "belly"].map((m) => (
+            {["height", "weight", "chest", "biceps", "quadriceps", "waist"].map((m) => (
               <div key={m}>
                 <label className="section-title">{t[`measureType_${m}`]}</label>
                 <input
