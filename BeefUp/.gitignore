@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.claude
+.codex
+
+/graphify-out
+CLAUDE.md

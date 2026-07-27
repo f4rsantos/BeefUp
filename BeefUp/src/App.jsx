@@ -2,46 +2,113 @@ import { AppProvider, useApp } from "./context/AppContext";
 import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
+import ExercisesPage from "./pages/ExercisesPage";
 import ProfilePage from "./pages/ProfilePage";
-import StatisticsPage from "./pages/StatisticsPage";
 import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
 import PlanSettings from "./pages/PlanSettings";
-import { useState } from "react";
-import { Dumbbell, History, Settings, User } from "lucide-react";
+import WorkoutSettings from "./pages/WorkoutSettings";
+import NutritionPage from "./pages/NutritionPage";
+import Onboarding from "./onboarding/Onboarding";
+import HelperDashboard from "./dashboard/HelperDashboard";
+import MiniWorkoutBar from "./components/MiniWorkoutBar";
+import ConfirmModal from "./components/ConfirmModal";
+import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
+import { todaysPlanEntry, uid } from "./lib/planUtils";
+import { decodeWorkoutShare } from "./lib/workoutShare";
+import { useState, useEffect } from "react";
 
 const TABS = [
   { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
-  { id: "profile", Icon: User, labelPt: "Perfil", labelEn: "Profile" },
-  {
-    id: "settings",
-    Icon: Settings,
-    labelPt: "Definições",
-    labelEn: "Settings",
-  },
+  { id: "nutrition", Icon: Apple, labelPt: "Nutrição", labelEn: "Nutrition" },
+  { id: "progress", Icon: TrendingUp, labelPt: "Progresso", labelEn: "Progress" },
+  { id: "settings", Icon: Settings, labelPt: "Definições", labelEn: "Settings" },
 ];
 
 function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
-  const [overlay, setOverlay] = useState(null); // 'active' | 'pickWorkout' | 'planSettings' | null
-  const { setActiveWorkout, lang } = useApp();
+  const [overlay, setOverlay] = useState(null); // 'pickWorkout' | 'planSettings' | ... | null
+  const [workoutMinimized, setWorkoutMinimized] = useState(false);
+  const [planSettingsPlanId, setPlanSettingsPlanId] = useState(null);
+  const [workoutSettingsView, setWorkoutSettingsView] = useState("main");
+  const [workoutSettingsWorkout, setWorkoutSettingsWorkout] = useState(null);
+  const [incomingShare, setIncomingShare] = useState(() => {
+    const code = new URLSearchParams(window.location.search).get("w");
+    return code ? decodeWorkoutShare(code) : null;
+  });
+  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t, saveWorkout } = useApp();
+  const isDesktop = useIsDesktop();
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("w")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
+  if (!onboarded) return <Onboarding />;
+
+  if (appMode === "helper") {
+    if (isDesktop) return <HelperDashboard />;
+    return (
+      <div style={{ height: "100%", display: "grid", placeItems: "center", padding: 32, textAlign: "center", background: "var(--bg)" }}>
+        <p style={{ color: "var(--muted)", maxWidth: 320 }}>{t.obDesktopOnly}</p>
+      </div>
+    );
+  }
+
+  const showGym = focus !== "nutrition";
+  const showNutrition = focus !== "gym";
+  let tab2 = tab;
+  if (tab === "nutrition" && !showNutrition) tab2 = "home";
+  if (tab === "home" && !showGym) tab2 = "nutrition";
+
+  // A workout already running wins: starting another would swap activeWorkout
+  // under the still-mounted ActiveWorkout, which keeps the old exercises (its
+  // useState initializer only runs on mount). Re-open the running one instead.
   function goActive(workoutInfo) {
-    setActiveWorkout(workoutInfo);
-    setOverlay("active");
+    if (activeWorkout) {
+      setWorkoutMinimized(false);
+      setOverlay(null);
+      return;
+    }
+    setActiveWorkout({ ...workoutInfo, startedAt: Date.now() });
+    setWorkoutMinimized(false);
+    setOverlay(null);
   }
 
   function endWorkout() {
     setActiveWorkout(null);
+    setWorkoutMinimized(false);
     setOverlay(null);
   }
 
   function closeOverlay() {
+    setPlanSettingsPlanId(null);
+    setWorkoutSettingsView("main");
+    setWorkoutSettingsWorkout(null);
     setOverlay(null);
   }
 
-  const showNav = overlay === null;
+  // Start FAB: jump straight into today's scheduled workout if there is one,
+  // otherwise open the workout picker. Only reachable with no workout running the FAB is hidden while one is.
+  function handleStart() {
+    const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
+    const entry = todaysPlanEntry(activePlan, sessions);
+    if (entry?.type === "workout") {
+      const w = workouts.find((x) => x.id === entry.workoutId);
+      if (w) {
+        goActive({
+          workoutId: w.id,
+          workoutName: lang === "pt" ? w.namePt || w.name : w.name,
+        });
+        return;
+      }
+    }
+    setOverlay("pickWorkout");
+  }
+
+  const workoutExpanded = activeWorkout !== null && !workoutMinimized;
+  const showNav = overlay === null && !workoutExpanded;
 
   return (
     <div
@@ -56,28 +123,51 @@ function AppInner() {
         background: "var(--bg)",
       }}
     >
-      {/* Main content area */}
       <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-        {/* Tab views */}
-        {overlay === null && tab === "home" && (
+        {overlay === null && tab2 === "home" && showGym && (
           <WorkoutPage
             onStartWorkout={goActive}
             onPickWorkout={() => setOverlay("pickWorkout")}
-            onManageWorkouts={() => setOverlay("planSettings")}
-            onViewHistory={() => setTab("history")}
+            onManagePlans={() => {
+              setPlanSettingsPlanId(null);
+              setOverlay("planSettings");
+            }}
+            onCreateWorkout={() => {
+              setWorkoutSettingsView("editWorkout");
+              setWorkoutSettingsWorkout(null);
+              setOverlay("workoutSettings");
+            }}
+            onManageWorkouts={() => {
+              setWorkoutSettingsView("main");
+              setPlanSettingsPlanId(null);
+              setWorkoutSettingsWorkout(null);
+              setOverlay("workoutSettings");
+            }}
+            onEditWorkout={(workout) => {
+              setWorkoutSettingsWorkout(workout);
+              setWorkoutSettingsView("editWorkout");
+              setOverlay("workoutSettings");
+            }}
+            onViewPlanDetails={() => {
+              setPlanSettingsPlanId(activePlanId);
+              setOverlay("planSettings");
+            }}
+            onViewHistory={() => setOverlay("history")}
+            onViewExercises={() => setOverlay("exercises")}
           />
         )}
-        {overlay === null && tab === "history" && <HistoryPage />}
-        {overlay === null && tab === "profile" && (
+        {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
+        {overlay === null && tab2 === "progress" && (
           <ProfilePage
-            onOpenStatistics={() => setOverlay("statistics")}
             onOpenMeasures={() => setOverlay("measures")}
+            onViewHistory={() => setOverlay("history")}
           />
         )}
-        {overlay === null && tab === "settings" && <SettingsPage />}
+        {overlay === null && tab2 === "settings" && <SettingsPage />}
 
         {/* Overlays (full-screen, cover nav) */}
-        {overlay === "active" && <ActiveWorkout onEnd={endWorkout} />}
+        {overlay === "history" && <HistoryPage onBack={closeOverlay} />}
+        {overlay === "exercises" && <ExercisesPage onBack={closeOverlay} />}
         {overlay === "pickWorkout" && (
           <WorkoutPicker
             onSelect={(w) =>
@@ -89,18 +179,92 @@ function AppInner() {
             onBack={closeOverlay}
           />
         )}
-        {overlay === "planSettings" && <PlanSettings onBack={closeOverlay} />}
-        {overlay === "statistics" && <StatisticsPage onBack={closeOverlay} />}
+        {overlay === "planSettings" && (
+          <PlanSettings onBack={closeOverlay} initialPlanId={planSettingsPlanId} />
+        )}
+        {overlay === "workoutSettings" && (
+          <WorkoutSettings
+            onBack={closeOverlay}
+            initialView={workoutSettingsView}
+            initialWorkout={workoutSettingsWorkout}
+          />
+        )}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
+
+        {/* Stays mounted while minimized: unmounting would drop the logged sets
+            and restart the clock. Hidden with CSS instead. */}
+        {activeWorkout && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 50,
+              background: "var(--bg)",
+              display: workoutMinimized ? "none" : "block",
+            }}
+          >
+            <ActiveWorkout
+              key={activeWorkout.startedAt}
+              onEnd={endWorkout}
+              onMinimize={() => setWorkoutMinimized(true)}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Bottom nav — hidden during active workout */}
+      {activeWorkout && workoutMinimized && overlay === null && (
+        <MiniWorkoutBar
+          startedAt={activeWorkout.startedAt}
+          workoutName={activeWorkout.workoutName}
+          onExpand={() => setWorkoutMinimized(false)}
+          label={t.startWorkout}
+        />
+      )}
+
+      {incomingShare && (
+        <ConfirmModal
+          title={t.importWorkoutTitle}
+          message={`${lang === "pt" ? incomingShare.namePt : incomingShare.name} — ${incomingShare.exercises.length} ${t.exercises}`}
+          cancelLabel={t.cancel}
+          confirmLabel={t.importWorkout}
+          onCancel={() => setIncomingShare(null)}
+          onConfirm={async () => {
+            await saveWorkout({ id: uid(), ...incomingShare });
+            setIncomingShare(null);
+          }}
+        />
+      )}
+
+      {/* Bottom nav — hidden during overlays */}
       {showNav && (
         <nav className="bottom-nav">
-          {TABS.map(({ id, Icon, labelPt, labelEn }) => (
+          {TABS.slice(0, 2)
+            .filter(({ id }) => (id === "home" ? showGym : id === "nutrition" ? showNutrition : true))
+            .map(({ id, Icon, labelPt, labelEn }) => (
+              <button
+                key={id}
+                className={`nav-tab ${tab2 === id ? "active" : ""}`}
+                onClick={() => setTab(id)}
+              >
+                <Icon size={22} />
+                <span>{lang === "pt" ? labelPt : labelEn}</span>
+              </button>
+            ))}
+
+          {showGym && !activeWorkout && (
+            <button
+              className="nav-fab"
+              onClick={handleStart}
+              aria-label={lang === "pt" ? "Iniciar treino" : "Start workout"}
+            >
+              <Play size={26} fill="currentColor" />
+            </button>
+          )}
+
+          {TABS.slice(2).map(({ id, Icon, labelPt, labelEn }) => (
             <button
               key={id}
-              className={tab === id ? "active" : ""}
+              className={`nav-tab ${tab2 === id ? "active" : ""}`}
               onClick={() => setTab(id)}
             >
               <Icon size={22} />
@@ -111,6 +275,19 @@ function AppInner() {
       )}
     </div>
   );
+}
+
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 900px)").matches : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 900px)");
+    const fn = (e) => setDesktop(e.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+  return desktop;
 }
 
 export default function App() {

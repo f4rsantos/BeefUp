@@ -1,0 +1,110 @@
+.ob-root {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.ob-frame {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 48px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.ob-modes {
+  flex: 1;
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  align-content: center;
+}
+
+.ob-mode {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 28px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  min-height: 140px;
+}
+.ob-mode:hover { transform: translateY(-2px); border-color: var(--accent); }
+.ob-mode--start { background: var(--grad-hero, var(--surface)); color: #fff; }
+.ob-mode--start .ob-mode-desc { color: rgba(255, 255, 255, 0.85); }
+
+.ob-mode-title { font-size: 22px; font-weight: 900; }
+.ob-mode-desc { font-size: 14px; color: var(--muted); }
+.ob-mode--start .ob-mode-title { font-size: 32px; }
+
+.ob-mode--coach { display: none; }
+
+@media (min-width: 700px) {
+  .ob-modes {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr;
+    height: 100%;
+    max-height: 640px;
+  }
+  .ob-mode--start { grid-column: 1; }
+  .ob-mode--coach { display: flex; grid-column: 2; }
+}
+
+.ob-pref-group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface2);
+}
+.ob-pref-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ob-pref-btn.active { background: var(--accent); color: #fff; }
+
+.ob-title { font-size: 26px; font-weight: 900; color: var(--text); }
+.ob-sub { font-size: 14px; color: var(--muted); margin-top: -8px; }
+.ob-spacer { flex: 1; }
+
+.ob-explainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px;
+}
+.ob-explainer-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--grad-accent, var(--accent));
+  color: #fff;
+}

@@ -1,5 +1,5 @@
 const DB_NAME = 'beefup'
-const DB_VERSION = 2
+const DB_VERSION = 4
 
 const STORES = {
   workouts: 'workouts',       // custom workout definitions
@@ -8,6 +8,10 @@ const STORES = {
   steps: 'steps',             // daily step entries { date, count }
   settings: 'settings',       // key/value app settings
   measurements: 'measurements', // body measurement entries { id, date, weight }
+  foods: 'foods',             // custom/cached food items { id, name, namePt, kcal, protein, carbs, fat, serving }
+  foodLog: 'foodLog',         // diary entries { id, date, meal, name, qty, kcal, protein, carbs, fat }
+  water: 'water',             // daily water { date, ml }
+  clients: 'clients',
 }
 
 export { STORES }
@@ -37,6 +41,19 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORES.measurements)) {
         const m = db.createObjectStore(STORES.measurements, { keyPath: 'id' })
         m.createIndex('date', 'date', { unique: false })
+      }
+      if (!db.objectStoreNames.contains(STORES.foods)) {
+        db.createObjectStore(STORES.foods, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(STORES.foodLog)) {
+        const f = db.createObjectStore(STORES.foodLog, { keyPath: 'id' })
+        f.createIndex('date', 'date', { unique: false })
+      }
+      if (!db.objectStoreNames.contains(STORES.water)) {
+        db.createObjectStore(STORES.water, { keyPath: 'date' })
+      }
+      if (!db.objectStoreNames.contains(STORES.clients)) {
+        db.createObjectStore(STORES.clients, { keyPath: 'id' })
       }
     }
     req.onsuccess = e => resolve(e.target.result)
@@ -99,4 +116,22 @@ export const db = {
   // Measurements helpers
   addMeasurement: (entry) => tx(STORES.measurements, 'readwrite', s => s.put(entry)),
   getAllMeasurements: () => tx(STORES.measurements, 'readonly', s => s.getAll()),
+  deleteMeasurement: (id) => tx(STORES.measurements, 'readwrite', s => s.delete(id)),
+
+  // Custom foods helpers
+  saveFood: (food) => tx(STORES.foods, 'readwrite', s => s.put(food)),
+  getAllFoods: () => tx(STORES.foods, 'readonly', s => s.getAll()),
+
+  // Food log (diary) helpers
+  addFoodLog: (entry) => tx(STORES.foodLog, 'readwrite', s => s.put(entry)),
+  removeFoodLog: (id) => tx(STORES.foodLog, 'readwrite', s => s.delete(id)),
+  getAllFoodLog: () => tx(STORES.foodLog, 'readonly', s => s.getAll()),
+
+  // Water helpers
+  setWater: (date, ml) => tx(STORES.water, 'readwrite', s => s.put({ date, ml })),
+  getAllWater: () => tx(STORES.water, 'readonly', s => s.getAll()),
+
+  getAllClients: () => tx(STORES.clients, 'readonly', s => s.getAll()),
+  saveClient: (client) => tx(STORES.clients, 'readwrite', s => s.put(client)),
+  removeClient: (id) => tx(STORES.clients, 'readwrite', s => s.delete(id)),
 }
