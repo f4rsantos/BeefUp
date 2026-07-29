@@ -7,6 +7,20 @@ import strings from '../strings'
 
 const AppContext = createContext(null)
 
+function upsertById(list, item) {
+  const idx = list.findIndex((x) => x.id === item.id)
+  if (idx >= 0) {
+    const next = [...list]
+    next[idx] = item
+    return next
+  }
+  return [...list, item]
+}
+
+function removeById(list, id) {
+  return list.filter((item) => item.id !== id)
+}
+
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
   const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
@@ -107,16 +121,12 @@ export function AppProvider({ children }) {
   // Plans CRUD
   const savePlan = useCallback(async (plan) => {
     await db.put(STORES.plans, plan)
-    setPlans(prev => {
-      const idx = prev.findIndex(p => p.id === plan.id)
-      if (idx >= 0) { const n = [...prev]; n[idx] = plan; return n }
-      return [...prev, plan]
-    })
+    setPlans(prev => upsertById(prev, plan))
   }, [])
 
   const deletePlan = useCallback(async (id) => {
     await db.remove(STORES.plans, id)
-    setPlans(prev => prev.filter(p => p.id !== id))
+    setPlans(prev => removeById(prev, id))
   }, [])
 
   const setActivePlan = useCallback(async (id) => {
@@ -127,16 +137,12 @@ export function AppProvider({ children }) {
   // Workouts CRUD
   const saveWorkout = useCallback(async (workout) => {
     await db.put(STORES.workouts, workout)
-    setWorkouts(prev => {
-      const idx = prev.findIndex(w => w.id === workout.id)
-      if (idx >= 0) { const n = [...prev]; n[idx] = workout; return n }
-      return [...prev, workout]
-    })
+    setWorkouts(prev => upsertById(prev, workout))
   }, [])
 
   const deleteWorkout = useCallback(async (id) => {
     await db.remove(STORES.workouts, id)
-    setWorkouts(prev => prev.filter(w => w.id !== id))
+    setWorkouts(prev => removeById(prev, id))
   }, [])
 
   // Sessions
@@ -158,7 +164,7 @@ export function AppProvider({ children }) {
 
   const deleteMeasurement = useCallback(async (id) => {
     await db.deleteMeasurement(id)
-    setMeasurements(prev => prev.filter(m => m.id !== id))
+    setMeasurements(prev => removeById(prev, id))
   }, [])
 
   const setStatsLayout = useCallback((layout) => {
@@ -174,16 +180,12 @@ export function AppProvider({ children }) {
 
   const deleteFoodLog = useCallback(async (id) => {
     await db.removeFoodLog(id)
-    setFoodLog(prev => prev.filter(e => e.id !== id))
+    setFoodLog(prev => removeById(prev, id))
   }, [])
 
   const saveCustomFood = useCallback(async (food) => {
     await db.saveFood(food)
-    setCustomFoods(prev => {
-      const idx = prev.findIndex(f => f.id === food.id)
-      if (idx >= 0) { const n = [...prev]; n[idx] = food; return n }
-      return [...prev, food]
-    })
+    setCustomFoods(prev => upsertById(prev, food))
   }, [])
 
   const setWaterToday = useCallback(async (date, ml) => {
@@ -198,16 +200,12 @@ export function AppProvider({ children }) {
 
   const saveClient = useCallback(async (client) => {
     await db.saveClient(client)
-    setClients(prev => {
-      const idx = prev.findIndex(c => c.id === client.id)
-      if (idx >= 0) { const n = [...prev]; n[idx] = client; return n }
-      return [...prev, client]
-    })
+    setClients(prev => upsertById(prev, client))
   }, [])
 
   const deleteClient = useCallback(async (id) => {
     await db.removeClient(id)
-    setClients(prev => prev.filter(c => c.id !== id))
+    setClients(prev => removeById(prev, id))
   }, [])
 
   // Favourites
@@ -221,7 +219,7 @@ export function AppProvider({ children }) {
 
   const deleteSession = useCallback(async (sessionId) => {
     await db.remove(STORES.sessions, sessionId)
-    setSessions(prev => prev.filter(s => s.id !== sessionId))
+    setSessions(prev => removeById(prev, sessionId))
   }, [])
 
   const value = {

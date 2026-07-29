@@ -16,45 +16,27 @@ const STORES = {
 
 export { STORES }
 
+function ensureStore(db, name, options, indexes = []) {
+  if (db.objectStoreNames.contains(name)) return
+  const store = db.createObjectStore(name, options)
+  indexes.forEach(([indexName, keyPath, indexOptions]) => store.createIndex(indexName, keyPath, indexOptions))
+}
+
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = e => {
       const db = e.target.result
-      if (!db.objectStoreNames.contains(STORES.workouts)) {
-        db.createObjectStore(STORES.workouts, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORES.plans)) {
-        db.createObjectStore(STORES.plans, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORES.sessions)) {
-        const s = db.createObjectStore(STORES.sessions, { keyPath: 'id' })
-        s.createIndex('date', 'date', { unique: false })
-      }
-      if (!db.objectStoreNames.contains(STORES.steps)) {
-        const s = db.createObjectStore(STORES.steps, { keyPath: 'date' })
-        s.createIndex('date', 'date', { unique: true })
-      }
-      if (!db.objectStoreNames.contains(STORES.settings)) {
-        db.createObjectStore(STORES.settings, { keyPath: 'key' })
-      }
-      if (!db.objectStoreNames.contains(STORES.measurements)) {
-        const m = db.createObjectStore(STORES.measurements, { keyPath: 'id' })
-        m.createIndex('date', 'date', { unique: false })
-      }
-      if (!db.objectStoreNames.contains(STORES.foods)) {
-        db.createObjectStore(STORES.foods, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORES.foodLog)) {
-        const f = db.createObjectStore(STORES.foodLog, { keyPath: 'id' })
-        f.createIndex('date', 'date', { unique: false })
-      }
-      if (!db.objectStoreNames.contains(STORES.water)) {
-        db.createObjectStore(STORES.water, { keyPath: 'date' })
-      }
-      if (!db.objectStoreNames.contains(STORES.clients)) {
-        db.createObjectStore(STORES.clients, { keyPath: 'id' })
-      }
+      ensureStore(db, STORES.workouts, { keyPath: 'id' })
+      ensureStore(db, STORES.plans, { keyPath: 'id' })
+      ensureStore(db, STORES.sessions, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
+      ensureStore(db, STORES.steps, { keyPath: 'date' }, [['date', 'date', { unique: true }]])
+      ensureStore(db, STORES.settings, { keyPath: 'key' })
+      ensureStore(db, STORES.measurements, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
+      ensureStore(db, STORES.foods, { keyPath: 'id' })
+      ensureStore(db, STORES.foodLog, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
+      ensureStore(db, STORES.water, { keyPath: 'date' })
+      ensureStore(db, STORES.clients, { keyPath: 'id' })
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)

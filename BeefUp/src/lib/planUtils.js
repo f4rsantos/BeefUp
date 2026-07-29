@@ -1,10 +1,6 @@
 import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree'
 
-// Given a plan and a reference date, determine what today's entry is.
-// A plan has a `days` array: [{ type: 'workout'|'rest', workoutId? }]
-// The plan cycles: day index = (daysSinceStart % days.length)
-// If no plan, returns null.
-
+// A plan's `days` array cycles: day index = (daysSinceStart % days.length).
 export function todaysPlanEntry(plan) {
   if (!plan || !plan.days || plan.days.length === 0) return null
 
@@ -58,48 +54,40 @@ export function formatDuration(s) {
   return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
 }
 
-export function computeStreak(sessions, plans, activePlanId) {
+function activeDayFlags(sessions, plans, activePlanId, dayCount) {
   const sessionDates = new Set(sessions.map(sessionDay))
   const plan = plans.find(p => p.id === activePlanId)
-
-  let streak = 0
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  for (let i = 0; i < 365; i++) {
+  const flags = []
+  for (let i = 0; i < dayCount; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const iso = toLocalISO(d)
-
     const hasSession = sessionDates.has(iso)
     const isRestDay = plan ? isPlannedRestDay(plan, d) : false
+    flags.push(hasSession || isRestDay)
+  }
+  return flags
+}
 
-    if (hasSession || isRestDay) {
-      streak++
-    } else {
-      break
-    }
+export function computeStreak(sessions, plans, activePlanId) {
+  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+  let streak = 0
+  for (const active of flags) {
+    if (!active) break
+    streak++
   }
   return streak
 }
 
 export function computeBestStreak(sessions, plans, activePlanId) {
-  const sessionDates = new Set(sessions.map(sessionDay))
-  const plan = plans.find(p => p.id === activePlanId)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
+  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
   let best = 0
   let current = 0
-  for (let i = 364; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const iso = toLocalISO(d)
-
-    const hasSession = sessionDates.has(iso)
-    const isRestDay = plan ? isPlannedRestDay(plan, d) : false
-
-    if (hasSession || isRestDay) {
+  for (const active of flags) {
+    if (active) {
       current++
       if (current > best) best = current
     } else {

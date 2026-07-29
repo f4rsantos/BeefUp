@@ -29,6 +29,29 @@ const BODY_NATURAL_HEIGHT = 500
 const BODY_NATURAL_WIDTH = 207
 const SCALE = (EXPANDED_HEIGHT - 60) / BODY_NATURAL_HEIGHT
 
+function SlideDots({ activeSlide, onSelect, style }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center', flexShrink: 0, ...style }}>
+      {[0, 1].map((index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => onSelect(index)}
+          style={{
+            width: 24,
+            height: 4,
+            borderRadius: 9999,
+            border: 'none',
+            background: activeSlide === index ? 'var(--accent)' : 'var(--muted)',
+            opacity: activeSlide === index ? 1 : 0.35,
+            cursor: 'pointer',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
   const sliderRef = useRef(null)
   const startX = useRef(0)
@@ -96,7 +119,6 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
     setExpanded((prev) => !prev)
     setConfirmDelete(false)
   }
-
 
   const handleDeleteClick = (e) => {
     e.stopPropagation()
@@ -288,34 +310,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
               </div>
 
               {/* Dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => showSlide(0)}
-                  style={{
-                    width: 24,
-                    height: 4,
-                    borderRadius: 9999,
-                    border: 'none',
-                    background: activeSlide === 0 ? 'var(--accent)' : 'var(--muted)',
-                    opacity: activeSlide === 0 ? 1 : 0.35,
-                    cursor: 'pointer',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => showSlide(1)}
-                  style={{
-                    width: 24,
-                    height: 4,
-                    borderRadius: 9999,
-                    border: 'none',
-                    background: activeSlide === 1 ? 'var(--accent)' : 'var(--muted)',
-                    opacity: activeSlide === 1 ? 1 : 0.35,
-                    cursor: 'pointer',
-                  }}
-                />
-              </div>
+              <SlideDots activeSlide={activeSlide} onSelect={showSlide} style={{ paddingTop: 10 }} />
             </div>
 
             {/*  Slide 2: Human Body  */}
@@ -352,34 +347,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
               </div>
 
               {/* Dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 10, gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => showSlide(0)}
-                  style={{
-                    width: 24,
-                    height: 4,
-                    borderRadius: 9999,
-                    border: 'none',
-                    background: activeSlide === 0 ? 'var(--accent)' : 'var(--muted)',
-                    opacity: activeSlide === 0 ? 1 : 0.35,
-                    cursor: 'pointer',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => showSlide(1)}
-                  style={{
-                    width: 24,
-                    height: 4,
-                    borderRadius: 9999,
-                    border: 'none',
-                    background: activeSlide === 1 ? 'var(--accent)' : 'var(--muted)',
-                    opacity: activeSlide === 1 ? 1 : 0.35,
-                    cursor: 'pointer',
-                  }}
-                />
-              </div>
+              <SlideDots activeSlide={activeSlide} onSelect={showSlide} style={{ paddingBottom: 10 }} />
             </div>
 
           </div>

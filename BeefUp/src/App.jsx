@@ -26,6 +26,15 @@ const TABS = [
   { id: "settings", Icon: Settings, labelPt: "Definições", labelEn: "Settings" },
 ];
 
+function NavTabButton({ Icon, label, active, onClick }) {
+  return (
+    <button className={`nav-tab ${active ? "active" : ""}`} onClick={onClick}>
+      <Icon size={22} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
   const [overlay, setOverlay] = useState(null); // 'pickWorkout' | 'planSettings' | ... | null
@@ -87,8 +96,7 @@ function AppInner() {
     setOverlay(null);
   }
 
-  // Start FAB: jump straight into today's scheduled workout if there is one,
-  // otherwise open the workout picker. Only reachable with no workout running the FAB is hidden while one is.
+  // Start FAB: jump straight into today's scheduled workout if there is one, otherwise open the workout picker. Only reachable when no workout is running the FAB is hidden while one is.
   function handleStart() {
     const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
     const entry = todaysPlanEntry(activePlan);
@@ -238,14 +246,13 @@ function AppInner() {
           {TABS.slice(0, 2)
             .filter(({ id }) => (id === "home" ? showGym : id === "nutrition" ? showNutrition : true))
             .map(({ id, Icon, labelPt, labelEn }) => (
-              <button
+              <NavTabButton
                 key={id}
-                className={`nav-tab ${tab2 === id ? "active" : ""}`}
+                Icon={Icon}
+                label={lang === "pt" ? labelPt : labelEn}
+                active={tab2 === id}
                 onClick={() => setTab(id)}
-              >
-                <Icon size={22} />
-                <span>{lang === "pt" ? labelPt : labelEn}</span>
-              </button>
+              />
             ))}
 
           {showGym && !activeWorkout && (
@@ -259,14 +266,13 @@ function AppInner() {
           )}
 
           {TABS.slice(2).map(({ id, Icon, labelPt, labelEn }) => (
-            <button
+            <NavTabButton
               key={id}
-              className={`nav-tab ${tab2 === id ? "active" : ""}`}
+              Icon={Icon}
+              label={lang === "pt" ? labelPt : labelEn}
+              active={tab2 === id}
               onClick={() => setTab(id)}
-            >
-              <Icon size={22} />
-              <span>{lang === "pt" ? labelPt : labelEn}</span>
-            </button>
+            />
           ))}
         </nav>
       )}

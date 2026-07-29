@@ -28,23 +28,29 @@ export default function SyncView() {
     }
   }
 
-  async function push() {
+  async function runSync(action) {
     setError(""); setStatus(""); setBusy(true);
     try {
-      await pushClients(config, clients);
-      setStatus(`${t.dashPushed} (${clients.length})`);
-    } catch (e) { setError(String(e?.message || e)); }
+      await action();
+    } catch (e) {
+      setError(String(e?.message || e));
+    }
     setBusy(false);
   }
 
-  async function pull() {
-    setError(""); setStatus(""); setBusy(true);
-    try {
+  function push() {
+    return runSync(async () => {
+      await pushClients(config, clients);
+      setStatus(`${t.dashPushed} (${clients.length})`);
+    });
+  }
+
+  function pull() {
+    return runSync(async () => {
       const remote = await pullClients(config);
       for (const c of remote) await saveClient(c);
       setStatus(`${t.dashPulled} (${remote.length})`);
-    } catch (e) { setError(String(e?.message || e)); }
-    setBusy(false);
+    });
   }
 
   return (

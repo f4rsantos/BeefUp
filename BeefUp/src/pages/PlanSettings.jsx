@@ -3,8 +3,6 @@ import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import PlanEditor from "../components/PlanEditor";
 
-// ─── Main PlanSettings page ────────────────────────────────────────────────────
-
 export default function PlanSettings({ onBack, initialPlanId = null }) {
   const {
     t,

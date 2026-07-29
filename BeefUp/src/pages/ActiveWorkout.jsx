@@ -12,6 +12,10 @@ import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 
+function timerBelongsTo(timer, exIdx, setIdx) {
+  return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
+}
+
 function buildExerciseEntry(ex, lastSets = []) {
   return {
     id: uid(),
@@ -139,11 +143,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           total: restAfterSet,
         });
       } else {
-        setSetTimer((prevTimer) =>
-          prevTimer?.exIdx === exIdx && prevTimer?.setIdx === setIdx
-            ? null
-            : prevTimer,
-        );
+        setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx, setIdx) ? null : prevTimer));
       }
     },
     [exercises, restAfterSet],
@@ -179,18 +179,12 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         return { ...e, sets: e.sets.filter((_, j) => j !== setIdx) };
       }),
     );
-    setSetTimer((prevTimer) =>
-      prevTimer?.exIdx === exIdx && prevTimer?.setIdx === setIdx
-        ? null
-        : prevTimer,
-    );
+    setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx, setIdx) ? null : prevTimer));
   }, []);
 
   const removeExercise = useCallback((exIdx) => {
     setExercises((prev) => prev.filter((_, i) => i !== exIdx));
-    setSetTimer((prevTimer) =>
-      prevTimer?.exIdx === exIdx ? null : prevTimer,
-    );
+    setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
 
   const addExercises = useCallback((refs) => {
