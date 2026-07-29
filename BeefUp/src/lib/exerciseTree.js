@@ -21,7 +21,6 @@ function lowerFirst(str) {
   return str ? str[0].toLowerCase() + str.slice(1) : str
 }
 
-// PT labels for body_part / muscleGroup (broad regions).
 const BODY_PART_LABELS = {
   back: 'Costas',
   cardio: 'Cardio',
@@ -34,7 +33,6 @@ const BODY_PART_LABELS = {
   waist: 'Abdómen',
 }
 
-// PT labels for target / secondaryMuscles (specific muscles).
 const MUSCLE_LABELS = {
   abs: 'Abdominais',
   back: 'Costas',
@@ -54,12 +52,19 @@ const MUSCLE_LABELS = {
   triceps: 'Tríceps',
 }
 
-export function getBodyPartLabel(bodyPart, lang) {
-  if (lang !== 'pt') return bodyPart
-  return BODY_PART_LABELS[bodyPart] ?? bodyPart
+function lookupLabel(labels, key, lang) {
+  if (lang !== 'pt') return key
+  return labels[key] ?? key
 }
 
-// One accent color per catalog body part
+export function getBodyPartLabel(bodyPart, lang) {
+  return lookupLabel(BODY_PART_LABELS, bodyPart, lang)
+}
+
+export function getMuscleLabel(muscle, lang) {
+  return lookupLabel(MUSCLE_LABELS, muscle, lang)
+}
+
 export const BODY_PART_ACCENT = {
   chest: '#16a34a',
   back: '#0ea5e9',
@@ -72,24 +77,14 @@ export const BODY_PART_ACCENT = {
   cardio: '#ec4899',
 }
 
-export function getMuscleLabel(muscle, lang) {
-  if (lang !== 'pt') return muscle
-  return MUSCLE_LABELS[muscle] ?? muscle
-}
-
-// Given a base exercise + chosen equipment/variant, composes the display name.
-// Mirrors the "(equipment)" suffix convention used across the app: the equipment
-// is only shown when it's a meaningful choice (not bodyweight, not the only option).
-function composeName(base, equipment, variant, key) {
-  let name = base[key]
-  if (variant) name += ` ${lowerFirst(variant[key])}`
+function composeName(base, equipment, variant, field) {
+  let name = base[field]
+  if (variant) name += ` ${lowerFirst(variant[field])}`
   const showEquipment = equipment && equipment.id !== 'bodyweight' && base.equipment.length > 1
-  if (showEquipment) name += ` (${lowerFirst(equipment[key])})`
+  if (showEquipment) name += ` (${lowerFirst(equipment[field])})`
   return name
 }
 
-// Resolves a composite ref into a full exercise object, ready for display or
-// for building a live workout entry (name/namePt/defaultSets/defaultReps/defaultWeight).
 export function resolveExercise(ref) {
   const { baseId, equipmentId, variantId } = parseExerciseRef(ref)
   const base = BASE_BY_ID[baseId]

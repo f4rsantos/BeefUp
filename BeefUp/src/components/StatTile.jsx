@@ -1,4 +1,3 @@
-// Compact stat tile. Optional icon, accent color, and gradient surface.
 export default function StatTile({
   icon: Icon,
   label,

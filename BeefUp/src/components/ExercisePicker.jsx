@@ -13,7 +13,6 @@ import {
   buildExerciseRef,
 } from "../lib/exerciseTree";
 
-// Full-screen multi-select picker used while a workout is running
 export default function AddExercisesPicker({ onConfirm, onClose }) {
   const { t, lang } = useApp();
   const [query, setQuery] = useState("");

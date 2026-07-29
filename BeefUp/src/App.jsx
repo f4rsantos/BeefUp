@@ -37,7 +37,7 @@ function AppInner() {
     const code = new URLSearchParams(window.location.search).get("w");
     return code ? decodeWorkoutShare(code) : null;
   });
-  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t, saveWorkout } = useApp();
+  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, onboarded, focus, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("w")) {
@@ -62,9 +62,7 @@ function AppInner() {
   if (tab === "nutrition" && !showNutrition) tab2 = "home";
   if (tab === "home" && !showGym) tab2 = "nutrition";
 
-  // A workout already running wins: starting another would swap activeWorkout
-  // under the still-mounted ActiveWorkout, which keeps the old exercises (its
-  // useState initializer only runs on mount). Re-open the running one instead.
+  // A workout already running wins: Re-open the running one instead of creating another one.
   function goActive(workoutInfo) {
     if (activeWorkout) {
       setWorkoutMinimized(false);
@@ -93,7 +91,7 @@ function AppInner() {
   // otherwise open the workout picker. Only reachable with no workout running the FAB is hidden while one is.
   function handleStart() {
     const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
-    const entry = todaysPlanEntry(activePlan, sessions);
+    const entry = todaysPlanEntry(activePlan);
     if (entry?.type === "workout") {
       const w = workouts.find((x) => x.id === entry.workoutId);
       if (w) {
@@ -191,8 +189,7 @@ function AppInner() {
         )}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
 
-        {/* Stays mounted while minimized: unmounting would drop the logged sets
-            and restart the clock. Hidden with CSS instead. */}
+        {/* Stays mounted while minimized */}
         {activeWorkout && (
           <div
             style={{

@@ -1,4 +1,3 @@
-// Consistent bold page header. Optional eyebrow line + right-side action slot.
 export default function PageHeader({ title, eyebrow, action }) {
   return (
     <div

@@ -3,7 +3,6 @@ import { ChevronUp } from "lucide-react";
 import { formatDuration } from "../lib/planUtils";
 
 // Collapsed view of a running workout
-// ActiveWorkout, which keeps running (hidden) while this is shown.
 export default function MiniWorkoutBar({ startedAt, workoutName, onExpand, label }) {
   const [elapsed, setElapsed] = useState(() =>
     Math.floor((Date.now() - startedAt) / 1000),

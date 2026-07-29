@@ -5,7 +5,7 @@ import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree
 // The plan cycles: day index = (daysSinceStart % days.length)
 // If no plan, returns null.
 
-export function todaysPlanEntry(plan, sessions) {
+export function todaysPlanEntry(plan) {
   if (!plan || !plan.days || plan.days.length === 0) return null
 
   const startDate = plan.startDate ? new Date(plan.startDate) : new Date()
@@ -38,7 +38,6 @@ export function nowISO() {
   return new Date().toISOString()
 }
 
-// Sessions store only completed sets, in order, and are set as default for the future sets
 export function lastCompletedSets(sessions, exerciseId) {
   let latest = null
   for (const s of sessions) {
@@ -50,7 +49,6 @@ export function lastCompletedSets(sessions, exerciseId) {
   return latest?.sets ?? []
 }
 
-// Elapsed seconds as mm:ss, or h:mm:ss once past an hour.
 export function formatDuration(s) {
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
@@ -60,8 +58,6 @@ export function formatDuration(s) {
   return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
 }
 
-// Build streak: count consecutive days (going backwards from today)
-// that have either a completed session OR are marked rest days in the active plan.
 export function computeStreak(sessions, plans, activePlanId) {
   const sessionDates = new Set(sessions.map(sessionDay))
   const plan = plans.find(p => p.id === activePlanId)
@@ -87,7 +83,6 @@ export function computeStreak(sessions, plans, activePlanId) {
   return streak
 }
 
-// Longest run (within the last year) of consecutive days that each have either a completed session or a planned rest day — unlike computeStreak, keeps scanning past breaks instead of stopping at the first one.
 export function computeBestStreak(sessions, plans, activePlanId) {
   const sessionDates = new Set(sessions.map(sessionDay))
   const plan = plans.find(p => p.id === activePlanId)
@@ -125,7 +120,6 @@ function isPlannedRestDay(plan, date) {
   return plan.days[idx]?.type === 'rest'
 }
 
-// Get which days of the current month are rest days or completed sessions
 export function getMonthActivity(year, month, sessions, plans, activePlanId) {
   const plan = plans.find(p => p.id === activePlanId)
   const sessionDates = new Set(sessions.map(sessionDay))
@@ -176,7 +170,6 @@ export function computeOverallStats(sessions) {
   return { daysTrained, totalSessions, totalVolume, totalDuration, totalReps, totalSets }
 }
 
-// Bucket sessions into ISO week starts, summing the given metric, for the last `weeks` weeks.
 export function aggregateSessionsByWeek(sessions, metric, weeks = 10) {
   const metricFn = {
     duration: (s) => s.duration ?? 0,

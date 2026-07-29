@@ -237,8 +237,8 @@ export default function WorkoutPage({
   const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout } = useApp()
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const todayEntry = useMemo(
-    () => todaysPlanEntry(activePlan, sessions),
-    [activePlan, sessions],
+    () => todaysPlanEntry(activePlan),
+    [activePlan],
   );
   const todayWorkout =
     todayEntry?.type === "workout"

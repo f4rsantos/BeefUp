@@ -15,7 +15,6 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
     () => measurementsForType(measurements, type),
     [measurements, type],
   );
-  // Histórico do mais recente para o mais antigo.
   const history = useMemo(() => [...chartData].reverse(), [chartData]);
 
   async function handleSave() {
@@ -30,7 +29,6 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
       await onSave(type, n);
       setVal("");
     } catch {
-      // Mantém o valor no input — o utilizador não perde o que escreveu.
       setError(t.measureSaveFailed);
     } finally {
       setSaving(false);
