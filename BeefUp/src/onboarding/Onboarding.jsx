@@ -210,14 +210,14 @@ function Frame({ children, t, onBack, total, current, theme, setTheme, lang, set
 function FocusStep({ t, value, onChange }) {
   const opts = [
     { id: "gym", Icon: Dumbbell, label: t.obFocusGym, desc: t.obFocusGymDesc },
-    { id: "nutrition", Icon: Apple, label: t.obFocusNutrition, desc: t.obFocusNutritionDesc },
-    { id: "both", Icon: Sparkles, label: t.obFocusBoth, desc: t.obFocusBothDesc },
+    { id: "nutrition", Icon: Apple, label: t.obFocusNutrition, desc: t.obFocusNutritionDesc, unavailable: true },
+    { id: "both", Icon: Sparkles, label: t.obFocusBoth, desc: t.obFocusBothDesc, unavailable: true },
   ];
   return (
     <>
       <h1 className="ob-title">{t.obFocusTitle}</h1>
       <div className="flex flex-col gap-3">
-        {opts.map(({ id, Icon, label, desc }) => (
+        {opts.map(({ id, Icon, label, desc, unavailable }) => (
           <button
             key={id}
             className={`card ob-focus-card flex items-center gap-3 ${value === id ? "card-elevated active" : ""}`}
@@ -225,7 +225,10 @@ function FocusStep({ t, value, onChange }) {
           >
             <Icon size={24} style={{ color: "var(--accent)" }} />
             <div>
-              <div className="ob-focus-label">{label}</div>
+              <div className="flex items-center gap-2">
+                <span className="ob-focus-label">{label}</span>
+                {unavailable && <span className="ob-focus-badge">{t.nutritionUnavailable}</span>}
+              </div>
               <div className="ob-focus-desc">{desc}</div>
             </div>
           </button>
