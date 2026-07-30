@@ -3,6 +3,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 
 const SWIPE_THRESHOLD = 90;
+const SET_ROW_GRID_TEMPLATE = "22px minmax(0,1fr) minmax(0,1fr) 28px";
 const SET_TYPES = ["warmup", "dropset", "superset", "failure"];
 const TYPE_COLORS = {
   normal: "var(--accent)",
@@ -138,7 +139,7 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet, onS
         onTouchEnd={onTouchEnd}
         className="grid items-center gap-0.5 py-1"
         style={{
-          gridTemplateColumns: "22px minmax(0,1fr) minmax(0,1fr) 28px",
+          gridTemplateColumns: SET_ROW_GRID_TEMPLATE,
           opacity: set.done ? 0.5 : 1,
           background: set.done ? "var(--surface2)" : "var(--bg)",
           borderRadius: 8,
@@ -313,9 +314,7 @@ export default function ExerciseCard({
 
       <div
         className="grid items-center mb-1"
-        style={{
-          gridTemplateColumns: "22px minmax(0,1fr) minmax(0,1fr) 28px",
-        }}
+        style={{ gridTemplateColumns: SET_ROW_GRID_TEMPLATE }}
       >
         <span className="text-xs text-center" style={{ color: "var(--muted)" }}>
           #

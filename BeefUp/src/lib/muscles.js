@@ -3,7 +3,6 @@ import { resolveExercise } from './exerciseTree'
 // Maps an exercise muscle tag to body-area ids on the HumanBody SVG (front/back).
 // Keys are body_part / target values from the exercises dataset schema.
 export const muscleTagToBodyAreas = {
-  // body_part values
   chest: { front: ['chest'], back: [] },
   back: { front: [], back: ['left-trap', 'right-trap', 'left-lat', 'right-lat', 'lumbar', 'upper-back', 'lower-back'] },
   shoulders: { front: ['left-shoulder-front', 'right-shoulder-front'], back: ['left-shoulder-back', 'right-shoulder-back'] },
@@ -20,8 +19,6 @@ export const muscleTagToBodyAreas = {
   'lower legs': { front: [], back: ['left-calf', 'right-calf'] },
   neck: { front: [], back: ['left-trap', 'right-trap'] },
   cardio: { front: [], back: [] },
-
-  // target values (more specific, take precedence when present)
   abs: { front: ['stomach', 'upper-abs', 'lower-abs'], back: [] },
   abductors: { front: [], back: ['glutes'] },
   adductors: { front: ['left-adductor', 'right-adductor'], back: [] },
@@ -46,7 +43,6 @@ export const muscleTagToBodyAreas = {
   'upper back': { front: [], back: ['left-lat', 'right-lat', 'upper-back'] },
 }
 
-// Given a list of sessions, return the unique front/back body areas worked.
 export function bodyAreasForSessions(sessions) {
   const front = new Set()
   const back = new Set()
@@ -63,7 +59,6 @@ export function bodyAreasForSessions(sessions) {
   return { front: [...front], back: [...back] }
 }
 
-// Sessions in the last `days` days (default 7), based on the session date.
 export function recentSessions(sessions, days = 7) {
   const cutoff = new Date()
   cutoff.setHours(0, 0, 0, 0)

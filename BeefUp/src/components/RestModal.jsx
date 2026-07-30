@@ -37,13 +37,6 @@ export default function RestModal({ restState, setRestState, onClose }) {
     return () => clearInterval(intervalRef.current);
   }, [isRunning, setRestState]);
 
-  // Reopen when done
-  useEffect(() => {
-    if (restState?.done) {
-      // modal is already open when done triggers
-    }
-  }, [restState?.done]);
-
   function start() {
     setRestState({
       duration: selected,
@@ -53,12 +46,7 @@ export default function RestModal({ restState, setRestState, onClose }) {
     });
   }
 
-  function cancel() {
-    setRestState(null);
-    onClose();
-  }
-
-  function skip() {
+  function stopRest() {
     setRestState(null);
     onClose();
   }
@@ -163,14 +151,14 @@ export default function RestModal({ restState, setRestState, onClose }) {
                 </text>
               </svg>
             </div>
-            <button className="btn btn-ghost w-full mt-1" onClick={skip}>
+            <button className="btn btn-ghost w-full mt-1" onClick={stopRest}>
               {t.skipRest}
             </button>
           </>
         )}
 
         {(isRunning || restState?.done) && (
-          <button className="btn btn-ghost w-full mt-3" onClick={cancel}>
+          <button className="btn btn-ghost w-full mt-3" onClick={stopRest}>
             {t.cancel}
           </button>
         )}

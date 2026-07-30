@@ -114,22 +114,18 @@ export default function FoodSearchModal({ meal, onClose }) {
               <input className="field mt-1" placeholder={t.foodName} value={cf.name} onChange={(e) => setCf({ ...cf, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="section-title">{t.kcal}</label>
-                <input className="field mt-1" type="number" placeholder={t.kcal} value={cf.kcal} onChange={(e) => setCf({ ...cf, kcal: e.target.value })} />
-              </div>
-              <div>
-                <label className="section-title">{t.protein}</label>
-                <input className="field mt-1" type="number" placeholder={t.protein} value={cf.protein} onChange={(e) => setCf({ ...cf, protein: e.target.value })} />
-              </div>
-              <div>
-                <label className="section-title">{t.carbs}</label>
-                <input className="field mt-1" type="number" placeholder={t.carbs} value={cf.carbs} onChange={(e) => setCf({ ...cf, carbs: e.target.value })} />
-              </div>
-              <div>
-                <label className="section-title">{t.fat}</label>
-                <input className="field mt-1" type="number" placeholder={t.fat} value={cf.fat} onChange={(e) => setCf({ ...cf, fat: e.target.value })} />
-              </div>
+              {["kcal", "protein", "carbs", "fat"].map((field) => (
+                <div key={field}>
+                  <label className="section-title">{t[field]}</label>
+                  <input
+                    className="field mt-1"
+                    type="number"
+                    placeholder={t[field]}
+                    value={cf[field]}
+                    onChange={(e) => setCf({ ...cf, [field]: e.target.value })}
+                  />
+                </div>
+              ))}
             </div>
             <button className="btn btn-primary w-full" onClick={createCustom}>{t.add}</button>
           </div>

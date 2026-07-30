@@ -6,8 +6,7 @@ import { ACTIVITY, OBJECTIVE, calcGoals } from "../lib/nutritionCalc";
 import "./onboarding.css";
 
 function soloSteps(focus) {
-  const steps = ["focus", "expFocus"];
-  steps.push("measures", "expMeasures");
+  const steps = ["focus", "expFocus", "measures", "expMeasures"];
   if (focus !== "gym") steps.push("goals", "expGoals");
   return steps;
 }
@@ -19,6 +18,11 @@ export default function Onboarding() {
   const [focus, setFocus] = useState("both");
   const [measures, setMeasures] = useState({ height: "", weight: "", chest: "", biceps: "", quadriceps: "", waist: "" });
   const [calc, setCalc] = useState({ sex: "male", age: 28, height: 175, weight: 75, activity: 1.55, obj: 0 });
+
+  function startMode(m) {
+    setMode(m);
+    setIdx(0);
+  }
 
   if (mode === null) {
     return (
@@ -44,11 +48,6 @@ export default function Onboarding() {
         </div>
       </div>
     );
-  }
-
-  function startMode(m) {
-    setMode(m);
-    setIdx(0);
   }
 
   if (mode === "helper") {

@@ -26,6 +26,15 @@ const TABS = [
   { id: "settings", Icon: Settings, labelPt: "Definições", labelEn: "Settings" },
 ];
 
+function NavTabButton({ Icon, label, active, onClick }) {
+  return (
+    <button className={`nav-tab ${active ? "active" : ""}`} onClick={onClick}>
+      <Icon size={22} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
   const [overlay, setOverlay] = useState(null); // 'pickWorkout' | 'planSettings' | ... | null
@@ -37,7 +46,7 @@ function AppInner() {
     const code = new URLSearchParams(window.location.search).get("w");
     return code ? decodeWorkoutShare(code) : null;
   });
-  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, sessions, onboarded, focus, appMode, t, saveWorkout } = useApp();
+  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, onboarded, focus, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("w")) {
@@ -62,9 +71,7 @@ function AppInner() {
   if (tab === "nutrition" && !showNutrition) tab2 = "home";
   if (tab === "home" && !showGym) tab2 = "nutrition";
 
-  // A workout already running wins: starting another would swap activeWorkout
-  // under the still-mounted ActiveWorkout, which keeps the old exercises (its
-  // useState initializer only runs on mount). Re-open the running one instead.
+  // A workout already running wins: Re-open the running one instead of creating another one.
   function goActive(workoutInfo) {
     if (activeWorkout) {
       setWorkoutMinimized(false);
@@ -89,11 +96,10 @@ function AppInner() {
     setOverlay(null);
   }
 
-  // Start FAB: jump straight into today's scheduled workout if there is one,
-  // otherwise open the workout picker. Only reachable with no workout running the FAB is hidden while one is.
+  // Start FAB: jump straight into today's scheduled workout if there is one, otherwise open the workout picker. Only reachable when no workout is running the FAB is hidden while one is.
   function handleStart() {
     const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
-    const entry = todaysPlanEntry(activePlan, sessions);
+    const entry = todaysPlanEntry(activePlan);
     if (entry?.type === "workout") {
       const w = workouts.find((x) => x.id === entry.workoutId);
       if (w) {
@@ -191,8 +197,7 @@ function AppInner() {
         )}
         {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
 
-        {/* Stays mounted while minimized: unmounting would drop the logged sets
-            and restart the clock. Hidden with CSS instead. */}
+        {/* Stays mounted while minimized */}
         {activeWorkout && (
           <div
             style={{
@@ -241,14 +246,13 @@ function AppInner() {
           {TABS.slice(0, 2)
             .filter(({ id }) => (id === "home" ? showGym : id === "nutrition" ? showNutrition : true))
             .map(({ id, Icon, labelPt, labelEn }) => (
-              <button
+              <NavTabButton
                 key={id}
-                className={`nav-tab ${tab2 === id ? "active" : ""}`}
+                Icon={Icon}
+                label={lang === "pt" ? labelPt : labelEn}
+                active={tab2 === id}
                 onClick={() => setTab(id)}
-              >
-                <Icon size={22} />
-                <span>{lang === "pt" ? labelPt : labelEn}</span>
-              </button>
+              />
             ))}
 
           {showGym && !activeWorkout && (
@@ -262,14 +266,13 @@ function AppInner() {
           )}
 
           {TABS.slice(2).map(({ id, Icon, labelPt, labelEn }) => (
-            <button
+            <NavTabButton
               key={id}
-              className={`nav-tab ${tab2 === id ? "active" : ""}`}
+              Icon={Icon}
+              label={lang === "pt" ? labelPt : labelEn}
+              active={tab2 === id}
               onClick={() => setTab(id)}
-            >
-              <Icon size={22} />
-              <span>{lang === "pt" ? labelPt : labelEn}</span>
-            </button>
+            />
           ))}
         </nav>
       )}

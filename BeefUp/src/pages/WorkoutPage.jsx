@@ -18,6 +18,21 @@ function formatLastDate(iso, lang) {
 
 const SPACE = { sm: 8, md: 16, lg: 32 };
 
+const ICON_BUTTON_STYLE = { background: "none", border: "none", cursor: "pointer", color: "var(--text)" };
+
+const MENU_ITEM_STYLE = {
+  width: "100%",
+  padding: "10px 14px",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  fontSize: 13,
+  textAlign: "left",
+};
+
 function workoutAccentColors(workout) {
   const counts = {};
   workout.exercises?.forEach((ref) => {
@@ -35,7 +50,6 @@ function workoutAccentColors(workout) {
     });
   return colors;
 }
-
 
 function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDelete, onEdit }) {
   const [open, setOpen] = useState(false);
@@ -74,6 +88,14 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDele
     };
   }, [open]);
 
+  const menuItems = [
+    { Icon: Pencil, label: lang === "pt" ? "Editar" : "Edit", onSelect: () => onEdit(workout) },
+    { Icon: FilePenLine, label: lang === "pt" ? "Renomear" : "Rename", onSelect: () => onRename(workout) },
+    { Icon: Copy, label: lang === "pt" ? "Duplicar" : "Duplicate", onSelect: () => onDuplicate(workout) },
+    { Icon: Share2, label: lang === "pt" ? "Partilhar" : "Share", onSelect: () => onShare(workout) },
+    { Icon: Trash2, label: lang === "pt" ? "Excluir" : "Delete", onSelect: () => onDelete(workout), danger: true },
+  ];
+
   return (
     <>
       <button
@@ -102,120 +124,23 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDele
             overflow: "hidden",
           }}
         >
-          <button
-            onClick={() => {
-              setOpen(false);
-              onEdit(workout);}}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text)",
-              fontSize: 13,
-              textAlign: "left",
-            }}
-          >
-            <Pencil size={14} />
-            {lang === "pt" ? "Editar" : "Edit"}
-          </button>
-
-          <button
-            onClick={() => {
-              setOpen(false);
-              onRename(workout);
-            }}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text)",
-              fontSize: 13,
-              textAlign: "left",
-            }}
-          >
-            <FilePenLine size={14} />
-            {lang === "pt" ? "Renomear" : "Rename"}
-          </button>
-
-          <button
-            onClick={() => {
-              setOpen(false);
-              onDuplicate(workout);
-            }}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text)",
-              fontSize: 13,
-              textAlign: "left",
-            }}
-          >
-            <Copy size={14} />
-            {lang === "pt" ? "Duplicar" : "Duplicate"}
-          </button>
-
-          <button
-            onClick={() => {
-              setOpen(false);
-              onShare(workout);
-            }}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text)",
-              fontSize: 13,
-              textAlign: "left",
-            }}
-          >
-            <Share2 size={14} />
-            {lang === "pt" ? "Partilhar" : "Share"}
-          </button>
-
-          <button
-            onClick={() => {
-              setOpen(false);
-              onDelete(workout);
-            }}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#ef4444",
-              fontSize: 13,
-              textAlign: "left",
-              borderTop: "1px solid var(--border)",
-            }}
-          >
-            <Trash2 size={14} />
-            {lang === "pt" ? "Excluir" : "Delete"}
-          </button>
+          {menuItems.map(({ Icon, label, onSelect, danger }) => (
+            <button
+              key={label}
+              onClick={() => {
+                setOpen(false);
+                onSelect();
+              }}
+              style={{
+                ...MENU_ITEM_STYLE,
+                color: danger ? "#ef4444" : "var(--text)",
+                borderTop: danger ? "1px solid var(--border)" : "none",
+              }}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
         </div>
       )}
     </>
@@ -237,8 +162,8 @@ export default function WorkoutPage({
   const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout } = useApp()
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const todayEntry = useMemo(
-    () => todaysPlanEntry(activePlan, sessions),
-    [activePlan, sessions],
+    () => todaysPlanEntry(activePlan),
+    [activePlan],
   );
   const todayWorkout =
     todayEntry?.type === "workout"
@@ -317,6 +242,66 @@ export default function WorkoutPage({
     }
   };
 
+  function renderTodayHero() {
+    if (!activePlan) {
+      return (
+        <div className="card" style={{ marginBottom: SPACE.md }}>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noPlan}</p>
+          <button className="btn btn-ghost mt-3 w-full py-2.5 text-sm" onClick={onManageWorkouts}>
+            {t.choosePlan}
+          </button>
+        </div>
+      );
+    }
+
+    if (todayEntry?.type === "rest") {
+      return (
+        <div className="hero" style={{ background: "var(--grad-energy)", marginBottom: SPACE.md }}>
+          <div className="flex items-center justify-between" style={{ position: "relative" }}>
+            <div>
+              <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
+              <p className="display" style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>{t.restDay}</p>
+              <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+                {lang === "pt" ? "Recupera e volta mais forte." : "Recover and come back stronger."}
+              </p>
+            </div>
+            <Moon size={40} style={{ opacity: 0.9 }} />
+          </div>
+        </div>
+      );
+    }
+
+    if (todayWorkout) {
+      return (
+        <div className="hero" style={{ marginBottom: SPACE.md }}>
+          <div style={{ position: "relative" }}>
+            <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
+            <p className="display" style={{ fontSize: 28, fontWeight: 900, marginTop: 2, lineHeight: 1.1 }}>
+              {workoutLabel}
+            </p>
+            <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
+              {todayWorkout.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
+            </p>
+            <button
+              className="btn w-full mt-4 py-3.5 text-base"
+              style={{ background: "#fff", color: "var(--accent)", fontWeight: 800 }}
+              onClick={() => onStartWorkout({ workoutId: todayWorkout.id, workoutName: workoutLabel })}
+            >
+              <Play size={20} fill="currentColor" /> {t.startWorkout}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="card" style={{ marginBottom: SPACE.md }}>
+        <p className="text-xs mb-0.5" style={{ color: "var(--muted)" }}>{activePlan.name}</p>
+        <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noWorkoutScheduled}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ padding: "40px 20px 16px" }}>
@@ -346,51 +331,7 @@ export default function WorkoutPage({
         </div>
 
         {/* ── Today's hero ── */}
-        {!activePlan ? (
-          <div className="card" style={{ marginBottom: SPACE.md }}>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noPlan}</p>
-            <button className="btn btn-ghost mt-3 w-full py-2.5 text-sm" onClick={onManageWorkouts}>
-              {t.choosePlan}
-            </button>
-          </div>
-        ) : todayEntry?.type === "rest" ? (
-          <div className="hero" style={{ background: "var(--grad-energy)", marginBottom: SPACE.md }}>
-            <div className="flex items-center justify-between" style={{ position: "relative" }}>
-              <div>
-                <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
-                <p className="display" style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>{t.restDay}</p>
-                <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-                  {lang === "pt" ? "Recupera e volta mais forte." : "Recover and come back stronger."}
-                </p>
-              </div>
-              <Moon size={40} style={{ opacity: 0.9 }} />
-            </div>
-          </div>
-        ) : todayWorkout ? (
-          <div className="hero" style={{ marginBottom: SPACE.md }}>
-            <div style={{ position: "relative" }}>
-              <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
-              <p className="display" style={{ fontSize: 28, fontWeight: 900, marginTop: 2, lineHeight: 1.1 }}>
-                {workoutLabel}
-              </p>
-              <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
-                {todayWorkout.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
-              </p>
-              <button
-                className="btn w-full mt-4 py-3.5 text-base"
-                style={{ background: "#fff", color: "var(--accent)", fontWeight: 800 }}
-                onClick={() => onStartWorkout({ workoutId: todayWorkout.id, workoutName: workoutLabel })}
-              >
-                <Play size={20} fill="currentColor" /> {t.startWorkout}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="card" style={{ marginBottom: SPACE.md }}>
-            <p className="text-xs mb-0.5" style={{ color: "var(--muted)" }}>{activePlan.name}</p>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noWorkoutScheduled}</p>
-          </div>
-        )}
+        {renderTodayHero()}
 
         {/* ── Weekly muscle heatmap (signature figure) ── */}
         <div className="card card-elevated" style={{ marginBottom: SPACE.md }}>
@@ -432,21 +373,17 @@ export default function WorkoutPage({
             </div>
           )}
         </div>
-        
+
         {/* Plano ativo */}
         <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
           <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>
             {lang === "pt" ? "Plano Atual" : "Current Plan"}
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
-              <button
-                aria-label="more"
-                onClick={onManagePlans}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}
-              >
-                <MoreHorizontal size={18} />
-              </button>
-            </div>
+            <button aria-label="more" onClick={onManagePlans} style={ICON_BUTTON_STYLE}>
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
         </div>
         <button
           className="card w-full flex items-center justify-between text-left"
@@ -476,18 +413,10 @@ export default function WorkoutPage({
           {lang === "pt" ? "Os meus Treinos" : "My Workouts"} ({workouts.length})
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
-            <button
-              aria-label="create workout"
-              onClick={onCreateWorkout}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}
-            >
+            <button aria-label="create workout" onClick={onCreateWorkout} style={ICON_BUTTON_STYLE}>
               <Plus size={18} />
             </button>
-            <button
-              aria-label="more"
-              onClick={onManageWorkouts}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}
-            >
+            <button aria-label="more" onClick={onManageWorkouts} style={ICON_BUTTON_STYLE}>
               <MoreHorizontal size={18} />
             </button>
           </div>

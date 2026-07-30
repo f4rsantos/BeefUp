@@ -3,6 +3,17 @@ import { Sun, Moon, Monitor, Activity, Database, Sparkles, RotateCcw } from "luc
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 
+const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
+
+function selectableButtonStyle(selected) {
+  return {
+    background: selected ? "var(--grad-accent)" : "transparent",
+    color: selected ? "#fff" : "var(--muted)",
+    border: selected ? "none" : "1px solid var(--border)",
+    borderRadius: 12,
+  };
+}
+
 export default function SettingsPage() {
   const {
     t,
@@ -43,6 +54,10 @@ export default function SettingsPage() {
     setDemoLoaded(true);
   }
 
+  const loadDemoLabel = loadingDemo
+    ? (lang === "pt" ? "A carregar" : "Loading")
+    : (lang === "pt" ? "Carregar" : "Load");
+
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <div style={{ padding: "38px 20px 16px" }}>
@@ -61,12 +76,7 @@ export default function SettingsPage() {
                 key={id}
                 onClick={() => setTheme(id)}
                 className="btn flex-1 flex-col gap-1 py-3 text-xs"
-                style={{
-                  background: theme === id ? "var(--grad-accent)" : "transparent",
-                  color: theme === id ? "#fff" : "var(--muted)",
-                  border: theme === id ? "none" : "1px solid var(--border)",
-                  borderRadius: 12,
-                }}
+                style={selectableButtonStyle(theme === id)}
               >
                 <Icon size={16} />
                 {label}
@@ -87,12 +97,7 @@ export default function SettingsPage() {
                 key={id}
                 onClick={() => setLang(id)}
                 className="btn flex-1 py-3 text-sm"
-                style={{
-                  background: lang === id ? "var(--grad-accent)" : "transparent",
-                  color: lang === id ? "#fff" : "var(--muted)",
-                  border: lang === id ? "none" : "1px solid var(--border)",
-                  borderRadius: 12,
-                }}
+                style={selectableButtonStyle(lang === id)}
               >
                 {label}
               </button>
@@ -106,14 +111,7 @@ export default function SettingsPage() {
           </p>
           <div className="card flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div
-                style={{
-                  padding: 8,
-                  borderRadius: 10,
-                  background: "var(--surface2)",
-                  display: "flex",
-                }}
-              >
+              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
                 <Database size={16} style={{ color: "var(--text)" }} />
               </div>
               <div className="min-w-0">
@@ -141,13 +139,7 @@ export default function SettingsPage() {
               disabled={loadingDemo}
             >
               <Sparkles size={14} />
-              {loadingDemo
-                ? lang === "pt"
-                  ? "A carregar"
-                  : "Loading"
-                : lang === "pt"
-                  ? "Carregar"
-                  : "Load"}
+              {loadDemoLabel}
             </button>
           </div>
           {demoLoaded && (
@@ -158,7 +150,7 @@ export default function SettingsPage() {
 
           <div className="card flex items-center justify-between gap-4 mt-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div style={{ padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" }}>
+              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
                 <RotateCcw size={16} style={{ color: "var(--text)" }} />
               </div>
               <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
@@ -176,14 +168,7 @@ export default function SettingsPage() {
           <p className="section-title mb-2">{t.healthConnect}</p>
           <div className="card flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div
-                style={{
-                  padding: 8,
-                  borderRadius: 10,
-                  background: "var(--surface2)",
-                  display: "flex",
-                }}
-              >
+              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
                 <Activity size={16} style={{ color: "var(--muted)" }} />
               </div>
               <div>

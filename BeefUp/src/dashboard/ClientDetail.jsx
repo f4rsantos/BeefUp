@@ -72,7 +72,10 @@ function Overview({ client }) {
     <div className="dash-grid">
       <div className="card">
         <p className="section-title mb-3">{t.dashMeasures}</p>
-        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>{weight ? `${weight.value}` : "—"}<span className="text-sm" style={{ color: "var(--muted)" }}> kg</span></div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
+          {weight ? `${weight.value}` : "—"}
+          <span className="text-sm" style={{ color: "var(--muted)" }}> kg</span>
+        </div>
         {weightChart.length > 1 && (
           <div style={{ width: "100%", height: 90, marginTop: 8 }}>
             <ResponsiveContainer>
@@ -89,14 +92,24 @@ function Overview({ client }) {
       <div className="card">
         <p className="section-title mb-3">{t.dashCalendar}</p>
         {next ? (
-          <div><div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{next.date}</div><p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{next.time || "—"}</p></div>
-        ) : <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashUnassigned}</p>}
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{next.date}</div>
+            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{next.time || "—"}</p>
+          </div>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashUnassigned}</p>
+        )}
       </div>
       <div className="card">
         <p className="section-title mb-3">{t.dashNotes}</p>
         {lastNote ? (
-          <div><p className="text-sm" style={{ color: "var(--text)", whiteSpace: "pre-wrap" }}>{lastNote.text}</p><span className="text-xs" style={{ color: "var(--muted)" }}>{lastNote.date}</span></div>
-        ) : <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
+          <div>
+            <p className="text-sm" style={{ color: "var(--text)", whiteSpace: "pre-wrap" }}>{lastNote.text}</p>
+            <span className="text-xs" style={{ color: "var(--muted)" }}>{lastNote.date}</span>
+          </div>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>
+        )}
       </div>
     </div>
   );

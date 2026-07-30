@@ -21,7 +21,6 @@ export default function EndWorkoutModal({ stats, onClose }) {
       fired.current = true
       confetti({ particleCount: 130, spread: 80, origin: { y: 0.5 } })
       if (prs.length) {
-        // extra celebratory bursts for a new personal record
         setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 65, origin: { x: 0 } }), 200)
         setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 65, origin: { x: 1 } }), 350)
       }

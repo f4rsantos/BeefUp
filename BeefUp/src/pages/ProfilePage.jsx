@@ -20,6 +20,13 @@ function formatDuration(totalSeconds, t) {
   return hours > 0 ? `${hours}h ${minutes}${t.minutes}` : `${minutes}${t.minutes}`;
 }
 
+const FATIGUE_COLOR = {
+  fatigued: "var(--danger)",
+  recovering: "var(--warn)",
+  fresh: "var(--success)",
+  none: "var(--muted)",
+};
+
 export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
   const { t, lang, plans, activePlanId, sessions, stepsMap, statsLayout, setStatsLayout } = useApp();
 
@@ -87,13 +94,6 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
     personalRecords: t.personalRecords,
   };
 
-  const fatigueColor = {
-    fatigued: "var(--danger)",
-    recovering: "var(--warn)",
-    fresh: "var(--success)",
-    none: "var(--muted)",
-  };
-
   function toggleEnabled(key) {
     const next = layout.map((b) => (b.key === key ? { ...b, enabled: !b.enabled } : b));
     setLayout(next);
@@ -150,259 +150,280 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
     setStatsLayout(layout);
   }
 
-  function renderBlockContent(key) {
-    switch (key) {
-      case "streakCalendar":
-        return (
-          <div className="card" style={{ height: 184 }}>
-            <div className="grid gap-3 items-center" style={{ gridTemplateColumns: "4fr 8fr", height: "100%" }}>
-              <div>
-                <span className="text-4xl font-black" style={{ color: "var(--accent)", lineHeight: 1 }}>
-                  {streak}
-                </span>
-                <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                  {lang === "pt" ? "Série atual" : "Current streak"}
-                </p>
-                <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
-                  {t.bestStreak}: <span style={{ color: "var(--text)", fontWeight: 700 }}>{bestStreak}</span>
-                </p>
-              </div>
-
-              <div
-                className="grid gap-1 justify-items-end"
-                style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
-              >
-                {Array.from({ length: daysInMonth }, (_, index) => {
-                  const day = index + 1;
-                  const info = monthActivity[day] || {};
-                  const lit = info.active;
-                  const isToday = info.isToday;
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center justify-center"
-                      style={{ width: 26, height: 26, opacity: isToday ? 1 : 0.6 }}
-                      title={`${day}`}
-                    >
-                      <Flame
-                        size={13}
-                        style={{
-                          color: lit ? "var(--accent)" : "var(--border)",
-                          fill: lit ? "var(--accent)" : "none",
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+  function renderStreakCalendarBlock() {
+    return (
+      <div className="card" style={{ height: 184 }}>
+        <div className="grid gap-3 items-center" style={{ gridTemplateColumns: "4fr 8fr", height: "100%" }}>
+          <div>
+            <span className="text-4xl font-black" style={{ color: "var(--accent)", lineHeight: 1 }}>
+              {streak}
+            </span>
+            <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+              {lang === "pt" ? "Série atual" : "Current streak"}
+            </p>
+            <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
+              {t.bestStreak}: <span style={{ color: "var(--text)", fontWeight: 700 }}>{bestStreak}</span>
+            </p>
           </div>
-        );
-      case "steps":
-        return (
-          <button
-            className="card text-left w-full flex items-center justify-between"
-            onClick={() => setShowSteps(true)}
-            style={{ cursor: "pointer", height: 84 }}
+
+          <div
+            className="grid gap-1 justify-items-end"
+            style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
           >
-            <div className="flex items-center gap-3">
-              <div
-                style={{ padding: 10, borderRadius: 12, background: "var(--accent-soft)", display: "flex" }}
-              >
-                <Footprints size={17} style={{ color: "var(--accent)" }} />
+            {Array.from({ length: daysInMonth }, (_, index) => {
+              const day = index + 1;
+              const info = monthActivity[day] || {};
+              const lit = info.active;
+              const isToday = info.isToday;
+              return (
+                <div
+                  key={index}
+                  className="flex items-center justify-center"
+                  style={{ width: 26, height: 26, opacity: isToday ? 1 : 0.6 }}
+                  title={`${day}`}
+                >
+                  <Flame
+                    size={13}
+                    style={{
+                      color: lit ? "var(--accent)" : "var(--border)",
+                      fill: lit ? "var(--accent)" : "none",
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderStepsBlock() {
+    return (
+      <button
+        className="card text-left w-full flex items-center justify-between"
+        onClick={() => setShowSteps(true)}
+        style={{ cursor: "pointer", height: 84 }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            style={{ padding: 10, borderRadius: 12, background: "var(--accent-soft)", display: "flex" }}
+          >
+            <Footprints size={17} style={{ color: "var(--accent)" }} />
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: "var(--muted)" }}>
+              {t.stepsToday}
+            </p>
+            <p className="text-2xl font-bold" style={{ color: "var(--text)", lineHeight: 1.05 }}>
+              {todaySteps !== null ? todaySteps.toLocaleString() : "—"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-end gap-1 min-w-[72px] justify-end" aria-hidden="true">
+            {weekSteps.map((entry, index) => {
+              const height = 10 + Math.round((entry.value / maxWeekSteps) * 26);
+              const active = entry.value > 0;
+              return (
+                <div
+                  key={index}
+                  className="rounded-full"
+                  title={`${entry.value.toLocaleString()} ${t.steps}`}
+                  style={{
+                    width: 6,
+                    height,
+                    background: active ? "var(--accent)" : "var(--border)",
+                    opacity: entry.isToday ? 1 : 0.7,
+                  }}
+                />
+              );
+            })}
+          </div>
+          <Plus size={16} style={{ color: "var(--text)" }} />
+        </div>
+      </button>
+    );
+  }
+
+  function renderTilesBlock() {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {items.map((item, i) => (
+          <StatTile key={i} icon={item.icon} label={item.label} value={item.value} unit={item.unit} />
+        ))}
+      </div>
+    );
+  }
+
+  function renderWeeklyProgressBlock() {
+    return (
+      <div className="card">
+        <p className="section-title mb-3">{t.weeklyProgress}</p>
+        <div style={{ width: "100%", height: 180 }}>
+          <ResponsiveContainer>
+            <LineChart data={chartData}>
+              <XAxis dataKey="weekLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
+              <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="var(--accent)"
+                strokeWidth={2}
+                dot={{ r: 3, fill: "var(--accent)" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex gap-2 mt-3">
+          {["duration", "volume", "reps"].map((m) => (
+            <button
+              key={m}
+              className={`btn ${metric === m ? "btn-primary" : "btn-ghost"} flex-1 py-1.5 text-xs`}
+              onClick={() => setMetric(m)}
+            >
+              {m === "duration" ? t.duration : m === "volume" ? t.volume : t.reps}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderMuscleDistributionBlock() {
+    return (
+      <div className="card">
+        <p className="section-title mb-3">{t.muscleDistribution}</p>
+        {distribution.length === 0 ? (
+          <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>{t.noMeasures}</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {distribution.map((d) => (
+              <div key={d.bodyPart} className="flex items-center gap-3">
+                <span className="text-xs" style={{ color: "var(--muted)", width: 72, flexShrink: 0 }}>
+                  {d.label}
+                </span>
+                <div className="flex-1" style={{ background: "var(--border)", borderRadius: 6, height: 8 }}>
+                  <div
+                    style={{
+                      width: `${(d.count / maxDistCount) * 100}%`,
+                      background: BODY_PART_ACCENT[d.bodyPart] ?? "var(--accent)",
+                      borderRadius: 6,
+                      height: 8,
+                    }}
+                  />
+                </div>
+                <span className="text-xs font-semibold" style={{ color: "var(--text)", width: 24, textAlign: "right" }}>
+                  {d.count}
+                </span>
               </div>
-              <div>
-                <p className="text-xs" style={{ color: "var(--muted)" }}>
-                  {t.stepsToday}
-                </p>
-                <p className="text-2xl font-bold" style={{ color: "var(--text)", lineHeight: 1.05 }}>
-                  {todaySteps !== null ? todaySteps.toLocaleString() : "—"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-end gap-1 min-w-[72px] justify-end" aria-hidden="true">
-                {weekSteps.map((entry, index) => {
-                  const height = 10 + Math.round((entry.value / maxWeekSteps) * 26);
-                  const active = entry.value > 0;
-                  return (
-                    <div
-                      key={index}
-                      className="rounded-full"
-                      title={`${entry.value.toLocaleString()} ${t.steps}`}
-                      style={{
-                        width: 6,
-                        height,
-                        background: active ? "var(--accent)" : "var(--border)",
-                        opacity: entry.isToday ? 1 : 0.7,
-                      }}
-                    />
-                  );
-                })}
-              </div>
-              <Plus size={16} style={{ color: "var(--text)" }} />
-            </div>
-          </button>
-        );
-      case "tiles":
-        return (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {items.map((item, i) => (
-              <StatTile key={i} icon={item.icon} label={item.label} value={item.value} unit={item.unit} />
             ))}
           </div>
-        );
-      case "weeklyProgress":
-        return (
-          <div className="card">
-            <p className="section-title mb-3">{t.weeklyProgress}</p>
-            <div style={{ width: "100%", height: 180 }}>
-              <ResponsiveContainer>
-                <LineChart data={chartData}>
-                  <XAxis dataKey="weekLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
-                  <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--accent)"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: "var(--accent)" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex gap-2 mt-3">
-              {["duration", "volume", "reps"].map((m) => (
-                <button
-                  key={m}
-                  className={`btn ${metric === m ? "btn-primary" : "btn-ghost"} flex-1 py-1.5 text-xs`}
-                  onClick={() => setMetric(m)}
-                >
-                  {m === "duration" ? t.duration : m === "volume" ? t.volume : t.reps}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      case "muscleDistribution":
-        return (
-          <div className="card">
-            <p className="section-title mb-3">{t.muscleDistribution}</p>
-            {distribution.length === 0 ? (
-              <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>{t.noMeasures}</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {distribution.map((d) => (
-                  <div key={d.bodyPart} className="flex items-center gap-3">
-                    <span className="text-xs" style={{ color: "var(--muted)", width: 72, flexShrink: 0 }}>
-                      {d.label}
-                    </span>
-                    <div className="flex-1" style={{ background: "var(--border)", borderRadius: 6, height: 8 }}>
-                      <div
-                        style={{
-                          width: `${(d.count / maxDistCount) * 100}%`,
-                          background: BODY_PART_ACCENT[d.bodyPart] ?? "var(--accent)",
-                          borderRadius: 6,
-                          height: 8,
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs font-semibold" style={{ color: "var(--text)", width: 24, textAlign: "right" }}>
-                      {d.count}
-                    </span>
-                  </div>
-                ))}
+        )}
+      </div>
+    );
+  }
+
+  function renderMuscleFatigueBlock() {
+    return (
+      <div className="card">
+        <p className="section-title mb-3">{t.muscleFatigue}</p>
+        <div className="flex flex-col gap-2">
+          {fatigue.map((f) => (
+            <div key={f.bodyPart} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: FATIGUE_COLOR[f.level],
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{ color: "var(--text)" }}>{f.label}</span>
               </div>
+              <span className="text-xs" style={{ color: "var(--muted)" }}>
+                {t[`fatigueLevel_${f.level}`]}
+                {f.daysSince !== null ? ` · ${t.daysAgo.replace("{n}", f.daysSince)}` : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderPersonalRecordsBlock() {
+    return (
+      <div className="card">
+        <button
+          className="flex items-center justify-between w-full"
+          onClick={() => setPrExpanded((v) => !v)}
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+        >
+          <p className="section-title" style={{ margin: 0 }}>
+            {t.personalRecords}
+            {records.length > 0 && (
+              <span style={{ color: "var(--muted)", fontWeight: 500 }}> ({records.length})</span>
             )}
-          </div>
-        );
-      case "muscleFatigue":
-        return (
-          <div className="card">
-            <p className="section-title mb-3">{t.muscleFatigue}</p>
-            <div className="flex flex-col gap-2">
-              {fatigue.map((f) => (
-                <div key={f.bodyPart} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: fatigueColor[f.level],
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ color: "var(--text)" }}>{f.label}</span>
+          </p>
+          <ChevronDown
+            size={18}
+            style={{
+              color: "var(--muted)",
+              transform: prExpanded ? "rotate(180deg)" : "none",
+              transition: "transform 0.15s",
+            }}
+          />
+        </button>
+        {prExpanded && (
+          <p className="text-xs mt-3" style={{ color: "var(--muted)" }}>
+            {t.personalRecordsLegend}
+          </p>
+        )}
+        {prExpanded && (
+          records.length === 0 ? (
+            <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>{t.noPRs}</p>
+          ) : (
+            <div className="flex flex-col mt-3" style={{ borderTop: "1px solid var(--border)" }}>
+              {records.map((r) => (
+                <div
+                  key={r.exerciseId}
+                  className="flex items-center justify-between text-sm"
+                  style={{ padding: "10px 0", borderBottom: "1px solid var(--border)" }}
+                >
+                  <div>
+                    <p style={{ color: "var(--text)", fontWeight: 600 }}>{r.name}</p>
+                    <p className="text-xs" style={{ color: "var(--muted)" }}>
+                      {r.weight}kg × {r.reps} · {r.date.slice(0, 10)}
+                    </p>
                   </div>
-                  <span className="text-xs" style={{ color: "var(--muted)" }}>
-                    {t[`fatigueLevel_${f.level}`]}
-                    {f.daysSince !== null ? ` · ${t.daysAgo.replace("{n}", f.daysSince)}` : ""}
+                  <span className="font-bold" style={{ color: "var(--accent)" }}>
+                    {Math.round(r.e1rm)}kg
                   </span>
                 </div>
               ))}
             </div>
-          </div>
-        );
-      case "personalRecords":
-        return (
-          <div className="card">
-            <button
-              className="flex items-center justify-between w-full"
-              onClick={() => setPrExpanded((v) => !v)}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
-            >
-              <p className="section-title" style={{ margin: 0 }}>
-                {t.personalRecords}
-                {records.length > 0 && (
-                  <span style={{ color: "var(--muted)", fontWeight: 500 }}> ({records.length})</span>
-                )}
-              </p>
-              <ChevronDown
-                size={18}
-                style={{
-                  color: "var(--muted)",
-                  transform: prExpanded ? "rotate(180deg)" : "none",
-                  transition: "transform 0.15s",
-                }}
-              />
-            </button>
-            {prExpanded && (
-              <p className="text-xs mt-3" style={{ color: "var(--muted)" }}>
-                {t.personalRecordsLegend}
-              </p>
-            )}
-            {prExpanded && (
-              records.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>{t.noPRs}</p>
-              ) : (
-                <div className="flex flex-col mt-3" style={{ borderTop: "1px solid var(--border)" }}>
-                  {records.map((r) => (
-                    <div
-                      key={r.exerciseId}
-                      className="flex items-center justify-between text-sm"
-                      style={{ padding: "10px 0", borderBottom: "1px solid var(--border)" }}
-                    >
-                      <div>
-                        <p style={{ color: "var(--text)", fontWeight: 600 }}>{r.name}</p>
-                        <p className="text-xs" style={{ color: "var(--muted)" }}>
-                          {r.weight}kg × {r.reps} · {r.date.slice(0, 10)}
-                        </p>
-                      </div>
-                      <span className="font-bold" style={{ color: "var(--accent)" }}>
-                        {Math.round(r.e1rm)}kg
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-          </div>
-        );
-      default:
-        return null;
-    }
+          )
+        )}
+      </div>
+    );
+  }
+
+  const blockRenderers = {
+    streakCalendar: renderStreakCalendarBlock,
+    steps: renderStepsBlock,
+    tiles: renderTilesBlock,
+    weeklyProgress: renderWeeklyProgressBlock,
+    muscleDistribution: renderMuscleDistributionBlock,
+    muscleFatigue: renderMuscleFatigueBlock,
+    personalRecords: renderPersonalRecordsBlock,
+  };
+
+  function renderBlockContent(key) {
+    return blockRenderers[key]?.() ?? null;
   }
 
   const visibleBlocks = statsLayout.filter((b) => b.enabled);

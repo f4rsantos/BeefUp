@@ -12,7 +12,10 @@ import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 
-// sets from the most recent prior session are filled in by index
+function timerBelongsTo(timer, exIdx, setIdx) {
+  return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
+}
+
 function buildExerciseEntry(ex, lastSets = []) {
   return {
     id: uid(),
@@ -45,8 +48,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
   });
 
-  // Shared with MiniWorkoutBar so both derive the same elapsed time, and so the
-  // clock survives this component being hidden while the workout stays running.
+  // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
   const startedAt = activeWorkout?.startedAt ?? fallbackStart;
   const [elapsed, setElapsed] = useState(() =>
@@ -141,11 +143,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           total: restAfterSet,
         });
       } else {
-        setSetTimer((prevTimer) =>
-          prevTimer?.exIdx === exIdx && prevTimer?.setIdx === setIdx
-            ? null
-            : prevTimer,
-        );
+        setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx, setIdx) ? null : prevTimer));
       }
     },
     [exercises, restAfterSet],
@@ -181,18 +179,12 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         return { ...e, sets: e.sets.filter((_, j) => j !== setIdx) };
       }),
     );
-    setSetTimer((prevTimer) =>
-      prevTimer?.exIdx === exIdx && prevTimer?.setIdx === setIdx
-        ? null
-        : prevTimer,
-    );
+    setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx, setIdx) ? null : prevTimer));
   }, []);
 
   const removeExercise = useCallback((exIdx) => {
     setExercises((prev) => prev.filter((_, i) => i !== exIdx));
-    setSetTimer((prevTimer) =>
-      prevTimer?.exIdx === exIdx ? null : prevTimer,
-    );
+    setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
 
   const addExercises = useCallback((refs) => {
@@ -237,7 +229,6 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         .filter((e) => e.sets.length > 0),
     };
 
-    // Detect new 1RM personal records vs all prior sessions.
     const priorBest = {};
     sessions.forEach((s) =>
       s.exercises?.forEach((e) =>

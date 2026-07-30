@@ -1,4 +1,3 @@
-// Circular SVG progress ring. Reused for calories, macros, workout completion.
 export default function ProgressRing({
   value = 0,
   max = 100,
