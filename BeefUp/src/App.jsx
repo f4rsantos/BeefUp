@@ -46,7 +46,7 @@ function AppInner() {
     const code = new URLSearchParams(window.location.search).get("w");
     return code ? decodeWorkoutShare(code) : null;
   });
-  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, onboarded, focus, appMode, t, saveWorkout } = useApp();
+  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("w")) {
@@ -65,8 +65,8 @@ function AppInner() {
     );
   }
 
-  const showGym = focus !== "nutrition";
-  const showNutrition = focus !== "gym";
+  const showGym = sectionPrefs.gym;
+  const showNutrition = sectionPrefs.nutrition;
   let tab2 = tab;
   if (tab === "nutrition" && !showNutrition) tab2 = "home";
   if (tab === "home" && !showGym) tab2 = "nutrition";

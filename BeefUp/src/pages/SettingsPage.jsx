@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Sun, Moon, Monitor, Activity, Database, Sparkles, RotateCcw } from "lucide-react";
+import { Sun, Moon, Monitor, Activity, Database, Sparkles, RotateCcw, Dumbbell, Apple } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
+import PageHeader from "../components/PageHeader";
 
 const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
 
@@ -27,9 +28,22 @@ export default function SettingsPage() {
     saveSteps,
     setActivePlan,
     resetOnboarding,
+    sectionPrefs,
+    setSectionPrefs,
   } = useApp();
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
+
+  const sections = [
+    { id: "gym", Icon: Dumbbell, label: t.sectionGym },
+    { id: "nutrition", Icon: Apple, label: t.nutrition },
+  ];
+
+  function toggleSection(id) {
+    const next = { ...sectionPrefs, [id]: !sectionPrefs[id] };
+    if (!next.gym && !next.nutrition) return; // pelo menos uma secção fica sempre visível
+    setSectionPrefs(next);
+  }
 
   const themeOptions = [
     { id: "light", Icon: Sun, label: t.themeLight },
@@ -60,13 +74,9 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div style={{ padding: "38px 20px 16px" }}>
-        <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
-          {t.settingsTitle}
-        </h1>
-      </div>
+      <PageHeader title={t.settingsTitle} />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide fade-in">
         {/* Theme */}
         <section>
           <p className="section-title mb-2">{t.theme}</p>
@@ -101,6 +111,32 @@ export default function SettingsPage() {
               >
                 {label}
               </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Sections visibility */}
+        <section>
+          <p className="section-title mb-1">{t.settingsSections}</p>
+          <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>{t.settingsSectionsDesc}</p>
+          <div className="card flex flex-col gap-3">
+            {sections.map(({ id, Icon, label }) => (
+              <div key={id} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div style={SETTINGS_ICON_WRAPPER_STYLE}>
+                    <Icon size={16} style={{ color: "var(--text)" }} />
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{label}</p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={sectionPrefs[id]}
+                  aria-label={label}
+                  className={`switch ${sectionPrefs[id] ? "on" : ""}`}
+                  disabled={sectionPrefs[id] && !sectionPrefs[id === "gym" ? "nutrition" : "gym"]}
+                  onClick={() => toggleSection(id)}
+                />
+              </div>
             ))}
           </div>
         </section>

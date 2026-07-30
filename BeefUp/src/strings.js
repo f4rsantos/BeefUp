@@ -181,6 +181,8 @@ const strings = {
 
     // Settings
     settingsTitle: 'Definições',
+    settingsSections: 'Secções',
+    sectionGym: 'Treino',
     healthConnect: 'Health Connect',
     healthConnectDesc: 'Sincronizar passos com Health Connect',
     connect: 'Ligar',
@@ -472,6 +474,8 @@ const strings = {
     langEn: 'English',
 
     settingsTitle: 'Settings',
+    settingsSections: 'Sections',
+    sectionGym: 'Workout',
     healthConnect: 'Health Connect',
     healthConnectDesc: 'Sync steps with Health Connect',
     connect: 'Connect',

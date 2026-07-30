@@ -27,6 +27,9 @@ export function AppProvider({ children }) {
   const [onboarded, setOnboardedState] = useState(() => getLS('onboarded', false))
   const [appMode, setAppModeState] = useState(() => getLS('appMode', 'solo'))
   const [focus, setFocusState] = useState(() => getLS('focus', 'both'))
+  const [sectionPrefs, setSectionPrefsState] = useState(() =>
+    getLS('sectionPrefs', { gym: focus !== 'nutrition', nutrition: focus !== 'gym' }),
+  )
   const [plans, setPlans] = useState([])
   const [workouts, setWorkouts] = useState([])
   const [sessions, setSessions] = useState([])
@@ -62,6 +65,11 @@ export function AppProvider({ children }) {
     setLS('appMode', mode); setAppModeState(mode)
     if (focus) { setLS('focus', focus); setFocusState(focus) }
     setLS('onboarded', true); setOnboardedState(true)
+  }, [])
+
+  const setSectionPrefs = useCallback((next) => {
+    setSectionPrefsState(next)
+    setLS('sectionPrefs', next)
   }, [])
 
   const resetOnboarding = useCallback(() => {
@@ -227,6 +235,7 @@ export function AppProvider({ children }) {
     lang, setLang,
     t,
     onboarded, appMode, focus, completeOnboarding, resetOnboarding,
+    sectionPrefs, setSectionPrefs,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession, deleteSession,
