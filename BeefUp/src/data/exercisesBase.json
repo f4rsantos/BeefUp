@@ -1,0 +1,1274 @@
+[
+  {
+    "id": "bench_press",
+    "name": "Bench press",
+    "namePt": "Supino",
+    "bodyPart": "chest",
+    "target": "pectorals",
+    "muscleGroup": "chest",
+    "secondaryMuscles": ["triceps", "shoulders"],
+    "description": "Classic pressing movement for chest, shoulders and triceps.",
+    "descriptionPt": "Movimento clássico de press para peito, ombros e tríceps.",
+    "instructions": [
+      "Lie on the bench with feet flat on the floor.",
+      "Grip and unrack the weight above your chest.",
+      "Lower it under control until it touches your chest.",
+      "Press back up until your arms are extended."
+    ],
+    "instructionsPt": [
+      "Deita-te no banco com os pés bem assentes no chão.",
+      "Pega e destranca o peso por cima do peito.",
+      "Desce de forma controlada até tocar no peito.",
+      "Empurra para cima até estenderes os braços."
+    ],
+    "equipment": ["barbell", "dumbbell", "cable", "smith_machine", "machine"],
+    "variants": [
+      { "id": "flat", "name": "Flat", "namePt": "Reto" },
+      { "id": "incline", "name": "Incline", "namePt": "Inclinado" },
+      { "id": "decline", "name": "Decline", "namePt": "Declinado" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "push_up",
+    "name": "Push-up",
+    "namePt": "Flexão de braços",
+    "bodyPart": "chest",
+    "target": "pectorals",
+    "muscleGroup": "chest",
+    "secondaryMuscles": ["triceps", "shoulders", "abs"],
+    "description": "Bodyweight chest press done on the floor.",
+    "descriptionPt": "Press de peito com peso do corpo, feito no chão.",
+    "instructions": [
+      "Start in a plank position with hands under your shoulders.",
+      "Lower your body until your chest nears the floor.",
+      "Push back up until your arms are extended."
+    ],
+    "instructionsPt": [
+      "Começa em prancha, com as mãos por baixo dos ombros.",
+      "Desce o corpo até o peito quase tocar no chão.",
+      "Empurra para cima até estenderes os braços."
+    ],
+    "equipment": ["bodyweight", "rings"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "wide", "name": "Wide grip", "namePt": "Pegada aberta" },
+      { "id": "diamond", "name": "Diamond", "namePt": "Diamante" },
+      { "id": "feet_elevated", "name": "Feet elevated", "namePt": "Pés elevados" },
+      { "id": "hand_release", "name": "Hand-release", "namePt": "Hand-release" },
+      { "id": "ring", "name": "Ring push-up", "namePt": "Nas argolas" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "row",
+    "name": "Row",
+    "namePt": "Remada",
+    "bodyPart": "back",
+    "target": "lats",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["biceps", "traps"],
+    "description": "Pulling movement that builds back thickness.",
+    "descriptionPt": "Movimento de puxar que constrói espessura nas costas.",
+    "instructions": [
+      "Hinge forward at the hips keeping your back straight.",
+      "Pull the weight towards your torso, squeezing your shoulder blades.",
+      "Lower it back under control."
+    ],
+    "instructionsPt": [
+      "Inclina o tronco à frente, mantendo as costas direitas.",
+      "Puxa o peso em direção ao tronco, apertando as omoplatas.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["barbell", "dumbbell", "cable", "machine"],
+    "variants": [
+      { "id": "bent_over", "name": "Bent-over", "namePt": "Curvado" },
+      { "id": "seated", "name": "Seated", "namePt": "Sentado" },
+      { "id": "one_arm", "name": "One arm", "namePt": "Um braço" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "pull_up",
+    "name": "Pull-up",
+    "namePt": "Elevação na barra",
+    "bodyPart": "back",
+    "target": "lats",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["biceps", "forearms"],
+    "description": "Vertical pulling movement for the back and biceps.",
+    "descriptionPt": "Movimento de puxar na vertical para costas e bíceps.",
+    "instructions": [
+      "Hang from the bar with your chosen grip.",
+      "Pull yourself up until your chin clears the bar.",
+      "Lower back down under control until arms are extended."
+    ],
+    "instructionsPt": [
+      "Fica pendurado na barra com a pegada escolhida.",
+      "Puxa-te para cima até o queixo passar a barra.",
+      "Desce de forma controlada até estenderes os braços."
+    ],
+    "equipment": ["bodyweight", "machine"],
+    "variants": [
+      { "id": "pronated", "name": "Pronated grip", "namePt": "Pegada pronada" },
+      { "id": "supinated", "name": "Supinated grip (chin-up)", "namePt": "Pegada supinada" },
+      { "id": "wide", "name": "Wide grip", "namePt": "Pegada aberta" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 8,
+    "defaultWeight": 0
+  },
+  {
+    "id": "lat_pulldown",
+    "name": "Lat pulldown",
+    "namePt": "Puxada alta",
+    "bodyPart": "back",
+    "target": "lats",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["biceps"],
+    "description": "Machine/cable pulldown that mimics the pull-up.",
+    "descriptionPt": "Puxada na máquina/cabo que imita a elevação na barra.",
+    "instructions": [
+      "Sit and grip the bar wider than shoulder width.",
+      "Pull the bar down to your upper chest.",
+      "Slowly let it back up until arms are extended."
+    ],
+    "instructionsPt": [
+      "Senta-te e pega na barra mais aberto que os ombros.",
+      "Puxa a barra até ao peito.",
+      "Deixa subir devagar até estenderes os braços."
+    ],
+    "equipment": ["cable", "machine"],
+    "variants": [
+      { "id": "wide", "name": "Wide grip", "namePt": "Pegada aberta" },
+      { "id": "close", "name": "Close grip", "namePt": "Pegada fechada" },
+      { "id": "reverse", "name": "Reverse grip", "namePt": "Pegada invertida" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "squat",
+    "name": "Squat",
+    "namePt": "Agachamento",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "hamstrings"],
+    "description": "Fundamental lower-body compound movement.",
+    "descriptionPt": "Movimento composto fundamental para as pernas.",
+    "instructions": [
+      "Stand with feet shoulder-width apart.",
+      "Bend your knees and hips to lower down, keeping your chest up.",
+      "Go down until thighs are at least parallel to the floor.",
+      "Push through your heels back to standing."
+    ],
+    "instructionsPt": [
+      "Fica de pé com os pés à largura dos ombros.",
+      "Dobra os joelhos e as ancas para descer, mantendo o peito erguido.",
+      "Desce até as coxas ficarem pelo menos paralelas ao chão.",
+      "Empurra pelos calcanhares até voltares a ficar de pé."
+    ],
+    "equipment": ["barbell", "dumbbell", "bodyweight", "smith_machine"],
+    "variants": [
+      { "id": "back", "name": "Back squat", "namePt": "Costas" },
+      { "id": "front", "name": "Front squat", "namePt": "Frontal" },
+      { "id": "overhead", "name": "Overhead squat", "namePt": "Agachamento overhead" },
+      { "id": "goblet", "name": "Goblet", "namePt": "Goblet" },
+      { "id": "pistol", "name": "Pistol", "namePt": "Pistol" },
+      { "id": "pistol_assisted", "name": "Assisted pistol", "namePt": "Pistol assistido" },
+      { "id": "pistol_weighted", "name": "Weighted pistol", "namePt": "Pistol com haltere" }
+    ],
+    "defaultSets": 4,
+    "defaultReps": 8,
+    "defaultWeight": 0
+  },
+  {
+    "id": "deadlift",
+    "name": "Deadlift",
+    "namePt": "Levantamento terra",
+    "bodyPart": "back",
+    "target": "hamstrings",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "back"],
+    "description": "Hip-hinge compound movement lifting weight off the floor.",
+    "descriptionPt": "Movimento composto de dobra de anca, levantando o peso do chão.",
+    "instructions": [
+      "Stand with the bar over mid-foot, grip it just outside your legs.",
+      "Keep your back straight and hinge at the hips to grip the bar.",
+      "Drive through your heels and stand up straight, keeping the bar close.",
+      "Lower it back down under control."
+    ],
+    "instructionsPt": [
+      "Fica de pé com a barra sobre o meio do pé, pega fora das pernas.",
+      "Mantém as costas direitas e dobra as ancas para pegar na barra.",
+      "Empurra pelos calcanhares e fica direito, mantendo a barra perto do corpo.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["barbell", "dumbbell", "smith_machine"],
+    "variants": [
+      { "id": "conventional", "name": "Conventional", "namePt": "Convencional" },
+      { "id": "romanian", "name": "Romanian", "namePt": "Romeno" },
+      { "id": "sumo", "name": "Sumo", "namePt": "Sumo" },
+      { "id": "deficit", "name": "Deficit", "namePt": "Défice" },
+      { "id": "wide_grip", "name": "Wide grip", "namePt": "Pegada larga" },
+      { "id": "close_grip", "name": "Close grip", "namePt": "Pegada estreita" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 6,
+    "defaultWeight": 0
+  },
+  {
+    "id": "leg_press",
+    "name": "Leg press",
+    "namePt": "Leg press",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "hamstrings"],
+    "description": "Machine-based pressing movement for the legs.",
+    "descriptionPt": "Movimento de press para pernas feito na máquina.",
+    "instructions": [
+      "Sit in the machine with feet shoulder-width apart on the platform.",
+      "Lower the platform by bending your knees towards your chest.",
+      "Press back up until legs are extended, without locking your knees."
+    ],
+    "instructionsPt": [
+      "Senta-te na máquina com os pés à largura dos ombros na plataforma.",
+      "Desce a plataforma dobrando os joelhos em direção ao peito.",
+      "Empurra para cima até estenderes as pernas, sem travar os joelhos."
+    ],
+    "equipment": ["machine"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "single_leg", "name": "Single leg", "namePt": "Uma perna" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "leg_curl",
+    "name": "Leg curl",
+    "namePt": "Flexão de pernas",
+    "bodyPart": "upper legs",
+    "target": "hamstrings",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["calves"],
+    "description": "Isolation movement for the hamstrings.",
+    "descriptionPt": "Movimento de isolamento para os isquiotibiais.",
+    "instructions": [
+      "Position yourself on the machine with the pad against your ankles.",
+      "Curl your legs, bringing your heels towards your glutes.",
+      "Slowly return to the starting position."
+    ],
+    "instructionsPt": [
+      "Posiciona-te na máquina com o apoio contra os tornozelos.",
+      "Flete as pernas, levando os calcanhares em direção aos glúteos.",
+      "Volta devagar à posição inicial."
+    ],
+    "equipment": ["machine", "cable"],
+    "variants": [
+      { "id": "lying", "name": "Lying", "namePt": "Deitado" },
+      { "id": "seated", "name": "Seated", "namePt": "Sentado" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "leg_extension",
+    "name": "Leg extension",
+    "namePt": "Extensão de pernas",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": [],
+    "description": "Isolation movement for the quadriceps.",
+    "descriptionPt": "Movimento de isolamento para o quadríceps.",
+    "instructions": [
+      "Sit on the machine with the pad against your shins.",
+      "Extend your legs until they're straight.",
+      "Slowly return to the starting position."
+    ],
+    "instructionsPt": [
+      "Senta-te na máquina com o apoio contra as canelas.",
+      "Estende as pernas até ficarem direitas.",
+      "Volta devagar à posição inicial."
+    ],
+    "equipment": ["machine"],
+    "variants": [],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "calf_raise",
+    "name": "Calf raise",
+    "namePt": "Elevação de gémeos",
+    "bodyPart": "lower legs",
+    "target": "calves",
+    "muscleGroup": "lower legs",
+    "secondaryMuscles": [],
+    "description": "Isolation movement for the calves.",
+    "descriptionPt": "Movimento de isolamento para os gémeos.",
+    "instructions": [
+      "Stand with the balls of your feet on a raised surface.",
+      "Rise up onto your toes as high as possible.",
+      "Lower your heels back down under control."
+    ],
+    "instructionsPt": [
+      "Fica de pé com a parte da frente dos pés numa superfície elevada.",
+      "Sobe o mais alto possível na ponta dos pés.",
+      "Desce os calcanhares de forma controlada."
+    ],
+    "equipment": ["bodyweight", "barbell", "machine", "smith_machine"],
+    "variants": [
+      { "id": "standing", "name": "Standing", "namePt": "Em pé" },
+      { "id": "seated", "name": "Seated", "namePt": "Sentado" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "lunge",
+    "name": "Lunge",
+    "namePt": "Lunge",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "hamstrings"],
+    "description": "Single-leg movement for the legs and glutes.",
+    "descriptionPt": "Movimento unilateral para pernas e glúteos.",
+    "instructions": [
+      "Stand tall and take a step forward (or backward).",
+      "Lower your hips until both knees are bent around 90°.",
+      "Push back up to the starting position and repeat on the other side."
+    ],
+    "instructionsPt": [
+      "Fica em pé e dá um passo à frente (ou atrás).",
+      "Desce as ancas até os dois joelhos ficarem a cerca de 90°.",
+      "Empurra de volta à posição inicial e repete do outro lado."
+    ],
+    "equipment": ["bodyweight", "dumbbell", "barbell"],
+    "variants": [
+      { "id": "forward", "name": "Forward", "namePt": "À frente" },
+      { "id": "reverse", "name": "Reverse", "namePt": "Atrás" },
+      { "id": "walking", "name": "Walking", "namePt": "Caminhando" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "overhead_press",
+    "name": "Overhead press",
+    "namePt": "Shoulder Press",
+    "bodyPart": "shoulders",
+    "target": "delts",
+    "muscleGroup": "shoulders",
+    "secondaryMuscles": ["triceps"],
+    "description": "Vertical pressing movement for the shoulders.",
+    "descriptionPt": "Movimento de press vertical para os ombros.",
+    "instructions": [
+      "Hold the weight at shoulder height.",
+      "Press it straight overhead until your arms are extended.",
+      "Lower it back down under control."
+    ],
+    "instructionsPt": [
+      "Segura o peso à altura dos ombros.",
+      "Empurra-o na vertical até estenderes os braços.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["barbell", "dumbbell", "machine", "smith_machine"],
+    "variants": [
+      { "id": "standing", "name": "Standing", "namePt": "Em pé" },
+      { "id": "seated", "name": "Seated", "namePt": "Sentado" },
+      { "id": "push_press", "name": "Push press", "namePt": "Push press" },
+      { "id": "push_jerk", "name": "Push jerk", "namePt": "Push jerk" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "lateral_raise",
+    "name": "Lateral raise",
+    "namePt": "Elevação lateral",
+    "bodyPart": "shoulders",
+    "target": "delts",
+    "muscleGroup": "shoulders",
+    "secondaryMuscles": [],
+    "description": "Isolation movement for the side delts.",
+    "descriptionPt": "Movimento de isolamento para o deltoide lateral.",
+    "instructions": [
+      "Stand holding weights by your sides.",
+      "Raise your arms out to the sides until roughly shoulder height.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Fica de pé com os pesos ao lado do corpo.",
+      "Eleva os braços para os lados até à altura dos ombros.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["dumbbell", "cable", "band"],
+    "variants": [],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "rear_delt_fly",
+    "name": "Rear delt fly",
+    "namePt": "Crucifixo invertido",
+    "bodyPart": "shoulders",
+    "target": "delts",
+    "muscleGroup": "shoulders",
+    "secondaryMuscles": ["traps"],
+    "description": "Isolation movement for the rear delts and upper back.",
+    "descriptionPt": "Movimento de isolamento para o deltoide posterior e costas superiores.",
+    "instructions": [
+      "Hinge forward slightly with a soft bend in your knees.",
+      "Raise your arms out to the sides, squeezing your shoulder blades.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Inclina-te ligeiramente à frente com os joelhos levemente dobrados.",
+      "Eleva os braços para os lados, apertando as omoplatas.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["dumbbell", "cable", "machine"],
+    "variants": [
+      { "id": "bent_over", "name": "Bent-over", "namePt": "Dobrado à frente" },
+      { "id": "incline_bench", "name": "Incline bench", "namePt": "Banco inclinado" },
+      { "id": "reverse_pec_deck", "name": "Reverse pec-deck", "namePt": "Pec-deck invertido" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "bicep_curl",
+    "name": "Bicep curl",
+    "namePt": "Rosca bíceps",
+    "bodyPart": "upper arms",
+    "target": "biceps",
+    "muscleGroup": "upper arms",
+    "secondaryMuscles": ["forearms"],
+    "description": "Isolation movement for the biceps.",
+    "descriptionPt": "Movimento de isolamento para o bíceps.",
+    "instructions": [
+      "Stand holding the weight with arms extended.",
+      "Curl it up towards your shoulders, keeping elbows still.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Fica de pé com o peso e os braços estendidos.",
+      "Flete até ao ombro, mantendo os cotovelos parados.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["dumbbell", "barbell", "cable", "band"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "alternating", "name": "Alternating", "namePt": "Alternado" },
+      { "id": "hammer", "name": "Hammer", "namePt": "Martelo" },
+      { "id": "incline", "name": "Incline bench", "namePt": "Banco inclinado" },
+      { "id": "concentration", "name": "Concentration", "namePt": "Concentrada" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "tricep_extension",
+    "name": "Tricep extension",
+    "namePt": "Extensão de tríceps",
+    "bodyPart": "upper arms",
+    "target": "triceps",
+    "muscleGroup": "upper arms",
+    "secondaryMuscles": [],
+    "description": "Isolation movement for the triceps.",
+    "descriptionPt": "Movimento de isolamento para o tríceps.",
+    "instructions": [
+      "Hold the weight above or behind your head.",
+      "Extend your arms until straight, keeping elbows still.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Segura o peso acima ou atrás da cabeça.",
+      "Estende os braços, mantendo os cotovelos parados.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["dumbbell", "cable", "barbell"],
+    "variants": [
+      { "id": "overhead", "name": "Overhead", "namePt": "Acima da cabeça" },
+      { "id": "lying", "name": "Lying (skull crusher)", "namePt": "Deitado" },
+      { "id": "rope", "name": "Rope", "namePt": "Corda" },
+      { "id": "straight_bar", "name": "Straight bar", "namePt": "Barra reta" },
+      { "id": "v_bar", "name": "V-bar", "namePt": "Barra em V" },
+      { "id": "reverse_grip", "name": "Reverse grip", "namePt": "Pegada supinada" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "plank",
+    "name": "Plank",
+    "namePt": "Prancha",
+    "bodyPart": "waist",
+    "target": "abs",
+    "muscleGroup": "waist",
+    "secondaryMuscles": ["back"],
+    "description": "Isometric core-stability hold.",
+    "descriptionPt": "Exercício isométrico de estabilidade do core.",
+    "instructions": [
+      "Support your body on forearms and toes, in a straight line.",
+      "Brace your core and hold the position.",
+      "Avoid letting your hips sag or pike up."
+    ],
+    "instructionsPt": [
+      "Apoia o corpo nos antebraços e nas pontas dos pés, em linha reta.",
+      "Contrai o core e mantém a posição.",
+      "Evita que as ancas caiam ou subam demasiado."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "side", "name": "Side plank", "namePt": "Lateral" },
+      { "id": "high", "name": "High plank", "namePt": "Prancha alta" },
+      { "id": "limb_raise", "name": "Limb raise", "namePt": "Com elevação de perna/braço" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 1,
+    "defaultWeight": 0
+  },
+  {
+    "id": "crunch",
+    "name": "Crunch",
+    "namePt": "Abdominal",
+    "bodyPart": "waist",
+    "target": "abs",
+    "muscleGroup": "waist",
+    "secondaryMuscles": [],
+    "description": "Basic abdominal flexion movement.",
+    "descriptionPt": "Movimento básico de flexão abdominal.",
+    "instructions": [
+      "Lie on your back with knees bent, feet flat on the floor.",
+      "Curl your shoulders up off the floor, engaging your abs.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Deita-te de costas com os joelhos dobrados e os pés no chão.",
+      "Enrola os ombros para cima do chão, contraindo o abdómen.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["bodyweight", "cable"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "bicycle", "name": "Bicycle", "namePt": "Bicicleta" },
+      { "id": "reverse", "name": "Reverse", "namePt": "Invertido" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "hanging_leg_raise",
+    "name": "Hanging leg raise",
+    "namePt": "Elevação de pernas suspenso",
+    "bodyPart": "waist",
+    "target": "abs",
+    "muscleGroup": "waist",
+    "secondaryMuscles": ["forearms"],
+    "description": "Advanced core movement performed hanging from a bar.",
+    "descriptionPt": "Movimento avançado de core feito pendurado numa barra.",
+    "instructions": [
+      "Hang from a pull-up bar with arms extended.",
+      "Raise your legs up towards your chest, keeping them straight if possible.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Fica pendurado numa barra com os braços estendidos.",
+      "Eleva as pernas em direção ao peito, esticadas se possível.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [
+      { "id": "bent_knees", "name": "Bent knees", "namePt": "Joelhos fletidos" },
+      { "id": "straight_legs", "name": "Straight legs", "namePt": "Pernas estendidas" },
+      { "id": "toes_to_bar", "name": "Toes-to-bar", "namePt": "Toes-to-bar" },
+      { "id": "knees_to_elbows", "name": "Knees-to-elbows", "namePt": "Knees-to-elbows" },
+      { "id": "rings", "name": "Rings", "namePt": "Argolas" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "hip_thrust",
+    "name": "Hip thrust",
+    "namePt": "Elevação de anca",
+    "bodyPart": "upper legs",
+    "target": "glutes",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["hamstrings"],
+    "description": "Hip-extension movement that targets the glutes directly.",
+    "descriptionPt": "Movimento de extensão de anca que trabalha diretamente os glúteos.",
+    "instructions": [
+      "Rest your upper back against a bench, weight over your hips.",
+      "Drive through your heels to raise your hips up.",
+      "Squeeze your glutes at the top, then lower back down under control."
+    ],
+    "instructionsPt": [
+      "Apoia as costas num banco, com o peso sobre as ancas.",
+      "Empurra pelos calcanhares para elevar as ancas.",
+      "Aperta os glúteos em cima, depois desce de forma controlada."
+    ],
+    "equipment": ["barbell", "bodyweight", "dumbbell", "machine", "band"],
+    "variants": [
+      { "id": "single_leg", "name": "Single leg", "namePt": "Unilateral" },
+      { "id": "floor", "name": "Floor (glute bridge)", "namePt": "No chão (ponte de glúteos)" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "dip",
+    "name": "Dip",
+    "namePt": "Dip",
+    "bodyPart": "upper arms",
+    "target": "triceps",
+    "muscleGroup": "upper arms",
+    "secondaryMuscles": ["chest", "shoulders"],
+    "description": "Pressing movement for chest and triceps on parallel bars.",
+    "descriptionPt": "Movimento de press para peito e tríceps em barras paralelas.",
+    "instructions": [
+      "Support your body on parallel bars with arms extended.",
+      "Lower yourself by bending your elbows.",
+      "Push back up until your arms are extended."
+    ],
+    "instructionsPt": [
+      "Apoia o corpo em barras paralelas com os braços estendidos.",
+      "Desce dobrando os cotovelos.",
+      "Empurra para cima até estenderes os braços."
+    ],
+    "equipment": ["bodyweight", "machine"],
+    "variants": [
+      { "id": "chest", "name": "Chest-focused", "namePt": "Foco no peito" },
+      { "id": "triceps", "name": "Triceps-focused", "namePt": "Foco no tríceps" },
+      { "id": "between_benches", "name": "Between benches", "namePt": "Entre bancos" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "shrug",
+    "name": "Shrug",
+    "namePt": "Encolhimento de ombros",
+    "bodyPart": "back",
+    "target": "traps",
+    "muscleGroup": "back",
+    "secondaryMuscles": [],
+    "description": "Isolation movement for the trapezius.",
+    "descriptionPt": "Movimento de isolamento para o trapézio.",
+    "instructions": [
+      "Stand holding the weight with arms extended by your sides.",
+      "Raise your shoulders straight up towards your ears.",
+      "Lower back down under control."
+    ],
+    "instructionsPt": [
+      "Fica de pé com o peso e os braços estendidos ao lado do corpo.",
+      "Eleva os ombros na direção das orelhas.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["barbell", "dumbbell", "machine"],
+    "variants": [],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "chest_fly",
+    "name": "Chest fly",
+    "namePt": "Crucifixo",
+    "bodyPart": "chest",
+    "target": "pectorals",
+    "muscleGroup": "chest",
+    "secondaryMuscles": ["shoulders"],
+    "description": "Isolation movement for the chest, moving the arms in an arc.",
+    "descriptionPt": "Movimento de isolamento para o peito, com os braços a desenhar um arco.",
+    "instructions": [
+      "Lie on a bench (or stand at a cable/pec-deck station) with arms extended out to the sides.",
+      "Bring your arms together in an arc above your chest.",
+      "Lower back down under control until you feel a stretch."
+    ],
+    "instructionsPt": [
+      "Deita-te num banco (ou fica de pé no cabo/pec-deck) com os braços abertos para os lados.",
+      "Junta os braços num arco por cima do peito.",
+      "Desce de forma controlada até sentires o alongamento."
+    ],
+    "equipment": ["dumbbell", "cable", "machine"],
+    "variants": [
+      { "id": "flat", "name": "Flat", "namePt": "Reto" },
+      { "id": "incline", "name": "Incline", "namePt": "Inclinado" },
+      { "id": "decline", "name": "Decline", "namePt": "Declinado" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "bulgarian_split_squat",
+    "name": "Bulgarian split squat",
+    "namePt": "Agachamento búlgaro",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "hamstrings"],
+    "description": "Single-leg squat with the rear foot elevated on a bench.",
+    "descriptionPt": "Agachamento a uma perna com o pé de trás apoiado num banco.",
+    "instructions": [
+      "Stand a stride length in front of a bench, resting the top of your rear foot on it.",
+      "Lower your back knee towards the floor, keeping your front shin vertical.",
+      "Push through your front heel to stand back up."
+    ],
+    "instructionsPt": [
+      "Fica um passo à frente de um banco, com o peito do pé de trás apoiado nele.",
+      "Desce o joelho de trás em direção ao chão, mantendo a canela da frente vertical.",
+      "Empurra pelo calcanhar da frente para voltares a subir."
+    ],
+    "equipment": ["bodyweight", "dumbbell", "barbell"],
+    "variants": [
+      { "id": "back_rack", "name": "Back rack", "namePt": "Barra nas costas" },
+      { "id": "front_rack", "name": "Front rack", "namePt": "Barra frontal" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "face_pull",
+    "name": "Face pull",
+    "namePt": "Face pull",
+    "bodyPart": "shoulders",
+    "target": "delts",
+    "muscleGroup": "shoulders",
+    "secondaryMuscles": ["traps", "back"],
+    "description": "Cable movement for the rear delts and upper back, pulled towards the face.",
+    "descriptionPt": "Movimento no cabo para o deltoide posterior e costas superiores, puxado em direção à cara.",
+    "instructions": [
+      "Set a rope attachment at face height on the cable machine.",
+      "Pull it towards your face, flaring your elbows out and back.",
+      "Return to the start under control."
+    ],
+    "instructionsPt": [
+      "Coloca um acessório de corda à altura da cara no cabo.",
+      "Puxa em direção à cara, abrindo os cotovelos para trás.",
+      "Volta ao início de forma controlada."
+    ],
+    "equipment": ["cable"],
+    "variants": [
+      { "id": "standing", "name": "Standing", "namePt": "Em pé" },
+      { "id": "kneeling", "name": "Kneeling", "namePt": "Joelhos fletidos" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "clean",
+    "name": "Clean",
+    "namePt": "Clean",
+    "bodyPart": "back",
+    "target": "hamstrings",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["glutes", "shoulders", "quads"],
+    "description": "Olympic pull that brings the barbell from the floor to the shoulders in one motion.",
+    "descriptionPt": "Levantamento olímpico que traz a barra do chão aos ombros num só movimento.",
+    "instructions": [
+      "Start with the bar over midfoot, grip just outside your legs.",
+      "Pull explosively, extending hips and knees, then pull yourself under the bar.",
+      "Catch it on your shoulders in a front rack and stand up."
+    ],
+    "instructionsPt": [
+      "Começa com a barra sobre o meio do pé, pegada fora das pernas.",
+      "Puxa explosivamente, estendendo ancas e joelhos, depois desce por baixo da barra.",
+      "Recebe nos ombros em front rack e levanta-te."
+    ],
+    "equipment": ["barbell"],
+    "variants": [
+      { "id": "power", "name": "Power clean", "namePt": "Power clean" },
+      { "id": "squat", "name": "Squat clean", "namePt": "Squat clean" },
+      { "id": "hang", "name": "Hang clean", "namePt": "Hang clean" }
+    ],
+    "defaultSets": 5,
+    "defaultReps": 3,
+    "defaultWeight": 0
+  },
+  {
+    "id": "snatch",
+    "name": "Snatch",
+    "namePt": "Snatch",
+    "bodyPart": "back",
+    "target": "hamstrings",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["glutes", "shoulders", "traps"],
+    "description": "Olympic pull that brings the barbell from the floor to overhead in one motion.",
+    "descriptionPt": "Levantamento olímpico que traz a barra do chão até acima da cabeça num só movimento.",
+    "instructions": [
+      "Start with the bar over midfoot, wide grip.",
+      "Pull explosively, extending hips and knees, then pull yourself under the bar.",
+      "Catch it overhead with arms locked out and stand up."
+    ],
+    "instructionsPt": [
+      "Começa com a barra sobre o meio do pé, pegada aberta.",
+      "Puxa explosivamente, estendendo ancas e joelhos, depois desce por baixo da barra.",
+      "Recebe acima da cabeça com os braços travados e levanta-te."
+    ],
+    "equipment": ["barbell"],
+    "variants": [
+      { "id": "power", "name": "Power snatch", "namePt": "Power snatch" },
+      { "id": "squat", "name": "Squat snatch", "namePt": "Squat snatch" },
+      { "id": "hang", "name": "Hang snatch", "namePt": "Hang snatch" }
+    ],
+    "defaultSets": 5,
+    "defaultReps": 3,
+    "defaultWeight": 0
+  },
+  {
+    "id": "thruster",
+    "name": "Thruster",
+    "namePt": "Thruster",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["delts", "glutes"],
+    "description": "Front squat combined with an overhead press in one continuous motion.",
+    "descriptionPt": "Agachamento frontal combinado com um press acima da cabeça num movimento contínuo.",
+    "instructions": [
+      "Hold the weight in a front rack position.",
+      "Squat down, then drive up and press the weight overhead using the momentum.",
+      "Return the weight to the front rack and repeat."
+    ],
+    "instructionsPt": [
+      "Segura o peso em front rack.",
+      "Agacha, depois sobe e empurra o peso acima da cabeça usando o momento.",
+      "Volta o peso ao front rack e repete."
+    ],
+    "equipment": ["barbell", "dumbbell", "kettlebell"],
+    "variants": [],
+    "defaultSets": 4,
+    "defaultReps": 10,
+    "defaultWeight": 0
+  },
+  {
+    "id": "muscle_up",
+    "name": "Muscle-up",
+    "namePt": "Muscle-up",
+    "bodyPart": "back",
+    "target": "lats",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["triceps", "chest", "shoulders"],
+    "description": "Pull-up transitioned into a dip, taking the body from hanging to above the bar or rings.",
+    "descriptionPt": "Passa de uma dominada para um mergulho, levando o corpo de pendurado para cima da barra ou argolas.",
+    "instructions": [
+      "Start hanging with an active grip on the bar or rings.",
+      "Pull explosively and transition your body over the bar/rings.",
+      "Press up until your arms are extended."
+    ],
+    "instructionsPt": [
+      "Começa pendurado com pegada ativa na barra ou argolas.",
+      "Puxa explosivamente e transita o corpo para cima da barra/argolas.",
+      "Empurra até estenderes os braços."
+    ],
+    "equipment": ["bodyweight", "rings"],
+    "variants": [
+      { "id": "strict", "name": "Strict", "namePt": "Estrito" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 5,
+    "defaultWeight": 0
+  },
+  {
+    "id": "handstand_pushup",
+    "name": "Handstand push-up",
+    "namePt": "Flexão de pino",
+    "bodyPart": "shoulders",
+    "target": "delts",
+    "muscleGroup": "shoulders",
+    "secondaryMuscles": ["triceps", "chest"],
+    "description": "Pressing movement done upside down in a handstand against a wall.",
+    "descriptionPt": "Movimento de press feito de pernas para o ar, apoiado numa parede.",
+    "instructions": [
+      "Kick up into a handstand against a wall.",
+      "Lower your head towards the floor by bending your elbows.",
+      "Press back up until your arms are extended."
+    ],
+    "instructionsPt": [
+      "Sobe para o pino apoiado na parede.",
+      "Desce a cabeça em direção ao chão dobrando os cotovelos.",
+      "Empurra para cima até estenderes os braços."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [
+      { "id": "strict", "name": "Strict", "namePt": "Estrito" },
+      { "id": "wall_facing", "name": "Wall-facing", "namePt": "De frente para a parede" },
+      { "id": "deficit", "name": "Deficit (plates)", "namePt": "Défice (com plates)" },
+      { "id": "parallettes", "name": "Parallettes", "namePt": "Paralelo" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 5,
+    "defaultWeight": 0
+  },
+  {
+    "id": "burpee",
+    "name": "Burpee",
+    "namePt": "Burpee",
+    "bodyPart": "chest",
+    "target": "pectorals",
+    "muscleGroup": "chest",
+    "secondaryMuscles": ["quads", "delts", "abs"],
+    "description": "Full-body conditioning movement combining a push-up and a jump.",
+    "descriptionPt": "Movimento de condição física completo que combina uma flexão e um salto.",
+    "instructions": [
+      "Drop into a squat and place your hands on the floor.",
+      "Kick your feet back into a plank, do a push-up, then jump your feet back in.",
+      "Jump up, reaching overhead."
+    ],
+    "instructionsPt": [
+      "Agacha e coloca as mãos no chão.",
+      "Atira os pés para trás em prancha, faz uma flexão, depois traz os pés de volta.",
+      "Salta, esticando os braços para cima."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "bar_facing", "name": "Bar-facing", "namePt": "Sobre a barra" },
+      { "id": "box_jump_over", "name": "Box jump-over", "namePt": "Sobre a caixa" },
+      { "id": "lateral_over_bar", "name": "Lateral over bar", "namePt": "Lateral sobre a barra" },
+      { "id": "wall_target", "name": "With wall target", "namePt": "Com alvo na parede" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "rope_climb",
+    "name": "Rope climb",
+    "namePt": "Subida à corda",
+    "bodyPart": "back",
+    "target": "lats",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["forearms", "biceps"],
+    "description": "Climbing a suspended rope using the arms and legs.",
+    "descriptionPt": "Subida a uma corda suspensa, usando braços e pernas.",
+    "instructions": [
+      "Grip the rope and clamp it between or on top of your feet.",
+      "Pull with your arms while pushing with your legs to climb up.",
+      "Descend under control."
+    ],
+    "instructionsPt": [
+      "Agarra a corda e prende-a entre ou em cima dos pés.",
+      "Puxa com os braços enquanto empurras com as pernas para subir.",
+      "Desce de forma controlada."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [
+      { "id": "standard", "name": "Standard (leg clamp)", "namePt": "Normal (com clamp)" },
+      { "id": "legless", "name": "Legless", "namePt": "Sem pernas" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 3,
+    "defaultWeight": 0
+  },
+  {
+    "id": "running",
+    "name": "Running",
+    "namePt": "Corrida",
+    "bodyPart": "cardio",
+    "target": "cardio",
+    "muscleGroup": "cardio",
+    "secondaryMuscles": [],
+    "description": "Monostructural cardio, from short sprints to long distance.",
+    "descriptionPt": "Cardio monoestrutural, de sprints curtos a longa distância.",
+    "instructions": [
+      "Warm up with an easy jog.",
+      "Run at the prescribed distance, time or pace.",
+      "Cool down with an easy walk or jog."
+    ],
+    "instructionsPt": [
+      "Aquece com uma corrida leve.",
+      "Corre a distância, tempo ou ritmo prescrito.",
+      "Termina com uma caminhada ou corrida leve."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [],
+    "defaultSets": 1,
+    "defaultReps": 1,
+    "defaultWeight": 0
+  },
+  {
+    "id": "rowing",
+    "name": "Rowing",
+    "namePt": "Remo",
+    "bodyPart": "cardio",
+    "target": "cardio",
+    "muscleGroup": "cardio",
+    "secondaryMuscles": ["back", "quads"],
+    "description": "Monostructural cardio on a rowing machine.",
+    "descriptionPt": "Cardio monoestrutural no remo.",
+    "instructions": [
+      "Sit at the rower with feet strapped in, grip the handle.",
+      "Drive with your legs, then lean back and pull the handle to your chest.",
+      "Reverse the sequence to recover."
+    ],
+    "instructionsPt": [
+      "Senta-te no remo com os pés presos, agarra a pega.",
+      "Empurra com as pernas, depois inclina-te para trás e puxa a pega ao peito.",
+      "Inverte a sequência para recuperar."
+    ],
+    "equipment": ["machine"],
+    "variants": [],
+    "defaultSets": 1,
+    "defaultReps": 1,
+    "defaultWeight": 0
+  },
+  {
+    "id": "assault_bike",
+    "name": "Assault bike",
+    "namePt": "Bicicleta (Assault/Echo)",
+    "bodyPart": "cardio",
+    "target": "cardio",
+    "muscleGroup": "cardio",
+    "secondaryMuscles": ["quads", "delts"],
+    "description": "Monostructural cardio on a fan/air bike, working arms and legs together.",
+    "descriptionPt": "Cardio monoestrutural numa bicicleta de ar, trabalhando braços e pernas juntos.",
+    "instructions": [
+      "Sit on the bike and grip both handles.",
+      "Pedal and push/pull the handles at the prescribed effort.",
+      "Recover with easy pedalling between efforts."
+    ],
+    "instructionsPt": [
+      "Senta-te na bicicleta e agarra as duas pegas.",
+      "Pedala e empurra/puxa as pegas ao esforço prescrito.",
+      "Recupera pedalando devagar entre esforços."
+    ],
+    "equipment": ["machine"],
+    "variants": [],
+    "defaultSets": 1,
+    "defaultReps": 1,
+    "defaultWeight": 0
+  },
+  {
+    "id": "jump_rope",
+    "name": "Jump rope",
+    "namePt": "Corda",
+    "bodyPart": "cardio",
+    "target": "cardio",
+    "muscleGroup": "cardio",
+    "secondaryMuscles": ["calves"],
+    "description": "Monostructural cardio skipping a rope, single or double turns per jump.",
+    "descriptionPt": "Cardio monoestrutural a saltar à corda, com uma ou duas voltas por salto.",
+    "instructions": [
+      "Hold an end of the rope in each hand, rope behind your heels.",
+      "Swing the rope over your head and jump over it as it passes your feet.",
+      "Keep a steady rhythm with small jumps."
+    ],
+    "instructionsPt": [
+      "Segura uma ponta da corda em cada mão, corda atrás dos calcanhares.",
+      "Roda a corda por cima da cabeça e salta quando passa nos pés.",
+      "Mantém um ritmo constante com saltos pequenos."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [],
+    "defaultSets": 3,
+    "defaultReps": 50,
+    "defaultWeight": 0
+  },
+  {
+    "id": "kettlebell_swing",
+    "name": "Kettlebell swing",
+    "namePt": "Kettlebell swing",
+    "bodyPart": "upper legs",
+    "target": "glutes",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["hamstrings", "back"],
+    "description": "Hip-hinge movement that swings a kettlebell using explosive hip drive.",
+    "descriptionPt": "Movimento de dobra de anca que balança um kettlebell com extensão explosiva das ancas.",
+    "instructions": [
+      "Hinge at the hips holding the kettlebell with both hands.",
+      "Drive your hips forward explosively to swing the kettlebell up.",
+      "Let it swing back down between your legs and repeat."
+    ],
+    "instructionsPt": [
+      "Dobra pelas ancas segurando o kettlebell com as duas mãos.",
+      "Empurra as ancas à frente explosivamente para balançar o kettlebell para cima.",
+      "Deixa balançar de volta entre as pernas e repete."
+    ],
+    "equipment": ["kettlebell"],
+    "variants": [
+      { "id": "russian", "name": "Russian (eye height)", "namePt": "Russo (altura dos olhos)" },
+      { "id": "american", "name": "American (overhead)", "namePt": "Americano (acima da cabeça)" },
+      { "id": "one_arm", "name": "One arm", "namePt": "Uma mão" },
+      { "id": "alternating", "name": "Alternating", "namePt": "Alternado" }
+    ],
+    "defaultSets": 4,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "wall_ball",
+    "name": "Wall ball",
+    "namePt": "Wall ball",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["delts", "glutes"],
+    "description": "Squat combined with an overhead throw of a medicine ball against a wall target.",
+    "descriptionPt": "Agachamento combinado com um lançamento acima da cabeça de uma bola medicinal contra um alvo na parede.",
+    "instructions": [
+      "Hold the ball at your chest, facing a wall target.",
+      "Squat down, then drive up and throw the ball to the target.",
+      "Catch it and go straight into the next squat."
+    ],
+    "instructionsPt": [
+      "Segura a bola ao peito, de frente para o alvo na parede.",
+      "Agacha, depois sobe e atira a bola ao alvo.",
+      "Recebe a bola e segue direto para o próximo agachamento."
+    ],
+    "equipment": ["medicine_ball"],
+    "variants": [],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "box_jump",
+    "name": "Box jump",
+    "namePt": "Salto à caixa",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "calves"],
+    "description": "Explosive jump onto an elevated box.",
+    "descriptionPt": "Salto explosivo para cima de uma caixa elevada.",
+    "instructions": [
+      "Stand facing the box with feet shoulder-width apart.",
+      "Swing your arms and jump onto the box, landing softly.",
+      "Step or jump back down and repeat."
+    ],
+    "instructionsPt": [
+      "Fica de frente para a caixa com os pés à largura dos ombros.",
+      "Balança os braços e salta para cima da caixa, aterrando suavemente.",
+      "Desce a andar ou a saltar e repete."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "step_up", "name": "Step-up", "namePt": "Step-up" },
+      { "id": "burpee_box_jump_over", "name": "Burpee box jump-over", "namePt": "Burpee sobre a caixa" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "defaultWeight": 0
+  },
+  {
+    "id": "farmers_carry",
+    "name": "Farmer's carry",
+    "namePt": "Farmer's carry",
+    "bodyPart": "back",
+    "target": "traps",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["forearms", "abs"],
+    "description": "Walking a distance while carrying a heavy weight in each hand.",
+    "descriptionPt": "Caminhar uma distância a carregar um peso pesado em cada mão.",
+    "instructions": [
+      "Pick up a weight in each hand, standing tall with shoulders back.",
+      "Walk the prescribed distance keeping your core braced.",
+      "Set the weights down under control."
+    ],
+    "instructionsPt": [
+      "Levanta um peso em cada mão, de pé e com os ombros para trás.",
+      "Caminha a distância prescrita mantendo o core contraído.",
+      "Pousa os pesos de forma controlada."
+    ],
+    "equipment": ["dumbbell", "kettlebell", "sandbag"],
+    "variants": [
+      { "id": "short_heavy", "name": "Short & heavy", "namePt": "Curta e pesada" },
+      { "id": "long_moderate", "name": "Long & moderate", "namePt": "Longa e moderada" },
+      { "id": "shuttle", "name": "Shuttle (for time)", "namePt": "Shuttle (for time)" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 1,
+    "defaultWeight": 0
+  },
+  {
+    "id": "slam_ball",
+    "name": "Slam ball",
+    "namePt": "Slam ball",
+    "bodyPart": "waist",
+    "target": "abs",
+    "muscleGroup": "waist",
+    "secondaryMuscles": ["delts", "back"],
+    "description": "Explosive movement slamming a weighted ball into the floor.",
+    "descriptionPt": "Movimento explosivo que atira uma bola pesada contra o chão.",
+    "instructions": [
+      "Lift the ball overhead with arms extended.",
+      "Slam it into the floor as hard as possible, hinging at the hips.",
+      "Pick it back up and repeat."
+    ],
+    "instructionsPt": [
+      "Levanta a bola acima da cabeça com os braços estendidos.",
+      "Atira-a com força contra o chão, dobrando pelas ancas.",
+      "Apanha-a de novo e repete."
+    ],
+    "equipment": ["medicine_ball"],
+    "variants": [
+      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "with_burpee", "name": "With burpee", "namePt": "Com burpee" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "defaultWeight": 0
+  },
+  {
+    "id": "chest_to_bar",
+    "name": "Chest-to-bar",
+    "namePt": "Chest-to-bar",
+    "bodyPart": "back",
+    "target": "lats",
+    "muscleGroup": "back",
+    "secondaryMuscles": ["biceps", "forearms"],
+    "description": "Pull-up variation where the chest touches the bar at the top of the movement.",
+    "descriptionPt": "Variação da elevação na barra em que o peito toca na barra no topo do movimento.",
+    "instructions": [
+      "Hang from the bar with your chosen grip.",
+      "Pull yourself up until your chest touches the bar.",
+      "Lower back down under control until arms are extended."
+    ],
+    "instructionsPt": [
+      "Fica pendurado na barra com a pegada escolhida.",
+      "Puxa-te para cima até o peito tocar na barra.",
+      "Desce de forma controlada até estenderes os braços."
+    ],
+    "equipment": ["bodyweight", "machine"],
+    "variants": [
+      { "id": "pronated", "name": "Pronated grip", "namePt": "Pegada pronada" },
+      { "id": "wide", "name": "Wide grip", "namePt": "Pegada aberta" }
+    ],
+    "defaultSets": 3,
+    "defaultReps": 5,
+    "defaultWeight": 0
+  }
+]

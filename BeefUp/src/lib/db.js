@@ -1,5 +1,5 @@
 const DB_NAME = 'beefup'
-const DB_VERSION = 2
+const DB_VERSION = 4
 
 const STORES = {
   workouts: 'workouts',       // custom workout definitions
@@ -8,36 +8,35 @@ const STORES = {
   steps: 'steps',             // daily step entries { date, count }
   settings: 'settings',       // key/value app settings
   measurements: 'measurements', // body measurement entries { id, date, weight }
+  foods: 'foods',             // custom/cached food items { id, name, namePt, kcal, protein, carbs, fat, serving }
+  foodLog: 'foodLog',         // diary entries { id, date, meal, name, qty, kcal, protein, carbs, fat }
+  water: 'water',             // daily water { date, ml }
+  clients: 'clients',
 }
 
 export { STORES }
+
+function ensureStore(db, name, options, indexes = []) {
+  if (db.objectStoreNames.contains(name)) return
+  const store = db.createObjectStore(name, options)
+  indexes.forEach(([indexName, keyPath, indexOptions]) => store.createIndex(indexName, keyPath, indexOptions))
+}
 
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = e => {
       const db = e.target.result
-      if (!db.objectStoreNames.contains(STORES.workouts)) {
-        db.createObjectStore(STORES.workouts, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORES.plans)) {
-        db.createObjectStore(STORES.plans, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORES.sessions)) {
-        const s = db.createObjectStore(STORES.sessions, { keyPath: 'id' })
-        s.createIndex('date', 'date', { unique: false })
-      }
-      if (!db.objectStoreNames.contains(STORES.steps)) {
-        const s = db.createObjectStore(STORES.steps, { keyPath: 'date' })
-        s.createIndex('date', 'date', { unique: true })
-      }
-      if (!db.objectStoreNames.contains(STORES.settings)) {
-        db.createObjectStore(STORES.settings, { keyPath: 'key' })
-      }
-      if (!db.objectStoreNames.contains(STORES.measurements)) {
-        const m = db.createObjectStore(STORES.measurements, { keyPath: 'id' })
-        m.createIndex('date', 'date', { unique: false })
-      }
+      ensureStore(db, STORES.workouts, { keyPath: 'id' })
+      ensureStore(db, STORES.plans, { keyPath: 'id' })
+      ensureStore(db, STORES.sessions, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
+      ensureStore(db, STORES.steps, { keyPath: 'date' }, [['date', 'date', { unique: true }]])
+      ensureStore(db, STORES.settings, { keyPath: 'key' })
+      ensureStore(db, STORES.measurements, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
+      ensureStore(db, STORES.foods, { keyPath: 'id' })
+      ensureStore(db, STORES.foodLog, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
+      ensureStore(db, STORES.water, { keyPath: 'date' })
+      ensureStore(db, STORES.clients, { keyPath: 'id' })
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)
@@ -99,4 +98,22 @@ export const db = {
   // Measurements helpers
   addMeasurement: (entry) => tx(STORES.measurements, 'readwrite', s => s.put(entry)),
   getAllMeasurements: () => tx(STORES.measurements, 'readonly', s => s.getAll()),
+  deleteMeasurement: (id) => tx(STORES.measurements, 'readwrite', s => s.delete(id)),
+
+  // Custom foods helpers
+  saveFood: (food) => tx(STORES.foods, 'readwrite', s => s.put(food)),
+  getAllFoods: () => tx(STORES.foods, 'readonly', s => s.getAll()),
+
+  // Food log (diary) helpers
+  addFoodLog: (entry) => tx(STORES.foodLog, 'readwrite', s => s.put(entry)),
+  removeFoodLog: (id) => tx(STORES.foodLog, 'readwrite', s => s.delete(id)),
+  getAllFoodLog: () => tx(STORES.foodLog, 'readonly', s => s.getAll()),
+
+  // Water helpers
+  setWater: (date, ml) => tx(STORES.water, 'readwrite', s => s.put({ date, ml })),
+  getAllWater: () => tx(STORES.water, 'readonly', s => s.getAll()),
+
+  getAllClients: () => tx(STORES.clients, 'readonly', s => s.getAll()),
+  saveClient: (client) => tx(STORES.clients, 'readwrite', s => s.put(client)),
+  removeClient: (id) => tx(STORES.clients, 'readwrite', s => s.delete(id)),
 }

@@ -27,10 +27,12 @@
   stroke-width: 1px;
 }
 
+.human-body-complete svg { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.10)); }
+
 .human-body-complete .muscle-region path {
   fill: var(--body-neutral) !important;
-  opacity: 0.24;
-  transition: fill 150ms ease, opacity 150ms ease;
+  opacity: 0.3;
+  transition: fill 200ms ease, opacity 200ms ease;
 }
 
 .human-body-complete.highlight-Abs #Abs path,
@@ -49,6 +51,7 @@
 .human-body-complete.highlight-Triceps #Triceps path {
   fill: var(--body-highlight) !important;
   opacity: 1;
+  filter: drop-shadow(0 0 3px var(--body-highlight));
 }
 
 .human-body-complete.front #Back,

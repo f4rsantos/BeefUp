@@ -1,9 +1,7 @@
-// Given a plan and a reference date, determine what today's entry is.
-// A plan has a `days` array: [{ type: 'workout'|'rest', workoutId? }]
-// The plan cycles: day index = (daysSinceStart % days.length)
-// If no plan, returns null.
+import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree'
 
-export function todaysPlanEntry(plan, sessions) {
+// A plan's `days` array cycles: day index = (daysSinceStart % days.length).
+export function todaysPlanEntry(plan) {
   if (!plan || !plan.days || plan.days.length === 0) return null
 
   const startDate = plan.startDate ? new Date(plan.startDate) : new Date()
@@ -16,39 +14,87 @@ export function todaysPlanEntry(plan, sessions) {
   return plan.days[idx]
 }
 
+export function toLocalISO(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function sessionDay(session) {
+  if (!session?.date) return null
+  return session.date.length > 10 ? toLocalISO(new Date(session.date)) : session.date
+}
+
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  return toLocalISO(new Date())
 }
 
 export function nowISO() {
   return new Date().toISOString()
 }
 
-// Build streak: count consecutive days (going backwards from today)
-// that have either a completed session OR are marked rest days in the active plan.
-export function computeStreak(sessions, plans, activePlanId) {
-  const sessionDates = new Set(sessions.map(s => s.date?.slice(0, 10)))
-  const plan = plans.find(p => p.id === activePlanId)
+export function lastCompletedSets(sessions, exerciseId) {
+  let latest = null
+  for (const s of sessions) {
+    const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
+    if (entry?.sets?.length && (!latest || s.date > latest.date)) {
+      latest = { date: s.date, sets: entry.sets }
+    }
+  }
+  return latest?.sets ?? []
+}
 
-  let streak = 0
+export function formatDuration(s) {
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0)
+    return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
+  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
+}
+
+function activeDayFlags(sessions, plans, activePlanId, dayCount) {
+  const sessionDates = new Set(sessions.map(sessionDay))
+  const plan = plans.find(p => p.id === activePlanId)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  for (let i = 0; i < 365; i++) {
+  const flags = []
+  for (let i = 0; i < dayCount; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const iso = d.toISOString().slice(0, 10)
-
+    const iso = toLocalISO(d)
     const hasSession = sessionDates.has(iso)
     const isRestDay = plan ? isPlannedRestDay(plan, d) : false
+    flags.push(hasSession || isRestDay)
+  }
+  return flags
+}
 
-    if (hasSession || isRestDay) {
-      streak++
-    } else {
-      break
-    }
+export function computeStreak(sessions, plans, activePlanId) {
+  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+  let streak = 0
+  for (const active of flags) {
+    if (!active) break
+    streak++
   }
   return streak
+}
+
+export function computeBestStreak(sessions, plans, activePlanId) {
+  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+  let best = 0
+  let current = 0
+  for (const active of flags) {
+    if (active) {
+      current++
+      if (current > best) best = current
+    } else {
+      current = 0
+    }
+  }
+  return best
 }
 
 function isPlannedRestDay(plan, date) {
@@ -62,17 +108,16 @@ function isPlannedRestDay(plan, date) {
   return plan.days[idx]?.type === 'rest'
 }
 
-// Get which days of the current month are rest days or completed sessions
 export function getMonthActivity(year, month, sessions, plans, activePlanId) {
   const plan = plans.find(p => p.id === activePlanId)
-  const sessionDates = new Set(sessions.map(s => s.date?.slice(0, 10)))
+  const sessionDates = new Set(sessions.map(sessionDay))
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const result = {}
 
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d)
-    const iso = date.toISOString().slice(0, 10)
-    const isToday = iso === new Date().toISOString().slice(0, 10)
+    const iso = toLocalISO(date)
+    const isToday = iso === todayISO()
     const future = date > new Date()
 
     if (!future || isToday) {
@@ -101,7 +146,7 @@ function sessionReps(session) {
 }
 
 export function computeOverallStats(sessions) {
-  const daysTrained = new Set(sessions.map((s) => s.date?.slice(0, 10))).size
+  const daysTrained = new Set(sessions.map(sessionDay)).size
   const totalSessions = sessions.length
   const totalVolume = sessions.reduce((acc, s) => acc + sessionVolume(s), 0)
   const totalDuration = sessions.reduce((acc, s) => acc + (s.duration ?? 0), 0)
@@ -113,7 +158,6 @@ export function computeOverallStats(sessions) {
   return { daysTrained, totalSessions, totalVolume, totalDuration, totalReps, totalSets }
 }
 
-// Bucket sessions into ISO week starts, summing the given metric, for the last `weeks` weeks.
 export function aggregateSessionsByWeek(sessions, metric, weeks = 10) {
   const metricFn = {
     duration: (s) => s.duration ?? 0,
@@ -151,5 +195,103 @@ export function measurementsForType(measurements, type) {
   return measurements
     .filter((m) => m.type === type)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ dateLabel: m.date.slice(5), value: m.value }))
+    .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value }))
+}
+
+export const epley = (weight, reps) => (parseFloat(weight) || 0) * (1 + (parseInt(reps) || 0) / 30)
+
+export function computePersonalRecords(sessions, lang) {
+  const best = {}
+  sessions.forEach((s) => {
+    s.exercises?.forEach((e) => {
+      e.sets?.forEach((set) => {
+        if (set.type === 'warmup') return
+        const e1rm = epley(set.weight, set.reps)
+        if (!best[e.exerciseId] || e1rm > best[e.exerciseId].e1rm) {
+          best[e.exerciseId] = {
+            exerciseId: e.exerciseId,
+            e1rm,
+            weight: set.weight,
+            reps: set.reps,
+            date: s.date,
+            name: e.name,
+            namePt: e.namePt,
+          }
+        }
+      })
+    })
+  })
+
+  return Object.values(best)
+    .map((r) => {
+      const resolved = resolveExercise(r.exerciseId)
+      const name = resolved
+        ? (lang === 'pt' ? resolved.namePt : resolved.name)
+        : (lang === 'pt' ? r.namePt : r.name)
+      return { ...r, name }
+    })
+    .sort((a, b) => b.e1rm - a.e1rm)
+}
+
+function statsBodyPart(bodyPart) {
+  return bodyPart === 'upper legs' || bodyPart === 'lower legs' ? 'legs' : bodyPart
+}
+
+export function computeMuscleGroupDistribution(sessions, lang) {
+  const counts = {}
+  sessions.forEach((s) => {
+    s.exercises?.forEach((e) => {
+      const resolved = resolveExercise(e.exerciseId)
+      if (!resolved) return
+      const nonWarmupSets = e.sets?.filter((set) => set.type !== 'warmup').length ?? 0
+      if (nonWarmupSets === 0) return
+      const bodyPart = statsBodyPart(resolved.bodyPart)
+      counts[bodyPart] = (counts[bodyPart] || 0) + nonWarmupSets
+    })
+  })
+
+  return Object.entries(counts)
+    .map(([bodyPart, count]) => ({ bodyPart, label: getBodyPartLabel(bodyPart, lang), count }))
+    .sort((a, b) => b.count - a.count)
+}
+
+function fatigueLevel(daysSince) {
+  if (daysSince === null) return 'none'
+  if (daysSince <= 1) return 'fatigued'
+  if (daysSince <= 3) return 'recovering'
+  return 'fresh'
+}
+
+export function computeMuscleFatigue(sessions, lang) {
+  const lastTrainedDay = {}
+  sessions.forEach((s) => {
+    const day = sessionDay(s)
+    if (!day) return
+    s.exercises?.forEach((e) => {
+      const hasNonWarmup = e.sets?.some((set) => set.type !== 'warmup')
+      if (!hasNonWarmup) return
+      const resolved = resolveExercise(e.exerciseId)
+      if (!resolved) return
+      const bodyPart = statsBodyPart(resolved.bodyPart)
+      if (!lastTrainedDay[bodyPart] || day > lastTrainedDay[bodyPart]) {
+        lastTrainedDay[bodyPart] = day
+      }
+    })
+  })
+
+  const today = todayISO()
+  const groups = [...new Set(listBodyParts().map(statsBodyPart))]
+  return groups
+    .map((bodyPart) => {
+      const lastDay = lastTrainedDay[bodyPart] ?? null
+      const daysSince = lastDay
+        ? Math.round((new Date(today) - new Date(lastDay)) / (1000 * 60 * 60 * 24))
+        : null
+      return { bodyPart, label: getBodyPartLabel(bodyPart, lang), daysSince, level: fatigueLevel(daysSince) }
+    })
+    .sort((a, b) => {
+      if (a.daysSince === null) return 1
+      if (b.daysSince === null) return -1
+      return a.daysSince - b.daysSince
+    })
 }

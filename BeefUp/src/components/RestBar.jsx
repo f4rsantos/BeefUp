@@ -26,7 +26,7 @@ export default function RestBar({ restState, onOpenRest }) {
           className="h-full rounded-full transition-all"
           style={{
             width: `${Math.min(100, progress * 100)}%`,
-            background: "var(--accent)",
+            background: "var(--grad-accent)",
           }}
         />
       </div>
