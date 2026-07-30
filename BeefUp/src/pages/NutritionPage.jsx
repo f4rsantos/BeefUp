@@ -48,7 +48,7 @@ export default function NutritionPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--bg)", position: "relative" }}>
       <PageHeader
         title={t.nutrition}
         action={
@@ -165,7 +165,7 @@ export default function NutritionPage() {
       {addMeal && <FoodSearchModal meal={addMeal} onClose={() => setAddMeal(null)} />}
       {showGoals && <MacroGoalModal onClose={() => setShowGoals(false)} />}
 
-      <div className="modal-overlay" style={{ alignItems: "center" }}>
+      <div className="modal-overlay" style={{ position: "absolute", alignItems: "center" }}>
         <div className="modal-center fade-in" style={{ textAlign: "center" }}>
           <div
             style={{
