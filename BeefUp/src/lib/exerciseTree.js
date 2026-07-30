@@ -66,7 +66,7 @@ export function getMuscleLabel(muscle, lang) {
 }
 
 export const BODY_PART_ACCENT = {
-  chest: '#16a34a',
+  chest: '#109a14',
   back: '#0ea5e9',
   shoulders: '#a855f7',
   'upper arms': '#f97316',

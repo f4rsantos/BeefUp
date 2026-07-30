@@ -51,7 +51,7 @@
 .human-body-complete.highlight-Triceps #Triceps path {
   fill: var(--body-highlight) !important;
   opacity: 1;
-  filter: drop-shadow(0 0 3px var(--body-highlight));
+  filter: drop-shadow(0 0 1px var(--body-highlight));
 }
 
 .human-body-complete.front #Back,

@@ -68,8 +68,8 @@ export default function NutritionPage() {
               size={128}
               stroke={12}
               gradientId="kcalRing"
-              gradientFrom="#22c55e"
-              gradientTo="#16a34a"
+              gradientFrom="#18a01c"
+              gradientTo="#109a14"
             >
               <span className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
                 {kcalLeft}
