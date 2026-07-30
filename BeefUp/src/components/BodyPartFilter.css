@@ -1,0 +1,85 @@
+.body-filter-columns {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+}
+
+.body-filter-col {
+  position: relative;
+  width: 84px;
+  height: 500px;
+  flex-shrink: 0;
+}
+
+.body-label-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.body-label-row.active { color: var(--accent); font-weight: 700; }
+
+.body-filter-silhouette {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.body-filter-hitarea .muscle-region {
+  cursor: pointer;
+}
+
+.body-filter-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.body-filter-lines line {
+  stroke: var(--border);
+  stroke-width: 0.4;
+}
+.body-filter-lines line.active { stroke: var(--accent); stroke-width: 0.6; }
+
+.body-marker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--surface);
+  border: 1.5px solid var(--muted);
+  transform: translate(-50%, -50%);
+  padding: 0;
+  cursor: pointer;
+}
+.body-marker.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.body-filter-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.body-rotate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 8px 14px;
+}

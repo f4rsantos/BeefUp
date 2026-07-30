@@ -77,6 +77,24 @@ export const BODY_PART_ACCENT = {
   cardio: '#ec4899',
 }
 
+export const BODY_PART_POSITIONS = {
+  front: {
+    shoulders: { x: 26, y: 16, side: 'left' },
+    'upper arms': { x: 18, y: 28, side: 'left' },
+    waist: { x: 32, y: 42, side: 'left' },
+    'upper legs': { x: 32, y: 63, side: 'left' },
+    chest: { x: 68, y: 21, side: 'right' },
+    'lower legs': { x: 68, y: 86, side: 'right' },
+  },
+  back: {
+    shoulders: { x: 26, y: 16, side: 'left' },
+    'upper arms': { x: 18, y: 30, side: 'left' },
+    'upper legs': { x: 32, y: 63, side: 'left' },
+    back: { x: 68, y: 34, side: 'right' },
+    'lower legs': { x: 68, y: 86, side: 'right' },
+  },
+}
+
 function composeName(base, equipment, variant, field) {
   let name = base[field]
   if (variant) name += ` ${lowerFirst(variant[field])}`
