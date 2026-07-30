@@ -45,9 +45,17 @@ export default function Onboarding() {
             <span className="ob-mode-title">{t.obStart}</span>
             <span className="ob-mode-desc">{t.obStartDesc}</span>
           </button>
-          <button className="ob-mode ob-mode--coach" onClick={() => startMode("helper")}>
+          <button
+            className="ob-mode ob-mode--coach ob-mode--disabled"
+            disabled
+            aria-disabled="true"
+            tabIndex={-1}
+          >
             <TrendingUp size={24} />
-            <span className="ob-mode-title">{t.obHelping}</span>
+            <span className="ob-mode-title">
+              {t.obHelping}
+              <span className="ob-focus-badge">{t.nutritionUnavailable}</span>
+            </span>
             <span className="ob-mode-desc">{t.obHelpingDesc}</span>
           </button>
         </div>
