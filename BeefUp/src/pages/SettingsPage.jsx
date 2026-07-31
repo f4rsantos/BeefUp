@@ -4,7 +4,9 @@ import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 import { parseWorkoutCsv, buildWorkoutCsv, downloadFile, workoutCsvFilename } from "../lib/csvData";
 import { buildBackup, parseBackup, restoreBackup, backupFilename } from "../lib/backup";
+import { PRESET_ACCENTS } from "../lib/colorTheme";
 import ConfirmModal from "../components/ConfirmModal";
+import AccentColorModal from "../components/AccentColorModal";
 import PageHeader from "../components/PageHeader";
 
 const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
@@ -48,6 +50,10 @@ export default function SettingsPage() {
     setLang,
     theme,
     setTheme,
+    accentColor,
+    setAccentColor,
+    customAccentHex,
+    setCustomAccentColor,
     savePlan,
     saveWorkout,
     addSession,
@@ -63,6 +69,7 @@ export default function SettingsPage() {
   const [dataBusy, setDataBusy] = useState(false);
   const [dataStatus, setDataStatus] = useState("");
   const [dataError, setDataError] = useState("");
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [showExportChoice, setShowExportChoice] = useState(false);
   const [showImportChoice, setShowImportChoice] = useState(false);
   const [pendingRestore, setPendingRestore] = useState(null);
@@ -80,6 +87,10 @@ export default function SettingsPage() {
     if (!next.gym && !next.nutrition) return; // pelo menos uma secção fica sempre visível
     setSectionPrefs(next);
   }
+
+  const currentAccentHex = accentColor === "custom"
+    ? customAccentHex
+    : PRESET_ACCENTS.find((p) => p.id === accentColor)?.hex ?? PRESET_ACCENTS[0].hex;
 
   const themeOptions = [
     { id: "light", Icon: Sun, label: t.themeLight },
@@ -216,6 +227,27 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* Accent color */}
+        <section>
+          <button
+            className="card flex items-center justify-between"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => setShowColorPicker(true)}
+          >
+            <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.accentColor}</span>
+            <span
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                background: currentAccentHex,
+                border: "1px solid var(--border)",
+                flexShrink: 0,
+              }}
+            />
+          </button>
         </section>
 
         {/* Language */}
@@ -477,6 +509,16 @@ export default function SettingsPage() {
           confirmLabel={t.restore}
           onCancel={() => setPendingRestore(null)}
           onConfirm={confirmRestore}
+        />
+      )}
+
+      {showColorPicker && (
+        <AccentColorModal
+          value={currentAccentHex}
+          t={t}
+          onSelectPreset={(id) => { setAccentColor(id); setShowColorPicker(false); }}
+          onPickCustom={setCustomAccentColor}
+          onClose={() => setShowColorPicker(false)}
         />
       )}
     </div>
