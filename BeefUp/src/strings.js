@@ -301,6 +301,7 @@ const strings = {
     obExpGoalsTitle: 'Tudo definido',
     obExpGoalsBody: 'Os teus objetivos nutricionais estão prontos. Vamos começar!',
     resetOnboarding: 'Recomeçar configuração',
+    resetOnboardingWarn: 'Vais passar pela configuração inicial outra vez.',
 
     // Coach dashboard
     dashCalendar: 'Calendário',
@@ -623,6 +624,7 @@ const strings = {
     obExpGoalsTitle: 'All set',
     obExpGoalsBody: 'Your nutrition goals are ready. Let’s get started!',
     resetOnboarding: 'Restart setup',
+    resetOnboardingWarn: "You'll go through initial setup again.",
 
     // Coach dashboard
     dashCalendar: 'Calendar',

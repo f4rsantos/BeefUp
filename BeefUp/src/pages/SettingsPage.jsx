@@ -298,7 +298,7 @@ export default function SettingsPage() {
 
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>
-            {lang === "pt" ? "Teste" : "Testing"}
+            {lang === "pt" ? "Avançado" : "Advanced"}
           </p>
           <div className="card flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
@@ -344,11 +344,17 @@ export default function SettingsPage() {
               <div style={SETTINGS_ICON_WRAPPER_STYLE}>
                 <RotateCcw size={16} style={{ color: "var(--text)" }} />
               </div>
-              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                {t.resetOnboarding}
-              </p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                  {t.resetOnboarding}
+                </p>
+                <p className="text-xs flex items-center gap-1" style={{ color: "var(--danger)" }}>
+                  <AlertTriangle size={11} />
+                  {t.resetOnboardingWarn}
+                </p>
+              </div>
             </div>
-            <button className="btn btn-ghost px-3 py-2 text-xs" onClick={resetOnboarding}>
+            <button className="btn btn-danger px-3 py-2 text-xs" onClick={resetOnboarding}>
               {lang === "pt" ? "Recomeçar" : "Restart"}
             </button>
           </div>
