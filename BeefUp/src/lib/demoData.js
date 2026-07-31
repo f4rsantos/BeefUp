@@ -24,13 +24,11 @@ export function buildDemoPreset() {
     {
       id: 'demo_upper',
       name: 'Upper Strength',
-      namePt: 'Superior Força',
       exercises: [upperA?.id, upperB?.id, upperC?.id].filter(Boolean),
     },
     {
       id: 'demo_lower',
       name: 'Lower Strength',
-      namePt: 'Inferior Força',
       exercises: [lowerA?.id, lowerB?.id, lowerC?.id].filter(Boolean),
     },
   ]

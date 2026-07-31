@@ -1,15 +1,73 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
-import { resolveExercise } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
+
+function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
+  const [note, setNote] = useState(item.note ?? "");
+  const [weight, setWeight] = useState(item.weight ?? "");
+  const [reps, setReps] = useState(item.reps ?? "");
+
+  return (
+    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+      <div className="modal-center" onClick={(e) => e.stopPropagation()}>
+        <p className="font-semibold mb-3" style={{ color: "var(--text)" }}>{exerciseLabel}</p>
+
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.exerciseNote}</label>
+            <textarea
+              className="field w-full"
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.weight}</label>
+              <input
+                className="field w-full"
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.reps}</label>
+              <input
+                className="field w-full"
+                type="number"
+                value={reps}
+                onChange={(e) => setReps(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-5">
+          <button className="btn btn-ghost flex-1 py-3 text-sm" onClick={onClose}>
+            {t.cancel}
+          </button>
+          <button
+            className="btn btn-primary flex-1 py-3 text-sm"
+            onClick={() => onSave({ note, weight, reps })}
+          >
+            {t.save}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
   const [name, setName] = useState(workout?.name ?? "");
-  const [namePt, setNamePt] = useState(workout?.namePt ?? "");
-  const [exIds, setExIds] = useState(workout?.exercises ?? []);
+  const [exItems, setExItems] = useState(() => normalizeWorkoutExercises(workout?.exercises));
   const [restAfterSet, setRestAfterSet] = useState(workout?.restAfterSet ?? 120);
   const [showPicker, setShowPicker] = useState(false);
+  const [editingExIdx, setEditingExIdx] = useState(null);
 
   function save() {
     if (!name.trim()) return;
@@ -17,8 +75,7 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
       ...workout,
       id: workout?.id ?? uid(),
       name: name.trim(),
-      namePt: namePt.trim() || name.trim(),
-      exercises: exIds,
+      exercises: exItems,
       restAfterSet: Math.max(0, parseInt(restAfterSet) || 120),
     });
     onBack();
@@ -39,24 +96,13 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
         <div className="card flex flex-col gap-3">
           <div>
             <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
-              {t.workoutName} · EN
+              {t.workoutName}
             </label>
             <input
               className="field"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Leg Day"
-            />
-          </div>
-          <div>
-            <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
-              {t.workoutName} · PT
-            </label>
-            <input
-              className="field"
-              value={namePt}
-              onChange={(e) => setNamePt(e.target.value)}
-              placeholder="e.g. Dia de Pernas"
             />
           </div>
           <div>
@@ -81,14 +127,14 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
         <div className="card flex flex-col gap-2">
           <div className="section-header">
             <p className="section-title" style={{ marginBottom: 0 }}>{t.exercises}</p>
-            <span className="chip active" style={{ pointerEvents: "none" }}>{exIds.length}</span>
+            <span className="chip active" style={{ pointerEvents: "none" }}>{exItems.length}</span>
           </div>
-          {exIds.map((ref, i) => {
-            const ex = resolveExercise(ref);
+          {exItems.map((item, i) => {
+            const ex = resolveExercise(item.ref);
             if (!ex) return null;
             return (
               <div
-                key={`${ref}-${i}`}
+                key={`${item.ref}-${i}`}
                 className="flex items-center gap-2 py-2.5 px-3 rounded-xl"
                 style={{ background: "var(--surface2)" }}
               >
@@ -96,16 +142,19 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
                 <span className="text-sm flex-1 truncate" style={{ color: "var(--text)" }}>
                   {lang === "pt" ? ex.namePt : ex.name}
                 </span>
+                <button className="btn-icon p-1" onClick={() => setEditingExIdx(i)}>
+                  <Pencil size={14} style={{ color: "var(--muted)" }} />
+                </button>
                 <button
                   className="btn-icon p-1"
-                  onClick={() => setExIds((prev) => prev.filter((_, j) => j !== i))}
+                  onClick={() => setExItems((prev) => prev.filter((_, j) => j !== i))}
                 >
                   <Trash2 size={14} style={{ color: "var(--muted)" }} />
                 </button>
               </div>
             );
           })}
-          {exIds.length === 0 && (
+          {exItems.length === 0 && (
             <p className="text-xs" style={{ color: "var(--muted)", padding: "4px 2px" }}>
               {lang === "pt" ? "Sem exercícios ainda." : "No exercises yet."}
             </p>
@@ -127,12 +176,29 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
       {showPicker && (
         <ExercisePicker
           onConfirm={(refs) => {
-            setExIds((prev) => [...prev, ...refs]);
+            setExItems((prev) => [...prev, ...refs.map((ref) => ({ ref }))]);
             setShowPicker(false);
           }}
           onClose={() => setShowPicker(false)}
         />
       )}
+
+      {editingExIdx !== null && (() => {
+        const item = exItems[editingExIdx];
+        const ex = resolveExercise(item.ref);
+        return (
+          <ExercisePresetModal
+            item={item}
+            exerciseLabel={ex ? (lang === "pt" ? ex.namePt : ex.name) : ""}
+            t={t}
+            onClose={() => setEditingExIdx(null)}
+            onSave={(patch) => {
+              setExItems((prev) => prev.map((it, j) => (j === editingExIdx ? { ...it, ...patch } : it)));
+              setEditingExIdx(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

@@ -105,7 +105,7 @@ function AppInner() {
       if (w) {
         goActive({
           workoutId: w.id,
-          workoutName: lang === "pt" ? w.namePt || w.name : w.name,
+          workoutName: w.name,
         });
         return;
       }
@@ -179,7 +179,7 @@ function AppInner() {
             onSelect={(w) =>
               goActive({
                 workoutId: w.id,
-                workoutName: lang === "pt" ? w.namePt || w.name : w.name,
+                workoutName: w.name,
               })
             }
             onBack={closeOverlay}
@@ -229,7 +229,7 @@ function AppInner() {
       {incomingShare && (
         <ConfirmModal
           title={t.importWorkoutTitle}
-          message={`${lang === "pt" ? incomingShare.namePt : incomingShare.name} — ${incomingShare.exercises.length} ${t.exercises}`}
+          message={`${incomingShare.name} — ${incomingShare.exercises.length} ${t.exercises}`}
           cancelLabel={t.cancel}
           confirmLabel={t.importWorkout}
           onCancel={() => setIncomingShare(null)}

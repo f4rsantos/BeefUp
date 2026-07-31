@@ -13,6 +13,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
     activePlanId,
     setActivePlan,
     workouts,
+    saveWorkout,
   } = useApp();
   const [view, setView] = useState(initialPlanId ? "editPlan" : "main"); // 'main' | 'editPlan'
   const [editingPlan, setEditingPlan] = useState(
@@ -25,6 +26,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
         plan={editingPlan}
         workouts={workouts}
         onSave={savePlan}
+        saveWorkout={saveWorkout}
         onBack={() => (initialPlanId ? onBack() : setView("main"))}
         lang={lang}
         t={t}

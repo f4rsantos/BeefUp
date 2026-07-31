@@ -151,6 +151,10 @@ export function getVariantOptions(baseId) {
   return BASE_BY_ID[baseId]?.variants ?? []
 }
 
+export function normalizeWorkoutExercises(list) {
+  return (list || []).map((item) => (typeof item === 'string' ? { ref: item } : item))
+}
+
 export function listBodyParts() {
   return [...new Set(exercisesBase.map((b) => b.bodyPart))]
 }

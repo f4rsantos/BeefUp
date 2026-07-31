@@ -3,7 +3,7 @@ import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, C
 import { useApp } from "../context/AppContext";
 import { todaysPlanEntry } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
-import { resolveExercise, BODY_PART_ACCENT } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises, BODY_PART_ACCENT } from "../lib/exerciseTree";
 import { encodeWorkoutShare } from "../lib/workoutShare";
 import HumanBody from "../components/HumanBody";
 
@@ -35,8 +35,8 @@ const MENU_ITEM_STYLE = {
 
 function workoutAccentColors(workout) {
   const counts = {};
-  workout.exercises?.forEach((ref) => {
-    const ex = resolveExercise(ref);
+  normalizeWorkoutExercises(workout.exercises).forEach((item) => {
+    const ex = resolveExercise(item.ref);
     if (!ex?.bodyPart) return;
     counts[ex.bodyPart] = (counts[ex.bodyPart] || 0) + 1;
   });
@@ -177,11 +177,7 @@ export default function WorkoutPage({
   );
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
 
-  const workoutLabel = todayWorkout
-    ? lang === "pt"
-      ? todayWorkout.namePt || todayWorkout.name
-      : todayWorkout.name
-    : null;
+  const workoutLabel = todayWorkout ? todayWorkout.name : null;
 
   const lastSessionByWorkout = useMemo(() => {
     const map = {};
@@ -195,19 +191,12 @@ export default function WorkoutPage({
   }, [sessions]);
 
   const handleRename = (workout) => {
-    const currentName = lang === "pt" ? workout.namePt || workout.name : workout.name;
     const newName = window.prompt(
       lang === "pt" ? "Novo nome do treino:" : "New workout name:",
-      currentName,
+      workout.name,
     );
     if (!newName || !newName.trim()) return;
-    const trimmed = newName.trim();
-    const updated = {
-      ...workout,
-      name: lang === "pt" ? workout.name : trimmed,
-      namePt: lang === "pt" ? trimmed : workout.namePt,
-    };
-    saveWorkout(updated);
+    saveWorkout({ ...workout, name: newName.trim() });
   };
 
   const handleDuplicate = (workout) => {
@@ -215,9 +204,6 @@ export default function WorkoutPage({
       ...workout,
       id: crypto.randomUUID(),
       name: `${workout.name} (${lang === "pt" ? "cópia" : "copy"})`,
-      namePt: workout.namePt
-        ? `${workout.namePt} (${lang === "pt" ? "cópia" : "copy"})`
-        : undefined,
     };
     saveWorkout(copy);
   };
@@ -226,14 +212,14 @@ export default function WorkoutPage({
     const code = encodeWorkoutShare(workout);
     const url = `${window.location.origin}${window.location.pathname}?w=${code}`;
     if (navigator.share) {
-      navigator.share({ title: lang === "pt" ? workout.namePt || workout.name : workout.name, url });
+      navigator.share({ title: workout.name, url });
     } else {
       navigator.clipboard.writeText(url);
     }
   };
 
   const handleDelete = (workout) => {
-    const name = lang === "pt" ? workout.namePt || workout.name : workout.name;
+    const name = workout.name;
     const confirmMsg = lang === "pt"
       ? `Eliminar "${name}"? Esta ação não pode ser desfeita.`
       : `Delete "${name}"? This action cannot be undone.`;
@@ -427,12 +413,12 @@ export default function WorkoutPage({
           style={{ gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: SPACE.lg }}
         >
           {workouts.map((w) => {
-            const name = lang === "pt" ? w.namePt || w.name : w.name;
+            const name = w.name;
             const exerciseCount = w.exercises?.length ?? 0;
-            const exerciseNames = w.exercises
-              ?.slice(0, 3)
-              .map((ref) => {
-                const ex = resolveExercise(ref);
+            const exerciseNames = normalizeWorkoutExercises(w.exercises)
+              .slice(0, 3)
+              .map((item) => {
+                const ex = resolveExercise(item.ref);
                 return ex ? (lang === "pt" ? ex.namePt || ex.name : ex.name) : null;
               })
               .filter(Boolean)
@@ -447,7 +433,7 @@ export default function WorkoutPage({
                 onClick={() =>
                   onStartWorkout({
                     workoutId: w.id,
-                    workoutName: lang === "pt" ? w.namePt || w.name : w.name,
+                    workoutName: w.name,
                   })
                 }
               >

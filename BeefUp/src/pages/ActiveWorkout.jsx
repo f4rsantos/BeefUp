@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, epley } from "../lib/planUtils";
-import { resolveExercise } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
 import ExerciseCard from "../components/ExerciseCard";
@@ -16,19 +16,22 @@ function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
 }
 
-function buildExerciseEntry(ex, lastSets = [], lastNote = "") {
+// Priority for weight/reps/note when a set isn't covered by real history:
+function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null) {
   return {
     id: uid(),
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
-    note: lastNote,
+    note: lastNote || workoutItem?.note || "",
     sets: Array.from({ length: ex.defaultSets }, (_, i) => {
       const last = lastSets[Math.min(i, lastSets.length - 1)];
+      const fallbackWeight = workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : "");
+      const fallbackReps = workoutItem?.reps || String(ex.defaultReps);
       return {
         id: uid(),
-        weight: last ? last.weight : (ex.defaultWeight > 0 ? String(ex.defaultWeight) : ""),
-        reps: last ? last.reps : String(ex.defaultReps),
+        weight: last ? last.weight : fallbackWeight,
+        reps: last ? last.reps : fallbackReps,
         done: false,
       };
     }),
@@ -42,10 +45,12 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
   const [exercises, setExercises] = useState(() => {
     if (!sourceWorkout) return [];
-    return sourceWorkout.exercises
-      .map((ref) => resolveExercise(ref))
-      .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id)));
+    return normalizeWorkoutExercises(sourceWorkout.exercises)
+      .map((item) => ({ item, ex: resolveExercise(item.ref) }))
+      .filter(({ ex }) => ex)
+      .map(({ item, ex }) =>
+        buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), item),
+      );
   });
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
