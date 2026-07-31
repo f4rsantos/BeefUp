@@ -704,3 +704,19 @@ input.field:focus, select.field:focus, textarea.field:focus {
 }
 
 @keyframes ringFill { from { stroke-dashoffset: var(--dash-start); } to { stroke-dashoffset: var(--dash-end); } }
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+.workout-timer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #fff;
+  flex-shrink: 0;
+  animation: pulseDot 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workout-timer-dot { animation: none; }
+}

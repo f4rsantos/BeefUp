@@ -4,7 +4,6 @@ import { useApp } from "../context/AppContext";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, epley } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
-import RestBar from "../components/RestBar";
 import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
 import OneRMModal from "../components/OneRMModal";
@@ -74,6 +73,21 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     );
     return () => clearInterval(id);
   }, [startedAt]);
+
+  useEffect(() => {
+    if (!restState?.running) return;
+    const id = setInterval(() => {
+      setRestState((prev) => {
+        if (!prev) return prev;
+        const nextElapsed = prev.elapsed + 1;
+        if (nextElapsed >= prev.duration) {
+          return { ...prev, elapsed: prev.duration, running: false, done: true };
+        }
+        return { ...prev, elapsed: nextElapsed };
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [restState?.running]);
 
   useEffect(() => {
     if (!setTimer) return;
@@ -278,6 +292,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     >
       <WorkoutTopBar
         elapsed={elapsed}
+        restState={restState}
         onOneRM={() => setShowOneRM(true)}
         onRest={() => setShowRestModal(true)}
         onEnd={() => setEndModal("confirm")}
@@ -293,11 +308,6 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           {workoutName}
         </p>
       )}
-
-      <RestBar
-        restState={restState}
-        onOpenRest={() => setShowRestModal(true)}
-      />
 
       <div className="px-4 pb-8 flex flex-col gap-3">
         {exercises.map((ex, exIdx) => (
