@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, nowISO, lastCompletedSets, epley } from "../lib/planUtils";
+import { uid, nowISO, lastCompletedSets, lastExerciseNote, epley } from "../lib/planUtils";
 import { resolveExercise } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import RestBar from "../components/RestBar";
@@ -16,13 +16,13 @@ function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
 }
 
-function buildExerciseEntry(ex, lastSets = []) {
+function buildExerciseEntry(ex, lastSets = [], lastNote = "") {
   return {
     id: uid(),
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
-    note: "",
+    note: lastNote,
     sets: Array.from({ length: ex.defaultSets }, (_, i) => {
       const last = lastSets[Math.min(i, lastSets.length - 1)];
       return {
@@ -45,7 +45,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     return sourceWorkout.exercises
       .map((ref) => resolveExercise(ref))
       .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
+      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id)));
   });
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
@@ -106,6 +106,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         };
       }),
     );
+  }, []);
+
+  const updateNote = useCallback((exIdx, note) => {
+    setExercises((prev) => prev.map((e, i) => (i === exIdx ? { ...e, note } : e)));
   }, []);
 
   const setSetType = useCallback((exIdx, setIdx, type) => {
@@ -191,7 +195,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     const entries = refs
       .map(resolveExercise)
       .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
+      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id)));
     if (entries.length === 0) return;
     setExercises((prev) => [...prev, ...entries]);
     setShowExPicker(false);
@@ -305,6 +309,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onRemoveExercise={removeExercise}
             onSetType={setSetType}
             note={ex.note}
+            onUpdateNote={updateNote}
             setTimer={setTimer}
             onSkipSetTimer={dismissSetTimer}
           />

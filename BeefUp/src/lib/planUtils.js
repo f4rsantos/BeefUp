@@ -45,6 +45,17 @@ export function lastCompletedSets(sessions, exerciseId) {
   return latest?.sets ?? []
 }
 
+export function lastExerciseNote(sessions, exerciseId) {
+  let latest = null
+  for (const s of sessions) {
+    const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
+    if (entry?.note && (!latest || s.date > latest.date)) {
+      latest = { date: s.date, note: entry.note }
+    }
+  }
+  return latest?.note ?? ''
+}
+
 export function formatDuration(s) {
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
