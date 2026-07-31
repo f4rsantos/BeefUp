@@ -56,7 +56,7 @@ export default function RestModal({ restState, setRestState, onClose }) {
         {!isRunning && !restState?.done ? (
           <>
             {/* Presets */}
-            <div className="flex gap-2.5 flex-wrap mb-7">
+            <div className="flex gap-2.5 flex-wrap" style={{ marginBottom: 15 }}>
               {PRESETS.map((s) => (
                 <button
                   key={s}
@@ -68,7 +68,8 @@ export default function RestModal({ restState, setRestState, onClose }) {
               ))}
             </div>
             <input
-              className="field w-full mb-7"
+              className="field w-full"
+              style={{ marginBottom: 15 }}
               type="number"
               placeholder={`${t.seconds}`}
               value={selected}
@@ -95,14 +96,14 @@ export default function RestModal({ restState, setRestState, onClose }) {
                 </span>
               </ProgressRing>
             </div>
-            <button className="btn btn-ghost w-full mt-1" onClick={stopRest}>
+            <button className="btn btn-ghost w-full mt-3" onClick={stopRest}>
               {t.skipRest}
             </button>
           </>
         )}
 
         {(isRunning || restState?.done) && (
-          <button className="btn btn-ghost w-full mt-3" onClick={stopRest}>
+          <button className="btn btn-ghost w-full mt-4" onClick={stopRest}>
             {t.cancel}
           </button>
         )}
