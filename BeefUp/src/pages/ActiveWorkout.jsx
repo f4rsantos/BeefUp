@@ -55,9 +55,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
   const startedAt = activeWorkout?.startedAt ?? fallbackStart;
-  const [elapsed, setElapsed] = useState(() =>
-    Math.floor((Date.now() - startedAt) / 1000),
-  );
+  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
   const [restState, setRestState] = useState(null);
