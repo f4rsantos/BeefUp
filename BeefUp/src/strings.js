@@ -222,8 +222,6 @@ const strings = {
 
     // Nutrition
     nutrition: 'Nutrição',
-    comingSoon: 'Em construção',
-    comingSoonBody: 'Estamos a preparar esta funcionalidade. Estará disponível em breve.',
     calories: 'Calorias',
     kcal: 'kcal',
     protein: 'Proteína',
@@ -285,7 +283,7 @@ const strings = {
     obFocusNutritionDesc: 'Calorias e macros',
     obFocusBoth: 'Ambos',
     obFocusBothDesc: 'Treino e dieta juntos',
-    nutritionUnavailable: 'Indisponível',
+    unavailable: 'Indisponível',
     obMeasuresTitle: 'As tuas medidas',
     obMeasuresSub: 'Opcional, podes saltar qualquer campo',
     obGoalsTitle: 'O teu objetivo',
@@ -547,8 +545,6 @@ const strings = {
 
     // Nutrition
     nutrition: 'Nutrition',
-    comingSoon: 'Under construction',
-    comingSoonBody: "We're working on this feature. It will be available soon.",
     calories: 'Calories',
     kcal: 'kcal',
     protein: 'Protein',
@@ -610,7 +606,7 @@ const strings = {
     obFocusNutritionDesc: 'Calories and macros',
     obFocusBoth: 'Both',
     obFocusBothDesc: 'Training and diet together',
-    nutritionUnavailable: 'Unavailable',
+    unavailable: 'Unavailable',
     obMeasuresTitle: 'Your measurements',
     obMeasuresSub: 'Optional, skip any field',
     obGoalsTitle: 'Your goal',

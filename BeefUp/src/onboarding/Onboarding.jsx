@@ -54,7 +54,7 @@ export default function Onboarding() {
             <TrendingUp size={24} />
             <span className="ob-mode-title">
               {t.obHelping}
-              <span className="ob-focus-badge">{t.nutritionUnavailable}</span>
+              <span className="ob-focus-badge">{t.unavailable}</span>
             </span>
             <span className="ob-mode-desc">{t.obHelpingDesc}</span>
           </button>
@@ -218,14 +218,14 @@ function Frame({ children, t, onBack, total, current, theme, setTheme, lang, set
 function FocusStep({ t, value, onChange }) {
   const opts = [
     { id: "gym", Icon: Dumbbell, label: t.obFocusGym, desc: t.obFocusGymDesc },
-    { id: "nutrition", Icon: Apple, label: t.obFocusNutrition, desc: t.obFocusNutritionDesc, unavailable: true },
-    { id: "both", Icon: Sparkles, label: t.obFocusBoth, desc: t.obFocusBothDesc, unavailable: true },
+    { id: "nutrition", Icon: Apple, label: t.obFocusNutrition, desc: t.obFocusNutritionDesc },
+    { id: "both", Icon: Sparkles, label: t.obFocusBoth, desc: t.obFocusBothDesc },
   ];
   return (
     <>
       <h1 className="ob-title">{t.obFocusTitle}</h1>
       <div className="flex flex-col gap-3">
-        {opts.map(({ id, Icon, label, desc, unavailable }) => (
+        {opts.map(({ id, Icon, label, desc }) => (
           <button
             key={id}
             className={`card ob-focus-card flex items-center gap-3 ${value === id ? "card-elevated active" : ""}`}
@@ -233,10 +233,7 @@ function FocusStep({ t, value, onChange }) {
           >
             <Icon size={24} style={{ color: "var(--accent)" }} />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="ob-focus-label">{label}</span>
-                {unavailable && <span className="ob-focus-badge">{t.nutritionUnavailable}</span>}
-              </div>
+              <span className="ob-focus-label">{label}</span>
               <div className="ob-focus-desc">{desc}</div>
             </div>
           </button>
