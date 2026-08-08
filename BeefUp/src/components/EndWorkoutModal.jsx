@@ -65,7 +65,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
           </div>
         )}
 
-        <div className="flex gap-3 mb-5">
+        <div className="flex gap-3" style={{ marginBottom: 10 }}>
           <StatBox label={t.totalTime} value={formatDuration(stats.duration)} />
           <StatBox label={t.totalSets} value={stats.totalSets} />
           <StatBox label={t.totalVolume} value={`${stats.totalVolume.toFixed(0)}kg`} />

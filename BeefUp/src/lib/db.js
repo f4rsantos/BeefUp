@@ -72,6 +72,9 @@ export const db = {
   // Generic delete
   remove: (store, key) => tx(store, 'readwrite', s => s.delete(key)),
 
+  // When restoring a backup replaces the current data 
+  clear: (store) => tx(store, 'readwrite', s => s.clear()),
+
   // Settings helpers
   getSetting: async (key, fallback = null) => {
     const row = await tx(STORES.settings, 'readonly', s => s.get(key))

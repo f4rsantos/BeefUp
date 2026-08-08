@@ -3,6 +3,7 @@ import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, normalizeStatsLayout } from '../lib/statsLayout'
+import { applyCustomAccent } from '../lib/colorTheme'
 import strings from '../strings'
 
 const AppContext = createContext(null)
@@ -23,10 +24,15 @@ function removeById(list, id) {
 
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
+  const [accentColor, setAccentColorState] = useState(() => getLS('accentColor', 'green'))
+  const [customAccentHex, setCustomAccentHexState] = useState(() => getLS('customAccentHex', '#109a14'))
   const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
   const [onboarded, setOnboardedState] = useState(() => getLS('onboarded', false))
   const [appMode, setAppModeState] = useState(() => getLS('appMode', 'solo'))
   const [focus, setFocusState] = useState(() => getLS('focus', 'both'))
+  const [sectionPrefs, setSectionPrefsState] = useState(() =>
+    getLS('sectionPrefs', { gym: focus !== 'nutrition', nutrition: focus !== 'gym' }),
+  )
   const [plans, setPlans] = useState([])
   const [workouts, setWorkouts] = useState([])
   const [sessions, setSessions] = useState([])
@@ -58,10 +64,30 @@ export function AppProvider({ children }) {
 
   const setTheme = useCallback((v) => setThemeState(v), [])
 
+  useEffect(() => {
+    if (accentColor === 'custom') applyCustomAccent(customAccentHex)
+    else if (accentColor === 'green') document.documentElement.removeAttribute('data-accent')
+    else document.documentElement.setAttribute('data-accent', accentColor)
+    setLS('accentColor', accentColor)
+  }, [accentColor, customAccentHex])
+
+  const setAccentColor = useCallback((v) => setAccentColorState(v), [])
+
+  const setCustomAccentColor = useCallback((hex) => {
+    setLS('customAccentHex', hex)
+    setCustomAccentHexState(hex)
+    setAccentColorState('custom')
+  }, [])
+
   const completeOnboarding = useCallback(({ mode, focus }) => {
     setLS('appMode', mode); setAppModeState(mode)
     if (focus) { setLS('focus', focus); setFocusState(focus) }
     setLS('onboarded', true); setOnboardedState(true)
+  }, [])
+
+  const setSectionPrefs = useCallback((next) => {
+    setSectionPrefsState(next)
+    setLS('sectionPrefs', next)
   }, [])
 
   const resetOnboarding = useCallback(() => {
@@ -224,9 +250,11 @@ export function AppProvider({ children }) {
 
   const value = {
     theme, setTheme,
+    accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,
     onboarded, appMode, focus, completeOnboarding, resetOnboarding,
+    sectionPrefs, setSectionPrefs,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession, deleteSession,

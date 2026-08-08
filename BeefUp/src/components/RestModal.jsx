@@ -1,41 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import ProgressRing from "./ProgressRing";
 
 const PRESETS = [30, 60, 90, 120, 180];
 
 export default function RestModal({ restState, setRestState, onClose }) {
   const { t } = useApp();
   const [selected, setSelected] = useState(restState?.duration ?? 60);
-  const intervalRef = useRef(null);
 
   const isRunning = restState?.running ?? false;
   const elapsed = restState?.elapsed ?? 0;
   const duration = restState?.duration ?? selected;
   const remaining = Math.max(0, duration - elapsed);
-  const progress = duration > 0 ? elapsed / duration : 0;
-
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setRestState((prev) => {
-          if (!prev) return prev;
-          const nextElapsed = prev.elapsed + 1;
-          if (nextElapsed >= prev.duration) {
-            clearInterval(intervalRef.current);
-            return {
-              ...prev,
-              elapsed: prev.duration,
-              running: false,
-              done: true,
-            };
-          }
-          return { ...prev, elapsed: nextElapsed };
-        });
-      }, 1000);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning, setRestState]);
 
   function start() {
     setRestState({
@@ -51,8 +28,6 @@ export default function RestModal({ restState, setRestState, onClose }) {
     onClose();
   }
 
-  const circumference = 2 * Math.PI * 44;
-  const strokeDash = circumference * (1 - progress);
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
 
@@ -81,16 +56,11 @@ export default function RestModal({ restState, setRestState, onClose }) {
         {!isRunning && !restState?.done ? (
           <>
             {/* Presets */}
-            <div className="flex gap-2 flex-wrap mb-5">
+            <div className="flex gap-2.5 flex-wrap" style={{ marginBottom: 15 }}>
               {PRESETS.map((s) => (
                 <button
                   key={s}
-                  className="btn text-sm px-3 py-2"
-                  style={{
-                    background:
-                      selected === s ? "var(--text)" : "var(--surface2)",
-                    color: selected === s ? "var(--bg)" : "var(--text)",
-                  }}
+                  className={`chip ${selected === s ? "active" : ""}`}
                   onClick={() => setSelected(s)}
                 >
                   {s >= 60 ? `${s / 60}${t.minutes}` : `${s}${t.seconds}`}
@@ -98,7 +68,8 @@ export default function RestModal({ restState, setRestState, onClose }) {
               ))}
             </div>
             <input
-              className="field w-full mb-5"
+              className="field w-full"
+              style={{ marginBottom: 15 }}
               type="number"
               placeholder={`${t.seconds}`}
               value={selected}
@@ -114,51 +85,25 @@ export default function RestModal({ restState, setRestState, onClose }) {
           <>
             {/* Circle progress */}
             <div className="flex justify-center my-5">
-              <svg width={100} height={100} viewBox="0 0 100 100">
-                <circle
-                  cx={50}
-                  cy={50}
-                  r={44}
-                  fill="none"
-                  stroke="var(--surface2)"
-                  strokeWidth={6}
-                />
-                <circle
-                  cx={50}
-                  cy={50}
-                  r={44}
-                  fill="none"
-                  stroke="var(--text)"
-                  strokeWidth={6}
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDash}
-                  strokeLinecap="round"
-                  transform="rotate(-90 50 50)"
-                  style={{ transition: "stroke-dashoffset 0.5s linear" }}
-                />
-                <text
-                  x={50}
-                  y={50}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="var(--text)"
-                  fontSize={18}
-                  fontWeight={600}
+              <ProgressRing value={elapsed} max={duration} size={140} stroke={8} color="var(--accent)">
+                <span
+                  className="font-mono"
+                  style={{ fontSize: 28, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}
                 >
                   {restState?.done
                     ? "0"
                     : `${mins > 0 ? `${mins}:` : ""}${secs.toString().padStart(2, "0")}`}
-                </text>
-              </svg>
+                </span>
+              </ProgressRing>
             </div>
-            <button className="btn btn-ghost w-full mt-1" onClick={stopRest}>
+            <button className="btn btn-ghost w-full mt-3" onClick={stopRest}>
               {t.skipRest}
             </button>
           </>
         )}
 
         {(isRunning || restState?.done) && (
-          <button className="btn btn-ghost w-full mt-3" onClick={stopRest}>
+          <button className="btn btn-ghost w-full mt-4" onClick={stopRest}>
             {t.cancel}
           </button>
         )}

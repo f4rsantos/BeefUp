@@ -1,5 +1,5 @@
 // Encode/decode a workout into a URL-safe blob for sharing via link.
-const FIELDS = ['name', 'namePt', 'exercises', 'restAfterSet']
+const FIELDS = ['name', 'exercises', 'restAfterSet']
 
 export function encodeWorkoutShare(workout) {
   const payload = Object.fromEntries(FIELDS.map((k) => [k, workout[k]]))

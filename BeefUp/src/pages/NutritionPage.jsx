@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Minus, Pencil, Droplet, Trash2, Coffee, Sun, Moon, Cookie } from "lucide-react";
+import { Plus, Minus, Pencil, Droplet, Trash2, Coffee, Sun, Moon, Cookie, Hammer } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todayISO } from "../lib/planUtils";
 import PageHeader from "../components/PageHeader";
@@ -48,7 +48,7 @@ export default function NutritionPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--bg)", position: "relative" }}>
       <PageHeader
         title={t.nutrition}
         action={
@@ -68,8 +68,8 @@ export default function NutritionPage() {
               size={128}
               stroke={12}
               gradientId="kcalRing"
-              gradientFrom="#22c55e"
-              gradientTo="#16a34a"
+              gradientFrom="#18a01c"
+              gradientTo="#109a14"
             >
               <span className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>
                 {kcalLeft}
@@ -164,6 +164,26 @@ export default function NutritionPage() {
 
       {addMeal && <FoodSearchModal meal={addMeal} onClose={() => setAddMeal(null)} />}
       {showGoals && <MacroGoalModal onClose={() => setShowGoals(false)} />}
+
+      <div className="modal-overlay" style={{ position: "absolute", alignItems: "center" }}>
+        <div className="modal-center fade-in" style={{ textAlign: "center" }}>
+          <div
+            style={{
+              width: 64, height: 64, borderRadius: "50%",
+              display: "grid", placeItems: "center", margin: "0 auto 16px",
+              background: "var(--grad-accent, var(--accent))", color: "#fff",
+            }}
+          >
+            <Hammer size={28} />
+          </div>
+          <p className="font-semibold mb-1" style={{ color: "var(--text)" }}>
+            {t.comingSoon}
+          </p>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
+            {t.comingSoonBody}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

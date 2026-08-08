@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, nowISO, lastCompletedSets, epley } from "../lib/planUtils";
-import { resolveExercise } from "../lib/exerciseTree";
+import { uid, nowISO, lastCompletedSets, lastExerciseNote, epley } from "../lib/planUtils";
+import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
-import RestBar from "../components/RestBar";
 import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
 import OneRMModal from "../components/OneRMModal";
@@ -16,19 +15,22 @@ function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
 }
 
-function buildExerciseEntry(ex, lastSets = []) {
+// Priority for weight/reps/note when a set isn't covered by real history:
+function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null) {
   return {
     id: uid(),
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
-    note: "",
+    note: lastNote || workoutItem?.note || "",
     sets: Array.from({ length: ex.defaultSets }, (_, i) => {
       const last = lastSets[Math.min(i, lastSets.length - 1)];
+      const fallbackWeight = workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : "");
+      const fallbackReps = workoutItem?.reps || String(ex.defaultReps);
       return {
         id: uid(),
-        weight: last ? last.weight : (ex.defaultWeight > 0 ? String(ex.defaultWeight) : ""),
-        reps: last ? last.reps : String(ex.defaultReps),
+        weight: last ? last.weight : fallbackWeight,
+        reps: last ? last.reps : fallbackReps,
         done: false,
       };
     }),
@@ -42,10 +44,12 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
   const [exercises, setExercises] = useState(() => {
     if (!sourceWorkout) return [];
-    return sourceWorkout.exercises
-      .map((ref) => resolveExercise(ref))
-      .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
+    return normalizeWorkoutExercises(sourceWorkout.exercises)
+      .map((item) => ({ item, ex: resolveExercise(item.ref) }))
+      .filter(({ ex }) => ex)
+      .map(({ item, ex }) =>
+        buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), item),
+      );
   });
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
@@ -69,6 +73,21 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     );
     return () => clearInterval(id);
   }, [startedAt]);
+
+  useEffect(() => {
+    if (!restState?.running) return;
+    const id = setInterval(() => {
+      setRestState((prev) => {
+        if (!prev) return prev;
+        const nextElapsed = prev.elapsed + 1;
+        if (nextElapsed >= prev.duration) {
+          return { ...prev, elapsed: prev.duration, running: false, done: true };
+        }
+        return { ...prev, elapsed: nextElapsed };
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [restState?.running]);
 
   useEffect(() => {
     if (!setTimer) return;
@@ -106,6 +125,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         };
       }),
     );
+  }, []);
+
+  const updateNote = useCallback((exIdx, note) => {
+    setExercises((prev) => prev.map((e, i) => (i === exIdx ? { ...e, note } : e)));
   }, []);
 
   const setSetType = useCallback((exIdx, setIdx, type) => {
@@ -191,7 +214,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     const entries = refs
       .map(resolveExercise)
       .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id)));
+      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id)));
     if (entries.length === 0) return;
     setExercises((prev) => [...prev, ...entries]);
     setShowExPicker(false);
@@ -269,6 +292,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     >
       <WorkoutTopBar
         elapsed={elapsed}
+        restState={restState}
         onOneRM={() => setShowOneRM(true)}
         onRest={() => setShowRestModal(true)}
         onEnd={() => setEndModal("confirm")}
@@ -285,11 +309,6 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         </p>
       )}
 
-      <RestBar
-        restState={restState}
-        onOpenRest={() => setShowRestModal(true)}
-      />
-
       <div className="px-4 pb-8 flex flex-col gap-3">
         {exercises.map((ex, exIdx) => (
           <ExerciseCard
@@ -305,6 +324,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onRemoveExercise={removeExercise}
             onSetType={setSetType}
             note={ex.note}
+            onUpdateNote={updateNote}
             setTimer={setTimer}
             onSkipSetTimer={dismissSetTimer}
           />

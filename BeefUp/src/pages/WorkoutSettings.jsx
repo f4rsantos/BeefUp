@@ -43,7 +43,7 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
           <div key={w.id} className="card flex items-center justify-between gap-3">
             <div>
               <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>
-                {lang === "pt" ? w.namePt || w.name : w.name}
+                {w.name}
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
                 {w.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}

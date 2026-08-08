@@ -15,7 +15,7 @@ export default function ConfirmModal({
         <p className="font-semibold mb-1" style={{ color: "var(--text)" }}>
           {title}
         </p>
-        <p className="text-sm mb-5" style={{ color: "var(--muted)" }}>
+        <p className="text-sm" style={{ color: "var(--muted)", marginBottom: 10 }}>
           {message}
         </p>
         <div className="flex gap-3">

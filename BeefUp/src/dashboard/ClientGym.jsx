@@ -44,7 +44,7 @@ export default function ClientGym({ client }) {
   }
 
   async function createWorkout() {
-    const w = { id: uid(), name: "New workout", namePt: "Novo treino", exercises: [] };
+    const w = { id: uid(), name: "New workout", exercises: [] };
     await patchClient({ workouts: [...workouts, w] });
     setEditingWorkout(w.id);
   }
@@ -82,7 +82,7 @@ export default function ClientGym({ client }) {
                 {isWorkout ? (
                   workouts.length > 0 ? (
                     <select className="field flex-1" value={day.workoutId ?? ""} onChange={(e) => updateDay(i, { workoutId: e.target.value })}>
-                      {workouts.map((w) => <option key={w.id} value={w.id}>{lang === "pt" ? w.namePt || w.name : w.name}</option>)}
+                      {workouts.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                     </select>
                   ) : (
                     <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>{t.newWorkout} →</span>
@@ -112,7 +112,7 @@ export default function ClientGym({ client }) {
           {workouts.map((w) => (
             <div key={w.id} className="dash-day">
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{lang === "pt" ? w.namePt || w.name : w.name}</div>
+                <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{w.name}</div>
                 <div className="text-xs" style={{ color: "var(--muted)" }}>{w.exercises.length} {t.exercises}</div>
               </div>
               <button className="btn-icon" onClick={() => setPreviewing(w.id)} title={t.startWorkout}><Play size={15} style={{ color: "var(--accent)" }} /></button>
@@ -132,12 +132,11 @@ export default function ClientGym({ client }) {
 
 function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
   const [name, setName] = useState(workout.name);
-  const [namePt, setNamePt] = useState(workout.namePt);
   const [items, setItems] = useState(normalizeExercises(workout.exercises));
   const [picking, setPicking] = useState(false);
 
   function commit(nextItems) {
-    onSave({ ...workout, name: name.trim() || "Workout", namePt: namePt.trim() || name.trim() || "Treino", exercises: nextItems ?? items });
+    onSave({ ...workout, name: name.trim() || "Workout", exercises: nextItems ?? items });
   }
 
   function updateItem(idx, patch) {
@@ -159,9 +158,9 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
           <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>{t.editWorkout}</h3>
           <button className="btn-icon" onClick={() => { commit(); onClose(); }}><X size={18} /></button>
         </div>
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1"><label className="section-title">EN</label><input className="field mt-1" value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div className="flex-1"><label className="section-title">PT</label><input className="field mt-1" value={namePt} onChange={(e) => setNamePt(e.target.value)} /></div>
+        <div className="mb-4">
+          <label className="section-title">{t.workoutName}</label>
+          <input className="field mt-1 w-full" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
         <div className="flex flex-col gap-3" style={{ overflowY: "auto", flex: 1 }}>

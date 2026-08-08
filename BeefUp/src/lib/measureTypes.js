@@ -6,3 +6,9 @@ export const MEASURE_GROUPS = [
 ];
 
 export const LEGACY_TYPE_MAP = { belly: "waist", arms: "biceps", legs: "quadriceps" };
+
+const MEASURE_UNITS = { weight: "kg", bodyFat: "%" };
+
+export function getMeasureUnit(type) {
+  return MEASURE_UNITS[type] ?? "cm";
+}

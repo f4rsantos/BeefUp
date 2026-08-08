@@ -3,7 +3,7 @@ import { ChevronLeft, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType } from "../lib/planUtils";
-import { MEASURE_GROUPS } from "../lib/measureTypes";
+import { MEASURE_GROUPS, getMeasureUnit } from "../lib/measureTypes";
 
 const MAX_VALUE = 1000;
 
@@ -35,18 +35,30 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
     }
   }
 
+  const unit = getMeasureUnit(type);
+
   return (
     <div className="card flex flex-col gap-3">
       <p className="section-title" style={{ margin: 0 }}>{t[`measureType_${type}`]}</p>
       <div className="flex gap-3 items-center">
-        <input
-          className="field flex-1"
-          type="number"
-          placeholder={t.measureValuePlaceholder}
-          value={val}
-          onChange={(e) => { setVal(e.target.value); setError(null); }}
-          style={error ? { borderColor: "var(--danger)" } : undefined}
-        />
+        <div className="flex-1" style={{ position: "relative" }}>
+          <input
+            className="field"
+            type="number"
+            placeholder={t.measureValuePlaceholder}
+            value={val}
+            onChange={(e) => { setVal(e.target.value); setError(null); }}
+            style={{ width: "100%", paddingRight: 36, ...(error ? { borderColor: "var(--danger)" } : null) }}
+          />
+          <span
+            style={{
+              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+              fontSize: 13, color: "var(--muted)", pointerEvents: "none",
+            }}
+          >
+            {unit}
+          </span>
+        </div>
         <button className="btn btn-primary px-5 py-2.5" onClick={handleSave} disabled={saving}>
           {t.saveMeasure}
         </button>
@@ -91,7 +103,7 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
             >
               <span style={{ color: "var(--muted)" }}>{m.dateLabel}</span>
               <div className="flex items-center gap-3">
-                <span style={{ color: "var(--text)" }}>{m.value}</span>
+                <span style={{ color: "var(--text)" }}>{m.value} {unit}</span>
                 <button
                   onClick={() => onDelete(m.id)}
                   aria-label={t.delete}

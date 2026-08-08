@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { ChevronLeft, Plus, Trash2, Dumbbell, Moon } from "lucide-react";
 import { uid, todayISO } from "../lib/planUtils";
+import WorkoutEditor from "./WorkoutEditor";
 
 export default function PlanEditor({
   plan,
   workouts,
   onSave,
+  saveWorkout,
   onBack,
   lang,
   t,
 }) {
   const [name, setName] = useState(plan?.name ?? "");
   const [days, setDays] = useState(plan?.days ?? []);
+  const [creatingWorkoutForDay, setCreatingWorkoutForDay] = useState(null);
 
   function addDay(type) {
     setDays((prev) => [
@@ -110,22 +113,29 @@ export default function PlanEditor({
                   : <Moon size={15} style={{ color: "var(--accent-2)" }} />}
               </button>
 
-              {isWorkout && workouts.length > 0 ? (
+              {isWorkout ? (
                 <select
                   className="field flex-1"
                   value={day.workoutId ?? ""}
-                  onChange={(e) => updateDay(i, { workoutId: e.target.value })}
+                  onChange={(e) => {
+                    if (e.target.value === "__new__") setCreatingWorkoutForDay(i);
+                    else updateDay(i, { workoutId: e.target.value });
+                  }}
                   style={{ fontSize: 12, padding: "7px 9px" }}
                 >
+                  {workouts.length === 0 && <option value="">{t.selectWorkout}</option>}
                   {workouts.map((w) => (
                     <option key={w.id} value={w.id}>
-                      {lang === "pt" ? w.namePt || w.name : w.name}
+                      {w.name}
                     </option>
                   ))}
+                  <option value="__new__">
+                    {lang === "pt" ? "+ Criar novo treino" : "+ Create new workout"}
+                  </option>
                 </select>
               ) : (
                 <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>
-                  {isWorkout ? t.selectWorkout : t.dayRest}
+                  {t.dayRest}
                 </span>
               )}
 
@@ -161,6 +171,22 @@ export default function PlanEditor({
           {t.save}
         </button>
       </div>
+
+      {creatingWorkoutForDay !== null && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 200, background: "var(--bg)" }}>
+          <WorkoutEditor
+            workout={null}
+            lang={lang}
+            t={t}
+            onBack={() => setCreatingWorkoutForDay(null)}
+            onSave={async (newWorkout) => {
+              await saveWorkout(newWorkout);
+              updateDay(creatingWorkoutForDay, { workoutId: newWorkout.id });
+              setCreatingWorkoutForDay(null);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

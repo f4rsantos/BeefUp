@@ -22,11 +22,7 @@ export default function WorkoutPicker({ onSelect, onBack }) {
     let list = [...workouts];
     if (query.trim()) {
       const q = query.toLowerCase();
-      list = list.filter(
-        (w) =>
-          w.name.toLowerCase().includes(q) ||
-          (w.namePt || "").toLowerCase().includes(q),
-      );
+      list = list.filter((w) => w.name.toLowerCase().includes(q));
     }
     list.sort((a, b) => {
       const aF = favIds.includes(a.id);
@@ -67,7 +63,7 @@ export default function WorkoutPicker({ onSelect, onBack }) {
         ) : (
           filtered.map((w) => {
             const isFav = favIds.includes(w.id);
-            const name = lang === "pt" ? w.namePt || w.name : w.name;
+            const name = w.name;
             return (
               <div key={w.id} className="card flex items-center gap-3" style={{ padding: 14 }}>
                 <button

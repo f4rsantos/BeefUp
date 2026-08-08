@@ -66,7 +66,7 @@ export function getMuscleLabel(muscle, lang) {
 }
 
 export const BODY_PART_ACCENT = {
-  chest: '#16a34a',
+  chest: '#109a14',
   back: '#0ea5e9',
   shoulders: '#a855f7',
   'upper arms': '#f97316',
@@ -75,6 +75,24 @@ export const BODY_PART_ACCENT = {
   'lower legs': '#14b8a6',
   waist: '#eab308',
   cardio: '#ec4899',
+}
+
+export const BODY_PART_POSITIONS = {
+  front: {
+    shoulders: { x: 26, y: 16, side: 'left' },
+    'upper arms': { x: 18, y: 28, side: 'left' },
+    waist: { x: 32, y: 42, side: 'left' },
+    'upper legs': { x: 32, y: 63, side: 'left' },
+    chest: { x: 68, y: 21, side: 'right' },
+    'lower legs': { x: 68, y: 86, side: 'right' },
+  },
+  back: {
+    shoulders: { x: 26, y: 16, side: 'left' },
+    'upper arms': { x: 18, y: 30, side: 'left' },
+    'upper legs': { x: 32, y: 63, side: 'left' },
+    back: { x: 68, y: 34, side: 'right' },
+    'lower legs': { x: 68, y: 86, side: 'right' },
+  },
 }
 
 function composeName(base, equipment, variant, field) {
@@ -131,6 +149,10 @@ export function getEquipmentOptions(baseId) {
 
 export function getVariantOptions(baseId) {
   return BASE_BY_ID[baseId]?.variants ?? []
+}
+
+export function normalizeWorkoutExercises(list) {
+  return (list || []).map((item) => (typeof item === 'string' ? { ref: item } : item))
 }
 
 export function listBodyParts() {
