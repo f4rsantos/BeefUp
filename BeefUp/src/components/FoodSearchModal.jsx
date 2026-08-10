@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, ChevronLeft } from "lucide-react";
+import { Search, Plus, ChevronLeft, X, Star } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { foodProvider, scaleFood } from "../lib/foodProvider";
 import { uid, todayISO } from "../lib/planUtils";
+import { macroShares } from "../lib/nutritionCalc";
+import MacroRing from "./MacroRing";
 
 export default function FoodSearchModal({ meal, onClose }) {
-  const { t, lang, addFoodLog, customFoods, saveCustomFood } = useApp();
+  const { t, lang, addFoodLog, customFoods, saveCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null); // food being portioned
@@ -29,6 +31,12 @@ export default function FoodSearchModal({ meal, onClose }) {
     });
     return () => { alive = false; };
   }, [query, customFoods]);
+
+  // Favourites always float to the top, otherwise same order as returned.
+  const sortedResults = [
+    ...results.filter((f) => favouriteFoods.includes(f.id)),
+    ...results.filter((f) => !favouriteFoods.includes(f.id)),
+  ];
 
   function pick(food) {
     setSelected(food);
@@ -69,23 +77,37 @@ export default function FoodSearchModal({ meal, onClose }) {
   const mealLabel = t[meal] || meal;
 
   return (
-    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
-      <div className="modal-center" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-center" style={{ maxWidth: 440, padding: 26 }} onClick={(e) => e.stopPropagation()}>
 
         {/* ── Portion view ── */}
         {selected ? (
           <div className="fade-in">
-            <button className="btn btn-back mb-2 flex items-center gap-1" onClick={() => setSelected(null)}>
-              <ChevronLeft size={18} /> <span className="text-sm">{t.back}</span>
+            <button className="btn btn-back mb-3 flex items-center gap-1" onClick={() => setSelected(null)}>
+              <ChevronLeft size={20} /> <span style={{ fontSize: 15 }}>{t.back}</span>
             </button>
-            <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>
-              {lang === "pt" ? selected.namePt || selected.name : selected.name}
-            </h3>
-            <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>{selected.servingLabel}</p>
+            <div className="flex items-center gap-2">
+              <h3 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+                {lang === "pt" ? selected.namePt || selected.name : selected.name}
+              </h3>
+              <button
+                className="btn btn-ghost p-2"
+                onClick={() => toggleFavouriteFood(selected.id)}
+                aria-label={t.favouriteFood}
+              >
+                <Star
+                  size={20}
+                  fill={favouriteFoods.includes(selected.id) ? "var(--accent-2)" : "none"}
+                  color={favouriteFoods.includes(selected.id) ? "var(--accent-2)" : "var(--muted)"}
+                />
+              </button>
+            </div>
+            <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>{selected.servingLabel}</p>
 
-            <label className="section-title">{t.quantity} ({t.grams})</label>
+            <label className="section-title" style={{ fontSize: 13 }}>{t.quantity} ({t.grams})</label>
             <input
-              className="field mt-2 mb-4"
+              className="field mt-2"
+              style={{ fontSize: 16, padding: "13px 14px", marginBottom: 15 }}
               type="number"
               value={grams}
               onChange={(e) => setGrams(parseFloat(e.target.value) || 0)}
@@ -93,32 +115,39 @@ export default function FoodSearchModal({ meal, onClose }) {
 
             <MacroPreview macros={scaleFood(selected, grams)} t={t} />
 
-            <button className="btn btn-primary w-full mt-4" onClick={confirmAdd}>
-              <Plus size={16} /> {t.add} · {mealLabel}
+            <button className="btn btn-primary w-full py-3.5" style={{ fontSize: 15, marginTop: 15 }} onClick={confirmAdd}>
+              <Plus size={18} /> {t.add} · {mealLabel}
             </button>
           </div>
         ) : creating ? (
           /* ── Custom food form ── */
           <div className="fade-in">
-            <button className="btn btn-back mb-2 flex items-center gap-1" onClick={() => setCreating(false)}>
-              <ChevronLeft size={18} /> <span className="text-sm">{t.back}</span>
+            <button className="btn btn-back mb-3 flex items-center gap-1" onClick={() => setCreating(false)}>
+              <ChevronLeft size={20} /> <span style={{ fontSize: 15 }}>{t.back}</span>
             </button>
-            <h3 className="display mb-3" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>
+            <h3 className="display mb-3" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
               {t.customFood}
             </h3>
-            <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
+            <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14 }}>
               {lang === "pt" ? "Valores por 100 g" : "Values per 100 g"}
             </p>
-            <div className="mb-3">
-              <label className="section-title">{t.foodName}</label>
-              <input className="field mt-1" placeholder={t.foodName} value={cf.name} onChange={(e) => setCf({ ...cf, name: e.target.value })} />
+            <div className="mb-4">
+              <label className="section-title" style={{ fontSize: 13 }}>{t.foodName}</label>
+              <input
+                className="field mt-2"
+                style={{ fontSize: 16, padding: "13px 14px" }}
+                placeholder={t.foodName}
+                value={cf.name}
+                onChange={(e) => setCf({ ...cf, name: e.target.value })}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               {["kcal", "protein", "carbs", "fat"].map((field) => (
                 <div key={field}>
-                  <label className="section-title">{t[field]}</label>
+                  <label className="section-title" style={{ fontSize: 13 }}>{t[field]}</label>
                   <input
-                    className="field mt-1"
+                    className="field mt-2"
+                    style={{ fontSize: 16, padding: "13px 14px" }}
                     type="number"
                     placeholder={t[field]}
                     value={cf[field]}
@@ -127,23 +156,26 @@ export default function FoodSearchModal({ meal, onClose }) {
                 </div>
               ))}
             </div>
-            <button className="btn btn-primary w-full" onClick={createCustom}>{t.add}</button>
+            <button className="btn btn-primary w-full py-3.5" style={{ fontSize: 15 }} onClick={createCustom}>{t.add}</button>
           </div>
         ) : (
           /* ── Search list ── */
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <h3 className="display flex-1" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>
+          <div className="fade-in">
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="display flex-1" style={{ fontSize: 21, fontWeight: 900, color: "var(--text)" }}>
                 {t.addFood}
               </h3>
               <span className="chip active" style={{ pointerEvents: "none" }}>{mealLabel}</span>
+              <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
+                <X size={18} />
+              </button>
             </div>
 
-            <div style={{ position: "relative", marginBottom: 12 }}>
-              <Search size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--muted)" }} />
+            <div style={{ position: "relative", marginBottom: 16 }}>
+              <Search size={17} style={{ position: "absolute", left: 13, top: 14, color: "var(--muted)" }} />
               <input
                 className="field"
-                style={{ paddingLeft: 36 }}
+                style={{ paddingLeft: 38, fontSize: 16, padding: "13px 14px 13px 38px" }}
                 placeholder={t.searchFood}
                 value={query}
                 autoFocus
@@ -151,31 +183,55 @@ export default function FoodSearchModal({ meal, onClose }) {
               />
             </div>
 
-            <button className="btn btn-ghost w-full mb-3 py-2.5 text-sm" onClick={() => setCreating(true)}>
-              <Plus size={15} /> {t.customFood}
+            <button className="btn btn-ghost w-full mb-4 py-3" style={{ fontSize: 14 }} onClick={() => setCreating(true)}>
+              <Plus size={16} /> {t.customFood}
             </button>
 
-            <div className="flex flex-col gap-2" style={{ maxHeight: "50vh", overflowY: "auto" }}>
-              {results.map((f) => (
+            {/* Rows should use `--surface2`, evitando o contraste branco-sobre-branco. */}
+            <div className="flex flex-col gap-2.5" style={{ maxHeight: "50vh", overflowY: "auto" }}>
+              {sortedResults.map((f) => (
                 <button
                   key={f.id}
-                  className="card flex items-center justify-between"
-                  style={{ padding: "14px 16px", cursor: "pointer", textAlign: "left" }}
+                  className="flex items-center justify-between"
+                  style={{
+                    padding: "16px 16px",
+                    borderRadius: 14,
+                    background: "var(--surface2)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    border: "none",
+                  }}
                   onClick={() => pick(f)}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text)", marginBottom: 4 }}>
+                    <p className="font-semibold truncate" style={{ color: "var(--text)", marginBottom: 4, fontSize: 15 }}>
                       {lang === "pt" ? f.namePt || f.name : f.name}
                     </p>
-                    <p className="text-sm" style={{ color: "var(--muted)" }}>
+                    <p style={{ color: "var(--muted)", fontSize: 13 }}>
                       {f.kcal} {t.kcal} · {f.servingLabel}
                     </p>
                   </div>
-                  <Plus size={18} style={{ color: "var(--accent)", flexShrink: 0, marginLeft: 12 }} />
+                  <div className="flex items-center gap-1" style={{ flexShrink: 0, marginLeft: 12 }}>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="btn-icon"
+                      style={{ padding: 6, display: "inline-flex", cursor: "pointer" }}
+                      onClick={(e) => { e.stopPropagation(); toggleFavouriteFood(f.id); }}
+                      aria-label={t.favouriteFood}
+                    >
+                      <Star
+                        size={17}
+                        fill={favouriteFoods.includes(f.id) ? "var(--accent-2)" : "none"}
+                        color={favouriteFoods.includes(f.id) ? "var(--accent-2)" : "var(--muted)"}
+                      />
+                    </span>
+                    <Plus size={18} style={{ color: "var(--accent-2)" }} />
+                  </div>
                 </button>
               ))}
               {results.length === 0 && (
-                <p className="text-sm text-center py-6" style={{ color: "var(--muted)" }}>{t.noResults}</p>
+                <p className="text-center py-6" style={{ color: "var(--muted)", fontSize: 15 }}>{t.noResults}</p>
               )}
             </div>
           </div>
@@ -187,19 +243,39 @@ export default function FoodSearchModal({ meal, onClose }) {
 
 function MacroPreview({ macros, t }) {
   const items = [
-    { label: t.calories, value: macros.kcal, unit: "", color: "var(--accent)" },
-    { label: t.protein, value: macros.protein, unit: "g", color: "var(--protein)" },
-    { label: t.carbs, value: macros.carbs, unit: "g", color: "var(--carbs)" },
-    { label: t.fat, value: macros.fat, unit: "g", color: "var(--fat)" },
+    { key: "protein", short: t.proteinShort, val: macros.protein, color: "var(--protein)" },
+    { key: "carbs", short: t.carbsShort, val: macros.carbs, color: "var(--carbs)" },
+    { key: "fat", short: t.fatShort, val: macros.fat, color: "var(--fat)" },
   ];
   return (
-    <div className="flex gap-3">
-      {items.map((it, i) => (
-        <div key={i} className="flex-1 text-center py-3 rounded-2xl" style={{ background: "var(--surface2)" }}>
-          <p className="display" style={{ fontSize: 16, fontWeight: 900, color: it.color }}>{it.value}{it.unit}</p>
-          <p className="text-xs" style={{ color: "var(--muted)", marginTop: 2 }}>{it.label}</p>
-        </div>
-      ))}
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-center">
+        <MacroRing value={macros.kcal} max={macros.kcal || 1} shares={macroShares(macros)}>
+          <span
+            className="display"
+            style={{ fontSize: 30, fontWeight: 900, color: "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}
+          >
+            {macros.kcal}
+          </span>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>{t.kcal}</span>
+        </MacroRing>
+      </div>
+      <div className="flex">
+        {items.map((m) => (
+          <div key={m.key} className="flex-1 flex flex-col items-center" style={{ minWidth: 0 }}>
+            <div className="flex items-center gap-1.5">
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: m.color, flexShrink: 0 }} />
+              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{m.short}</span>
+            </div>
+            <span
+              className="text-sm font-bold"
+              style={{ color: "var(--text)", fontVariantNumeric: "tabular-nums", marginTop: 3 }}
+            >
+              {m.val}g
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

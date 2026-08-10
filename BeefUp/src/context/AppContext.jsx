@@ -22,6 +22,14 @@ function removeById(list, id) {
   return list.filter((item) => item.id !== id)
 }
 
+const DEFAULT_MEAL_TYPES = [
+  { id: 'breakfast', icon: 'coffee' },
+  { id: 'morningSnack', icon: 'cookie' },
+  { id: 'lunch', icon: 'sun' },
+  { id: 'afternoonSnack', icon: 'apple' },
+  { id: 'dinner', icon: 'moon' },
+]
+
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
   const [accentColor, setAccentColorState] = useState(() => getLS('accentColor', 'green'))
@@ -43,6 +51,7 @@ export function AppProvider({ children }) {
     normalizeStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT)),
   )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
+  const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
   const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
   const [clients, setClients] = useState([])
 
@@ -53,6 +62,7 @@ export function AppProvider({ children }) {
   const [nutritionGoals, setNutritionGoalsState] = useState(() =>
     getLS('nutritionGoals', { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 }),
   )
+  const [mealTypes, setMealTypesState] = useState(() => getLS('mealTypes', DEFAULT_MEAL_TYPES))
 
   const t = strings[lang] || strings.pt
 
@@ -88,6 +98,11 @@ export function AppProvider({ children }) {
   const setSectionPrefs = useCallback((next) => {
     setSectionPrefsState(next)
     setLS('sectionPrefs', next)
+  }, [])
+
+  const setMealTypes = useCallback((next) => {
+    setMealTypesState(next)
+    setLS('mealTypes', next)
   }, [])
 
   const resetOnboarding = useCallback(() => {
@@ -243,6 +258,14 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const toggleFavouriteFood = useCallback((id) => {
+    setFavouriteFoods(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      setLS('favFoods', next)
+      return next
+    })
+  }, [])
+
   const deleteSession = useCallback(async (sessionId) => {
     await db.remove(STORES.sessions, sessionId)
     setSessions(prev => removeById(prev, sessionId))
@@ -255,6 +278,7 @@ export function AppProvider({ children }) {
     t,
     onboarded, appMode, focus, completeOnboarding, resetOnboarding,
     sectionPrefs, setSectionPrefs,
+    mealTypes, setMealTypes,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession, deleteSession,
@@ -265,6 +289,7 @@ export function AppProvider({ children }) {
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
     customFoods, saveCustomFood,
+    favouriteFoods, toggleFavouriteFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
     clients, saveClient, deleteClient,
