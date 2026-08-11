@@ -1,11 +1,12 @@
 import { ChevronLeft, Image as ImageIcon } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions } from "../lib/exerciseTree";
+import { localizedName } from "../lib/localizedName"
 
 export default function ExerciseDetailPage({ exercise, onBack }) {
   const { t, lang } = useApp();
 
-  const name = lang === "pt" ? exercise.namePt : exercise.name;
+  const name = localizedName(exercise, lang);
   const description = lang === "pt" ? exercise.descriptionPt : exercise.description;
   const instructions = lang === "pt" ? exercise.instructionsPt : exercise.instructions;
   const equipmentOptions = getEquipmentOptions(exercise.id);
@@ -20,7 +21,7 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
     },
     {
       label: t.filterEquipment,
-      value: equipmentOptions.map((eq) => (lang === "pt" ? eq.namePt : eq.name)).join(", ") || "—",
+      value: equipmentOptions.map((eq) => (localizedName(eq, lang))).join(", ") || "—",
     },
   ];
 
