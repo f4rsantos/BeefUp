@@ -56,7 +56,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
             <div className="flex items-center gap-2" style={{ fontWeight: 800, fontSize: 13 }}>
               <Flame size={16} fill="currentColor" />
               {prs.length === 1
-                ? (lang === 'pt' ? 'Novo recorde pessoal!' : 'New personal record!')
+                ? (t.newPersonalRecord)
                 : (lang === 'pt' ? `${prs.length} novos recordes!` : `${prs.length} new records!`)}
             </div>
             <p style={{ fontSize: 12, opacity: 0.92, marginTop: 4, lineHeight: 1.4 }}>

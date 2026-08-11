@@ -258,7 +258,7 @@ function AppInner() {
             <button
               className="nav-fab"
               onClick={handleStart}
-              aria-label={lang === "pt" ? "Iniciar treino" : "Start workout"}
+              aria-label={t.startWorkoutAria}
             >
               <Play size={26} fill="currentColor" />
             </button>

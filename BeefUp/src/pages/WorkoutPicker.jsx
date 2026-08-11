@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 import { getLS, setLS } from "../lib/crypto";
 
 export default function WorkoutPicker({ onSelect, onBack }) {
-  const { t, lang, workouts } = useApp();
+  const { t, workouts } = useApp();
   const [query, setQuery] = useState("");
   const [favIds, setFavIds] = useState(() => getLS("favWorkouts", []));
 
@@ -82,7 +82,7 @@ export default function WorkoutPicker({ onSelect, onBack }) {
                 <button className="flex-1 text-left" style={{ minWidth: 0 }} onClick={() => onSelect(w)}>
                   <p className="font-bold text-sm truncate" style={{ color: "var(--text)" }}>{name}</p>
                   <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--muted)" }}>
-                    <Dumbbell size={11} /> {w.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
+                    <Dumbbell size={11} /> {w.exercises?.length ?? 0} {t.exercises}
                   </p>
                 </button>
                 <button
