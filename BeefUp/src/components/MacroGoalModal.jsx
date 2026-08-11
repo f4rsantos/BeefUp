@@ -145,7 +145,7 @@ export default function MacroGoalModal({ onClose }) {
             </div>
 
             <div>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.objective}</label>
+              <label className="section-title" style={{ fontSize: 13 }}>{t.goal}</label>
               <div className="flex gap-2 mt-2">
                 {OBJECTIVE.map((o) => (
                   <button

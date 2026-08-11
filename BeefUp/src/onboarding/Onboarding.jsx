@@ -263,7 +263,7 @@ function GoalsStep({ t, calc, setCalc }) {
         </div>
       </div>
       <div>
-        <label className="section-title">{t.objective}</label>
+        <label className="section-title">{t.goal}</label>
         <div className="flex gap-2 mt-1">
           {OBJECTIVE.map((o) => (
             <button key={o.id} className={`chip ${calc.obj === o.d ? "active" : ""}`} style={{ flex: 1, justifyContent: "center", padding: 9 }} onClick={() => setCalc({ ...calc, obj: o.d })}>
