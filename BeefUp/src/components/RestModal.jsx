@@ -139,7 +139,7 @@ export default function RestModal({ restState, setRestState, onClose }) {
                 : t.rest
               : t.restTimer}
           </span>
-          <button className="btn btn-ghost p-2" onClick={onClose}>
+          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
             <X size={18} />
           </button>
         </div>

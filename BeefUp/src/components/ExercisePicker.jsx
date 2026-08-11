@@ -12,6 +12,7 @@ import {
   getEquipmentLabel,
   buildExerciseRef,
 } from "../lib/exerciseTree";
+import { localizedName } from "../lib/localizedName";
 
 export default function AddExercisesPicker({ onConfirm, onClose }) {
   const { t, lang } = useApp();
@@ -33,7 +34,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const sortedExercises = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = listBaseExercises().filter((ex) => {
-      const label = lang === "pt" ? ex.namePt : ex.name;
+      const label = localizedName(ex, lang);
       if (q && !label.toLowerCase().includes(q)) return false;
       if (bodyPart && ex.bodyPart !== bodyPart) return false;
       if (equipment && !ex.equipment.includes(equipment)) return false;
@@ -41,8 +42,8 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     });
 
     return [...filtered].sort((a, b) => {
-      const la = lang === "pt" ? a.namePt : a.name;
-      const lb = lang === "pt" ? b.namePt : b.name;
+      const la = localizedName(a, lang);
+      const lb = localizedName(b, lang);
       return la.localeCompare(lb);
     });
   }, [query, lang, bodyPart, equipment]);
@@ -51,7 +52,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     const sorted = sortedExercises;
     const byLetter = {};
     sorted.forEach((ex) => {
-      const label = lang === "pt" ? ex.namePt : ex.name;
+      const label = localizedName(ex, lang);
       const letter = label[0]?.toUpperCase() ?? "#";
       if (!byLetter[letter]) byLetter[letter] = [];
       byLetter[letter].push(ex);
@@ -230,7 +231,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                         </div>
                         <div style={{ padding: "8px 10px 10px" }}>
                           <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-                            {lang === "pt" ? ex.namePt : ex.name}
+                            {localizedName(ex, lang)}
                           </p>
                           <p
                             className="text-xs mt-0.5 truncate"
@@ -283,7 +284,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                           >
                             <div className="flex-1" style={{ minWidth: 0 }}>
                               <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-                                {lang === "pt" ? ex.namePt : ex.name}
+                                {localizedName(ex, lang)}
                               </p>
                               <p
                                 className="text-xs mt-0.5 truncate"
@@ -317,9 +318,9 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                 </button>
               )}
               <span className="font-semibold text-base flex-1" style={{ color: "var(--text)" }}>
-                {lang === "pt" ? activeBase.namePt : activeBase.name}
+                {localizedName(activeBase, lang)}
               </span>
-              <button className="btn btn-ghost p-2" onClick={cancelCustomize}>
+              <button className="btn btn-ghost p-2" onClick={cancelCustomize} aria-label={t.cancel}>
                 <X size={18} />
               </button>
             </div>
@@ -328,7 +329,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
               <div className="flex flex-wrap gap-2">
                 {equipmentOptions.map((eq) => (
                   <button key={eq.id} className="chip" onClick={() => pickEquipment(eq.id)}>
-                    {lang === "pt" ? eq.namePt : eq.name}
+                    {localizedName(eq, lang)}
                   </button>
                 ))}
               </div>
@@ -338,7 +339,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
               <div className="flex flex-wrap gap-2">
                 {variantOptions.map((v) => (
                   <button key={v.id} className="chip" onClick={() => pickVariant(v.id)}>
-                    {lang === "pt" ? v.namePt : v.name}
+                    {localizedName(v, lang)}
                   </button>
                 ))}
               </div>
@@ -391,7 +392,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
               <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
                 {t.filters}
               </span>
-              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)}>
+              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)} aria-label={t.cancel}>
                 <X size={18} />
               </button>
             </div>

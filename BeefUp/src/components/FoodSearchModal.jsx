@@ -5,6 +5,7 @@ import { foodProvider, scaleFood } from "../lib/foodProvider";
 import { uid, todayISO } from "../lib/planUtils";
 import { macroShares } from "../lib/nutritionCalc";
 import MacroRing from "./MacroRing";
+import { localizedNameOrEnglish } from "../lib/localizedName"
 
 export default function FoodSearchModal({ meal, onClose }) {
   const { t, lang, addFoodLog, customFoods, saveCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
@@ -50,7 +51,7 @@ export default function FoodSearchModal({ meal, onClose }) {
       id: uid(),
       date: todayISO(),
       meal,
-      name: lang === "pt" ? selected.namePt || selected.name : selected.name,
+      name: localizedNameOrEnglish(selected, lang),
       qty: grams,
       ...m,
     });
@@ -88,7 +89,7 @@ export default function FoodSearchModal({ meal, onClose }) {
             </button>
             <div className="flex items-center gap-2">
               <h3 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-                {lang === "pt" ? selected.namePt || selected.name : selected.name}
+                {localizedNameOrEnglish(selected, lang)}
               </h3>
               <button
                 className="btn btn-ghost p-2"
@@ -129,7 +130,7 @@ export default function FoodSearchModal({ meal, onClose }) {
               {t.customFood}
             </h3>
             <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14 }}>
-              {lang === "pt" ? "Valores por 100 g" : "Values per 100 g"}
+              {t.valuesPer100g}
             </p>
             <div className="mb-4">
               <label className="section-title" style={{ fontSize: 13 }}>{t.foodName}</label>
@@ -205,7 +206,7 @@ export default function FoodSearchModal({ meal, onClose }) {
                 >
                   <div style={{ minWidth: 0 }}>
                     <p className="font-semibold truncate" style={{ color: "var(--text)", marginBottom: 4, fontSize: 15 }}>
-                      {lang === "pt" ? f.namePt || f.name : f.name}
+                      {localizedNameOrEnglish(f, lang)}
                     </p>
                     <p style={{ color: "var(--muted)", fontSize: 13 }}>
                       {f.kcal} {t.kcal} · {f.servingLabel}

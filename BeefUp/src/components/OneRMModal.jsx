@@ -20,7 +20,7 @@ export default function OneRMModal({ onClose }) {
       <div className="modal-center fade-in" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <span className="font-semibold text-base" style={{ color: 'var(--text)' }}>{t.oneRM}</span>
-          <button className="btn btn-ghost p-2" onClick={onClose}><X size={18} /></button>
+          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}><X size={18} /></button>
         </div>
 
         <div className="flex gap-3 mb-4">

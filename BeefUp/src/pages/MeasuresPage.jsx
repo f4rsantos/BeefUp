@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType } from "../lib/planUtils";
 import { MEASURE_GROUPS, getMeasureUnit } from "../lib/measureTypes";
+import ConfirmModal from "../components/ConfirmModal";
 
 const MAX_VALUE = 1000;
 
@@ -11,6 +12,7 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const chartData = useMemo(
     () => measurementsForType(measurements, type),
     [measurements, type],
@@ -105,7 +107,7 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
               <div className="flex items-center gap-3">
                 <span style={{ color: "var(--text)" }}>{m.value} {unit}</span>
                 <button
-                  onClick={() => onDelete(m.id)}
+                  onClick={() => setPendingDelete(m.id)}
                   aria-label={t.delete}
                   title={t.delete}
                   style={{ color: "var(--muted)", display: "flex" }}
@@ -116,6 +118,20 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
             </div>
           ))}
         </div>
+      )}
+
+      {pendingDelete && (
+        <ConfirmModal
+          title={t.deleteMeasureTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            onDelete(pendingDelete);
+            setPendingDelete(null);
+          }}
+        />
       )}
     </div>
   );
