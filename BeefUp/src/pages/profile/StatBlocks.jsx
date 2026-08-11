@@ -23,7 +23,7 @@ function EmptyNote({ children }) {
 }
 
 export function StreakCalendarBlock({ streak, bestStreak, daysInMonth, monthActivity }) {
-  const { t, lang } = useApp()
+  const { t } = useApp()
   return (
     <div className="card" style={{ height: 184 }}>
       <div className="grid gap-3 items-center" style={{ gridTemplateColumns: '4fr 8fr', height: '100%' }}>
@@ -32,7 +32,7 @@ export function StreakCalendarBlock({ streak, bestStreak, daysInMonth, monthActi
             {streak}
           </span>
           <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-            {lang === 'pt' ? 'Série atual' : 'Current streak'}
+            {t.currentStreakShort}
           </p>
           <p className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
             {t.bestStreak}: <span style={{ color: 'var(--text)', fontWeight: 700 }}>{bestStreak}</span>

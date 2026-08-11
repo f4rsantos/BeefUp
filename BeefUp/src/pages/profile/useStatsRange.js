@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { todayISO, toLocalISO } from '../../lib/planUtils'
+import { todayISO, toLocalISO, daysBetween } from '../../lib/planUtils'
 
 export const RANGE_PRESETS = [7, 14, 30]
 
@@ -16,13 +16,7 @@ export function useStatsRange(defaultPreset = 30) {
     return toLocalISO(from)
   }, [preset, customStart])
 
-  const days = useMemo(() => {
-    const from = new Date(start)
-    from.setHours(0, 0, 0, 0)
-    const to = new Date()
-    to.setHours(0, 0, 0, 0)
-    return Math.max(1, Math.round((to - from) / 86400000) + 1)
-  }, [start])
+  const days = useMemo(() => daysBetween(start), [start])
 
   return { today, preset, setPreset, customStart, setCustomStart, start, days }
 }

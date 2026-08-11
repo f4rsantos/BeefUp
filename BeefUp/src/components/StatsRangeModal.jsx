@@ -1,18 +1,13 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { daysBetween } from "../lib/planUtils";
 
 export default function StatsRangeModal({ customStart, today, onApply, onClose }) {
   const { t } = useApp();
   const [draft, setDraft] = useState(customStart);
 
-  const draftDays = (() => {
-    const start = new Date(draft);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(0, 0, 0, 0);
-    return Math.max(1, Math.round((end - start) / 86400000) + 1);
-  })();
+  const draftDays = daysBetween(draft);
 
   return (
     <div className="modal-overlay" onClick={onClose}>

@@ -3,17 +3,14 @@ import { ChevronDown, Trash2, ChevronLeft } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import HumanBody from '../components/HumanBody'
 import { bodyAreasForSessions } from '../lib/muscles'
-import { sessionVolume } from '../lib/planUtils'
+import { sessionVolume, sessionSets } from '../lib/planUtils'
+import { localizedName } from '../lib/localizedName'
 
 function formatDate(iso) {
   const d = new Date(iso)
   const dateStr = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
   return iso.length > 10 ? `${dateStr} · ${timeStr}` : dateStr
-}
-
-function countSets(session) {
-  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.length ?? 0), 0) ?? 0
 }
 
 function countExercises(session) {
@@ -180,7 +177,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
             <Trash2 size={16} />
             {confirmDelete && (
               <span style={{ fontSize: 12, fontWeight: 600 }}>
-                {lang === 'pt' ? 'Confirmar' : 'Confirm'}
+                {t.confirm}
               </span>
             )}
           </button>
@@ -270,7 +267,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 12, flexShrink: 0 }}>
                 {[
                   { label: t.volume || 'Volume', value: `${sessionVolume(s).toFixed(0)} kg` },
-                  { label: t.sets, value: countSets(s) },
+                  { label: t.sets, value: sessionSets(s) },
                   { label: t.exercises, value: countExercises(s) },
                 ].map((stat, i, arr) => (
                   <div
@@ -296,7 +293,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                 {s.exercises?.map((ex, i) => (
                   <div key={i}>
                     <p style={{ color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>
-                      {lang === 'pt' ? ex.namePt : ex.name}
+                      {localizedName(ex, lang)}
                     </p>
                     <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>
                       {ex.sets?.map(set => `${set.weight || '—'}kg × ${set.reps || '—'}`).join('    ·    ')}

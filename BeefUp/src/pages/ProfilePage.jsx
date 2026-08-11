@@ -171,12 +171,12 @@ export default function ProfilePage({ onOpenMeasures }) {
           <div className="flex items-center justify-between" style={{ position: "relative" }}>
             <div>
               <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>
-                {lang === "pt" ? "Sequência atual" : "Current streak"}
+                {t.currentStreak}
               </p>
               <p className="display" style={{ fontSize: 40, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
                 {stats.streak}
                 <span style={{ fontSize: 16, fontWeight: 700, opacity: 0.85, marginLeft: 6 }}>
-                  {lang === "pt" ? "dias" : "days"}
+                  {t.days}
                 </span>
               </p>
               <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>

@@ -9,7 +9,7 @@ import { toLocalISO } from './planUtils'
 // A day counts as "on target" within this much of the calorie goal.
 export const TARGET_TOLERANCE = 0.1
 
-const EMPTY_DAY = { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+export const EMPTY_DAY = { kcal: 0, protein: 0, carbs: 0, fat: 0 }
 
 // -> Map<dateISO, { kcal, protein, carbs, fat }>, only days that have entries.
 export function dailyNutritionTotals(foodLog) {

@@ -3,6 +3,7 @@ import { Plus, Minus, Pencil, Droplet, Trash2, Check, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todayISO, uid } from "../lib/planUtils";
 import { macroShares } from "../lib/nutritionCalc";
+import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
 import PageHeader from "../components/PageHeader";
 import MacroRing from "../components/MacroRing";
@@ -26,17 +27,12 @@ export default function NutritionPage() {
 
   const todayLog = useMemo(() => foodLog.filter((e) => e.date === today), [foodLog, today]);
 
-  const totals = useMemo(() => {
-    return todayLog.reduce(
-      (acc, e) => ({
-        kcal: acc.kcal + (e.kcal || 0),
-        protein: acc.protein + (e.protein || 0),
-        carbs: acc.carbs + (e.carbs || 0),
-        fat: acc.fat + (e.fat || 0),
-      }),
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-    );
-  }, [todayLog]);
+  // Same per-day reduction the Progress nutrition blocks already use — one
+  // definition of "today's totals" instead of two kept in sync by hand.
+  const totals = useMemo(
+    () => dailyNutritionTotals(foodLog).get(today) ?? EMPTY_DAY,
+    [foodLog, today],
+  );
 
   const water = waterMap[today] || 0;
   const waterGlasses = Math.round(water / GLASS_ML);
@@ -157,7 +153,7 @@ export default function NutritionPage() {
             <button
               className="btn-icon"
               onClick={() => { setEditingMeals(!editingMeals); setCreatingMeal(false); }}
-              aria-label={editingMeals ? t.done : t.editGoals}
+              aria-label={editingMeals ? t.done : t.editMealsList}
             >
               {editingMeals ? <Check size={14} style={{ color: "var(--accent-2)" }} /> : <Pencil size={14} style={{ color: "var(--muted)" }} />}
             </button>

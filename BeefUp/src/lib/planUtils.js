@@ -1,4 +1,5 @@
 import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree'
+import { localizedName } from './localizedName'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
 export function todaysPlanEntry(plan) {
@@ -28,6 +29,19 @@ export function sessionDay(session) {
 
 export function todayISO() {
   return toLocalISO(new Date())
+}
+
+// Inclusive day count between an ISO start date and today (or an explicit
+// end date) — e.g. start === end counts as 1 day, not 0. Shared so the
+// applied range (useStatsRange) and its live preview while picking a custom
+// date (StatsRangeModal) can't drift into disagreeing about "how many days
+// is that".
+export function daysBetween(startISO, endISO = todayISO()) {
+  const start = new Date(startISO)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(endISO)
+  end.setHours(0, 0, 0, 0)
+  return Math.max(1, Math.round((end - start) / 86400000) + 1)
 }
 
 export function nowISO() {
@@ -154,6 +168,11 @@ export function sessionVolume(session) {
       s.type === 'warmup' ? a : a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
+export function sessionSets(session) {
+  return session.exercises?.reduce((acc, ex) =>
+    acc + (ex.sets?.filter((s) => s.type !== 'warmup').length ?? 0), 0) ?? 0
+}
+
 function sessionReps(session) {
   return session.exercises?.reduce((acc, ex) =>
     acc + (ex.sets?.reduce((a, s) =>
@@ -166,10 +185,7 @@ export function computeOverallStats(sessions) {
   const totalVolume = sessions.reduce((acc, s) => acc + sessionVolume(s), 0)
   const totalDuration = sessions.reduce((acc, s) => acc + (s.duration ?? 0), 0)
   const totalReps = sessions.reduce((acc, s) => acc + sessionReps(s), 0)
-  const totalSets = sessions.reduce(
-    (acc, s) => acc + (s.exercises?.reduce((a, ex) => a + (ex.sets?.length ?? 0), 0) ?? 0),
-    0,
-  )
+  const totalSets = sessions.reduce((acc, s) => acc + sessionSets(s), 0)
   return { daysTrained, totalSessions, totalVolume, totalDuration, totalReps, totalSets }
 }
 
@@ -246,6 +262,24 @@ export function measurementsForType(measurements, type) {
 
 export const epley = (weight, reps) => (parseFloat(weight) || 0) * (1 + (parseInt(reps) || 0) / 30)
 
+// Best estimated 1RM per exercise across the given sessions, warmup sets
+// excluded. Shared so "is this a new PR" (compared against a single just-
+// finished session) and the Personal Records list use the same rule instead
+// of two independently-maintained warmup-exclusion reductions.
+export function bestE1rmByExercise(sessions) {
+  const best = {}
+  sessions.forEach((s) => {
+    s.exercises?.forEach((e) => {
+      e.sets?.forEach((set) => {
+        if (set.type === 'warmup') return
+        const rm = epley(set.weight, set.reps)
+        if (rm > (best[e.exerciseId] || 0)) best[e.exerciseId] = rm
+      })
+    })
+  })
+  return best
+}
+
 export function computePersonalRecords(sessions, lang) {
   const best = {}
   sessions.forEach((s) => {
@@ -272,8 +306,8 @@ export function computePersonalRecords(sessions, lang) {
     .map((r) => {
       const resolved = resolveExercise(r.exerciseId)
       const name = resolved
-        ? (lang === 'pt' ? resolved.namePt : resolved.name)
-        : (lang === 'pt' ? r.namePt : r.name)
+        ? (localizedName(resolved, lang))
+        : (localizedName(r, lang))
       return { ...r, name }
     })
     .sort((a, b) => b.e1rm - a.e1rm)
