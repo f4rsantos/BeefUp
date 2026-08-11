@@ -16,7 +16,7 @@ function dayOffsetISO(daysBack) {
   return toLocalISO(date);
 }
 
-function formatDuration(totalSeconds, t) {
+function formatTotalTime(totalSeconds, t) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   return hours > 0 ? `${hours}h ${minutes}${t.minutes}` : `${minutes}${t.minutes}`;
@@ -127,7 +127,7 @@ export default function ProfilePage({ onOpenMeasures }) {
     { icon: CalendarDays, label: t.daysTrained, value: stats.daysTrained },
     { icon: Dumbbell, label: t.totalSessions, value: stats.totalSessions },
     { icon: Weight, label: t.totalVolume, value: Math.round(stats.totalVolume).toLocaleString(), unit: "kg" },
-    { icon: Clock, label: t.totalTime, value: formatDuration(stats.totalDuration, t) },
+    { icon: Clock, label: t.totalTime, value: formatTotalTime(stats.totalDuration, t) },
     { icon: Layers, label: t.totalSets, value: stats.totalSets },
     { icon: Repeat, label: t.totalReps, value: stats.totalReps },
   ];

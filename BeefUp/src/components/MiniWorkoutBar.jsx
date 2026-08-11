@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronUp } from "lucide-react";
-import { formatDuration } from "../lib/planUtils";
+import { formatElapsedClock } from "../lib/planUtils";
 
 // Collapsed view of a running workout
 export default function MiniWorkoutBar({ startedAt, workoutName, onExpand, label }) {
@@ -43,7 +43,7 @@ export default function MiniWorkoutBar({ startedAt, workoutName, onExpand, label
         className="font-mono text-sm font-semibold"
         style={{ color: "var(--accent)", flexShrink: 0 }}
       >
-        {formatDuration(elapsed)}
+        {formatElapsedClock(elapsed)}
       </span>
     </button>
   );

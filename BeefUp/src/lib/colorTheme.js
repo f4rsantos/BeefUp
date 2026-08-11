@@ -85,9 +85,9 @@ export function deriveAccentTokens(hex) {
   }
 }
 
-function cssVarsBlock(t) {
-  return `--accent:${t.accent};--accent-soft:${t.soft};--success:${t.accent};` +
-    `--grad-accent:${t.gradAccent};--grad-hero:${t.gradHero};--shadow-glow:${t.glow};`
+function cssVarsBlock(tokens) {
+  return `--accent:${tokens.accent};--accent-soft:${tokens.soft};--success:${tokens.accent};` +
+    `--grad-accent:${tokens.gradAccent};--grad-hero:${tokens.gradHero};--shadow-glow:${tokens.glow};`
 }
 
 const CUSTOM_STYLE_ID = 'custom-accent-style'

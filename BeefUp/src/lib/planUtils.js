@@ -56,13 +56,13 @@ export function lastExerciseNote(sessions, exerciseId) {
   return latest?.note ?? ''
 }
 
-export function formatDuration(s) {
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = s % 60
+export function formatElapsedClock(seconds) {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
   if (h > 0)
-    return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
-  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 function activeDayFlags(sessions, plans, activePlanId, dayCount) {
@@ -146,8 +146,9 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
-// Warmup sets are excluded for consistency with HistoryPage and other helpers, so the same session always shows the same volume.
-function sessionVolume(session) {
+// Warmup sets are excluded here and in every other stat helper below, so the
+// same session never reports two different volumes depending on the screen.
+export function sessionVolume(session) {
   return session.exercises?.reduce((acc, ex) =>
     acc + (ex.sets?.reduce((a, s) =>
       s.type === 'warmup' ? a : a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0

@@ -3,7 +3,7 @@ import { Trophy, Flame } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { useApp } from '../context/AppContext'
 
-function formatDuration(seconds) {
+function formatSessionLength(seconds) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
@@ -66,7 +66,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
         )}
 
         <div className="flex gap-3" style={{ marginBottom: 10 }}>
-          <StatBox label={t.totalTime} value={formatDuration(stats.duration)} />
+          <StatBox label={t.totalTime} value={formatSessionLength(stats.duration)} />
           <StatBox label={t.totalSets} value={stats.totalSets} />
           <StatBox label={t.totalVolume} value={`${stats.totalVolume.toFixed(0)}kg`} />
         </div>
