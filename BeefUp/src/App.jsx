@@ -166,7 +166,6 @@ function AppInner() {
         {overlay === null && tab2 === "progress" && (
           <ProfilePage
             onOpenMeasures={() => setOverlay("measures")}
-            onViewHistory={() => setOverlay("history")}
           />
         )}
         {overlay === null && tab2 === "settings" && <SettingsPage />}

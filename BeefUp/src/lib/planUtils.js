@@ -146,14 +146,17 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
+// Warmup sets are excluded for consistency with HistoryPage and other helpers, so the same session always shows the same volume.
 function sessionVolume(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+    acc + (ex.sets?.reduce((a, s) =>
+      s.type === 'warmup' ? a : a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
 function sessionReps(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) => a + (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+    acc + (ex.sets?.reduce((a, s) =>
+      s.type === 'warmup' ? a : a + (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
 export function computeOverallStats(sessions) {
@@ -200,6 +203,37 @@ export function aggregateSessionsByWeek(sessions, metric, weeks = 10) {
     weekLabel: `${b.start.getDate()}/${b.start.getMonth() + 1}`,
     value: Math.round(b.value),
   }))
+}
+
+// One row per day for the last `days`, oldest first. Unlike nutritionTrend(), days without a workout count as 0, since missing workout data means no training.
+export function aggregateSessionsByDay(sessions, metric, days) {
+  const metricFn = {
+    duration: (s) => s.duration ?? 0,
+    volume: sessionVolume,
+    reps: sessionReps,
+  }[metric]
+
+  const byDay = new Map()
+  sessions.forEach((s) => {
+    const day = sessionDay(s)
+    if (!day) return
+    byDay.set(day, (byDay.get(day) ?? 0) + metricFn(s))
+  })
+
+  const out = []
+  const cursor = new Date()
+  cursor.setHours(0, 0, 0, 0)
+  cursor.setDate(cursor.getDate() - (days - 1))
+  for (let i = 0; i < days; i++) {
+    const date = toLocalISO(cursor)
+    out.push({
+      date,
+      dateLabel: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      value: Math.round(byDay.get(date) ?? 0),
+    })
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return out
 }
 
 export function measurementsForType(measurements, type) {

@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState } from "react";
-import { Footprints, Flame,  Plus,  Ruler,  BarChart3,  CalendarDays,  Dumbbell,  Weight,  Clock,  Layers,  Repeat,  SlidersHorizontal,GripVertical,Eye,EyeOff,ChevronDown,} from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Footprints, Flame,  Plus,  Ruler,  CalendarDays,  Dumbbell,  Weight,  Clock,  Layers,  Repeat,  SlidersHorizontal,GripVertical,Eye,EyeOff,ChevronDown,Utensils,Target,Beef,CalendarCheck,CalendarRange,} from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useApp } from "../context/AppContext";
-import {  computeStreak,  computeBestStreak,  getMonthActivity,  aggregateSessionsByWeek,  computeOverallStats,  computePersonalRecords,  computeMuscleGroupDistribution,  computeMuscleFatigue,  todayISO,  toLocalISO,} from "../lib/planUtils";
+import {  computeStreak,  computeBestStreak,  getMonthActivity,  aggregateSessionsByDay,  computeOverallStats,  computePersonalRecords,  computeMuscleGroupDistribution,  computeMuscleFatigue,  sessionDay,  todayISO,  toLocalISO,} from "../lib/planUtils";
+import { nutritionTrend, nutritionSummary } from "../lib/nutritionStats";
 import StepsModal from "../components/StepsModal";
+import StatsRangeModal from "../components/StatsRangeModal";
 import StatTile from "../components/StatTile";
 import { BODY_PART_ACCENT } from "../lib/exerciseTree";
 
@@ -27,13 +29,44 @@ const FATIGUE_COLOR = {
   none: "var(--muted)",
 };
 
-export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
-  const { t, lang, plans, activePlanId, sessions, stepsMap, statsLayout, setStatsLayout } = useApp();
+const NUTRITION_BLOCKS = new Set(["nutritionTrend", "nutritionSummary"]);
+const RANGE_PRESETS = [7, 14, 30];
+
+export default function ProfilePage({ onOpenMeasures }) {
+  const { t, lang, plans, activePlanId, sessions, stepsMap, statsLayout, setStatsLayout, foodLog, nutritionGoals, sectionPrefs } = useApp();
 
   const [showSteps, setShowSteps] = useState(false);
+  const [showRangeModal, setShowRangeModal] = useState(false);
   const [prExpanded, setPrExpanded] = useState(false);
 
   const today = todayISO();
+
+// Global date-range control — not persisted, like the chart metric toggle.
+// Streaks, Personal Records, and Muscle Fatigue are excluded because filtering
+// them by date would make these lifetime/recent concepts misleading.
+  const [rangePreset, setRangePreset] = useState(30); // 7 | 14 | 30 | 'custom'
+  const [customStart, setCustomStart] = useState(today);
+
+  const rangeStart = useMemo(() => {
+    if (rangePreset === "custom") return customStart;
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (rangePreset - 1));
+    return toLocalISO(d);
+  }, [rangePreset, customStart]);
+
+  const rangeDays = useMemo(() => {
+    const start = new Date(rangeStart);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+    return Math.max(1, Math.round((end - start) / 86400000) + 1);
+  }, [rangeStart]);
+
+  const sessionsInRange = useMemo(
+    () => sessions.filter((s) => sessionDay(s) >= rangeStart),
+    [sessions, rangeStart],
+  );
   const streak = useMemo(
     () => computeStreak(sessions, plans, activePlanId),
     [sessions, plans, activePlanId],
@@ -61,14 +94,29 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
   );
   const maxWeekSteps = Math.max(1, ...weekSteps.map((entry) => entry.value));
 
-  const stats = useMemo(() => computeOverallStats(sessions), [sessions]);
+  const stats = useMemo(() => computeOverallStats(sessionsInRange), [sessionsInRange]);
   const records = useMemo(() => computePersonalRecords(sessions, lang), [sessions, lang]);
-  const distribution = useMemo(() => computeMuscleGroupDistribution(sessions, lang), [sessions, lang]);
+  const distribution = useMemo(
+    () => computeMuscleGroupDistribution(sessionsInRange, lang),
+    [sessionsInRange, lang],
+  );
   const maxDistCount = Math.max(1, ...distribution.map((d) => d.count));
+  // Não filtrado de propósito: "dias desde o último treino" só é verdade se
+  // olhar para o histórico completo, senão um grupo treinado mesmo antes do
+  // início da janela lia-se como "nunca treinado" em vez de "fresco".
   const fatigue = useMemo(() => computeMuscleFatigue(sessions, lang), [sessions, lang]);
 
   const [metric, setMetric] = useState("volume");
-  const chartData = useMemo(() => aggregateSessionsByWeek(sessions, metric), [sessions, metric]);
+  const chartData = useMemo(
+    () => aggregateSessionsByDay(sessionsInRange, metric, rangeDays),
+    [sessionsInRange, metric, rangeDays],
+  );
+
+  const nutriTrend = useMemo(() => nutritionTrend(foodLog, rangeDays), [foodLog, rangeDays]);
+  const nutriSummary = useMemo(
+    () => nutritionSummary(foodLog, nutritionGoals, rangeDays),
+    [foodLog, nutritionGoals, rangeDays],
+  );
 
   const [editMode, setEditMode] = useState(false);
   const [layout, setLayout] = useState(statsLayout);
@@ -88,10 +136,12 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
     streakCalendar: t.statsBlock_streakCalendar,
     steps: t.statsBlock_steps,
     tiles: t.statsBlock_tiles,
-    weeklyProgress: t.weeklyProgress,
+    weeklyProgress: t.progress,
     muscleDistribution: t.muscleDistribution,
     muscleFatigue: t.muscleFatigue,
     personalRecords: t.personalRecords,
+    nutritionTrend: t.nutritionTrend,
+    nutritionSummary: t.nutritionSummary,
   };
 
   function toggleEnabled(key) {
@@ -256,26 +306,33 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
     );
   }
 
-  function renderWeeklyProgressBlock() {
+  function renderProgressBlock() {
+    const hasData = sessionsInRange.length > 0;
     return (
       <div className="card">
-        <p className="section-title mb-3">{t.weeklyProgress}</p>
-        <div style={{ width: "100%", height: 180 }}>
-          <ResponsiveContainer>
-            <LineChart data={chartData}>
-              <XAxis dataKey="weekLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
-              <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="var(--accent)"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "var(--accent)" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <p className="section-title mb-3">{t.progress}</p>
+        {!hasData ? (
+          <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
+            {t.noSessionsInRange}
+          </p>
+        ) : (
+          <div style={{ width: "100%", height: 180 }}>
+            <ResponsiveContainer>
+              <LineChart data={chartData}>
+                <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--accent)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "var(--accent)" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
         <div className="flex gap-2 mt-3">
           {["duration", "volume", "reps"].map((m) => (
             <button
@@ -412,21 +469,107 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
     );
   }
 
+  function renderNutritionTrendBlock() {
+    const kcalGoal = nutritionGoals.kcal || 0;
+    const hasData = nutriSummary.daysLogged > 0;
+    return (
+      <div className="card">
+        <p className="section-title mb-3">{t.nutritionTrend}</p>
+        {!hasData ? (
+          <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
+            {t.noNutritionData}
+          </p>
+        ) : (
+          /* Dias sem registo entram como null: a linha abre falha em vez de mergulhar a zero, que seria dizer que não comeste nada. */
+          <div style={{ width: "100%", height: 180 }}>
+            <ResponsiveContainer>
+              <LineChart data={nutriTrend}>
+                <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={38} />
+                <Tooltip />
+                {kcalGoal > 0 && (
+                  <ReferenceLine
+                    y={kcalGoal}
+                    stroke="var(--muted)"
+                    strokeDasharray="4 4"
+                    label={{ value: t.goal, fontSize: 10, fill: "var(--muted)", position: "insideTopRight" }}
+                  />
+                )}
+                <Line
+                  type="monotone"
+                  dataKey="kcal"
+                  stroke="var(--accent-2)"
+                  strokeWidth={2}
+                  connectNulls={false}
+                  dot={{ r: 3, fill: "var(--accent-2)" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderNutritionSummaryBlock() {
+    const hasData = nutriSummary.daysLogged > 0;
+    const nutriTiles = [
+      { icon: Utensils, label: t.avgKcal, value: nutriSummary.avgKcal.toLocaleString(), unit: t.kcal },
+      { icon: Target, label: t.onTarget, value: `${nutriSummary.daysOnTarget}/${nutriSummary.daysLogged}` },
+      { icon: Beef, label: t.avgProtein, value: nutriSummary.avgProtein, unit: "g" },
+      { icon: CalendarCheck, label: t.daysLogged, value: nutriSummary.daysLogged },
+    ];
+    return (
+      <div>
+        {!hasData ? (
+          <div className="card">
+            <p className="text-sm text-center py-2" style={{ color: "var(--muted)" }}>
+              {t.noNutritionData}
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {nutriTiles.map((item, i) => (
+              <StatTile
+                key={i}
+                icon={item.icon}
+                label={item.label}
+                value={item.value}
+                unit={item.unit}
+                accent="var(--accent-2)"
+                accentSoft="var(--accent-2-soft)"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const blockRenderers = {
     streakCalendar: renderStreakCalendarBlock,
     steps: renderStepsBlock,
     tiles: renderTilesBlock,
-    weeklyProgress: renderWeeklyProgressBlock,
+    weeklyProgress: renderProgressBlock,
     muscleDistribution: renderMuscleDistributionBlock,
     muscleFatigue: renderMuscleFatigueBlock,
     personalRecords: renderPersonalRecordsBlock,
+    nutritionTrend: renderNutritionTrendBlock,
+    nutritionSummary: renderNutritionSummaryBlock,
   };
 
   function renderBlockContent(key) {
     return blockRenderers[key]?.() ?? null;
   }
 
-  const visibleBlocks = statsLayout.filter((b) => b.enabled);
+  const showNutrition = sectionPrefs.nutrition;
+  const availableBlocks = showNutrition
+    ? statsLayout
+    : statsLayout.filter((b) => !NUTRITION_BLOCKS.has(b.key));
+  const editableBlocks = showNutrition
+    ? layout
+    : layout.filter((b) => !NUTRITION_BLOCKS.has(b.key));
+  const visibleBlocks = availableBlocks.filter((b) => b.enabled);
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
@@ -445,23 +588,34 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4 scrollbar-hide fade-in">
-        <div className="flex gap-3">
-          <button
-            className="btn btn-ghost flex-1 py-3 text-sm flex items-center gap-2"
-            onClick={onOpenMeasures}
-          >
-            <Ruler size={15} />
-            {t.measures}
-          </button>
-          {onViewHistory && (
+        <button
+          className="btn btn-ghost w-full py-3 text-sm flex items-center justify-center gap-2"
+          onClick={onOpenMeasures}
+        >
+          <Ruler size={15} />
+          {t.measures}
+        </button>
+
+        {/* Options are shown directly in the row, with no hidden modal or gesture */}
+        <div className="pill-toggle">
+          {RANGE_PRESETS.map((d) => (
             <button
-              className="btn btn-ghost flex-1 py-3 text-sm flex items-center gap-2"
-              onClick={onViewHistory}
+              key={d}
+              className={`pill-option ${rangePreset === d ? "active" : ""}`}
+              onClick={() => setRangePreset(d)}
             >
-              <BarChart3 size={15} />
-              {t.history}
+              {d}d
             </button>
-          )}
+          ))}
+          <button
+            className={`pill-option ${rangePreset === "custom" ? "active" : ""}`}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+            onClick={() => setShowRangeModal(true)}
+            aria-label={t.custom}
+          >
+            <CalendarRange size={14} />
+            {rangePreset === "custom" && <span>{rangeDays}d</span>}
+          </button>
         </div>
 
         <div className="hero">
@@ -485,7 +639,7 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
         </div>
 
         {editMode ? (
-          layout.map((b) => (
+          editableBlocks.map((b) => (
             <div
               key={b.key}
               ref={(node) => { itemRefs.current[b.key] = node; }}
@@ -517,6 +671,18 @@ export default function ProfilePage({ onOpenMeasures, onViewHistory }) {
       </div>
 
       {showSteps && <StepsModal onClose={() => setShowSteps(false)} />}
+      {showRangeModal && (
+        <StatsRangeModal
+          customStart={customStart}
+          today={today}
+          onApply={(date) => {
+            setCustomStart(date);
+            setRangePreset("custom");
+            setShowRangeModal(false);
+          }}
+          onClose={() => setShowRangeModal(false)}
+        />
+      )}
     </div>
   );
 }

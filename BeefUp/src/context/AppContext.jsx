@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
-import { DEFAULT_STATS_LAYOUT, normalizeStatsLayout } from '../lib/statsLayout'
+import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
 import strings from '../strings'
 
@@ -48,7 +48,7 @@ export function AppProvider({ children }) {
   const [measurements, setMeasurements] = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
   const [statsLayout, setStatsLayoutState] = useState(() =>
-    normalizeStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT)),
+    resolveStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT), getLS('statsLayoutVersion', 1)),
   )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
@@ -211,6 +211,8 @@ export function AppProvider({ children }) {
   const setStatsLayout = useCallback((layout) => {
     setStatsLayoutState(layout)
     setLS('statsLayout', layout)
+    // Stamp the version so this order survives the next boot.
+    setLS('statsLayoutVersion', STATS_LAYOUT_VERSION)
   }, [])
 
   // Nutrition: food log
