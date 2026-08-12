@@ -183,15 +183,14 @@ export default function RestModal({ restState, setRestState, onClose }) {
         )}
 
         {(isRunning || isDone) && (
-          <button className="btn btn-ghost w-full mt-1" onClick={stopRest}>
-            {t.skipRest}
-          </button>
-        )}
-
-        {(isRunning || isDone) && (
-          <button className="btn btn-ghost w-full mt-4" onClick={stopRest}>
-            {t.cancel}
-          </button>
+          <div className="flex gap-3 mt-1">
+            <button className="btn btn-ghost flex-1" onClick={stopRest}>
+              {t.skipRest}
+            </button>
+            <button className="btn btn-ghost flex-1" onClick={stopRest}>
+              {t.cancel}
+            </button>
+          </div>
         )}
       </div>
     </div>
