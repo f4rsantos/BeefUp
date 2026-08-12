@@ -8,9 +8,9 @@ import { buildDemoPreset } from "../lib/demoData";
 import "./onboarding.css";
 
 function soloSteps(focus) {
-  if (focus === "gym") return ["focus", "expFocus", "measures", "expMeasures", "loadPlan"];
-  if (focus === "nutrition") return ["focus", "expFocus", "goals", "measures", "expMeasures", "expGoals"];
-  return ["focus", "expFocus", "goals", "measures", "expMeasures", "expGoals", "loadPlan"];
+  if (focus === "gym") return ["focus", "expFocus", "measures", "loadPlan", "expMeasures"];
+  if (focus === "nutrition") return ["focus", "expFocus", "goals", "measures", "expGoals", "expMeasures"];
+  return ["focus", "expFocus", "goals", "measures", "expMeasures", "loadPlan", "expGoals"];
 }
 
 export default function Onboarding() {
