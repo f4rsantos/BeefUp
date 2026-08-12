@@ -1,23 +1,26 @@
 import { useState } from "react";
-import { Dumbbell, Apple, Sparkles, TrendingUp, ChevronRight, ChevronLeft, Sun, Moon, Monitor } from "lucide-react";
+import { Dumbbell, Apple, Sparkles, TrendingUp, ChevronRight, ChevronLeft, Sun, Moon, Monitor, Check, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, todayISO } from "../lib/planUtils";
 import { ACTIVITY, OBJECTIVE, calcGoals } from "../lib/nutritionCalc";
 import { getMeasureUnit } from "../lib/measureTypes";
+import { buildDemoPreset } from "../lib/demoData";
 import "./onboarding.css";
 
 function soloSteps(focus) {
-  if (focus === "gym") return ["focus", "expFocus", "measures", "expMeasures"];
-  return ["focus", "expFocus", "goals", "measures", "expMeasures", "expGoals"];
+  if (focus === "gym") return ["focus", "expFocus", "measures", "expMeasures", "loadPlan"];
+  if (focus === "nutrition") return ["focus", "expFocus", "goals", "measures", "expMeasures", "expGoals"];
+  return ["focus", "expFocus", "goals", "measures", "expMeasures", "expGoals", "loadPlan"];
 }
 
 export default function Onboarding() {
-  const { t, completeOnboarding, addMeasurement, setNutritionGoals, theme, setTheme, lang, setLang } = useApp();
+  const { t, completeOnboarding, addMeasurement, setNutritionGoals, saveWorkout, savePlan, setActivePlan, theme, setTheme, lang, setLang } = useApp();
   const [mode, setMode] = useState(null);
   const [idx, setIdx] = useState(0);
   const [focus, setFocus] = useState("both");
   const [measures, setMeasures] = useState({ height: "", weight: "", chest: "", biceps: "", quadriceps: "", waist: "" });
   const [calc, setCalc] = useState({ sex: "male", age: 28, height: 175, weight: 75, activity: 1.55, obj: 0 });
+  const [loadPlan, setLoadPlan] = useState(true);
 
   function startMode(m) {
     setMode(m);
@@ -99,6 +102,12 @@ export default function Onboarding() {
         weight: +calc.weight || 75,
       }));
     }
+    if (loadPlan) {
+      const demo = buildDemoPreset();
+      await Promise.all(demo.workouts.map((workout) => saveWorkout(workout)));
+      await savePlan(demo.plan);
+      await setActivePlan(demo.plan.id);
+    }
     completeOnboarding({ mode: "solo", focus });
   }
 
@@ -151,6 +160,8 @@ export default function Onboarding() {
       {step === "expGoals" && (
         <Explainer icon={<Sparkles size={32} />} title={t.obExpGoalsTitle} body={t.obExpGoalsBody} />
       )}
+
+      {step === "loadPlan" && <LoadPlanStep t={t} value={loadPlan} onChange={setLoadPlan} />}
 
       <div className="ob-spacer" />
       <button className="btn btn-primary w-full flex items-center justify-center gap-1" onClick={next}>
@@ -212,6 +223,34 @@ function Frame({ children, t, onBack, total, current, theme, setTheme, lang, set
         {children}
       </div>
     </div>
+  );
+}
+
+function LoadPlanStep({ t, value, onChange }) {
+  const opts = [
+    { id: true, Icon: Check, label: t.obLoadPlanYes, desc: t.obLoadPlanYesDesc },
+    { id: false, Icon: X, label: t.obLoadPlanNo, desc: t.obLoadPlanNoDesc },
+  ];
+  return (
+    <>
+      <h1 className="ob-title">{t.obLoadPlanTitle}</h1>
+      <p className="ob-sub">{t.obLoadPlanSub}</p>
+      <div className="flex flex-col gap-3">
+        {opts.map(({ id, Icon, label, desc }) => (
+          <button
+            key={String(id)}
+            className={`card ob-focus-card flex items-center gap-3 ${value === id ? "card-elevated active" : ""}`}
+            onClick={() => onChange(id)}
+          >
+            <Icon size={24} style={{ color: "var(--accent)" }} />
+            <div>
+              <span className="ob-focus-label">{label}</span>
+              <div className="ob-focus-desc">{desc}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 

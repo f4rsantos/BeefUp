@@ -31,8 +31,6 @@ export default function SettingsPage() {
     setCustomAccentColor,
     savePlan,
     saveWorkout,
-    addSession,
-    saveSteps,
     setActivePlan,
     sectionPrefs,
     setSectionPrefs,
@@ -69,10 +67,6 @@ export default function SettingsPage() {
 
     await Promise.all(demo.workouts.map((workout) => saveWorkout(workout)));
     await savePlan(demo.plan);
-    await Promise.all(
-      demo.steps.map((step) => saveSteps(step.date, step.count)),
-    );
-    await addSession(demo.session);
     await setActivePlan(demo.plan.id);
 
     setLoadingDemo(false);
@@ -189,17 +183,13 @@ export default function SettingsPage() {
                   className="text-sm font-medium"
                   style={{ color: "var(--text)" }}
                 >
-                  {lang === "pt"
-                    ? "Carregar preset de teste"
-                    : "Load demo preset"}
+                  {t.demoPresetTitle}
                 </p>
                 <p
                   className="text-xs truncate"
                   style={{ color: "var(--muted)" }}
                 >
-                  {lang === "pt"
-                    ? "Planos, treinos, passos e histórico de exemplo"
-                    : "Sample plans, workouts, steps and history"}
+                  {t.demoPresetDesc}
                 </p>
               </div>
             </div>
