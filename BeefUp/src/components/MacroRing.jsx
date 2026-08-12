@@ -10,7 +10,7 @@ export default function MacroRing({
   size = 168,
   stroke = 14,
   track = "var(--accent-2-soft)",
-  overColor = "var(--accent-2)",
+  overColor = "var(--danger)",
   children,
 }) {
   const filled = max > 0 ? Math.min(1, value / max) : 0;
@@ -51,7 +51,7 @@ export default function MacroRing({
             style={{ transition: "stroke-dasharray 0.5s cubic-bezier(0.16,1,0.3,1), stroke-dashoffset 0.5s cubic-bezier(0.16,1,0.3,1)" }}
           />
         ))}
-        {/* Ultrapassagem recebe um contorno externo, sem limitar o anel. */}
+        {/* Ultrapassagem recebe um contorno externo */}
         {isOver && (
           <circle
             cx={size / 2}

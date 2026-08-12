@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Plus, Minus, Pencil, Droplet, Trash2, Check, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todayISO, uid } from "../lib/planUtils";
-import { macroShares } from "../lib/nutritionCalc";
+import { macroGoalShares } from "../lib/nutritionCalc";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
 import PageHeader from "../components/PageHeader";
@@ -39,8 +39,7 @@ export default function NutritionPage() {
   const goalGlasses = Math.max(1, Math.round((nutritionGoals.waterMl || 2500) / GLASS_ML));
 
   const kcalGoal = nutritionGoals.kcal || 0;
-  const kcalDiff = kcalGoal - totals.kcal;
-  const isOver = kcalDiff < 0;
+  const isOver = totals.kcal > kcalGoal;
 
   const macros = [
     { key: "protein", short: t.proteinShort, val: Math.round(totals.protein), goal: nutritionGoals.protein, color: "var(--protein)" },
@@ -76,14 +75,14 @@ export default function NutritionPage() {
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide fade-in">
         <div className="card card-elevated flex flex-col gap-4" style={{ padding: 20 }}>
           <div className="flex items-center justify-center">
-            <MacroRing value={totals.kcal} max={kcalGoal || 1} shares={macroShares(totals)}>
+            <MacroRing value={totals.kcal} max={kcalGoal || 1} shares={macroGoalShares(totals, nutritionGoals)}>
               <span
                 className="display"
-                style={{ fontSize: 30, fontWeight: 900, color: isOver ? "var(--accent-2)" : "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}
+                style={{ fontSize: 30, fontWeight: 900, color: isOver ? "var(--danger)" : "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}
               >
-                {isOver ? "+" : "-"}{Math.abs(Math.round(kcalDiff))}
+                {Math.round(totals.kcal)}
               </span>
-              <span className="text-xs" style={{ color: isOver ? "var(--accent-2)" : "var(--muted)" }}>{t.kcal}</span>
+              <span className="text-xs" style={{ color: isOver ? "var(--danger)" : "var(--muted)" }}>{t.kcal}</span>
             </MacroRing>
           </div>
 
