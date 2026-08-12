@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType } from "../lib/planUtils";
 import { MEASURE_GROUPS, LEGACY_TYPE_MAP } from "../lib/measureTypes";
+import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ClientGym from "./ClientGym";
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -180,7 +181,7 @@ function Measures({ client, saveClient, t }) {
               <LineChart data={chart} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: "var(--muted)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} width={36} domain={["auto", "auto"]} />
-                <Tooltip />
+                <Tooltip {...CHART_TOOLTIP_STYLE} />
                 <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--accent)" }} />
               </LineChart>
             </ResponsiveContainer>

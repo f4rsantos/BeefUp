@@ -2,6 +2,7 @@ import {ChevronDown, Flame, Footprints, Plus,} from 'lucide-react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useApp } from '../../context/AppContext'
 import { BODY_PART_ACCENT } from '../../lib/exerciseTree'
+import { CHART_TOOLTIP_STYLE } from '../../lib/chartTheme'
 import StatTile from '../../components/StatTile'
 import { useChartZoom } from './useChartZoom'
 
@@ -138,7 +139,7 @@ export function ProgressBlock({ chartData, hasSessions, metric, onMetricChange, 
             <LineChart data={chartData}>
               <XAxis dataKey="dateLabel" tick={AXIS_TICK} interval="preserveStartEnd" />
               <YAxis tick={AXIS_TICK} width={32} />
-              <Tooltip />
+              <Tooltip {...CHART_TOOLTIP_STYLE} />
               <Line
                 type="monotone"
                 dataKey="value"
