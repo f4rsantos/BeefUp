@@ -308,8 +308,6 @@ const strings = {
     obExpMeasuresBody: 'Registar medidas ajuda-te a ver resultados reais, não só na balança.',
     obExpGoalsTitle: 'Tudo definido',
     obExpGoalsBody: 'Os teus objetivos nutricionais estão prontos. Vamos começar!',
-    resetOnboarding: 'Recomeçar configuração',
-    resetOnboardingWarn: 'Vais passar pela configuração inicial outra vez.',
 
     // Coach dashboard
     dashCalendar: 'Calendário',
@@ -376,7 +374,6 @@ const strings = {
     deleteAppointmentTitle: "Eliminar marcação?",
     removeExerciseTitle: "Remover exercício?",
     removeExerciseConfirm: "Remove o exercício e todas as séries registadas nele, neste treino.",
-    restart: "Recomeçar",
     restDayBody: "Recupera e volta mais forte.",
     setSingular: "Série",
     share: "Partilhar",
@@ -685,8 +682,6 @@ const strings = {
     obExpMeasuresBody: 'Logging measurements helps you see real results, not just the scale.',
     obExpGoalsTitle: 'All set',
     obExpGoalsBody: 'Your nutrition goals are ready. Let’s get started!',
-    resetOnboarding: 'Restart setup',
-    resetOnboardingWarn: "You'll go through initial setup again.",
 
     // Coach dashboard
     dashCalendar: 'Calendar',
@@ -753,7 +748,6 @@ const strings = {
     deleteAppointmentTitle: "Delete appointment?",
     removeExerciseTitle: "Remove exercise?",
     removeExerciseConfirm: "This removes the exercise and every set logged under it, for this workout.",
-    restart: "Restart",
     restDayBody: "Recover and come back stronger.",
     setSingular: "Set",
     share: "Share",

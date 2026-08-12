@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, RotateCcw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import CalendarView from "./CalendarView";
 import ClientDetail from "./ClientDetail";
@@ -8,7 +8,7 @@ import SyncView from "./SyncView";
 import "./dashboard.css";
 
 export default function HelperDashboard() {
-  const { t, clients, resetOnboarding } = useApp();
+  const { t, clients } = useApp();
   const [tab, setTab] = useState("clients");
   const [selectedId, setSelectedId] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -25,9 +25,6 @@ export default function HelperDashboard() {
           <button className={`dash-tab ${tab === "sync" ? "active" : ""}`} onClick={() => setTab("sync")}>{t.dashSync}</button>
         </div>
         <div style={{ flex: 1 }} />
-        <button className="btn btn-ghost btn-icon" onClick={resetOnboarding} title={t.resetOnboarding}>
-          <RotateCcw size={16} />
-        </button>
       </header>
 
       <div className="dash-body">

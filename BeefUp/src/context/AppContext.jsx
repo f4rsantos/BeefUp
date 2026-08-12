@@ -105,12 +105,6 @@ export function AppProvider({ children }) {
     setLS('mealTypes', next)
   }, [])
 
-  const resetOnboarding = useCallback(() => {
-    setLS('onboarded', false); setOnboardedState(false)
-    setLS('appMode', 'solo'); setAppModeState('solo')
-    setLS('focus', 'both'); setFocusState('both')
-  }, [])
-
   // Lang
   const setLang = useCallback((v) => {
     setLangState(v)
@@ -278,7 +272,7 @@ export function AppProvider({ children }) {
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,
-    onboarded, appMode, focus, completeOnboarding, resetOnboarding,
+    onboarded, appMode, focus, completeOnboarding,
     sectionPrefs, setSectionPrefs,
     mealTypes, setMealTypes,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,

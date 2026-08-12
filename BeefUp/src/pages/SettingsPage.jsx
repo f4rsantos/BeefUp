@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Apple, Database, Dumbbell, Monitor, Moon, RotateCcw, Sparkles, Sun } from "lucide-react";
+import { Apple, Database, Dumbbell, Monitor, Moon, Sparkles, Sun } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 import { PRESET_ACCENTS } from "../lib/colorTheme";
@@ -34,7 +34,6 @@ export default function SettingsPage() {
     addSession,
     saveSteps,
     setActivePlan,
-    resetOnboarding,
     sectionPrefs,
     setSectionPrefs,
   } = useApp();
@@ -218,26 +217,6 @@ export default function SettingsPage() {
               {t.demoPresetLoaded}
             </p>
           )}
-
-          <div className="card flex items-center justify-between gap-4 mt-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                <RotateCcw size={16} style={{ color: "var(--text)" }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                  {t.resetOnboarding}
-                </p>
-                <p className="text-xs flex items-center gap-1" style={{ color: "var(--danger)" }}>
-                  <AlertTriangle size={11} />
-                  {t.resetOnboardingWarn}
-                </p>
-              </div>
-            </div>
-            <button className="btn btn-danger px-3 py-2 text-xs" onClick={resetOnboarding}>
-              {t.restart}
-            </button>
-          </div>
         </section>
 
         <BackupSection chooseLabel={chooseLabel} />
