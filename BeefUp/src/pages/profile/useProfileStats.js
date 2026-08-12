@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
-import {aggregateSessionsByDay, computeBestStreak, computeMuscleFatigue, computeMuscleGroupDistribution, computeOverallStats, computePersonalRecords, computeStreak, getMonthActivity, sessionDay, toLocalISO,} from '../../lib/planUtils'
-import { nutritionSummary, nutritionTrend } from '../../lib/nutritionStats'
+import {aggregateSessionsByDay, computeBestStreak, computeMuscleFatigue, computeMuscleGroupDistribution, computeOverallStats, computePersonalRecords, computeStreak, daysBetween, getMonthActivity, sessionDay, todayISO, toLocalISO,} from '../../lib/planUtils'
 
 function dayOffsetISO(daysBack) {
   const date = new Date()
@@ -10,14 +9,13 @@ function dayOffsetISO(daysBack) {
   return toLocalISO(date)
 }
 
-// Streak, personal records and muscle fatigue read the FULL history on purpose
-export function useProfileStats({ rangeStart, rangeDays, metric, today }) {
-  const { lang, plans, activePlanId, sessions, stepsMap, foodLog, nutritionGoals } = useApp()
+export const MIN_CHART_DAYS = 7
+export const DEFAULT_CHART_DAYS = 30
 
-  const sessionsInRange = useMemo(
-    () => sessions.filter((s) => sessionDay(s) >= rangeStart),
-    [sessions, rangeStart],
-  )
+export function useProfileStats({ metric, chartDays }) {
+  const { lang, plans, activePlanId, sessions, stepsMap } = useApp()
+
+  const today = todayISO()
 
   const streak = useMemo(
     () => computeStreak(sessions, plans, activePlanId),
@@ -48,28 +46,33 @@ export function useProfileStats({ rangeStart, rangeDays, metric, today }) {
   )
   const maxWeekSteps = Math.max(1, ...weekSteps.map((entry) => entry.value))
 
-  const overall = useMemo(() => computeOverallStats(sessionsInRange), [sessionsInRange])
+  const overall = useMemo(() => computeOverallStats(sessions), [sessions])
   const records = useMemo(() => computePersonalRecords(sessions, lang), [sessions, lang])
   const distribution = useMemo(
-    () => computeMuscleGroupDistribution(sessionsInRange, lang),
-    [sessionsInRange, lang],
+    () => computeMuscleGroupDistribution(sessions, lang),
+    [sessions, lang],
   )
   const maxDistCount = Math.max(1, ...distribution.map((d) => d.count))
   const fatigue = useMemo(() => computeMuscleFatigue(sessions, lang), [sessions, lang])
 
-  const chartData = useMemo(
-    () => aggregateSessionsByDay(sessionsInRange, metric, rangeDays),
-    [sessionsInRange, metric, rangeDays],
-  )
+  const maxChartDays = useMemo(() => {
+    if (sessions.length === 0) return DEFAULT_CHART_DAYS
+    const earliest = sessions.reduce((min, s) => {
+      const day = sessionDay(s)
+      return day && (!min || day < min) ? day : min
+    }, null)
+    return Math.max(MIN_CHART_DAYS, daysBetween(earliest, today))
+  }, [sessions, today])
+  const minChartDays = Math.min(MIN_CHART_DAYS, maxChartDays)
+  const effectiveChartDays = Math.min(Math.max(chartDays, minChartDays), maxChartDays)
 
-  const nutriTrend = useMemo(() => nutritionTrend(foodLog, rangeDays), [foodLog, rangeDays])
-  const nutriSummary = useMemo(
-    () => nutritionSummary(foodLog, nutritionGoals, rangeDays),
-    [foodLog, nutritionGoals, rangeDays],
+  const chartData = useMemo(
+    () => aggregateSessionsByDay(sessions, metric, effectiveChartDays),
+    [sessions, metric, effectiveChartDays],
   )
 
   return {
-    sessionsInRange,
+    hasSessions: sessions.length > 0,
     streak,
     bestStreak,
     monthActivity,
@@ -83,8 +86,8 @@ export function useProfileStats({ rangeStart, rangeDays, metric, today }) {
     maxDistCount,
     fatigue,
     chartData,
-    nutriTrend,
-    nutriSummary,
-    kcalGoal: nutritionGoals.kcal || 0,
+    chartDays: effectiveChartDays,
+    minChartDays,
+    maxChartDays,
   }
 }

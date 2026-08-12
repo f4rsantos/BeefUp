@@ -2,7 +2,6 @@
 export const STATS_LAYOUT_VERSION = 2
 
 export const DEFAULT_STATS_LAYOUT = [
-  { key: 'nutritionSummary', enabled: true },
   { key: 'tiles', enabled: true },
   { key: 'streakCalendar', enabled: true },
   { key: 'steps', enabled: true },
@@ -10,7 +9,6 @@ export const DEFAULT_STATS_LAYOUT = [
   { key: 'muscleDistribution', enabled: true },
   { key: 'muscleFatigue', enabled: true },
   { key: 'personalRecords', enabled: true },
-  { key: 'nutritionTrend', enabled: true },
 ]
 
 export function normalizeStatsLayout(saved) {

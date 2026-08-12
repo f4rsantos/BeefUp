@@ -1,25 +1,18 @@
 import { useState } from "react";
-import {CalendarDays, CalendarRange, Clock, Dumbbell, Eye, EyeOff, Flame, GripVertical, Layers,Repeat, Ruler, SlidersHorizontal, Weight,} from "lucide-react";
+import {CalendarDays, Clock, Dumbbell, Eye, EyeOff, Flame, GripVertical, Layers,Repeat, Ruler, SlidersHorizontal, Weight,} from "lucide-react";
 import { useApp } from "../context/AppContext";
 import StepsModal from "../components/StepsModal";
-import StatsRangeModal from "../components/StatsRangeModal";
-import { RANGE_PRESETS, useStatsRange } from "./profile/useStatsRange";
-import { useProfileStats } from "./profile/useProfileStats";
+import { DEFAULT_CHART_DAYS, useProfileStats } from "./profile/useProfileStats";
 import { useBlockReorder } from "./profile/useBlockReorder";
 import {
   MuscleDistributionBlock,
   MuscleFatigueBlock,
-  NutritionSummaryBlock,
-  NutritionTrendBlock,
   PersonalRecordsBlock,
   ProgressBlock,
   StepsBlock,
   StreakCalendarBlock,
   WorkoutSummaryBlock,
 } from "./profile/StatBlocks";
-
-// Blocks hidden when the user turns nutrition off in settings.
-const NUTRITION_BLOCKS = new Set(["nutritionTrend", "nutritionSummary"]);
 
 function formatTotalTime(totalSeconds, t) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -39,20 +32,14 @@ function buildSummaryTiles(overall, t) {
 }
 
 export default function ProfilePage({ onOpenMeasures }) {
-  const { t, lang, statsLayout, setStatsLayout, sectionPrefs } = useApp();
+  const { t, lang, statsLayout, setStatsLayout } = useApp();
 
   const [showSteps, setShowSteps] = useState(false);
-  const [showRangeModal, setShowRangeModal] = useState(false);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
   const [metric, setMetric] = useState("volume");
+  const [chartDays, setChartDays] = useState(DEFAULT_CHART_DAYS);
 
-  const range = useStatsRange();
-  const stats = useProfileStats({
-    rangeStart: range.start,
-    rangeDays: range.days,
-    metric,
-    today: range.today,
-  });
+  const stats = useProfileStats({ metric, chartDays });
   const reorder = useBlockReorder(statsLayout, setStatsLayout);
 
   const blockTitles = {
@@ -63,8 +50,6 @@ export default function ProfilePage({ onOpenMeasures }) {
     muscleDistribution: t.muscleDistribution,
     muscleFatigue: t.muscleFatigue,
     personalRecords: t.personalRecords,
-    nutritionTrend: t.nutritionTrend,
-    nutritionSummary: t.nutritionSummary,
   };
 
   // Keys stay as they are persisted in statsLayout; only the rendering moved.
@@ -89,9 +74,13 @@ export default function ProfilePage({ onOpenMeasures }) {
     weeklyProgress: () => (
       <ProgressBlock
         chartData={stats.chartData}
-        hasSessions={stats.sessionsInRange.length > 0}
+        hasSessions={stats.hasSessions}
         metric={metric}
         onMetricChange={setMetric}
+        days={stats.chartDays}
+        minDays={stats.minChartDays}
+        maxDays={stats.maxChartDays}
+        onDaysChange={setChartDays}
       />
     ),
     muscleDistribution: () => (
@@ -105,20 +94,10 @@ export default function ProfilePage({ onOpenMeasures }) {
         onToggle={() => setRecordsExpanded((v) => !v)}
       />
     ),
-    nutritionTrend: () => (
-      <NutritionTrendBlock
-        trend={stats.nutriTrend}
-        kcalGoal={stats.kcalGoal}
-        hasData={stats.nutriSummary.daysLogged > 0}
-      />
-    ),
-    nutritionSummary: () => <NutritionSummaryBlock summary={stats.nutriSummary} />,
   };
 
-  const keepAllowed = (list) =>
-    sectionPrefs.nutrition ? list : list.filter((b) => !NUTRITION_BLOCKS.has(b.key));
-  const visibleBlocks = keepAllowed(statsLayout).filter((b) => b.enabled);
-  const editableBlocks = keepAllowed(reorder.layout);
+  const visibleBlocks = statsLayout.filter((b) => b.enabled);
+  const editableBlocks = reorder.layout;
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
@@ -144,28 +123,6 @@ export default function ProfilePage({ onOpenMeasures }) {
           <Ruler size={15} />
           {t.measures}
         </button>
-
-        {/* Options sit in the row itself — one tap per preset*/}
-        <div className="pill-toggle">
-          {RANGE_PRESETS.map((days) => (
-            <button
-              key={days}
-              className={`pill-option ${range.preset === days ? "active" : ""}`}
-              onClick={() => range.setPreset(days)}
-            >
-              {days}d
-            </button>
-          ))}
-          <button
-            className={`pill-option ${range.preset === "custom" ? "active" : ""}`}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
-            onClick={() => setShowRangeModal(true)}
-            aria-label={t.custom}
-          >
-            <CalendarRange size={14} />
-            {range.preset === "custom" && <span>{range.days}d</span>}
-          </button>
-        </div>
 
         <div className="hero">
           <div className="flex items-center justify-between" style={{ position: "relative" }}>
@@ -220,18 +177,6 @@ export default function ProfilePage({ onOpenMeasures }) {
       </div>
 
       {showSteps && <StepsModal onClose={() => setShowSteps(false)} />}
-      {showRangeModal && (
-        <StatsRangeModal
-          customStart={range.customStart}
-          today={range.today}
-          onApply={(date) => {
-            range.setCustomStart(date);
-            range.setPreset("custom");
-            setShowRangeModal(false);
-          }}
-          onClose={() => setShowRangeModal(false)}
-        />
-      )}
     </div>
   );
 }

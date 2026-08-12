@@ -1,8 +1,9 @@
-import {Beef, CalendarCheck, ChevronDown, Flame, Footprints, Plus, Target, Utensils,} from 'lucide-react'
-import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {ChevronDown, Flame, Footprints, Plus,} from 'lucide-react'
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useApp } from '../../context/AppContext'
 import { BODY_PART_ACCENT } from '../../lib/exerciseTree'
 import StatTile from '../../components/StatTile'
+import { useChartZoom } from './useChartZoom'
 
 const FATIGUE_COLOR = {
   fatigued: 'var(--danger)',
@@ -117,16 +118,22 @@ export function WorkoutSummaryBlock({ tiles }) {
   )
 }
 
-export function ProgressBlock({ chartData, hasSessions, metric, onMetricChange }) {
+export function ProgressBlock({ chartData, hasSessions, metric, onMetricChange, days, minDays, maxDays, onDaysChange }) {
   const { t } = useApp()
   const metricLabels = { duration: t.duration, volume: t.volume, reps: t.reps }
+  const zoomRef = useChartZoom({ days, minDays, maxDays, onZoom: onDaysChange })
   return (
     <div className="card">
-      <p className="section-title mb-3">{t.progress}</p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="section-title" style={{ margin: 0 }}>{t.progress}</p>
+        {hasSessions && (
+          <span className="text-xs" style={{ color: 'var(--muted)' }}>{days}d</span>
+        )}
+      </div>
       {!hasSessions ? (
-        <EmptyNote>{t.noSessionsInRange}</EmptyNote>
+        <EmptyNote>{t.noSessionsYet}</EmptyNote>
       ) : (
-        <div style={{ width: '100%', height: CHART_HEIGHT }}>
+        <div ref={zoomRef} style={{ width: '100%', height: CHART_HEIGHT, touchAction: 'pan-y' }}>
           <ResponsiveContainer>
             <LineChart data={chartData}>
               <XAxis dataKey="dateLabel" tick={AXIS_TICK} interval="preserveStartEnd" />
@@ -282,82 +289,6 @@ export function PersonalRecordsBlock({ records, expanded, onToggle }) {
           )}
         </>
       )}
-    </div>
-  )
-}
-
-export function NutritionTrendBlock({ trend, kcalGoal, hasData }) {
-  const { t } = useApp()
-  return (
-    <div className="card">
-      <p className="section-title mb-3">{t.nutritionTrend}</p>
-      {!hasData ? (
-        <EmptyNote>{t.noNutritionData}</EmptyNote>
-      ) : (
-        // Unlogged days arrive as null so the line breaks instead of diving to zero, which would claim you ate nothing.
-        <div style={{ width: '100%', height: CHART_HEIGHT }}>
-          <ResponsiveContainer>
-            <LineChart data={trend}>
-              <XAxis dataKey="dateLabel" tick={AXIS_TICK} interval="preserveStartEnd" />
-              <YAxis tick={AXIS_TICK} width={38} />
-              <Tooltip />
-              {kcalGoal > 0 && (
-                <ReferenceLine
-                  y={kcalGoal}
-                  stroke="var(--muted)"
-                  strokeDasharray="4 4"
-                  label={{ value: t.goal, fontSize: 10, fill: 'var(--muted)', position: 'insideTopRight' }}
-                />
-              )}
-              <Line
-                type="monotone"
-                dataKey="kcal"
-                stroke="var(--accent-2)"
-                strokeWidth={2}
-                connectNulls={false}
-                dot={{ r: 3, fill: 'var(--accent-2)' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-    </div>
-  )
-}
-
-export function NutritionSummaryBlock({ summary }) {
-  const { t } = useApp()
-
-  if (summary.daysLogged === 0) {
-    return (
-      <div className="card">
-        <p className="text-sm text-center py-2" style={{ color: 'var(--muted)' }}>
-          {t.noNutritionData}
-        </p>
-      </div>
-    )
-  }
-
-  const tiles = [
-    { icon: Utensils, label: t.avgKcal, value: summary.avgKcal.toLocaleString(), unit: t.kcal },
-    { icon: Target, label: t.onTarget, value: `${summary.daysOnTarget}/${summary.daysLogged}` },
-    { icon: Beef, label: t.avgProtein, value: summary.avgProtein, unit: 'g' },
-    { icon: CalendarCheck, label: t.daysLogged, value: summary.daysLogged },
-  ]
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-      {tiles.map((tile, i) => (
-        <StatTile
-          key={i}
-          icon={tile.icon}
-          label={tile.label}
-          value={tile.value}
-          unit={tile.unit}
-          accent="var(--accent-2)"
-          accentSoft="var(--accent-2-soft)"
-        />
-      ))}
     </div>
   )
 }

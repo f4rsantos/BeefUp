@@ -31,11 +31,7 @@ export function todayISO() {
   return toLocalISO(new Date())
 }
 
-// Inclusive day count between an ISO start date and today (or an explicit
-// end date) — e.g. start === end counts as 1 day, not 0. Shared so the
-// applied range (useStatsRange) and its live preview while picking a custom
-// date (StatsRangeModal) can't drift into disagreeing about "how many days
-// is that".
+// Inclusive day count between an ISO start date and today (or an explicit end date) — e.g. start === end counts as 1 day, not 0.
 export function daysBetween(startISO, endISO = todayISO()) {
   const start = new Date(startISO)
   start.setHours(0, 0, 0, 0)
@@ -222,7 +218,7 @@ export function aggregateSessionsByWeek(sessions, metric, weeks = 10) {
   }))
 }
 
-// One row per day for the last `days`, oldest first. Unlike nutritionTrend(), days without a workout count as 0, since missing workout data means no training.
+// One row per day for the last `days`, oldest first. Days without a workout count as 0, since missing workout data means no training.
 export function aggregateSessionsByDay(sessions, metric, days) {
   const metricFn = {
     duration: (s) => s.duration ?? 0,
