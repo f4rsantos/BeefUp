@@ -5,7 +5,6 @@ export default function ConfirmModal({
   onCancel,
   cancelLabel = "Cancel",
   confirmLabel = "Confirm",
-  confirmDisabled = false,
 }) {
   return (
     <div className="modal-overlay">
@@ -23,12 +22,7 @@ export default function ConfirmModal({
           <button className="btn btn-ghost flex-1" onClick={onCancel}>
             {cancelLabel}
           </button>
-          <button 
-            className="btn btn-primary flex-1" 
-            onClick={onConfirm}
-            disabled={confirmDisabled}
-            style={{ opacity: confirmDisabled ? 0.5 : 1, cursor: confirmDisabled ? "not-allowed" : "pointer" }}
-          >
+          <button className="btn btn-primary flex-1" onClick={onConfirm}>
             {confirmLabel}
           </button>
         </div>

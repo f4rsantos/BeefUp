@@ -281,7 +281,6 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   }
 
   const workoutName = activeWorkout?.workoutName ?? "";
-  const anySetDone = exercises.some(e => e.sets.some(s => s.done));
 
   return (
     <div
@@ -358,10 +357,9 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       {endModal === "confirm" && (
         <ConfirmModal
           title={t.endWorkout}
-          message={anySetDone ? t.endConfirm : t.noSetsDone}
+          message={t.endConfirm}
           cancelLabel={t.cancelWorkout}
           confirmLabel={t.end}
-          confirmDisabled={!anySetDone}
           onCancel={() => {
             setCancelModal(true);
             setEndModal(null);

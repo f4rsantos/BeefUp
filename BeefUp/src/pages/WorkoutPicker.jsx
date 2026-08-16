@@ -33,7 +33,7 @@ export default function WorkoutPicker({ onSelect, onBack }) {
   }, [workouts, query, favIds]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)", position: "relative" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
         <button className="btn-back" onClick={onBack} aria-label={t.back}>
           <ChevronLeft size={24} style={{ color: "var(--text)" }} />
@@ -55,7 +55,8 @@ export default function WorkoutPicker({ onSelect, onBack }) {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in">        {filtered.length === 0 ? (
+      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-2.5 scrollbar-hide fade-in">
+        {filtered.length === 0 ? (
           <div className="flex items-center justify-center flex-1 py-16">
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noResults}</p>
           </div>
@@ -97,30 +98,6 @@ export default function WorkoutPicker({ onSelect, onBack }) {
           })
         )}
       </div>
-
-      <button
-        className="btn btn-primary"
-        style={{
-          position: "absolute",
-          bottom: 32,
-          left: "50%",
-          transform: "translateX(-50%)",
-          padding: "14px 24px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          fontSize: 18,
-          fontWeight: 700,
-          borderRadius: 16,
-          boxShadow: "var(--shadow-glow)",
-          zIndex: 50,
-          whiteSpace: "nowrap"
-        }}
-        onClick={() => onSelect({ id: null, name: lang === "pt" ? "Treino Livre" : "Empty Workout", exercises: [] })}
-      >
-        {lang === "pt" ? "Treino Livre" : "Empty Workout"}
-        <Play size={24} fill="currentColor" />
-      </button>
     </div>
   );
 }
