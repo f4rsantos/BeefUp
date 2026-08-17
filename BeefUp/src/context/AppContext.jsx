@@ -32,6 +32,7 @@ const DEFAULT_MEAL_TYPES = [
 
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
+  const [fontScale, setFontScaleState] = useState(() => getLS('fontScale', 'medium'))
   const [accentColor, setAccentColorState] = useState(() => getLS('accentColor', 'green'))
   const [customAccentHex, setCustomAccentHexState] = useState(() => getLS('customAccentHex', '#109a14'))
   const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
@@ -73,6 +74,13 @@ export function AppProvider({ children }) {
   }, [theme])
 
   const setTheme = useCallback((v) => setThemeState(v), [])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-font-scale', fontScale)
+    setLS('fontScale', fontScale)
+  }, [fontScale])
+
+  const setFontScale = useCallback((v) => setFontScaleState(v), [])
 
   useEffect(() => {
     if (accentColor === 'custom') applyCustomAccent(customAccentHex)
@@ -269,6 +277,7 @@ export function AppProvider({ children }) {
 
   const value = {
     theme, setTheme,
+    fontScale, setFontScale,
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,

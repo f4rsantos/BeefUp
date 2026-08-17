@@ -25,6 +25,8 @@ export default function SettingsPage() {
     setLang,
     theme,
     setTheme,
+    fontScale,
+    setFontScale,
     accentColor,
     setAccentColor,
     customAccentHex,
@@ -58,6 +60,13 @@ export default function SettingsPage() {
     { id: "light", Icon: Sun, label: t.themeLight },
     { id: "dark", Icon: Moon, label: t.themeDark },
     { id: "system", Icon: Monitor, label: t.themeSystem },
+  ];
+
+  const fontScaleOptions = [
+    { id: "small", size: 14, label: t.fontSizeSmall },
+    { id: "medium", size: 17, label: t.fontSizeMedium },
+    { id: "large", size: 20, label: t.fontSizeLarge },
+    { id: "extraLarge", size: 23, label: t.fontSizeExtraLarge },
   ];
 
   async function loadDemoPreset() {
@@ -121,6 +130,24 @@ export default function SettingsPage() {
               }}
             />
           </button>
+        </section>
+
+        {/* Font scale */}
+        <section>
+          <p className="section-title" style={{ marginBottom: 6 }}>{t.fontSize}</p>
+          <div className="card flex gap-2 p-2">
+            {fontScaleOptions.map(({ id, size, label }) => (
+              <button
+                key={id}
+                onClick={() => setFontScale(id)}
+                className="btn flex-1 flex-col gap-1 py-3 text-xs"
+                style={selectableButtonStyle(fontScale === id)}
+              >
+                <span style={{ fontSize: size, fontWeight: 800, lineHeight: 1 }}>A</span>
+                {label}
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* Language */}
