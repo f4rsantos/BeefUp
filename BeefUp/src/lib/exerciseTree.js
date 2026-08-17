@@ -148,8 +148,15 @@ export function getEquipmentOptions(baseId) {
   return base.equipment.map((id) => EQUIPMENT_BY_ID[id]).filter(Boolean)
 }
 
-export function getVariantOptions(baseId) {
-  return BASE_BY_ID[baseId]?.variants ?? []
+export function getVariantOptions(baseId, equipmentId) {
+  const variants = BASE_BY_ID[baseId]?.variants ?? []
+  if (!equipmentId) return variants
+  return variants.filter((v) => !v.equipmentOnly || v.equipmentOnly.includes(equipmentId))
+}
+
+export function repUnitFor(ref) {
+  const { baseId } = parseExerciseRef(ref)
+  return BASE_BY_ID[baseId]?.repUnit || 'reps'
 }
 
 export function normalizeWorkoutExercises(list) {

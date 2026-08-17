@@ -85,13 +85,13 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     }
 
     const equipmentOptions = getEquipmentOptions(base.id);
-    const variantOptions = getVariantOptions(base.id);
     setActiveBase(base);
     if (equipmentOptions.length > 1) {
       setStep("equipment");
       return;
     }
     const equipmentId = equipmentOptions[0]?.id ?? "";
+    const variantOptions = getVariantOptions(base.id, equipmentId);
     if (variantOptions.length > 0) {
       setActiveEquipmentId(equipmentId);
       setStep("variant");
@@ -101,7 +101,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   }
 
   function pickEquipment(equipmentId) {
-    const variantOptions = getVariantOptions(activeBase.id);
+    const variantOptions = getVariantOptions(activeBase.id, equipmentId);
     if (variantOptions.length > 0) {
       setActiveEquipmentId(equipmentId);
       setStep("variant");
@@ -129,7 +129,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   }
 
   const equipmentOptions = activeBase ? getEquipmentOptions(activeBase.id) : [];
-  const variantOptions = activeBase ? getVariantOptions(activeBase.id) : [];
+  const variantOptions = activeBase ? getVariantOptions(activeBase.id, activeEquipmentId) : [];
 
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
