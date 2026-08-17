@@ -182,9 +182,7 @@
       { "id": "front", "name": "Front squat", "namePt": "Frontal" },
       { "id": "overhead", "name": "Overhead squat", "namePt": "Agachamento overhead" },
       { "id": "goblet", "name": "Goblet", "namePt": "Goblet" },
-      { "id": "pistol", "name": "Pistol", "namePt": "Pistol" },
-      { "id": "pistol_assisted", "name": "Assisted pistol", "namePt": "Pistol assistido" },
-      { "id": "pistol_weighted", "name": "Weighted pistol", "namePt": "Pistol com haltere" }
+      { "id": "pistol", "name": "Pistol", "namePt": "Pistol" }
     ],
     "defaultSets": 4,
     "defaultReps": 8,
