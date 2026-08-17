@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
+import { useAudioCues } from "../hooks/useAudioCues";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
@@ -65,6 +66,9 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
   const [setTimer, setSetTimer] = useState(null);
+  const { unlock: unlockAudio, play: playAudioCue } = useAudioCues();
+  const restAnnouncedRef = useRef(null);
+  const setTimerAnnouncedKeyRef = useRef(null);
 
   useEffect(() => {
     const id = setInterval(
@@ -76,10 +80,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   useEffect(() => {
     if (!restState?.running) return;
+    restAnnouncedRef.current = null; // fresh rest session starting
     const id = setInterval(() => {
       setRestState((prev) => {
         if (!prev) return prev;
         const nextElapsed = prev.elapsed + 1;
+        const remaining = prev.duration - nextElapsed;
+        if (remaining >= 0 && remaining <= 3 && restAnnouncedRef.current !== remaining) {
+          restAnnouncedRef.current = remaining;
+          playAudioCue(remaining === 0 ? "done" : "tick");
+        }
         if (nextElapsed >= prev.duration) {
           return { ...prev, elapsed: prev.duration, running: false, done: true };
         }
@@ -87,7 +97,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [restState?.running]);
+  }, [restState?.running, playAudioCue]);
 
   useEffect(() => {
     if (!setTimer) return;
@@ -97,6 +107,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         0,
         Math.round((currentEndsAt - Date.now()) / 1000),
       );
+      if (remaining <= 3) {
+        const key = `${currentEndsAt}:${remaining}`;
+        if (setTimerAnnouncedKeyRef.current !== key) {
+          setTimerAnnouncedKeyRef.current = key;
+          playAudioCue(remaining === 0 ? "done" : "tick");
+        }
+      }
       if (remaining <= 0) {
         setSetTimer(null);
         return;
@@ -110,7 +127,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [setTimer]);
+  }, [setTimer, playAudioCue]);
 
   const updateSet = useCallback((exIdx, setIdx, field, val) => {
     setExercises((prev) =>
@@ -257,6 +274,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       .map((e) => localizedName(e, lang));
 
     await addSession(session);
+    playAudioCue("finish");
     setEndModal({ stats: { duration, totalSets, totalVolume, prs } });
   }
 
@@ -269,6 +287,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         background: "var(--bg)",
         touchAction: "pan-x pan-y pinch-zoom",
       }}
+      onPointerDownCapture={unlockAudio}
     >
       <WorkoutTopBar
         elapsed={elapsed}
