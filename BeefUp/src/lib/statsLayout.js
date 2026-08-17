@@ -1,7 +1,10 @@
+// Increase this version whenever the default ORDER changes. Otherwise, old saved layouts may keep the old order and never show the new one. A version mismatch resets the layout to the current default.
+export const STATS_LAYOUT_VERSION = 2
+
 export const DEFAULT_STATS_LAYOUT = [
+  { key: 'tiles', enabled: true },
   { key: 'streakCalendar', enabled: true },
   { key: 'steps', enabled: true },
-  { key: 'tiles', enabled: true },
   { key: 'weeklyProgress', enabled: true },
   { key: 'muscleDistribution', enabled: true },
   { key: 'muscleFatigue', enabled: true },
@@ -18,4 +21,9 @@ export function normalizeStatsLayout(saved) {
 
   const result = [...kept, ...missing]
   return result.length > 0 ? result : DEFAULT_STATS_LAYOUT
+}
+
+export function resolveStatsLayout(saved, savedVersion) {
+  if (savedVersion !== STATS_LAYOUT_VERSION) return DEFAULT_STATS_LAYOUT
+  return normalizeStatsLayout(saved)
 }

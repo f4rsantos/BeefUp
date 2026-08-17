@@ -1,5 +1,5 @@
 import { ChevronDown, Dumbbell, Square, Timer as TimerIcon } from "lucide-react";
-import { formatDuration } from "../lib/planUtils";
+import { formatElapsedClock } from "../lib/planUtils";
 import ProgressRing from "./ProgressRing";
 
 export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onEnd, onMinimize, minimizeLabel }) {
@@ -57,7 +57,7 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
           className="font-mono text-lg font-bold"
           style={{ color: "#fff", fontVariantNumeric: "tabular-nums" }}
         >
-          {formatDuration(elapsed)}
+          {formatElapsedClock(elapsed)}
         </span>
       </div>
 

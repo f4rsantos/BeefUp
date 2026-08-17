@@ -1,4 +1,5 @@
 import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree'
+import { localizedName } from './localizedName'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
 export function todaysPlanEntry(plan) {
@@ -30,6 +31,15 @@ export function todayISO() {
   return toLocalISO(new Date())
 }
 
+// Inclusive day count between an ISO start date and today (or an explicit end date) — e.g. start === end counts as 1 day, not 0.
+export function daysBetween(startISO, endISO = todayISO()) {
+  const start = new Date(startISO)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(endISO)
+  end.setHours(0, 0, 0, 0)
+  return Math.max(1, Math.round((end - start) / 86400000) + 1)
+}
+
 export function nowISO() {
   return new Date().toISOString()
 }
@@ -56,13 +66,13 @@ export function lastExerciseNote(sessions, exerciseId) {
   return latest?.note ?? ''
 }
 
-export function formatDuration(s) {
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = s % 60
+export function formatElapsedClock(seconds) {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
   if (h > 0)
-    return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
-  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 function activeDayFlags(sessions, plans, activePlanId, dayCount) {
@@ -146,14 +156,22 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
-function sessionVolume(session) {
+// Warmup sets are excluded here and in every other stat helper below, so the
+// same session never reports two different volumes depending on the screen.
+export function sessionVolume(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+    acc + (ex.sets?.reduce((a, s) =>
+      s.type === 'warmup' ? a : a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+}
+
+export function sessionSets(session) {
+  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter((s) => s.type !== 'warmup').length ?? 0), 0) ?? 0
 }
 
 function sessionReps(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) => a + (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
+    acc + (ex.sets?.reduce((a, s) =>
+      s.type === 'warmup' ? a : a + (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
 export function computeOverallStats(sessions) {
@@ -162,10 +180,7 @@ export function computeOverallStats(sessions) {
   const totalVolume = sessions.reduce((acc, s) => acc + sessionVolume(s), 0)
   const totalDuration = sessions.reduce((acc, s) => acc + (s.duration ?? 0), 0)
   const totalReps = sessions.reduce((acc, s) => acc + sessionReps(s), 0)
-  const totalSets = sessions.reduce(
-    (acc, s) => acc + (s.exercises?.reduce((a, ex) => a + (ex.sets?.length ?? 0), 0) ?? 0),
-    0,
-  )
+  const totalSets = sessions.reduce((acc, s) => acc + sessionSets(s), 0)
   return { daysTrained, totalSessions, totalVolume, totalDuration, totalReps, totalSets }
 }
 
@@ -202,6 +217,37 @@ export function aggregateSessionsByWeek(sessions, metric, weeks = 10) {
   }))
 }
 
+// One row per day for the last `days`, oldest first. Days without a workout count as 0, since missing workout data means no training.
+export function aggregateSessionsByDay(sessions, metric, days) {
+  const metricFn = {
+    duration: (s) => s.duration ?? 0,
+    volume: sessionVolume,
+    reps: sessionReps,
+  }[metric]
+
+  const byDay = new Map()
+  sessions.forEach((s) => {
+    const day = sessionDay(s)
+    if (!day) return
+    byDay.set(day, (byDay.get(day) ?? 0) + metricFn(s))
+  })
+
+  const out = []
+  const cursor = new Date()
+  cursor.setHours(0, 0, 0, 0)
+  cursor.setDate(cursor.getDate() - (days - 1))
+  for (let i = 0; i < days; i++) {
+    const date = toLocalISO(cursor)
+    out.push({
+      date,
+      dateLabel: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      value: Math.round(byDay.get(date) ?? 0),
+    })
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return out
+}
+
 export function measurementsForType(measurements, type) {
   return measurements
     .filter((m) => m.type === type)
@@ -210,6 +256,24 @@ export function measurementsForType(measurements, type) {
 }
 
 export const epley = (weight, reps) => (parseFloat(weight) || 0) * (1 + (parseInt(reps) || 0) / 30)
+
+// Best estimated 1RM per exercise across the given sessions, warmup sets
+// excluded. Shared so "is this a new PR" (compared against a single just-
+// finished session) and the Personal Records list use the same rule instead
+// of two independently-maintained warmup-exclusion reductions.
+export function bestE1rmByExercise(sessions) {
+  const best = {}
+  sessions.forEach((s) => {
+    s.exercises?.forEach((e) => {
+      e.sets?.forEach((set) => {
+        if (set.type === 'warmup') return
+        const rm = epley(set.weight, set.reps)
+        if (rm > (best[e.exerciseId] || 0)) best[e.exerciseId] = rm
+      })
+    })
+  })
+  return best
+}
 
 export function computePersonalRecords(sessions, lang) {
   const best = {}
@@ -237,8 +301,8 @@ export function computePersonalRecords(sessions, lang) {
     .map((r) => {
       const resolved = resolveExercise(r.exerciseId)
       const name = resolved
-        ? (lang === 'pt' ? resolved.namePt : resolved.name)
-        : (lang === 'pt' ? r.namePt : r.name)
+        ? (localizedName(resolved, lang))
+        : (localizedName(r, lang))
       return { ...r, name }
     })
     .sort((a, b) => b.e1rm - a.e1rm)

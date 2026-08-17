@@ -5,10 +5,12 @@ import { uid, todayISO } from "../lib/planUtils";
 import { resolveExercise } from "../lib/exerciseTree";
 import ExercisePicker from "../components/ExercisePicker";
 import WorkoutPreview from "./WorkoutPreview";
+import ConfirmModal from "../components/ConfirmModal";
+import { localizedName } from "../lib/localizedName"
 
 function exName(id, lang) {
   const ex = resolveExercise(id);
-  return ex ? (lang === "pt" ? ex.namePt : ex.name) : id;
+  return ex ? (localizedName(ex, lang)) : id;
 }
 
 function normalizeExercises(list) {
@@ -19,6 +21,8 @@ export default function ClientGym({ client }) {
   const { t, lang, saveClient } = useApp();
   const [editingWorkout, setEditingWorkout] = useState(null);
   const [previewing, setPreviewing] = useState(null);
+  const [pendingRemoveDay, setPendingRemoveDay] = useState(null);
+  const [pendingDeleteWorkout, setPendingDeleteWorkout] = useState(null);
 
   const plan = client.plan || { id: uid(), name: "", startDate: todayISO(), days: [] };
   const workouts = client.workouts || [];
@@ -76,7 +80,11 @@ export default function ClientGym({ client }) {
             return (
               <div key={day.id} className="dash-day">
                 <span className="dash-day-num">{i + 1}</span>
-                <button className="btn-icon" onClick={() => updateDay(i, { type: isWorkout ? "rest" : "workout", workoutId: !isWorkout ? (workouts[0]?.id ?? null) : null })}>
+                <button
+                  className="btn-icon"
+                  onClick={() => updateDay(i, { type: isWorkout ? "rest" : "workout", workoutId: !isWorkout ? (workouts[0]?.id ?? null) : null })}
+                  aria-label={t.toggleDayType}
+                >
                   {isWorkout ? <Dumbbell size={16} style={{ color: "var(--accent)" }} /> : <Moon size={16} style={{ color: "var(--accent-2)" }} />}
                 </button>
                 {isWorkout ? (
@@ -90,7 +98,7 @@ export default function ClientGym({ client }) {
                 ) : (
                   <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>{t.dayRest}</span>
                 )}
-                <button className="btn-icon" onClick={() => removeDay(i)}><Trash2 size={15} style={{ color: "var(--muted)" }} /></button>
+                <button className="btn-icon" onClick={() => setPendingRemoveDay(i)} aria-label={t.delete}><Trash2 size={15} style={{ color: "var(--muted)" }} /></button>
               </div>
             );
           })}
@@ -115,9 +123,9 @@ export default function ClientGym({ client }) {
                 <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{w.name}</div>
                 <div className="text-xs" style={{ color: "var(--muted)" }}>{w.exercises.length} {t.exercises}</div>
               </div>
-              <button className="btn-icon" onClick={() => setPreviewing(w.id)} title={t.startWorkout}><Play size={15} style={{ color: "var(--accent)" }} /></button>
-              <button className="btn-icon" onClick={() => setEditingWorkout(w.id)}><Pencil size={15} style={{ color: "var(--muted)" }} /></button>
-              <button className="btn-icon" onClick={() => deleteWorkoutDef(w.id)}><Trash2 size={15} style={{ color: "var(--muted)" }} /></button>
+              <button className="btn-icon" onClick={() => setPreviewing(w.id)} title={t.startWorkout} aria-label={t.startWorkout}><Play size={15} style={{ color: "var(--accent)" }} /></button>
+              <button className="btn-icon" onClick={() => setEditingWorkout(w.id)} aria-label={t.edit}><Pencil size={15} style={{ color: "var(--muted)" }} /></button>
+              <button className="btn-icon" onClick={() => setPendingDeleteWorkout(w)} aria-label={t.delete}><Trash2 size={15} style={{ color: "var(--muted)" }} /></button>
             </div>
           ))}
           {workouts.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
@@ -126,6 +134,34 @@ export default function ClientGym({ client }) {
 
       {editing && <WorkoutDefEditor workout={editing} lang={lang} t={t} onSave={saveWorkoutDef} onClose={() => setEditingWorkout(null)} />}
       {preview && <WorkoutPreview workout={preview} lang={lang} t={t} onClose={() => setPreviewing(null)} />}
+
+      {pendingRemoveDay !== null && (
+        <ConfirmModal
+          title={t.deletePlanDayTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingRemoveDay(null)}
+          onConfirm={() => {
+            removeDay(pendingRemoveDay);
+            setPendingRemoveDay(null);
+          }}
+        />
+      )}
+
+      {pendingDeleteWorkout && (
+        <ConfirmModal
+          title={t.deleteWorkoutTitle.replace("{name}", pendingDeleteWorkout.name)}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDeleteWorkout(null)}
+          onConfirm={() => {
+            deleteWorkoutDef(pendingDeleteWorkout.id);
+            setPendingDeleteWorkout(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -152,11 +188,11 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
   }
 
   return (
-    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => { commit(); onClose(); }}>
+    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
       <div className="modal-center" style={{ maxWidth: 560, maxHeight: "85vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>{t.editWorkout}</h3>
-          <button className="btn-icon" onClick={() => { commit(); onClose(); }}><X size={18} /></button>
+          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}><X size={18} /></button>
         </div>
         <div className="mb-4">
           <label className="section-title">{t.workoutName}</label>
@@ -178,7 +214,7 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
               </div>
             </div>
           ))}
-          {items.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>{lang === "pt" ? "Sem exercícios." : "No exercises."}</p>}
+          {items.length === 0 && <p className="text-xs" style={{ color: "var(--muted)" }}>{t.noExercises}</p>}
         </div>
 
         <button className="btn btn-ghost w-full py-3 mt-3" style={{ borderStyle: "dashed" }} onClick={() => setPicking(true)}><Plus size={15} /> {t.addExercise}</button>

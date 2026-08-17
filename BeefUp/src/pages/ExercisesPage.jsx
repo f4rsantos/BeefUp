@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import BodyPartFilter from "../components/BodyPartFilter";
+import { localizedName } from "../lib/localizedName"
 
 export default function ExercisesPage({ onBack }) {
   const { t, lang } = useApp();
@@ -22,7 +23,7 @@ export default function ExercisesPage({ onBack }) {
   const sortedExercises = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = listBaseExercises().filter((ex) => {
-      const label = lang === "pt" ? ex.namePt : ex.name;
+      const label = localizedName(ex, lang);
       if (q && !label.toLowerCase().includes(q)) return false;
       if (bodyPart && ex.bodyPart !== bodyPart) return false;
       if (equipment && !ex.equipment.includes(equipment)) return false;
@@ -30,8 +31,8 @@ export default function ExercisesPage({ onBack }) {
     });
 
     return [...filtered].sort((a, b) => {
-      const la = lang === "pt" ? a.namePt : a.name;
-      const lb = lang === "pt" ? b.namePt : b.name;
+      const la = localizedName(a, lang);
+      const lb = localizedName(b, lang);
       return la.localeCompare(lb);
     });
   }, [query, lang, bodyPart, equipment]);
@@ -40,7 +41,7 @@ export default function ExercisesPage({ onBack }) {
     const sorted = sortedExercises;
     const byLetter = {};
     sorted.forEach((ex) => {
-      const label = lang === "pt" ? ex.namePt : ex.name;
+      const label = localizedName(ex, lang);
       const letter = label[0]?.toUpperCase() ?? "#";
       if (!byLetter[letter]) byLetter[letter] = [];
       byLetter[letter].push(ex);
@@ -154,7 +155,7 @@ export default function ExercisesPage({ onBack }) {
                 </div>
                 <div style={{ padding: "8px 10px 10px" }}>
                   <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-                    {lang === "pt" ? ex.namePt : ex.name}
+                    {localizedName(ex, lang)}
                   </p>
                   <p
                     className="text-xs mt-0.5 truncate"
@@ -201,7 +202,7 @@ export default function ExercisesPage({ onBack }) {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                          {lang === "pt" ? ex.namePt : ex.name}
+                          {localizedName(ex, lang)}
                         </span>
                         <span
                           className="text-xs"
@@ -223,7 +224,7 @@ export default function ExercisesPage({ onBack }) {
                                 padding: "1px 6px",
                               }}
                             >
-                              {lang === "pt" ? eq.namePt : eq.name}
+                              {localizedName(eq, lang)}
                             </span>
                           ))}
                           {variantOptions.map((v) => (
@@ -237,7 +238,7 @@ export default function ExercisesPage({ onBack }) {
                                 padding: "1px 6px",
                               }}
                             >
-                              {lang === "pt" ? v.namePt : v.name}
+                              {localizedName(v, lang)}
                             </span>
                           ))}
                         </div>
@@ -262,7 +263,7 @@ export default function ExercisesPage({ onBack }) {
               <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
                 {t.filters}
               </span>
-              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)}>
+              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)} aria-label={t.cancel}>
                 <X size={18} />
               </button>
             </div>

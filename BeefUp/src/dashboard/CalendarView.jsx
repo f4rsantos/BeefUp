@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -15,6 +16,7 @@ export default function CalendarView() {
   const [month, setMonth] = useState(today.getMonth());
   const [assignFor, setAssignFor] = useState(null);
   const [time, setTime] = useState("18:00");
+  const [pendingRemove, setPendingRemove] = useState(null);
 
   const first = new Date(year, month, 1);
   const startPad = (first.getDay() + 6) % 7;
@@ -54,9 +56,9 @@ export default function CalendarView() {
   return (
     <div className="dash-cal">
       <div className="flex items-center gap-3 mb-4">
-        <button className="btn-icon" onClick={prev}><ChevronLeft size={18} /></button>
+        <button className="btn-icon" onClick={prev} aria-label={t.previousMonth}><ChevronLeft size={18} /></button>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", minWidth: 160 }}>{label}</h2>
-        <button className="btn-icon" onClick={nextM}><ChevronRight size={18} /></button>
+        <button className="btn-icon" onClick={nextM} aria-label={t.nextMonth}><ChevronRight size={18} /></button>
       </div>
 
       <div className="dash-cal-head">
@@ -109,7 +111,7 @@ export default function CalendarView() {
                   {clients.flatMap((c) => (c.schedule || []).filter((e) => e.date === assignFor).map((e, k) => (
                     <div key={c.id + k} className="flex items-center justify-between text-sm">
                       <span style={{ color: "var(--text)" }}>{e.time} · {c.name}</span>
-                      <button className="btn-icon" onClick={() => removeAppointment(c, e)}><X size={14} style={{ color: "var(--muted)" }} /></button>
+                      <button className="btn-icon" onClick={() => setPendingRemove({ client: c, entry: e })} aria-label={t.delete}><X size={14} style={{ color: "var(--muted)" }} /></button>
                     </div>
                   )))}
                 </div>
@@ -117,6 +119,20 @@ export default function CalendarView() {
             )}
           </div>
         </div>
+      )}
+
+      {pendingRemove && (
+        <ConfirmModal
+          title={t.deleteAppointmentTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingRemove(null)}
+          onConfirm={() => {
+            removeAppointment(pendingRemove.client, pendingRemove.entry);
+            setPendingRemove(null);
+          }}
+        />
       )}
     </div>
   );

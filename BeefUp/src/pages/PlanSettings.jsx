@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import PlanEditor from "../components/PlanEditor";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function PlanSettings({ onBack, initialPlanId = null }) {
   const {
@@ -19,6 +20,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
   const [editingPlan, setEditingPlan] = useState(
     () => plans.find((p) => p.id === initialPlanId) ?? null,
   );
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   if (view === "editPlan") {
     return (
@@ -53,7 +55,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
                 {plan.name}
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                {plan.days?.length ?? 0} {lang === "pt" ? "dias" : "days"}
+                {plan.days?.length ?? 0} {t.days}
               </p>
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -79,10 +81,11 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
                     setEditingPlan(plan);
                     setView("editPlan");
                   }}
+                  aria-label={t.edit}
                 >
                   <Pencil size={14} style={{ color: "var(--muted)" }} />
                 </button>
-                <button className="btn btn-ghost p-1.5" onClick={() => deletePlan(plan.id)}>
+                <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(plan)} aria-label={t.delete}>
                   <Trash2 size={14} style={{ color: "var(--muted)" }} />
                 </button>
               </div>
@@ -99,6 +102,20 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
           <Plus size={14} /> {t.newPlan}
         </button>
       </div>
+
+      {pendingDelete && (
+        <ConfirmModal
+          title={t.deletePlanTitle.replace("{name}", pendingDelete.name)}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            deletePlan(pendingDelete.id);
+            setPendingDelete(null);
+          }}
+        />
+      )}
     </div>
   );
 }

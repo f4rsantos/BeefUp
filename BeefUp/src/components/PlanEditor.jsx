@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Plus, Trash2, Dumbbell, Moon } from "lucide-react";
 import { uid, todayISO } from "../lib/planUtils";
 import WorkoutEditor from "./WorkoutEditor";
+import ConfirmModal from "./ConfirmModal";
 
 export default function PlanEditor({
   plan,
@@ -15,6 +16,7 @@ export default function PlanEditor({
   const [name, setName] = useState(plan?.name ?? "");
   const [days, setDays] = useState(plan?.days ?? []);
   const [creatingWorkoutForDay, setCreatingWorkoutForDay] = useState(null);
+  const [pendingRemoveDay, setPendingRemoveDay] = useState(null);
 
   function addDay(type) {
     setDays((prev) => [
@@ -74,7 +76,7 @@ export default function PlanEditor({
         <div className="card flex flex-col gap-2">
           <div className="section-header">
             <p className="section-title" style={{ marginBottom: 0 }}>
-              {lang === "pt" ? "Dias" : "Days"}
+              {t.daysTitle}
             </p>
             <span className="chip active" style={{ pointerEvents: "none" }}>{days.length}</span>
           </div>
@@ -106,7 +108,7 @@ export default function PlanEditor({
                     workoutId: !isWorkout ? (workouts[0]?.id ?? null) : null,
                   })
                 }
-                aria-label="toggle day type"
+                aria-label={t.toggleDayType}
               >
                 {isWorkout
                   ? <Dumbbell size={15} style={{ color: "var(--accent)" }} />
@@ -130,7 +132,7 @@ export default function PlanEditor({
                     </option>
                   ))}
                   <option value="__new__">
-                    {lang === "pt" ? "+ Criar novo treino" : "+ Create new workout"}
+                    {t.createNewWorkout}
                   </option>
                 </select>
               ) : (
@@ -141,7 +143,8 @@ export default function PlanEditor({
 
               <button
                 className="btn-icon p-1"
-                onClick={() => removeDay(i)}
+                onClick={() => setPendingRemoveDay(i)}
+                aria-label={t.delete}
               >
                 <Trash2 size={14} style={{ color: "var(--muted)" }} />
               </button>
@@ -186,6 +189,20 @@ export default function PlanEditor({
             }}
           />
         </div>
+      )}
+
+      {pendingRemoveDay !== null && (
+        <ConfirmModal
+          title={t.deletePlanDayTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingRemoveDay(null)}
+          onConfirm={() => {
+            removeDay(pendingRemoveDay);
+            setPendingRemoveDay(null);
+          }}
+        />
       )}
     </div>
   );

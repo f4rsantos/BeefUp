@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Timer } from "lucide-react";
 import { resolveExercise } from "../lib/exerciseTree";
+import { localizedName } from "../lib/localizedName"
 
 function exName(id, lang) {
   const ex = resolveExercise(id);
-  return ex ? (lang === "pt" ? ex.namePt : ex.name) : id;
+  return ex ? (localizedName(ex, lang)) : id;
 }
 
 export default function WorkoutPreview({ workout, lang, t, onClose }) {
@@ -22,7 +23,7 @@ export default function WorkoutPreview({ workout, lang, t, onClose }) {
     return (
       <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
         <div className="modal-center" onClick={(e) => e.stopPropagation()}>
-          <p style={{ color: "var(--muted)" }}>{lang === "pt" ? "Sem exercícios." : "No exercises."}</p>
+          <p style={{ color: "var(--muted)" }}>{t.noExercises}</p>
         </div>
       </div>
     );
@@ -35,7 +36,7 @@ export default function WorkoutPreview({ workout, lang, t, onClose }) {
       <div className="modal-center" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm" style={{ color: "var(--muted)" }}>{i + 1} / {items.length}</span>
-          <button className="btn-icon" onClick={onClose}><X size={18} /></button>
+          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}><X size={18} /></button>
         </div>
 
         <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", marginBottom: 16 }}>

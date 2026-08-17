@@ -4,6 +4,7 @@ export default function StatTile({
   value,
   unit,
   accent = "var(--accent)",
+  accentSoft = "var(--accent-soft)",
   gradient = false,
   onClick,
 }) {
@@ -33,7 +34,7 @@ export default function StatTile({
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 8,
-            background: gradient ? "rgba(255,255,255,0.22)" : "var(--accent-soft)",
+            background: gradient ? "rgba(255,255,255,0.22)" : accentSoft,
           }}
         >
           <Icon size={17} style={{ color: gradient ? "#fff" : accent }} />

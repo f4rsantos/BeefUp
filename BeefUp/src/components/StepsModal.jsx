@@ -21,7 +21,7 @@ export default function StepsModal({ onClose }) {
       <div className="modal-center fade-in" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <span className="font-semibold text-base" style={{ color: 'var(--text)' }}>{t.stepsToday}</span>
-          <button className="btn btn-ghost p-2" onClick={onClose}><X size={18} /></button>
+          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}><X size={18} /></button>
         </div>
         <input
           className="field w-full mb-4"

@@ -166,7 +166,6 @@ function AppInner() {
         {overlay === null && tab2 === "progress" && (
           <ProfilePage
             onOpenMeasures={() => setOverlay("measures")}
-            onViewHistory={() => setOverlay("history")}
           />
         )}
         {overlay === null && tab2 === "settings" && <SettingsPage />}
@@ -259,7 +258,7 @@ function AppInner() {
             <button
               className="nav-fab"
               onClick={handleStart}
-              aria-label={lang === "pt" ? "Iniciar treino" : "Start workout"}
+              aria-label={t.startWorkoutAria}
             >
               <Play size={26} fill="currentColor" />
             </button>

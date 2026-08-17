@@ -1,15 +1,22 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType } from "../lib/planUtils";
+import { MEASURE_GROUPS, LEGACY_TYPE_MAP } from "../lib/measureTypes";
+import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ClientGym from "./ClientGym";
+import ConfirmModal from "../components/ConfirmModal";
 
-const MEASURE_TYPES = ["weight", "height", "chest", "arms", "legs", "belly"];
+// Same current type set solo users' Measures page uses — client.measures can
+// still carry pre-migration type names (e.g. "arms"), which have no
+// matching `measureType_*` string and used to render as literal "undefined".
+const MEASURE_TYPES = MEASURE_GROUPS.flatMap((g) => g.types);
 
 export default function ClientDetail({ client, onDeleted }) {
   const { t, saveClient, deleteClient } = useApp();
   const [section, setSection] = useState("overview");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const sections = [
     { id: "overview", Icon: LayoutDashboard, label: t.dashOverview },
@@ -30,10 +37,21 @@ export default function ClientDetail({ client, onDeleted }) {
           <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>{client.name}</h2>
           {client.info && <p className="text-sm" style={{ color: "var(--muted)" }}>{client.info}</p>}
         </div>
-        <button className="btn btn-ghost btn-icon" onClick={remove} title={t.dashDelete}>
+        <button className="btn btn-ghost btn-icon" onClick={() => setConfirmingDelete(true)} title={t.dashDelete} aria-label={t.dashDelete}>
           <Trash2 size={16} />
         </button>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmModal
+          title={t.deleteClientTitle.replace("{name}", client.name)}
+          message={t.deleteClientConfirm}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={remove}
+        />
+      )}
 
       <div className="dash-detail-body">
         <nav className="dash-subnav">
@@ -119,15 +137,31 @@ function Measures({ client, saveClient, t }) {
   const [mType, setMType] = useState("weight");
   const [mVal, setMVal] = useState("");
 
+  // Mirrors the migration AppContext.jsx already runs for the solo user's
+  // own `measurements` (LEGACY_TYPE_MAP) — client.measures never went
+  // through that pass since it lives on the client record, not the
+  // top-level measurements store.
+  const measures = useMemo(
+    () => (client.measures || []).map((m) => (LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m)),
+    [client.measures],
+  );
+
+  useEffect(() => {
+    const raw = client.measures || [];
+    const changed = measures.some((m, i) => m.type !== raw[i]?.type);
+    if (changed) saveClient({ ...client, measures });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measures]);
+
   async function addMeasure() {
     const n = parseFloat(mVal);
     if (isNaN(n) || n <= 0) return;
-    await saveClient({ ...client, measures: [...(client.measures || []), { id: uid(), date: todayISO(), type: mType, value: n }] });
+    await saveClient({ ...client, measures: [...measures, { id: uid(), date: todayISO(), type: mType, value: n }] });
     setMVal("");
   }
 
-  const chart = measurementsForType(client.measures || [], mType);
-  const list = (client.measures || []).filter((m) => m.type === mType).slice().reverse();
+  const chart = measurementsForType(measures, mType);
+  const list = measures.filter((m) => m.type === mType).slice().reverse();
 
   return (
     <div className="dash-measures">
@@ -147,7 +181,7 @@ function Measures({ client, saveClient, t }) {
               <LineChart data={chart} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: "var(--muted)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} width={36} domain={["auto", "auto"]} />
-                <Tooltip />
+                <Tooltip {...CHART_TOOLTIP_STYLE} />
                 <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--accent)" }} />
               </LineChart>
             </ResponsiveContainer>
@@ -180,6 +214,7 @@ function Measures({ client, saveClient, t }) {
 
 function Notes({ client, saveClient, t }) {
   const [note, setNote] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   async function addNote() {
     if (!note.trim()) return;
@@ -210,10 +245,24 @@ function Notes({ client, saveClient, t }) {
               <span style={{ color: "var(--muted)", fontSize: 12 }}>{n.date}</span>
               <p className="text-sm mt-1" style={{ color: "var(--text)", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{n.text}</p>
             </div>
-            <button className="btn-icon" onClick={() => removeNote(n.id)}><Trash2 size={15} style={{ color: "var(--muted)" }} /></button>
+            <button className="btn-icon" onClick={() => setPendingDelete(n.id)} aria-label={t.delete}><Trash2 size={15} style={{ color: "var(--muted)" }} /></button>
           </div>
         ))}
       </div>
+
+      {pendingDelete && (
+        <ConfirmModal
+          title={t.deleteNoteTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            removeNote(pendingDelete);
+            setPendingDelete(null);
+          }}
+        />
+      )}
     </div>
   );
 }

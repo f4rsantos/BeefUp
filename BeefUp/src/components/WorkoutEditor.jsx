@@ -3,6 +3,7 @@ import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
+import { localizedName } from "../lib/localizedName"
 
 function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   const [note, setNote] = useState(item.note ?? "");
@@ -140,14 +141,15 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
               >
                 <GripVertical size={15} style={{ color: "var(--border)", flexShrink: 0 }} />
                 <span className="text-sm flex-1 truncate" style={{ color: "var(--text)" }}>
-                  {lang === "pt" ? ex.namePt : ex.name}
+                  {localizedName(ex, lang)}
                 </span>
-                <button className="btn-icon p-1" onClick={() => setEditingExIdx(i)}>
+                <button className="btn-icon p-1" onClick={() => setEditingExIdx(i)} aria-label={t.edit}>
                   <Pencil size={14} style={{ color: "var(--muted)" }} />
                 </button>
                 <button
                   className="btn-icon p-1"
                   onClick={() => setExItems((prev) => prev.filter((_, j) => j !== i))}
+                  aria-label={t.delete}
                 >
                   <Trash2 size={14} style={{ color: "var(--muted)" }} />
                 </button>
@@ -156,7 +158,7 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
           })}
           {exItems.length === 0 && (
             <p className="text-xs" style={{ color: "var(--muted)", padding: "4px 2px" }}>
-              {lang === "pt" ? "Sem exercícios ainda." : "No exercises yet."}
+              {t.noExercisesYet}
             </p>
           )}
           <button
@@ -189,7 +191,7 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
         return (
           <ExercisePresetModal
             item={item}
-            exerciseLabel={ex ? (lang === "pt" ? ex.namePt : ex.name) : ""}
+            exerciseLabel={ex ? (localizedName(ex, lang)) : ""}
             t={t}
             onClose={() => setEditingExIdx(null)}
             onSave={(patch) => {

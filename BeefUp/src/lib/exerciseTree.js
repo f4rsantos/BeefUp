@@ -1,5 +1,6 @@
 import exercisesBase from '../data/exercisesBase.json'
 import exerciseEquipment from '../data/exerciseEquipment.json'
+import { localizedName } from './localizedName'
 
 const BASE_BY_ID = Object.fromEntries(exercisesBase.map((b) => [b.id, b]))
 const EQUIPMENT_BY_ID = Object.fromEntries(exerciseEquipment.map((e) => [e.id, e]))
@@ -167,5 +168,5 @@ export function listEquipmentUsed() {
 export function getEquipmentLabel(id, lang) {
   const eq = EQUIPMENT_BY_ID[id]
   if (!eq) return id
-  return lang === 'pt' ? eq.namePt : eq.name
+  return localizedName(eq, lang)
 }

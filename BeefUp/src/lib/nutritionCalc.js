@@ -29,6 +29,37 @@ export function latestWeight(measurements) {
   return w ? w.value : ''
 }
 
+// O anel usa calorias registadas; macros apenas definem as proporções.
+export function macroShares({ protein = 0, carbs = 0, fat = 0 }) {
+  const kcal = { protein: protein * 4, carbs: carbs * 4, fat: fat * 9 }
+  const sum = kcal.protein + kcal.carbs + kcal.fat
+  if (sum <= 0) return { protein: 0, carbs: 0, fat: 0 }
+  return {
+    protein: kcal.protein / sum,
+    carbs: kcal.carbs / sum,
+    fat: kcal.fat / sum,
+  }
+}
+
+export function macroGoalShares(totals, goals) {
+  const hasGoals = (goals?.protein > 0) || (goals?.carbs > 0) || (goals?.fat > 0)
+  if (!hasGoals) return macroShares(totals)
+
+  const ratio = (val, goal) => (goal > 0 ? Math.max(0, val) / goal : 0)
+  const progress = {
+    protein: ratio(totals.protein, goals.protein),
+    carbs: ratio(totals.carbs, goals.carbs),
+    fat: ratio(totals.fat, goals.fat),
+  }
+  const sum = progress.protein + progress.carbs + progress.fat
+  if (sum <= 0) return { protein: 0, carbs: 0, fat: 0 }
+  return {
+    protein: progress.protein / sum,
+    carbs: progress.carbs / sum,
+    fat: progress.fat / sum,
+  }
+}
+
 export function calcGoals(c, waterMl = 2500) {
   const bmr = 10 * c.weight + 6.25 * c.height - 5 * c.age + (c.sex === 'male' ? 5 : -161)
   const tdee = bmr * c.activity

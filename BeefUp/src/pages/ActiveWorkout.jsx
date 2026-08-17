@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, nowISO, lastCompletedSets, lastExerciseNote, epley } from "../lib/planUtils";
+import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
@@ -10,6 +10,7 @@ import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
+import { localizedName } from "../lib/localizedName"
 
 function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
@@ -55,15 +56,14 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
   const startedAt = activeWorkout?.startedAt ?? fallbackStart;
-  const [elapsed, setElapsed] = useState(() =>
-    Math.floor((Date.now() - startedAt) / 1000),
-  );
+  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
   const [restState, setRestState] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
+  const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
   const [setTimer, setSetTimer] = useState(null);
 
   useEffect(() => {
@@ -222,16 +222,6 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   async function handleEnd() {
     const duration = Math.floor((Date.now() - startedAt) / 1000);
-    let totalSets = 0;
-    let totalVolume = 0;
-    exercises.forEach((e) => {
-      e.sets.forEach((s) => {
-        if (s.done && s.type !== "warmup") {
-          totalSets++;
-          totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-        }
-      });
-    });
 
     const session = {
       id: uid(),
@@ -252,29 +242,19 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         .filter((e) => e.sets.length > 0),
     };
 
-    const priorBest = {};
-    sessions.forEach((s) =>
-      s.exercises?.forEach((e) =>
-        e.sets?.forEach((set) => {
-          if (set.type === "warmup") return;
-          const rm = epley(set.weight, set.reps);
-          if (rm > (priorBest[e.exerciseId] || 0)) priorBest[e.exerciseId] = rm;
-        }),
-      ),
-    );
-    const prs = [];
-    exercises.forEach((e) => {
-      let best = 0;
-      e.sets.forEach((set) => {
-        if (set.done && set.type !== "warmup") {
-          const rm = epley(set.weight, set.reps);
-          if (rm > best) best = rm;
-        }
-      });
-      if (best > 0 && best > (priorBest[e.exerciseId] || 0)) {
-        prs.push(lang === "pt" ? e.namePt : e.name);
-      }
-    });
+    // session.exercises[].sets already excludes not-done sets (filtered
+    // above), so the shared warmup-excluding helpers can run on it directly
+    // instead of a second hand-rolled reduction over the raw `exercises`
+    // state — this is also what History/Progress compute for the same
+    // session once persisted, so the numbers can't drift apart.
+    const totalSets = sessionSets(session);
+    const totalVolume = sessionVolume(session);
+
+    const priorBest = bestE1rmByExercise(sessions);
+    const currentBest = bestE1rmByExercise([session]);
+    const prs = session.exercises
+      .filter((e) => currentBest[e.exerciseId] > (priorBest[e.exerciseId] || 0))
+      .map((e) => localizedName(e, lang));
 
     await addSession(session);
     setEndModal({ stats: { duration, totalSets, totalVolume, prs } });
@@ -321,7 +301,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onToggleSet={toggleSet}
             onAddSet={addSet}
             onRemoveSet={removeSet}
-            onRemoveExercise={removeExercise}
+            onRemoveExercise={setPendingRemoveExercise}
             onSetType={setSetType}
             note={ex.note}
             onUpdateNote={updateNote}
@@ -384,6 +364,20 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
       {endModal && endModal !== "confirm" && (
         <EndWorkoutModal stats={endModal.stats} onClose={onEnd} />
+      )}
+
+      {pendingRemoveExercise !== null && (
+        <ConfirmModal
+          title={t.removeExerciseTitle}
+          message={t.removeExerciseConfirm}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingRemoveExercise(null)}
+          onConfirm={() => {
+            removeExercise(pendingRemoveExercise);
+            setPendingRemoveExercise(null);
+          }}
+        />
       )}
     </div>
   );

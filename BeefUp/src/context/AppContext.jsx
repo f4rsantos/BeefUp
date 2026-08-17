@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
-import { DEFAULT_STATS_LAYOUT, normalizeStatsLayout } from '../lib/statsLayout'
+import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
 import strings from '../strings'
 
@@ -22,6 +22,14 @@ function removeById(list, id) {
   return list.filter((item) => item.id !== id)
 }
 
+const DEFAULT_MEAL_TYPES = [
+  { id: 'breakfast', icon: 'coffee' },
+  { id: 'morningSnack', icon: 'cookie' },
+  { id: 'lunch', icon: 'sun' },
+  { id: 'afternoonSnack', icon: 'apple' },
+  { id: 'dinner', icon: 'moon' },
+]
+
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
   const [accentColor, setAccentColorState] = useState(() => getLS('accentColor', 'green'))
@@ -40,9 +48,10 @@ export function AppProvider({ children }) {
   const [measurements, setMeasurements] = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
   const [statsLayout, setStatsLayoutState] = useState(() =>
-    normalizeStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT)),
+    resolveStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT), getLS('statsLayoutVersion', 1)),
   )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
+  const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
   const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
   const [clients, setClients] = useState([])
 
@@ -53,6 +62,7 @@ export function AppProvider({ children }) {
   const [nutritionGoals, setNutritionGoalsState] = useState(() =>
     getLS('nutritionGoals', { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 }),
   )
+  const [mealTypes, setMealTypesState] = useState(() => getLS('mealTypes', DEFAULT_MEAL_TYPES))
 
   const t = strings[lang] || strings.pt
 
@@ -90,10 +100,9 @@ export function AppProvider({ children }) {
     setLS('sectionPrefs', next)
   }, [])
 
-  const resetOnboarding = useCallback(() => {
-    setLS('onboarded', false); setOnboardedState(false)
-    setLS('appMode', 'solo'); setAppModeState('solo')
-    setLS('focus', 'both'); setFocusState('both')
+  const setMealTypes = useCallback((next) => {
+    setMealTypesState(next)
+    setLS('mealTypes', next)
   }, [])
 
   // Lang
@@ -196,6 +205,8 @@ export function AppProvider({ children }) {
   const setStatsLayout = useCallback((layout) => {
     setStatsLayoutState(layout)
     setLS('statsLayout', layout)
+    // Stamp the version so this order survives the next boot.
+    setLS('statsLayoutVersion', STATS_LAYOUT_VERSION)
   }, [])
 
   // Nutrition: food log
@@ -243,6 +254,14 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const toggleFavouriteFood = useCallback((id) => {
+    setFavouriteFoods(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      setLS('favFoods', next)
+      return next
+    })
+  }, [])
+
   const deleteSession = useCallback(async (sessionId) => {
     await db.remove(STORES.sessions, sessionId)
     setSessions(prev => removeById(prev, sessionId))
@@ -253,8 +272,9 @@ export function AppProvider({ children }) {
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,
-    onboarded, appMode, focus, completeOnboarding, resetOnboarding,
+    onboarded, appMode, focus, completeOnboarding,
     sectionPrefs, setSectionPrefs,
+    mealTypes, setMealTypes,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
     workouts, saveWorkout, deleteWorkout,
     sessions, addSession, deleteSession,
@@ -265,6 +285,7 @@ export function AppProvider({ children }) {
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
     customFoods, saveCustomFood,
+    favouriteFoods, toggleFavouriteFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
     clients, saveClient, deleteClient,

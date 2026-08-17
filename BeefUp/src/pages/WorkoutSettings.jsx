@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import WorkoutEditor from "../components/WorkoutEditor";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function WorkoutSettings({ onBack, initialView = "main", initialWorkout = null }) {
   const {
@@ -14,6 +15,7 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
 
   const [view, setView] = useState(initialView); // 'main' | 'editWorkout'
   const [editingWorkout, setEditingWorkout] = useState(initialWorkout);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   if (view === "editWorkout") {
     return (
@@ -46,7 +48,7 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
                 {w.name}
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                {w.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
+                {w.exercises?.length ?? 0} {t.exercises}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -56,10 +58,11 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
                   setEditingWorkout(w);
                   setView("editWorkout");
                 }}
+                aria-label={t.edit}
               >
                 <Pencil size={14} style={{ color: "var(--muted)" }} />
               </button>
-              <button className="btn btn-ghost p-1.5" onClick={() => deleteWorkout(w.id)}>
+              <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(w)} aria-label={t.delete}>
                 <Trash2 size={14} style={{ color: "var(--muted)" }} />
               </button>
             </div>
@@ -75,6 +78,20 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
           <Plus size={14} /> {t.newWorkout}
         </button>
       </div>
+
+      {pendingDelete && (
+        <ConfirmModal
+          title={t.deleteWorkoutTitle.replace("{name}", pendingDelete.name)}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            deleteWorkout(pendingDelete.id);
+            setPendingDelete(null);
+          }}
+        />
+      )}
     </div>
   );
 }

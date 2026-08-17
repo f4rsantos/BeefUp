@@ -6,6 +6,8 @@ import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
 import { resolveExercise, normalizeWorkoutExercises, BODY_PART_ACCENT } from "../lib/exerciseTree";
 import { encodeWorkoutShare } from "../lib/workoutShare";
 import HumanBody from "../components/HumanBody";
+import ConfirmModal from "../components/ConfirmModal";
+import { localizedNameOrEnglish } from "../lib/localizedName"
 
 function formatLastDate(iso, lang) {
   if (!iso) return "-";
@@ -51,7 +53,7 @@ function workoutAccentColors(workout) {
   return colors;
 }
 
-function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDelete, onEdit }) {
+function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete, onEdit }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -89,11 +91,11 @@ function WorkoutCardMenu({ workout, lang, onRename, onDuplicate, onShare, onDele
   }, [open]);
 
   const menuItems = [
-    { Icon: Pencil, label: lang === "pt" ? "Editar" : "Edit", onSelect: () => onEdit(workout) },
-    { Icon: FilePenLine, label: lang === "pt" ? "Renomear" : "Rename", onSelect: () => onRename(workout) },
-    { Icon: Copy, label: lang === "pt" ? "Duplicar" : "Duplicate", onSelect: () => onDuplicate(workout) },
-    { Icon: Share2, label: lang === "pt" ? "Partilhar" : "Share", onSelect: () => onShare(workout) },
-    { Icon: Trash2, label: lang === "pt" ? "Excluir" : "Delete", onSelect: () => onDelete(workout), danger: true },
+    { Icon: Pencil, label: t.edit, onSelect: () => onEdit(workout) },
+    { Icon: FilePenLine, label: t.rename, onSelect: () => onRename(workout) },
+    { Icon: Copy, label: t.duplicate, onSelect: () => onDuplicate(workout) },
+    { Icon: Share2, label: t.share, onSelect: () => onShare(workout) },
+    { Icon: Trash2, label: t.deleteWorkoutAction, onSelect: () => onDelete(workout), danger: true },
   ];
 
   return (
@@ -160,6 +162,7 @@ export default function WorkoutPage({
   onViewPlanDetails,
 }) {
   const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout } = useApp()
+  const [pendingDelete, setPendingDelete] = useState(null);
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const todayEntry = useMemo(
     () => todaysPlanEntry(activePlan),
@@ -192,7 +195,7 @@ export default function WorkoutPage({
 
   const handleRename = (workout) => {
     const newName = window.prompt(
-      lang === "pt" ? "Novo nome do treino:" : "New workout name:",
+      t.renameWorkoutPrompt,
       workout.name,
     );
     if (!newName || !newName.trim()) return;
@@ -203,7 +206,7 @@ export default function WorkoutPage({
     const copy = {
       ...workout,
       id: crypto.randomUUID(),
-      name: `${workout.name} (${lang === "pt" ? "cópia" : "copy"})`,
+      name: `${workout.name} (${t.copySuffix})`,
     };
     saveWorkout(copy);
   };
@@ -219,13 +222,7 @@ export default function WorkoutPage({
   };
 
   const handleDelete = (workout) => {
-    const name = workout.name;
-    const confirmMsg = lang === "pt"
-      ? `Eliminar "${name}"? Esta ação não pode ser desfeita.`
-      : `Delete "${name}"? This action cannot be undone.`;
-    if (window.confirm(confirmMsg)) {
-      deleteWorkout(workout.id);
-    }
+    setPendingDelete(workout);
   };
 
   function renderTodayHero() {
@@ -248,7 +245,7 @@ export default function WorkoutPage({
               <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
               <p className="display" style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>{t.restDay}</p>
               <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-                {lang === "pt" ? "Recupera e volta mais forte." : "Recover and come back stronger."}
+                {t.restDayBody}
               </p>
             </div>
             <Moon size={40} style={{ opacity: 0.9 }} />
@@ -266,7 +263,7 @@ export default function WorkoutPage({
               {workoutLabel}
             </p>
             <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
-              {todayWorkout.exercises?.length ?? 0} {lang === "pt" ? "exercícios" : "exercises"}
+              {todayWorkout.exercises?.length ?? 0} {t.exercises}
             </p>
             <button
               className="btn w-full mt-4 py-3.5 text-base"
@@ -323,7 +320,7 @@ export default function WorkoutPage({
         <div className="card card-elevated" style={{ marginBottom: SPACE.md }}>
           <div className="section-header">
             <p className="section-title" style={{ marginBottom: 0 }}>
-              {lang === "pt" ? "Músculos esta semana" : "This week's muscles"}
+              {t.weekMuscles}
             </p>
             <span className="chip active" style={{ pointerEvents: "none" }}>
               <Dumbbell size={12} /> {weekSessionCount}
@@ -331,7 +328,7 @@ export default function WorkoutPage({
           </div>
           {weekSessionCount === 0 ? (
             <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "20px 0" }}>
-              {lang === "pt" ? "Sem treinos esta semana ainda." : "No workouts logged this week yet."}
+              {t.noWorkoutsThisWeek}
             </p>
           ) : (
             <div
@@ -347,7 +344,7 @@ export default function WorkoutPage({
               {["front", "back"].map((view) => (
                 <div key={view} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>
-                    {view === "front" ? (lang === "pt" ? "Frente" : "Front") : (lang === "pt" ? "Costas" : "Back")}
+                    {view === "front" ? (t.bodyFront) : (t.bodyBack)}
                   </div>
                   <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
                     <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
@@ -363,7 +360,7 @@ export default function WorkoutPage({
         {/* Plano ativo */}
         <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
           <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>
-            {lang === "pt" ? "Plano Atual" : "Current Plan"}
+            {t.currentPlan}
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
             <button aria-label="more" onClick={onManagePlans} style={ICON_BUTTON_STYLE}>
@@ -382,12 +379,12 @@ export default function WorkoutPage({
                 {activePlan.name}
               </p>
               <p className="text-xs" style={{ color: "var(--muted)", marginTop: 4 }}>
-                {activePlan.days?.length ?? 0} {lang === "pt" ? "dias" : "days"}
+                {activePlan.days?.length ?? 0} {t.days}
               </p>
             </div>
           ) : (
             <p className="text-sm" style={{ color: "var(--muted)" }}>
-              {lang === "pt" ? "Nenhum plano ativo — toca para criar" : "No active plan — tap to create"}
+              {t.noActivePlanTap}
             </p>
           )}
           <ChevronRight size={16} style={{ color: "var(--muted)", flexShrink: 0 }} />
@@ -396,7 +393,7 @@ export default function WorkoutPage({
         {/* Outros Treinos */}
         <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
           <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-          {lang === "pt" ? "Os meus Treinos" : "My Workouts"} ({workouts.length})
+          {t.myWorkouts} ({workouts.length})
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
             <button aria-label="create workout" onClick={onCreateWorkout} style={ICON_BUTTON_STYLE}>
@@ -419,7 +416,7 @@ export default function WorkoutPage({
               .slice(0, 3)
               .map((item) => {
                 const ex = resolveExercise(item.ref);
-                return ex ? (lang === "pt" ? ex.namePt || ex.name : ex.name) : null;
+                return ex ? (localizedNameOrEnglish(ex, lang)) : null;
               })
               .filter(Boolean)
               .join(", ");
@@ -457,7 +454,7 @@ export default function WorkoutPage({
                   </p>
                   <WorkoutCardMenu
                     workout={w}
-                    lang={lang}
+                    t={t}
                     onEdit={onEditWorkout}
                     onRename={handleRename}
                     onDuplicate={handleDuplicate}
@@ -491,6 +488,20 @@ export default function WorkoutPage({
           })}
         </div>
       </div>
+
+      {pendingDelete && (
+        <ConfirmModal
+          title={t.deleteWorkoutTitle.replace("{name}", pendingDelete.name)}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            deleteWorkout(pendingDelete.id);
+            setPendingDelete(null);
+          }}
+        />
+      )}
     </div>
   );
 }

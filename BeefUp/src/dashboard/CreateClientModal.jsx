@@ -31,7 +31,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)" }}>{t.dashNewClient}</h3>
-          <button className="btn-icon" onClick={onClose}><X size={18} /></button>
+          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}><X size={18} /></button>
         </div>
         <div className="flex flex-col gap-3">
           <div>
