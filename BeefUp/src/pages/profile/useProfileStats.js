@@ -61,6 +61,7 @@ export function useProfileStats({ metric, chartDays }) {
       const day = sessionDay(s)
       return day && (!min || day < min) ? day : min
     }, null)
+    if (!earliest) return DEFAULT_CHART_DAYS
     return Math.max(MIN_CHART_DAYS, daysBetween(earliest, today))
   }, [sessions, today])
   const minChartDays = Math.min(MIN_CHART_DAYS, maxChartDays)

@@ -4,16 +4,19 @@ import { useRef, useState } from 'react'
 export function useBlockReorder(statsLayout, setStatsLayout) {
   const [editing, setEditing] = useState(false)
   const [layout, setLayout] = useState(statsLayout)
+  const layoutRef = useRef(statsLayout)
   const itemRefs = useRef({})
   const draggedKey = useRef(null)
 
   function startEditing() {
+    layoutRef.current = statsLayout
     setLayout(statsLayout)
     setEditing(true)
   }
 
   function toggleEnabled(key) {
-    const next = layout.map((b) => (b.key === key ? { ...b, enabled: !b.enabled } : b))
+    const next = layoutRef.current.map((b) => (b.key === key ? { ...b, enabled: !b.enabled } : b))
+    layoutRef.current = next
     setLayout(next)
     setStatsLayout(next)
   }
@@ -23,6 +26,7 @@ export function useBlockReorder(statsLayout, setStatsLayout) {
       const next = [...prev]
       const [moved] = next.splice(fromIndex, 1)
       next.splice(toIndex, 0, moved)
+      layoutRef.current = next
       return next
     })
   }
@@ -60,7 +64,7 @@ export function useBlockReorder(statsLayout, setStatsLayout) {
   function handlePointerUp() {
     if (!draggedKey.current) return
     draggedKey.current = null
-    setStatsLayout(layout)
+    setStatsLayout(layoutRef.current)
   }
 
   return {

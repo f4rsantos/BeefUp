@@ -8,7 +8,7 @@ import MacroRing from "./MacroRing";
 import { localizedNameOrEnglish } from "../lib/localizedName"
 
 export default function FoodSearchModal({ meal, onClose }) {
-  const { t, lang, addFoodLog, customFoods, saveCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
+  const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null); // food being portioned
@@ -75,7 +75,7 @@ export default function FoodSearchModal({ meal, onClose }) {
     pick(food);
   }
 
-  const mealLabel = t[meal] || meal;
+  const mealLabel = mealTypes.find((m) => m.id === meal)?.label || t[meal] || meal;
 
   return (
     <div className="modal-overlay" onClick={onClose}>

@@ -165,8 +165,7 @@ export function sessionVolume(session) {
 }
 
 export function sessionSets(session) {
-  return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.filter((s) => s.type !== 'warmup').length ?? 0), 0) ?? 0
+  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter((s) => s.type !== 'warmup').length ?? 0), 0) ?? 0
 }
 
 function sessionReps(session) {
