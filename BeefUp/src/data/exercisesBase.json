@@ -56,9 +56,7 @@
       { "id": "standard", "name": "Standard", "namePt": "Normal" },
       { "id": "wide", "name": "Wide grip", "namePt": "Pegada aberta" },
       { "id": "diamond", "name": "Diamond", "namePt": "Diamante" },
-      { "id": "feet_elevated", "name": "Feet elevated", "namePt": "Pés elevados" },
-      { "id": "hand_release", "name": "Hand-release", "namePt": "Hand-release" },
-      { "id": "ring", "name": "Ring push-up", "namePt": "Nas argolas" }
+      { "id": "feet_elevated", "name": "Feet elevated", "namePt": "Pés elevados" }
     ],
     "defaultSets": 3,
     "defaultReps": 12,
@@ -181,11 +179,38 @@
       { "id": "back", "name": "Back squat", "namePt": "Costas" },
       { "id": "front", "name": "Front squat", "namePt": "Frontal" },
       { "id": "overhead", "name": "Overhead squat", "namePt": "Agachamento overhead" },
-      { "id": "goblet", "name": "Goblet", "namePt": "Goblet" },
-      { "id": "pistol", "name": "Pistol", "namePt": "Pistol" }
+      { "id": "goblet", "name": "Goblet", "namePt": "Goblet" }
     ],
     "defaultSets": 4,
     "defaultReps": 8,
+    "defaultWeight": 0
+  },
+  {
+    "id": "pistol_squat",
+    "name": "Pistol squat",
+    "namePt": "Agachamento pistol",
+    "bodyPart": "upper legs",
+    "target": "quads",
+    "muscleGroup": "upper legs",
+    "secondaryMuscles": ["glutes", "hamstrings"],
+    "description": "Single-leg bodyweight squat performed with the other leg held out in front.",
+    "descriptionPt": "Agachamento a uma perna, com a outra perna estendida à frente.",
+    "instructions": [
+      "Stand on one leg, extending the other leg straight out in front of you.",
+      "Lower yourself down under control, keeping the extended leg off the floor.",
+      "Go as low as you can while keeping your balance.",
+      "Push through your standing heel back to the top."
+    ],
+    "instructionsPt": [
+      "Fica de pé sobre uma perna, com a outra estendida à frente.",
+      "Desce de forma controlada, mantendo a perna estendida sem tocar no chão.",
+      "Desce o mais fundo possível mantendo o equilíbrio.",
+      "Empurra pelo calcanhar de apoio até voltares ao topo."
+    ],
+    "equipment": ["bodyweight"],
+    "variants": [],
+    "defaultSets": 3,
+    "defaultReps": 5,
     "defaultWeight": 0
   },
   {
@@ -390,8 +415,7 @@
     "variants": [
       { "id": "standing", "name": "Standing", "namePt": "Em pé" },
       { "id": "seated", "name": "Seated", "namePt": "Sentado" },
-      { "id": "push_press", "name": "Push press", "namePt": "Push press" },
-      { "id": "push_jerk", "name": "Push jerk", "namePt": "Push jerk" }
+      { "id": "push_press", "name": "Push press", "namePt": "Push press" }
     ],
     "defaultSets": 3,
     "defaultReps": 10,
@@ -446,7 +470,7 @@
     "equipment": ["dumbbell", "cable", "machine"],
     "variants": [
       { "id": "bent_over", "name": "Bent-over", "namePt": "Dobrado à frente" },
-      { "id": "incline_bench", "name": "Incline bench", "namePt": "Banco inclinado" },
+      { "id": "incline_bench", "name": "Incline", "namePt": "Inclinado" },
       { "id": "reverse_pec_deck", "name": "Reverse pec-deck", "namePt": "Pec-deck invertido" }
     ],
     "defaultSets": 3,
@@ -540,7 +564,7 @@
     ],
     "equipment": ["bodyweight"],
     "variants": [
-      { "id": "standard", "name": "Standard", "namePt": "Normal" },
+      { "id": "low", "name": "Low plank", "namePt": "Prancha baixa" },
       { "id": "side", "name": "Side plank", "namePt": "Lateral" },
       { "id": "high", "name": "High plank", "namePt": "Prancha alta" },
       { "id": "limb_raise", "name": "Limb raise", "namePt": "Com elevação de perna/braço" }
@@ -604,8 +628,7 @@
       { "id": "bent_knees", "name": "Bent knees", "namePt": "Joelhos fletidos" },
       { "id": "straight_legs", "name": "Straight legs", "namePt": "Pernas estendidas" },
       { "id": "toes_to_bar", "name": "Toes-to-bar", "namePt": "Toes-to-bar" },
-      { "id": "knees_to_elbows", "name": "Knees-to-elbows", "namePt": "Knees-to-elbows" },
-      { "id": "rings", "name": "Rings", "namePt": "Argolas" }
+      { "id": "knees_to_elbows", "name": "Knees-to-elbows", "namePt": "Knees-to-elbows" }
     ],
     "defaultSets": 3,
     "defaultReps": 10,
@@ -748,8 +771,8 @@
     ],
     "equipment": ["bodyweight", "dumbbell", "barbell"],
     "variants": [
-      { "id": "back_rack", "name": "Back rack", "namePt": "Barra nas costas" },
-      { "id": "front_rack", "name": "Front rack", "namePt": "Barra frontal" }
+      { "id": "back_rack", "name": "Back rack", "namePt": "Costas" },
+      { "id": "front_rack", "name": "Front rack", "namePt": "Frontal" }
     ],
     "defaultSets": 3,
     "defaultReps": 10,
@@ -845,6 +868,36 @@
     "defaultWeight": 0
   },
   {
+    "id": "jerk",
+    "name": "Jerk",
+    "namePt": "Jerk",
+    "bodyPart": "shoulders",
+    "target": "delts",
+    "muscleGroup": "shoulders",
+    "secondaryMuscles": ["triceps", "quads", "glutes"],
+    "description": "Olympic press that drives the barbell overhead from the front rack using a dip and leg drive, catching it locked out.",
+    "descriptionPt": "Press olímpico que empurra a barra acima da cabeça a partir do front rack, usando um dip e impulso das pernas, recebendo travada.",
+    "instructions": [
+      "Hold the bar in a front rack position, feet hip-width apart.",
+      "Dip straight down, then drive up explosively and punch under the bar.",
+      "Catch it overhead with arms locked out and stand up."
+    ],
+    "instructionsPt": [
+      "Segura a barra em front rack, pés à largura das ancas.",
+      "Faz um dip na vertical, depois impulsiona para cima e empurra por baixo da barra.",
+      "Recebe acima da cabeça com os braços travados e levanta-te."
+    ],
+    "equipment": ["barbell"],
+    "variants": [
+      { "id": "split", "name": "Split jerk", "namePt": "Split jerk" },
+      { "id": "power", "name": "Power jerk", "namePt": "Power jerk" },
+      { "id": "squat", "name": "Squat jerk", "namePt": "Squat jerk" }
+    ],
+    "defaultSets": 5,
+    "defaultReps": 3,
+    "defaultWeight": 0
+  },
+  {
     "id": "thruster",
     "name": "Thruster",
     "namePt": "Thruster",
@@ -892,7 +945,8 @@
     ],
     "equipment": ["bodyweight", "rings"],
     "variants": [
-      { "id": "strict", "name": "Strict", "namePt": "Estrito" }
+      { "id": "strict", "name": "Strict", "namePt": "Estrito" },
+      { "id": "kipping", "name": "Kipping", "namePt": "Kipping", "equipmentOnly": ["bodyweight"] }
     ],
     "defaultSets": 3,
     "defaultReps": 5,
@@ -923,7 +977,8 @@
       { "id": "strict", "name": "Strict", "namePt": "Estrito" },
       { "id": "wall_facing", "name": "Wall-facing", "namePt": "De frente para a parede" },
       { "id": "deficit", "name": "Deficit (plates)", "namePt": "Défice (com plates)" },
-      { "id": "parallettes", "name": "Parallettes", "namePt": "Paralelo" }
+      { "id": "no_support", "name": "No support", "namePt": "Sem apoio" },
+      { "id": "kipping", "name": "Kipping", "namePt": "Kipping" }
     ],
     "defaultSets": 3,
     "defaultReps": 5,
@@ -1014,7 +1069,8 @@
     "variants": [],
     "defaultSets": 1,
     "defaultReps": 1,
-    "defaultWeight": 0
+    "defaultWeight": 0,
+    "repUnit": "m"
   },
   {
     "id": "rowing",
@@ -1040,7 +1096,8 @@
     "variants": [],
     "defaultSets": 1,
     "defaultReps": 1,
-    "defaultWeight": 0
+    "defaultWeight": 0,
+    "repUnit": "m"
   },
   {
     "id": "assault_bike",
@@ -1066,7 +1123,8 @@
     "variants": [],
     "defaultSets": 1,
     "defaultReps": 1,
-    "defaultWeight": 0
+    "defaultWeight": 0,
+    "repUnit": "m"
   },
   {
     "id": "jump_rope",
@@ -1092,7 +1150,8 @@
     "variants": [],
     "defaultSets": 3,
     "defaultReps": 50,
-    "defaultWeight": 0
+    "defaultWeight": 0,
+    "repUnit": "m"
   },
   {
     "id": "kettlebell_swing",
@@ -1174,8 +1233,7 @@
     "equipment": ["bodyweight"],
     "variants": [
       { "id": "standard", "name": "Standard", "namePt": "Normal" },
-      { "id": "step_up", "name": "Step-up", "namePt": "Step-up" },
-      { "id": "burpee_box_jump_over", "name": "Burpee box jump-over", "namePt": "Burpee sobre a caixa" }
+      { "id": "step_up", "name": "Step-up", "namePt": "Step-up" }
     ],
     "defaultSets": 3,
     "defaultReps": 12,
@@ -1202,14 +1260,11 @@
       "Pousa os pesos de forma controlada."
     ],
     "equipment": ["dumbbell", "kettlebell", "sandbag"],
-    "variants": [
-      { "id": "short_heavy", "name": "Short & heavy", "namePt": "Curta e pesada" },
-      { "id": "long_moderate", "name": "Long & moderate", "namePt": "Longa e moderada" },
-      { "id": "shuttle", "name": "Shuttle (for time)", "namePt": "Shuttle (for time)" }
-    ],
+    "variants": [],
     "defaultSets": 3,
     "defaultReps": 1,
-    "defaultWeight": 0
+    "defaultWeight": 0,
+    "repUnit": "m"
   },
   {
     "id": "slam_ball",
