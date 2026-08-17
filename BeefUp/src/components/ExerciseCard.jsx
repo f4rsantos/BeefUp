@@ -2,6 +2,7 @@ import ProgressRing from "./ProgressRing";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
+import { repUnitFor } from "../lib/exerciseTree"
 
 const SWIPE_THRESHOLD = 90;
 const SET_ROW_GRID_TEMPLATE = "22px minmax(0,1fr) minmax(0,1fr) 28px";
@@ -254,6 +255,7 @@ export default function ExerciseCard({
 }) {
   const [showNote, setShowNote] = useState(() => !!note);
   const exLabel = localizedName(exercise, lang);
+  const repUnit = repUnitFor(exercise.exerciseId);
   const addSetLabel = t.setSingular;
   const doneCount = exercise.sets.filter((s) => s.done).length;
   const allDone = doneCount === exercise.sets.length && exercise.sets.length > 0;
@@ -325,7 +327,7 @@ export default function ExerciseCard({
           kg
         </span>
         <span className="text-xs text-center" style={{ color: "var(--muted)" }}>
-          reps
+          {repUnit}
         </span>
         <span />
       </div>
