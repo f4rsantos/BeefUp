@@ -75,7 +75,7 @@ export function formatElapsedClock(seconds) {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-function activeDayFlags(sessions, plans, activePlanId, dayCount) {
+function activeDayFlags(sessions, plans, activePlanId, dayCount, activePlanSince) {
   const sessionDates = new Set(sessions.map(sessionDay))
   const plan = plans.find(p => p.id === activePlanId)
   const today = new Date()
@@ -87,14 +87,23 @@ function activeDayFlags(sessions, plans, activePlanId, dayCount) {
     d.setDate(d.getDate() - i)
     const iso = toLocalISO(d)
     const hasSession = sessionDates.has(iso)
-    const isRestDay = plan ? isPlannedRestDay(plan, d) : false
+    const withinCurrentPlanEra = !activePlanSince || iso >= activePlanSince
+    const isRestDay = plan && withinCurrentPlanEra ? isPlannedRestDay(plan, d) : false
     flags.push(hasSession || isRestDay)
   }
   return flags
 }
 
-export function computeStreak(sessions, plans, activePlanId) {
-  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+function resolveJoinedISO(joinedAt, sessions) {
+  if (joinedAt) return joinedAt
+  const sessionDates = sessions.map(sessionDay).filter(Boolean)
+  if (sessionDates.length === 0) return todayISO()
+  return sessionDates.reduce((earliest, d) => (d < earliest ? d : earliest))
+}
+
+export function computeStreak(sessions, plans, activePlanId, joinedAt, activePlanSince) {
+  const dayCount = daysBetween(resolveJoinedISO(joinedAt, sessions))
+  const flags = activeDayFlags(sessions, plans, activePlanId, dayCount, activePlanSince)
   let streak = 0
   for (const active of flags) {
     if (!active) break
@@ -103,8 +112,9 @@ export function computeStreak(sessions, plans, activePlanId) {
   return streak
 }
 
-export function computeBestStreak(sessions, plans, activePlanId) {
-  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+export function computeBestStreak(sessions, plans, activePlanId, joinedAt, activePlanSince) {
+  const dayCount = daysBetween(resolveJoinedISO(joinedAt, sessions))
+  const flags = activeDayFlags(sessions, plans, activePlanId, dayCount, activePlanSince)
   let best = 0
   let current = 0
   for (const active of flags) {
@@ -165,7 +175,7 @@ export function sessionVolume(session) {
 }
 
 export function sessionSets(session) {
-  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter((s) => s.type !== 'warmup').length ?? 0), 0) ?? 0
+  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter((s) => s.type !== 'warmup')?.length ?? 0), 0) ?? 0
 }
 
 function sessionReps(session) {

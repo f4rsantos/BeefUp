@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
+import { todayISO } from '../lib/planUtils'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
@@ -37,6 +38,8 @@ export function AppProvider({ children }) {
   const [customAccentHex, setCustomAccentHexState] = useState(() => getLS('customAccentHex', '#109a14'))
   const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
   const [onboarded, setOnboardedState] = useState(() => getLS('onboarded', false))
+  const [joinedAt, setJoinedAtState] = useState(() => getLS('joinedAt', null))
+  const [activePlanSince, setActivePlanSinceState] = useState(() => getLS('activePlanSince', null))
   const [appMode, setAppModeState] = useState(() => getLS('appMode', 'solo'))
   const [focus, setFocusState] = useState(() => getLS('focus', 'both'))
   const [sectionPrefs, setSectionPrefsState] = useState(() =>
@@ -101,6 +104,8 @@ export function AppProvider({ children }) {
     setLS('appMode', mode); setAppModeState(mode)
     if (focus) { setLS('focus', focus); setFocusState(focus) }
     setLS('onboarded', true); setOnboardedState(true)
+    const joined = todayISO()
+    setLS('joinedAt', joined); setJoinedAtState(joined)
   }, [])
 
   const setSectionPrefs = useCallback((next) => {
@@ -175,6 +180,9 @@ export function AppProvider({ children }) {
   const setActivePlan = useCallback(async (id) => {
     await db.setSetting('activePlanId', id)
     setActivePlanId(id)
+    const since = todayISO()
+    setLS('activePlanSince', since)
+    setActivePlanSinceState(since)
   }, [])
 
   // Workouts CRUD
@@ -281,7 +289,7 @@ export function AppProvider({ children }) {
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,
-    onboarded, appMode, focus, completeOnboarding,
+    onboarded, appMode, focus, completeOnboarding, joinedAt, activePlanSince,
     sectionPrefs, setSectionPrefs,
     mealTypes, setMealTypes,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
