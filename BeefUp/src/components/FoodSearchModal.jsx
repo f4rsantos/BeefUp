@@ -3,23 +3,34 @@ import { Search, Plus, ChevronLeft, ChevronDown, X, Star } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { foodProvider, scaleFood, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { uid, todayISO } from "../lib/planUtils";
+import { setLS } from "../lib/crypto";
 import { macroShares } from "../lib/nutritionCalc";
 import MacroRing from "./MacroRing";
 import { localizedNameOrEnglish } from "../lib/localizedName"
 
-export default function FoodSearchModal({ meal, onClose }) {
+const EMPTY_CUSTOM_FOOD = { name: "", kcal: "", protein: "", carbs: "", fat: "", fiber: "", sugar: "", saturatedFat: "", sodium: "" };
+
+export default function FoodSearchModal({ meal, onClose, initialDraft }) {
   const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => initialDraft?.query ?? "");
   const [results, setResults] = useState([]);
-  const [selected, setSelected] = useState(null); // food being portioned
-  const [grams, setGrams] = useState(100);
-  const [unitMode, setUnitMode] = useState(false); // false = grams, true = whole-unit count (servings)
-  const [unitCount, setUnitCount] = useState(1);
-  const [creating, setCreating] = useState(false);
+  const [selected, setSelected] = useState(() => initialDraft?.selected ?? null); // food being portioned
+  const [grams, setGrams] = useState(() => initialDraft?.grams ?? 100);
+  const [unitMode, setUnitMode] = useState(() => initialDraft?.unitMode ?? false); // false = grams, true = whole-unit count (servings)
+  const [unitCount, setUnitCount] = useState(() => initialDraft?.unitCount ?? 1);
+  const [creating, setCreating] = useState(() => initialDraft?.creating ?? false);
 
   // Custom-food form
-  const [cf, setCf] = useState({ name: "", kcal: "", protein: "", carbs: "", fat: "", fiber: "", sugar: "", saturatedFat: "", sodium: "" });
+  const [cf, setCf] = useState(() => initialDraft?.cf ?? EMPTY_CUSTOM_FOOD);
   const [showMicros, setShowMicros] = useState(false);
+
+  useEffect(() => {
+    if (!query && !selected && !creating) return;
+    const id = setTimeout(() => {
+      setLS("foodEntryDraft", { meal, query, selected, grams, unitMode, unitCount, creating, cf });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [meal, query, selected, grams, unitMode, unitCount, creating, cf]);
 
   useEffect(() => {
     let alive = true;

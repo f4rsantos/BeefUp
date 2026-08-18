@@ -58,7 +58,7 @@ export function AppProvider({ children }) {
   )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
-  const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
+  const [activeWorkout, setActiveWorkoutState] = useState(() => getLS('activeWorkout', null))
   const [clients, setClients] = useState([])
 
   // Nutrition
@@ -102,6 +102,11 @@ export function AppProvider({ children }) {
   }, [accentColor, customAccentHex])
 
   const setAccentColor = useCallback((v) => setAccentColorState(v), [])
+
+  const setActiveWorkout = useCallback((v) => {
+    setActiveWorkoutState(v)
+    setLS('activeWorkout', v)
+  }, [])
 
   const setCustomAccentColor = useCallback((hex) => {
     setLS('customAccentHex', hex)

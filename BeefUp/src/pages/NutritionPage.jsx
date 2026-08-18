@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todayISO, uid } from "../lib/planUtils";
+import { getLS, removeLS } from "../lib/crypto";
 import { macroGoalShares, MICRONUTRIENT_RDA } from "../lib/nutritionCalc";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
@@ -16,7 +17,8 @@ const GLASS_ML = 250;
 export default function NutritionPage() {
   const { t, foodLog, deleteFoodLog, nutritionGoals, waterMap, setWaterToday, mealTypes, setMealTypes } = useApp();
   const today = todayISO();
-  const [addMeal, setAddMeal] = useState(null);
+  const [foodDraft] = useState(() => getLS("foodEntryDraft", null));
+  const [addMeal, setAddMeal] = useState(() => foodDraft?.meal ?? null);
   const [showGoals, setShowGoals] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [editingMeals, setEditingMeals] = useState(false);
@@ -348,7 +350,16 @@ export default function NutritionPage() {
         </section>
       </div>
 
-      {addMeal && <FoodSearchModal meal={addMeal} onClose={() => setAddMeal(null)} />}
+      {addMeal && (
+        <FoodSearchModal
+          meal={addMeal}
+          initialDraft={foodDraft?.meal === addMeal ? foodDraft : null}
+          onClose={() => {
+            removeLS("foodEntryDraft");
+            setAddMeal(null);
+          }}
+        />
+      )}
       {showGoals && <MacroGoalModal onClose={() => setShowGoals(false)} />}
       {pendingDelete && (
         <ConfirmModal

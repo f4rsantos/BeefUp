@@ -49,3 +49,7 @@ export function getLS(key, fallback = null) {
     return fallback
   }
 }
+
+export function removeLS(key) {
+  localStorage.removeItem(key)
+}

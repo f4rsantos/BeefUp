@@ -113,6 +113,7 @@ export default function RestModal({ restState, setRestState, onClose }) {
       elapsed: 0,
       running: true,
       done: false,
+      endsAt: Date.now() + pickedSeconds * 1000,
     });
   }
 

@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
+import { getLS, setLS, removeLS } from "../lib/crypto";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
@@ -16,6 +17,20 @@ import { localizedName } from "../lib/localizedName"
 
 function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
+}
+
+function restoreRestState(saved) {
+  if (!saved || !saved.running || !saved.endsAt) return saved ?? null;
+  const remaining = Math.max(0, Math.round((saved.endsAt - Date.now()) / 1000));
+  if (remaining <= 0) return { ...saved, elapsed: saved.duration, running: false, done: true };
+  return { ...saved, elapsed: saved.duration - remaining };
+}
+
+// Drops the per-set auto-rest timer if it already expired while the app was away.
+function restoreSetTimer(saved) {
+  if (!saved) return null;
+  const remaining = Math.max(0, Math.round((saved.endsAt - Date.now()) / 1000));
+  return remaining <= 0 ? null : saved;
 }
 
 // Priority for weight/reps/note when a set isn't covered by real history:
@@ -46,6 +61,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
   const [exercises, setExercises] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return draft.exercises;
     if (!sourceWorkout) return [];
     return normalizeWorkoutExercises(sourceWorkout.exercises)
       .map((item) => ({ item, ex: resolveExercise(item.ref) }))
@@ -55,18 +72,35 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       );
   });
 
+  const [restState, setRestState] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return restoreRestState(draft.restState);
+    return null;
+  });
+  const [setTimer, setSetTimer] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return restoreSetTimer(draft.setTimer);
+    return null;
+  });
+
+  useEffect(() => {
+    if (!activeWorkout) return;
+    const id = setTimeout(() => {
+      setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [exercises, activeWorkout, restState.endsAt, restState.running, restState.done, setTimer.endsAt, restState, setTimer]);
+
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
   const startedAt = activeWorkout?.startedAt ?? fallbackStart;
   const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
-  const [restState, setRestState] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
-  const [setTimer, setSetTimer] = useState(null);
   const [viewingExercise, setViewingExercise] = useState(null);
 
   function openExerciseInfo(ref) {
@@ -282,6 +316,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       .map((e) => localizedName(e, lang));
 
     await addSession(session);
+    removeLS("activeWorkoutDraft");
     playAudioCue("finish");
     setEndModal({ stats: { duration, totalSets, totalVolume, prs } });
   }
@@ -394,7 +429,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           cancelLabel={t.back}
           confirmLabel={t.confirm}
           onCancel={() => setCancelModal(false)}
-          onConfirm={onEnd}
+          onConfirm={() => {
+            removeLS("activeWorkoutDraft");
+            onEnd();
+          }}
         />
       )}
 
