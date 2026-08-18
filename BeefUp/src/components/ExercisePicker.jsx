@@ -144,16 +144,20 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
-          <button className="btn-back" onClick={onClose} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-          </button>
-          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-            {t.addExercise}
-          </h1>
-        </div>
+        <div
+          className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
+          style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        >
+          <div className="flex items-center gap-1" style={{ marginBottom: 16 }}>
+            <button className="btn-back" onClick={onClose} aria-label={t.back}>
+              <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+            </button>
+            <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+              {t.addExercise}
+            </h1>
+          </div>
 
-        <div className="px-4 flex items-center gap-2" style={{ marginBottom: 8 }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
               <div className="relative flex items-center flex-1">
                 <Search size={16} style={{ position: "absolute", left: 12, color: "var(--muted)" }} />
                 <input
@@ -206,7 +210,6 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-24 scrollbar-hide">
               {sortedExercises.length === 0 ? (
                 <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "40px 0" }}>
                   {t.noResults}

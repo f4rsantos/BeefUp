@@ -34,28 +34,31 @@ export default function WorkoutPicker({ onSelect, onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)", position: "relative" }}>
-      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
-          {t.startAnother}
-        </h1>
-      </div>
+      <div
+        className="flex-1 overflow-y-auto pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
+            {t.startAnother}
+          </h1>
+        </div>
 
-      <div className="px-4 mb-3" style={{ position: "relative" }}>
-        <Search size={16} style={{ position: "absolute", left: 28, top: 13, color: "var(--muted)" }} />
-        <input
-          className="field"
-          style={{ paddingLeft: 38 }}
-          placeholder={t.searchExercises}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in">        {filtered.length === 0 ? (
+        <div style={{ position: "relative" }}>
+          <Search size={16} style={{ position: "absolute", left: 12, top: 13, color: "var(--muted)" }} />
+          <input
+            className="field"
+            style={{ paddingLeft: 38 }}
+            placeholder={t.searchExercises}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+        </div>
+        {filtered.length === 0 ? (
           <div className="flex items-center justify-center flex-1 py-16">
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noResults}</p>
           </div>

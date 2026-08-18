@@ -89,16 +89,18 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
-          <button className="btn-back" onClick={onClose} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-          </button>
-          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-            {t.createCustomExercise}
-          </h1>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 pb-24 scrollbar-hide">
+        <div
+          className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
+          style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        >
+          <div className="flex items-center gap-1" style={{ marginBottom: 16 }}>
+            <button className="btn-back" onClick={onClose} aria-label={t.back}>
+              <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+            </button>
+            <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+              {t.createCustomExercise}
+            </h1>
+          </div>
           <div style={{ marginBottom: 20 }}>
             <label className="section-title" style={{ fontSize: 13 }}>{t.exerciseName}</label>
             <input

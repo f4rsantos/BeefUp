@@ -1,9 +1,6 @@
 export default function PageHeader({ title, eyebrow, action }) {
   return (
-    <div
-      className="flex items-end justify-between"
-      style={{ padding: "34px 16px 14px" }}
-    >
+    <div className="flex items-end justify-between">
       <div style={{ minWidth: 0 }}>
         {eyebrow && (
           <p

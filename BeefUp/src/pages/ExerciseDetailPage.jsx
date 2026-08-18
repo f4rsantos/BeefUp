@@ -27,29 +27,31 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-          {name}
-        </h1>
-        {exercise.custom && (
-          <span
-            className="text-xs font-semibold"
-            style={{
-              color: "var(--accent)",
-              background: "var(--accent-soft)",
-              padding: "4px 10px",
-              borderRadius: 999,
-            }}
-          >
-            {t.customExerciseBadge}
-          </span>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-5 scrollbar-hide"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            {name}
+          </h1>
+          {exercise.custom && (
+            <span
+              className="text-xs font-semibold"
+              style={{
+                color: "var(--accent)",
+                background: "var(--accent-soft)",
+                padding: "4px 10px",
+                borderRadius: 999,
+              }}
+            >
+              {t.customExerciseBadge}
+            </span>
+          )}
+        </div>
         <div
           className="flex flex-col items-center justify-center"
           style={{

@@ -31,16 +31,18 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
-          {t.settingsTitle}
-        </h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-3 scrollbar-hide">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-3 scrollbar-hide"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
+            {t.settingsTitle}
+          </h1>
+        </div>
         {workouts.map((w) => (
           <div key={w.id} className="card flex items-center justify-between gap-3">
             <div>

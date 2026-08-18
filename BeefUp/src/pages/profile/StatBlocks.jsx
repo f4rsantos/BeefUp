@@ -49,7 +49,7 @@ export function StreakCalendarBlock({ streak, bestStreak, daysInMonth, monthActi
               <div
                 key={index}
                 className="flex items-center justify-center"
-                style={{ width: 26, height: 26, opacity: isToday ? 1 : 0.6 }}
+                style={{ width: "100%", aspectRatio: "1", opacity: isToday ? 1 : 0.6 }}
                 title={`${day}`}
               >
                 <Flame

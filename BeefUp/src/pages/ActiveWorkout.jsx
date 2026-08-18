@@ -89,7 +89,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer });
     }, 300);
     return () => clearTimeout(id);
-  }, [exercises, activeWorkout, restState.endsAt, restState.running, restState.done, setTimer.endsAt, restState, setTimer]);
+  }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt]);
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
@@ -352,7 +352,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         </p>
       )}
 
-      <div className="px-4 pb-8 flex flex-col gap-3">
+      <div className="pb-8 flex flex-col gap-3" style={{ paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}>
         {exercises.map((ex, exIdx) => (
           <ExerciseCard
             key={ex.id}

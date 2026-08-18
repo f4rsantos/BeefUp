@@ -84,16 +84,18 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-          {workout?.id ? t.editWorkout : t.newWorkout}
-        </h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide fade-in">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            {workout?.id ? t.editWorkout : t.newWorkout}
+          </h1>
+        </div>
         <div className="card flex flex-col gap-3">
           <div>
             <label className="section-title" style={{ marginBottom: 6, display: "block" }}>

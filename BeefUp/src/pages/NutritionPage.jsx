@@ -73,16 +73,18 @@ export default function NutritionPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <PageHeader
-        title={t.nutrition}
-        action={
-          <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={t.editGoals}>
-            <Pencil size={16} />
-          </button>
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide fade-in">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-5 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <PageHeader
+          title={t.nutrition}
+          action={
+            <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={t.editGoals}>
+              <Pencil size={16} />
+            </button>
+          }
+        />
         <div className="card card-elevated flex flex-col gap-4" style={{ padding: 20 }}>
           <div className="flex items-center justify-center">
             <MacroRing value={totals.kcal} max={kcalGoal || 1} shares={macroGoalShares(totals, nutritionGoals)}>

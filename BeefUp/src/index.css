@@ -6,6 +6,9 @@ html, body, #root { height: 100%; width: 100%; }
 
 /* ── Palette ─────────────────────────────────────────── */
 :root {
+  --page-px: clamp(16px, 5vw, 20px);
+  --page-py-top: clamp(28px, 6vh, 40px);
+
   --bg:       #f4f5f7;
   --surface:  #ffffff;
   --surface2: #eef0f3;
