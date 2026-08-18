@@ -3,6 +3,7 @@ import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle,
 import { useApp } from "../context/AppContext";
 import {
   listBaseExercises,
+  matchesExerciseQuery,
   getEquipmentOptions,
   getVariantOptions,
   getBodyPartLabel,
@@ -32,10 +33,9 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   const sortedExercises = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const filtered = listBaseExercises().filter((ex) => {
-      const label = localizedName(ex, lang);
-      if (q && !label.toLowerCase().includes(q)) return false;
+      if (!matchesExerciseQuery(ex, q)) return false;
       if (bodyPart && ex.bodyPart !== bodyPart) return false;
       if (equipment && !ex.equipment.includes(equipment)) return false;
       return true;

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
+import {listBaseExercises, matchesExerciseQuery, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import BodyPartFilter from "../components/BodyPartFilter";
 import { localizedName } from "../lib/localizedName"
@@ -21,10 +21,9 @@ export default function ExercisesPage({ onBack }) {
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   const sortedExercises = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const filtered = listBaseExercises().filter((ex) => {
-      const label = localizedName(ex, lang);
-      if (q && !label.toLowerCase().includes(q)) return false;
+      if (!matchesExerciseQuery(ex, q)) return false;
       if (bodyPart && ex.bodyPart !== bodyPart) return false;
       if (equipment && !ex.equipment.includes(equipment)) return false;
       return true;

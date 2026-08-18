@@ -138,6 +138,12 @@ export function listBaseExercises() {
   return exercisesBase
 }
 
+export function matchesExerciseQuery(ex, query) {
+  if (!query) return true
+  const q = query.toLowerCase()
+  return ex.name.toLowerCase().includes(q) || ex.namePt.toLowerCase().includes(q)
+}
+
 export function getBaseExercise(baseId) {
   return BASE_BY_ID[baseId] ?? null
 }
