@@ -1,4 +1,5 @@
 import ProgressRing from "./ProgressRing";
+import NumberField from "./NumberField";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
@@ -159,18 +160,17 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet, onS
         >
           {set.type && set.type !== "normal" ? t[`setType_${set.type}`][0] : setIdx + 1}
         </button>
-        <input
+        <NumberField
           className="field text-center text-sm"
-          type="number"
           value={set.weight}
           onChange={(e) => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
           placeholder="kg"
           disabled={set.done}
           style={{ padding: "6px 8px" }}
         />
-        <input
+        <NumberField
           className="field text-center text-sm"
-          type="number"
+          allowDecimal={false}
           value={set.reps}
           onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", e.target.value)}
           placeholder="—"

@@ -6,6 +6,7 @@ import { uid, todayISO, measurementsForType } from "../lib/planUtils";
 import { MEASURE_GROUPS, getMeasureUnit } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ConfirmModal from "../components/ConfirmModal";
+import NumberField from "../components/NumberField";
 
 const MAX_VALUE = 1000;
 
@@ -45,9 +46,8 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
       <p className="section-title" style={{ margin: 0 }}>{t[`measureType_${type}`]}</p>
       <div className="flex gap-3 items-center">
         <div className="flex-1" style={{ position: "relative" }}>
-          <input
+          <NumberField
             className="field"
-            type="number"
             placeholder={t.measureValuePlaceholder}
             value={val}
             onChange={(e) => { setVal(e.target.value); setError(null); }}

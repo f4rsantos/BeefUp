@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import NumberField from './NumberField'
 
 export default function OneRMModal({ onClose }) {
   const { t } = useApp()
@@ -26,9 +27,8 @@ export default function OneRMModal({ onClose }) {
         <div className="flex gap-3 mb-4">
           <div className="flex-1">
             <label className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>{t.weight}</label>
-            <input
+            <NumberField
               className="field w-full"
-              type="number"
               placeholder="kg"
               value={weight}
               onChange={e => setWeight(e.target.value)}
@@ -36,9 +36,9 @@ export default function OneRMModal({ onClose }) {
           </div>
           <div className="flex-1">
             <label className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>{t.reps}</label>
-            <input
+            <NumberField
               className="field w-full"
-              type="number"
+              allowDecimal={false}
               placeholder="reps"
               value={reps}
               onChange={e => setReps(e.target.value)}

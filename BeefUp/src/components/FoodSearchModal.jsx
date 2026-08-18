@@ -6,6 +6,7 @@ import { uid, todayISO } from "../lib/planUtils";
 import { setLS } from "../lib/crypto";
 import { macroShares } from "../lib/nutritionCalc";
 import MacroRing from "./MacroRing";
+import NumberField from "./NumberField";
 import { localizedNameOrEnglish } from "../lib/localizedName"
 
 const EMPTY_CUSTOM_FOOD = { name: "", kcal: "", protein: "", carbs: "", fat: "", fiber: "", sugar: "", saturatedFat: "", sodium: "" };
@@ -155,20 +156,17 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               </div>
             </div>
             {unitMode ? (
-              <input
+              <NumberField
                 className="field"
                 style={{ fontSize: 16, padding: "13px 14px", marginBottom: 15 }}
-                type="number"
-                step="1"
-                min="0"
+                allowDecimal={false}
                 value={unitCount}
                 onChange={(e) => setUnitCount(parseInt(e.target.value) || 0)}
               />
             ) : (
-              <input
+              <NumberField
                 className="field"
                 style={{ fontSize: 16, padding: "13px 14px", marginBottom: 15 }}
-                type="number"
                 value={grams}
                 onChange={(e) => setGrams(parseFloat(e.target.value) || 0)}
               />
@@ -206,10 +204,9 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               {["kcal", "protein", "carbs", "fat"].map((field) => (
                 <div key={field}>
                   <label className="section-title" style={{ fontSize: 13 }}>{t[field]}</label>
-                  <input
+                  <NumberField
                     className="field mt-2"
                     style={{ fontSize: 16, padding: "13px 14px" }}
-                    type="number"
                     placeholder={t[field]}
                     value={cf[field]}
                     onChange={(e) => setCf({ ...cf, [field]: e.target.value })}
@@ -235,10 +232,9 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
                 {MICRONUTRIENT_KEYS.map((field) => (
                   <div key={field}>
                     <label className="section-title" style={{ fontSize: 13 }}>{t[field]}</label>
-                    <input
+                    <NumberField
                       className="field mt-2"
                       style={{ fontSize: 16, padding: "13px 14px" }}
-                      type="number"
                       placeholder={t[field]}
                       value={cf[field]}
                       onChange={(e) => setCf({ ...cf, [field]: e.target.value })}

@@ -6,6 +6,7 @@ import { resolveExercise } from "../lib/exerciseTree";
 import ExercisePicker from "../components/ExercisePicker";
 import WorkoutPreview from "./WorkoutPreview";
 import ConfirmModal from "../components/ConfirmModal";
+import NumberField from "../components/NumberField";
 import { localizedName } from "../lib/localizedName"
 
 function exName(id, lang) {
@@ -207,10 +208,10 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
                 <button className="btn-icon" onClick={() => setItems((p) => p.filter((_, j) => j !== idx))}><Trash2 size={14} style={{ color: "var(--muted)" }} /></button>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                <NumField label={t.sets} value={it.sets} onChange={(v) => updateItem(idx, { sets: v })} />
-                <NumField label={t.reps} value={it.reps} onChange={(v) => updateItem(idx, { reps: v })} />
+                <NumField label={t.sets} allowDecimal={false} value={it.sets} onChange={(v) => updateItem(idx, { sets: v })} />
+                <NumField label={t.reps} allowDecimal={false} value={it.reps} onChange={(v) => updateItem(idx, { reps: v })} />
                 <NumField label={`${t.weight}`} value={it.weight} onChange={(v) => updateItem(idx, { weight: v })} />
-                <NumField label={`${t.rest} (${t.seconds})`} value={it.rest} onChange={(v) => updateItem(idx, { rest: v })} />
+                <NumField label={`${t.rest} (${t.seconds})`} allowDecimal={false} value={it.rest} onChange={(v) => updateItem(idx, { rest: v })} />
               </div>
             </div>
           ))}
@@ -228,11 +229,11 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
   );
 }
 
-function NumField({ label, value, onChange }) {
+function NumField({ label, value, onChange, allowDecimal }) {
   return (
     <div>
       <label className="text-xs" style={{ color: "var(--muted)" }}>{label}</label>
-      <input className="field mt-1" style={{ padding: "8px 10px", fontSize: 14 }} type="number" value={value} onChange={(e) => onChange(e.target.value)} />
+      <NumberField className="field mt-1" style={{ padding: "8px 10px", fontSize: 14 }} allowDecimal={allowDecimal} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
+import NumberField from "./NumberField";
 import { localizedName } from "../lib/localizedName"
 
 function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
@@ -28,18 +29,17 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.weight}</label>
-              <input
+              <NumberField
                 className="field w-full"
-                type="number"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
               />
             </div>
             <div className="flex-1">
               <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.reps}</label>
-              <input
+              <NumberField
                 className="field w-full"
-                type="number"
+                allowDecimal={false}
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
               />
@@ -113,11 +113,9 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
             >
               Tempo entre sets (s)
             </label>
-            <input
+            <NumberField
               className="field w-full"
-              type="number"
-              min="0"
-              step="1"
+              allowDecimal={false}
               value={restAfterSet}
               onChange={(e) => setRestAfterSet(e.target.value)}
               placeholder="120"

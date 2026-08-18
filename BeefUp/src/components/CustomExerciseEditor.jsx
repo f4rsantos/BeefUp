@@ -12,6 +12,7 @@ import {
   getEquipmentLabel,
 } from "../lib/exerciseTree";
 import BodyPartFilter from "./BodyPartFilter";
+import NumberField from "./NumberField";
 
 export default function CustomExerciseEditor({ onClose, onCreated }) {
   const { t, lang, saveCustomExercise } = useApp();
@@ -205,22 +206,20 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           <div className="grid grid-cols-2 gap-4" style={{ marginBottom: 20 }}>
             <div>
               <label className="section-title" style={{ fontSize: 13 }}>{t.defaultSetsLabel}</label>
-              <input
+              <NumberField
                 className="field mt-2 w-full"
                 style={{ fontSize: 16, padding: "13px 14px" }}
-                type="number"
-                min="0"
+                allowDecimal={false}
                 value={defaultSets}
                 onChange={(e) => setDefaultSets(e.target.value)}
               />
             </div>
             <div>
               <label className="section-title" style={{ fontSize: 13 }}>{t.defaultRepsLabel}</label>
-              <input
+              <NumberField
                 className="field mt-2 w-full"
                 style={{ fontSize: 16, padding: "13px 14px" }}
-                type="number"
-                min="0"
+                allowDecimal={false}
                 value={defaultReps}
                 onChange={(e) => setDefaultReps(e.target.value)}
               />

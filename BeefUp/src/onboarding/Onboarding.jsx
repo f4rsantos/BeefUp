@@ -5,6 +5,7 @@ import { uid, todayISO } from "../lib/planUtils";
 import { ACTIVITY, OBJECTIVE, calcGoals } from "../lib/nutritionCalc";
 import { getMeasureUnit } from "../lib/measureTypes";
 import { buildDemoPreset } from "../lib/demoData";
+import NumberField from "../components/NumberField";
 import "./onboarding.css";
 
 function soloSteps(focus) {
@@ -136,9 +137,8 @@ export default function Onboarding() {
               <div key={m}>
                 <label className="section-title">{t[`measureType_${m}`]}</label>
                 <div className="ob-field-unit-wrap mt-1">
-                  <input
+                  <NumberField
                     className="field ob-field-unit-input"
-                    type="number"
                     placeholder={t.obSkip}
                     value={measures[m]}
                     onChange={(e) => setMeasures({ ...measures, [m]: e.target.value })}
@@ -287,7 +287,7 @@ function GoalsStep({ t, calc, setCalc }) {
     <>
       <h1 className="ob-title">{t.obGoalsTitle}</h1>
       <div className="grid grid-cols-3 gap-2">
-        <Field label={t.age} value={calc.age} onChange={(v) => setCalc({ ...calc, age: v })} />
+        <Field label={t.age} allowDecimal={false} value={calc.age} onChange={(v) => setCalc({ ...calc, age: v })} />
         <Field label={t.height} unit={getMeasureUnit("height")} value={calc.height} onChange={(v) => setCalc({ ...calc, height: v })} />
         <Field label={t.bodyWeight} unit={getMeasureUnit("weight")} value={calc.weight} onChange={(v) => setCalc({ ...calc, weight: v })} />
       </div>
@@ -315,17 +315,17 @@ function GoalsStep({ t, calc, setCalc }) {
   );
 }
 
-function Field({ label, unit, value, onChange }) {
+function Field({ label, unit, value, onChange, allowDecimal }) {
   return (
     <div>
       <label className="section-title">{label}</label>
       {unit ? (
         <div className="ob-field-unit-wrap mt-1">
-          <input className="field ob-field-unit-input" type="number" value={value} onChange={(e) => onChange(e.target.value)} />
+          <NumberField className="field ob-field-unit-input" allowDecimal={allowDecimal} value={value} onChange={(e) => onChange(e.target.value)} />
           <span className="ob-field-unit">{unit}</span>
         </div>
       ) : (
-        <input className="field mt-1" type="number" value={value} onChange={(e) => onChange(e.target.value)} />
+        <NumberField className="field mt-1" allowDecimal={allowDecimal} value={value} onChange={(e) => onChange(e.target.value)} />
       )}
     </div>
   );
