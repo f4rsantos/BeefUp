@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
-import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
@@ -11,6 +11,7 @@ import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
+import ExerciseDetailPage from "./ExerciseDetailPage";
 import { localizedName } from "../lib/localizedName"
 
 function timerBelongsTo(timer, exIdx, setIdx) {
@@ -66,6 +67,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
   const [setTimer, setSetTimer] = useState(null);
+  const [viewingExercise, setViewingExercise] = useState(null);
+
+  function openExerciseInfo(ref) {
+    const { baseId } = parseExerciseRef(ref);
+    const base = getBaseExercise(baseId);
+    if (base) setViewingExercise(base);
+  }
   const { unlock: unlockAudio, play: playAudioCue } = useAudioCues();
   const restAnnouncedRef = useRef(null);
   const setTimerAnnouncedKeyRef = useRef(null);
@@ -326,6 +334,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onUpdateNote={updateNote}
             setTimer={setTimer}
             onSkipSetTimer={dismissSetTimer}
+            onOpenInfo={openExerciseInfo}
           />
         ))}
 
@@ -351,6 +360,12 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           onConfirm={addExercises}
           onClose={() => setShowExPicker(false)}
         />
+      )}
+
+      {viewingExercise && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
+          <ExerciseDetailPage exercise={viewingExercise} onBack={() => setViewingExercise(null)} />
+        </div>
       )}
 
       {endModal === "confirm" && (

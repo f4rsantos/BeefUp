@@ -252,6 +252,7 @@ export default function ExerciseCard({
   onUpdateNote,
   setTimer,
   onSkipSetTimer,
+  onOpenInfo,
 }) {
   const [showNote, setShowNote] = useState(() => !!note);
   const exLabel = localizedName(exercise, lang);
@@ -263,7 +264,11 @@ export default function ExerciseCard({
   return ( 
     <div className="card" style={allDone ? { borderColor: "var(--accent)" } : undefined}>
       <div className="flex items-center justify-between mb-3 gap-2">
-        <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
+        <button
+          className="flex items-center gap-3"
+          style={{ minWidth: 0, textAlign: "left" }}
+          onClick={() => onOpenInfo(exercise.exerciseId)}
+        >
           <ProgressRing
             value={doneCount}
             max={exercise.sets.length}
@@ -284,7 +289,7 @@ export default function ExerciseCard({
           >
             {exLabel}
           </p>
-        </div>
+        </button>
         <div className="flex items-center" style={{ gap: 4, flexShrink: 0 }}>
           <button
             className="btn btn-ghost p-1.5"
