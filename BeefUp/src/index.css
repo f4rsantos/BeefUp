@@ -612,7 +612,7 @@ input.field:focus, select.field:focus, textarea.field:focus {
   background: var(--surface2);
   border-radius: 999px;
   padding: 3px;
-  gap: 2px;
+  gap: 8px;
 }
 .pill-toggle .pill-option {
   flex: 1;

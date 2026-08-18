@@ -13,6 +13,8 @@ export default function FoodSearchModal({ meal, onClose }) {
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null); // food being portioned
   const [grams, setGrams] = useState(100);
+  const [unitMode, setUnitMode] = useState(false); // false = grams, true = whole-unit count (servings)
+  const [unitCount, setUnitCount] = useState(1);
   const [creating, setCreating] = useState(false);
 
   // Custom-food form
@@ -42,17 +44,32 @@ export default function FoodSearchModal({ meal, onClose }) {
   function pick(food) {
     setSelected(food);
     setGrams(food.serving || 100);
+    setUnitCount(1);
+    setUnitMode(false);
+  }
+
+  const effectiveGrams = unitMode ? unitCount * (selected?.serving || 100) : grams;
+
+  function switchToUnitMode() {
+    const serving = selected?.serving || 100;
+    setUnitCount(Math.max(1, Math.round(grams / serving)));
+    setUnitMode(true);
+  }
+
+  function switchToGramsMode() {
+    setGrams(unitCount * (selected?.serving || 100));
+    setUnitMode(false);
   }
 
   async function confirmAdd() {
     if (!selected) return;
-    const m = scaleFood(selected, grams);
+    const m = scaleFood(selected, effectiveGrams);
     await addFoodLog({
       id: uid(),
       date: todayISO(),
       meal,
       name: localizedNameOrEnglish(selected, lang),
-      qty: grams,
+      qty: effectiveGrams,
       ...m,
     });
     onClose();
@@ -105,16 +122,44 @@ export default function FoodSearchModal({ meal, onClose }) {
             </div>
             <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>{selected.servingLabel}</p>
 
-            <label className="section-title" style={{ fontSize: 13 }}>{t.quantity} ({t.grams})</label>
-            <input
-              className="field mt-2"
-              style={{ fontSize: 16, padding: "13px 14px", marginBottom: 15 }}
-              type="number"
-              value={grams}
-              onChange={(e) => setGrams(parseFloat(e.target.value) || 0)}
-            />
+            <div className="flex items-center justify-between mt-1 mb-2">
+              <label className="section-title" style={{ fontSize: 13, margin: 0 }}>{t.quantity}</label>
+              <div className="pill-toggle">
+                <button
+                  className={`pill-option ${!unitMode ? "active" : ""}`}
+                  onClick={switchToGramsMode}
+                >
+                  {t.grams}
+                </button>
+                <button
+                  className={`pill-option ${unitMode ? "active" : ""}`}
+                  onClick={switchToUnitMode}
+                >
+                  {t.units}
+                </button>
+              </div>
+            </div>
+            {unitMode ? (
+              <input
+                className="field"
+                style={{ fontSize: 16, padding: "13px 14px", marginBottom: 15 }}
+                type="number"
+                step="1"
+                min="0"
+                value={unitCount}
+                onChange={(e) => setUnitCount(parseInt(e.target.value) || 0)}
+              />
+            ) : (
+              <input
+                className="field"
+                style={{ fontSize: 16, padding: "13px 14px", marginBottom: 15 }}
+                type="number"
+                value={grams}
+                onChange={(e) => setGrams(parseFloat(e.target.value) || 0)}
+              />
+            )}
 
-            <MacroPreview macros={scaleFood(selected, grams)} t={t} />
+            <MacroPreview macros={scaleFood(selected, effectiveGrams)} t={t} />
 
             <button className="btn btn-primary w-full py-3.5" style={{ fontSize: 15, marginTop: 15 }} onClick={confirmAdd}>
               <Plus size={18} /> {t.add} · {mealLabel}
