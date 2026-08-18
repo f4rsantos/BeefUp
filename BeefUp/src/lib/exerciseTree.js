@@ -65,6 +65,20 @@ const MUSCLE_LABELS = {
   triceps: 'Tríceps',
 }
 
+// Which MUSCLE_LABELS keys belong under each bodyPart — lets the custom-exercise
+// form narrow "primary/secondary muscle" down to what's anatomically relevant
+// once a bodyPart is picked, instead of showing all 16 muscles unfiltered.
+const BODY_PART_MUSCLES = {
+  chest: ['chest', 'pectorals'],
+  back: ['back', 'lats', 'traps'],
+  shoulders: ['shoulders', 'delts'],
+  'upper arms': ['biceps', 'triceps', 'forearms'],
+  'upper legs': ['quads', 'hamstrings', 'glutes'],
+  'lower legs': ['calves'],
+  waist: ['abs'],
+  cardio: ['cardio'],
+}
+
 function lookupLabel(labels, key, lang) {
   if (lang !== 'pt') return key
   return labels[key] ?? key
@@ -196,6 +210,10 @@ export function listAllEquipment() {
 
 export function listMuscles() {
   return Object.keys(MUSCLE_LABELS)
+}
+
+export function listMusclesForBodyPart(bodyPart) {
+  return BODY_PART_MUSCLES[bodyPart] ?? []
 }
 
 export function getEquipmentLabel(id, lang) {

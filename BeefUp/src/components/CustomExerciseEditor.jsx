@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, PersonStanding, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid } from "../lib/planUtils";
 import {
   listBodyParts,
   listMuscles,
+  listMusclesForBodyPart,
   listAllEquipment,
   getBodyPartLabel,
   getMuscleLabel,
   getEquipmentLabel,
 } from "../lib/exerciseTree";
+import BodyPartFilter from "./BodyPartFilter";
 
 export default function CustomExerciseEditor({ onClose, onCreated }) {
   const { t, lang, saveCustomExercise } = useApp();
@@ -23,9 +25,12 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   const [defaultReps, setDefaultReps] = useState("10");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [bodyView, setBodyView] = useState("front");
+  const [showBodyModal, setShowBodyModal] = useState(false);
 
   const bodyParts = listBodyParts();
-  const muscles = listMuscles();
+  const musclesForBodyPart = bodyPart ? listMusclesForBodyPart(bodyPart) : [];
+  const allMuscles = listMuscles();
   const equipmentList = listAllEquipment();
 
   function toggleEquipment(id) {
@@ -39,6 +44,13 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   function pickTarget(id) {
     setTarget(id);
     setSecondaryMuscles((prev) => prev.filter((x) => x !== id));
+  }
+
+  function handleBodyPartChange(bp) {
+    setBodyPart(bp);
+    setTarget(null);
+    setSecondaryMuscles([]);
+    if (bp) setShowBodyModal(false);
   }
 
   const canSave = name.trim() !== "" && bodyPart && target && equipmentIds.length > 0 && !saving;
@@ -99,13 +111,23 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.filterBodyPart}</label>
+            <div className="flex items-center justify-between">
+              <label className="section-title" style={{ fontSize: 13, margin: 0 }}>{t.filterBodyPart}</label>
+              <button
+                className="btn btn-ghost flex items-center gap-1"
+                style={{ padding: "4px 8px", fontSize: 12, color: "var(--accent)" }}
+                onClick={() => setShowBodyModal(true)}
+              >
+                <PersonStanding size={14} />
+                {t.viewOnBody}
+              </button>
+            </div>
             <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
               {bodyParts.map((bp) => (
                 <button
                   key={bp}
                   className={`chip ${bodyPart === bp ? "active" : ""}`}
-                  onClick={() => setBodyPart(bp)}
+                  onClick={() => handleBodyPartChange(bp)}
                 >
                   {getBodyPartLabel(bp, lang)}
                 </button>
@@ -113,35 +135,39 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.primaryMuscle}</label>
-            <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
-              {muscles.map((m) => (
-                <button
-                  key={m}
-                  className={`chip ${target === m ? "active" : ""}`}
-                  onClick={() => pickTarget(m)}
-                >
-                  {getMuscleLabel(m, lang)}
-                </button>
-              ))}
+          {bodyPart && (
+            <div style={{ marginBottom: 20 }}>
+              <label className="section-title" style={{ fontSize: 13 }}>{t.primaryMuscle}</label>
+              <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+                {musclesForBodyPart.map((m) => (
+                  <button
+                    key={m}
+                    className={`chip ${target === m ? "active" : ""}`}
+                    onClick={() => pickTarget(m)}
+                  >
+                    {getMuscleLabel(m, lang)}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div style={{ marginBottom: 20 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.secondaryMusclesLabel}</label>
-            <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
-              {muscles.filter((m) => m !== target).map((m) => (
-                <button
-                  key={m}
-                  className={`chip ${secondaryMuscles.includes(m) ? "active" : ""}`}
-                  onClick={() => toggleSecondaryMuscle(m)}
-                >
-                  {getMuscleLabel(m, lang)}
-                </button>
-              ))}
+          {target && (
+            <div style={{ marginBottom: 20 }}>
+              <label className="section-title" style={{ fontSize: 13 }}>{t.secondaryMusclesLabel}</label>
+              <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+                {allMuscles.filter((m) => m !== target).map((m) => (
+                  <button
+                    key={m}
+                    className={`chip ${secondaryMuscles.includes(m) ? "active" : ""}`}
+                    onClick={() => toggleSecondaryMuscle(m)}
+                  >
+                    {getMuscleLabel(m, lang)}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div style={{ marginBottom: 20 }}>
             <label className="section-title" style={{ fontSize: 13 }}>{t.filterEquipment}</label>
@@ -202,7 +228,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.notesLabel}</label>
+            <label className="section-title" style={{ fontSize: 13 }}>{t.exerciseDescriptionLabel}</label>
             <textarea
               className="field mt-2 w-full"
               style={{ fontSize: 15, padding: "13px 14px", minHeight: 80, resize: "vertical" }}
@@ -221,6 +247,29 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           </button>
         </div>
       </div>
+
+      {showBodyModal && (
+        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowBodyModal(false)}>
+          <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+                {t.filterBodyPart}
+              </span>
+              <button className="btn btn-ghost p-2" onClick={() => setShowBodyModal(false)} aria-label={t.cancel}>
+                <X size={18} />
+              </button>
+            </div>
+            <BodyPartFilter
+              bodyPart={bodyPart}
+              setBodyPart={handleBodyPartChange}
+              bodyView={bodyView}
+              setBodyView={setBodyView}
+              lang={lang}
+              t={t}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

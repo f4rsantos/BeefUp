@@ -72,7 +72,8 @@ const strings = {
     unitMeters: 'Metros',
     defaultSetsLabel: 'Séries padrão',
     defaultRepsLabel: 'Reps padrão',
-    notesLabel: 'Notas',
+    exerciseDescriptionLabel: 'Descrição',
+    viewOnBody: 'Ver no corpo',
 
     // History
     noHistory: 'Sem histórico ainda',
@@ -471,7 +472,8 @@ const strings = {
     unitMeters: 'Meters',
     defaultSetsLabel: 'Default sets',
     defaultRepsLabel: 'Default reps',
-    notesLabel: 'Notes',
+    exerciseDescriptionLabel: 'Description',
+    viewOnBody: 'View on body',
 
     noHistory: 'No history yet',
     historyEmpty: 'Complete a workout to get started.',
