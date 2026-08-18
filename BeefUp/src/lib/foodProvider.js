@@ -1,15 +1,7 @@
-// Food lookup abstraction. Swappable backends behind one interface:
-//   searchFoods(query)  -> Promise<Food[]>
-//   getByBarcode(code)  -> Promise<Food | null>
+// searchFoods(query)  -> Promise<Food[]>
+// getByBarcode(code)  -> Promise<Food | null>
 //
-// Food shape: { id, name, namePt, kcal, protein, carbs, fat, serving, servingLabel }
-// plus optionally fiber/sugar/saturatedFat/sodium (custom foods only — see MICRONUTRIENT_KEYS below).
-// All macro/micronutrient values are per `serving` grams/ml (the default serving for that food).
-//
-// v1 ships the bundled local provider (fully offline, no secret).
-// A FatSecret-backed provider drops in behind the same interface once a
-// server-side proxy is available — FatSecret OAuth2 needs a secret that must
-// NOT live in the browser, so it is reached via VITE_FOOD_PROXY_URL.
+// Food shape: { id, name, namePt, kcal, protein, carbs, fat, serving, servingLabel } plus optionally fiber/sugar/saturatedFat/sodium
 
 import foodsData from '../data/foods.json'
 
@@ -29,14 +21,11 @@ export const localFoodProvider = {
     )
   },
   async getByBarcode() {
-    // Local dataset has no barcodes; FatSecret provider will handle this.
     return null
   },
 }
 
 // Stubbed FatSecret provider. Inactive unless VITE_FOOD_PROXY_URL is configured.
-// The proxy is expected to expose GET /search?q= and GET /barcode?code= and to
-// return the Food shape above. No client secret is ever handled here.
 export function createFatSecretProvider(proxyUrl) {
   return {
     id: 'fatsecret',
@@ -60,7 +49,6 @@ export const foodProvider = proxyUrl
 
 export const MICRONUTRIENT_KEYS = ['fiber', 'sugar', 'saturatedFat', 'sodium']
 
-// Scale a food's macros (and any micronutrients it carries) to an arbitrary gram/ml amount.
 export function scaleFood(food, grams) {
   const factor = grams / (food.serving || 100)
   const scaled = {
