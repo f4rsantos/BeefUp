@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, ChevronLeft, X, Star } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronDown, X, Star } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { foodProvider, scaleFood } from "../lib/foodProvider";
+import { foodProvider, scaleFood, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { uid, todayISO } from "../lib/planUtils";
 import { macroShares } from "../lib/nutritionCalc";
 import MacroRing from "./MacroRing";
@@ -18,7 +18,8 @@ export default function FoodSearchModal({ meal, onClose }) {
   const [creating, setCreating] = useState(false);
 
   // Custom-food form
-  const [cf, setCf] = useState({ name: "", kcal: "", protein: "", carbs: "", fat: "" });
+  const [cf, setCf] = useState({ name: "", kcal: "", protein: "", carbs: "", fat: "", fiber: "", sugar: "", saturatedFat: "", sodium: "" });
+  const [showMicros, setShowMicros] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -87,6 +88,9 @@ export default function FoodSearchModal({ meal, onClose }) {
       serving: 100,
       servingLabel: "100 g",
     };
+    for (const key of MICRONUTRIENT_KEYS) {
+      if (cf[key].trim() !== "") food[key] = parseFloat(cf[key]) || 0;
+    }
     await saveCustomFood(food);
     setCreating(false);
     pick(food);
@@ -187,7 +191,7 @@ export default function FoodSearchModal({ meal, onClose }) {
                 onChange={(e) => setCf({ ...cf, name: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4" style={{ marginBottom: 8 }}>
               {["kcal", "protein", "carbs", "fat"].map((field) => (
                 <div key={field}>
                   <label className="section-title" style={{ fontSize: 13 }}>{t[field]}</label>
@@ -202,6 +206,37 @@ export default function FoodSearchModal({ meal, onClose }) {
                 </div>
               ))}
             </div>
+
+            <button
+              className="flex items-center justify-center gap-1 w-full"
+              style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, marginBottom: 10 }}
+              onClick={() => setShowMicros((v) => !v)}
+            >
+              {t.moreDetails}
+              <ChevronDown
+                size={15}
+                style={{ transform: showMicros ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
+              />
+            </button>
+
+            {showMicros && (
+              <div className="grid grid-cols-2 gap-4 fade-in" style={{ marginBottom: 15 }}>
+                {MICRONUTRIENT_KEYS.map((field) => (
+                  <div key={field}>
+                    <label className="section-title" style={{ fontSize: 13 }}>{t[field]}</label>
+                    <input
+                      className="field mt-2"
+                      style={{ fontSize: 16, padding: "13px 14px" }}
+                      type="number"
+                      placeholder={t[field]}
+                      value={cf[field]}
+                      onChange={(e) => setCf({ ...cf, [field]: e.target.value })}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
             <button className="btn btn-primary w-full py-3.5" style={{ fontSize: 15 }} onClick={createCustom}>{t.add}</button>
           </div>
         ) : (

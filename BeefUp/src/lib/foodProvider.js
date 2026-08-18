@@ -3,7 +3,8 @@
 //   getByBarcode(code)  -> Promise<Food | null>
 //
 // Food shape: { id, name, namePt, kcal, protein, carbs, fat, serving, servingLabel }
-// All macro values are per `serving` grams/ml (the default serving for that food).
+// plus optionally fiber/sugar/saturatedFat/sodium (custom foods only — see MICRONUTRIENT_KEYS below).
+// All macro/micronutrient values are per `serving` grams/ml (the default serving for that food).
 //
 // v1 ships the bundled local provider (fully offline, no secret).
 // A FatSecret-backed provider drops in behind the same interface once a
@@ -57,13 +58,19 @@ export const foodProvider = proxyUrl
   ? createFatSecretProvider(proxyUrl)
   : localFoodProvider
 
-// Scale a food's macros to an arbitrary gram/ml amount.
+export const MICRONUTRIENT_KEYS = ['fiber', 'sugar', 'saturatedFat', 'sodium']
+
+// Scale a food's macros (and any micronutrients it carries) to an arbitrary gram/ml amount.
 export function scaleFood(food, grams) {
   const factor = grams / (food.serving || 100)
-  return {
+  const scaled = {
     kcal: Math.round(food.kcal * factor),
     protein: +(food.protein * factor).toFixed(1),
     carbs: +(food.carbs * factor).toFixed(1),
     fat: +(food.fat * factor).toFixed(1),
   }
+  for (const key of MICRONUTRIENT_KEYS) {
+    if (food[key] != null) scaled[key] = +(food[key] * factor).toFixed(1)
+  }
+  return scaled
 }
