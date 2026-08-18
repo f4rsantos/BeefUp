@@ -12,6 +12,8 @@ export const OBJECTIVE = [
   { id: 'objBulk', d: 0.12 },
 ]
 
+export const MICRONUTRIENT_RDA = { fiber: 30, sugar: 50, saturatedFat: 20, sodium: 2300 }
+
 export function activityFromSessions(sessions) {
   const since = Date.now() - 7 * 24 * 60 * 60 * 1000
   const count = sessions.filter((s) => new Date(s.date).getTime() >= since).length

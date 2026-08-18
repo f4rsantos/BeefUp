@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { Plus, Minus, Pencil, Droplet, Trash2, Check, X } from "lucide-react";
+import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todayISO, uid } from "../lib/planUtils";
-import { macroGoalShares } from "../lib/nutritionCalc";
+import { macroGoalShares, MICRONUTRIENT_RDA } from "../lib/nutritionCalc";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
 import PageHeader from "../components/PageHeader";
@@ -24,6 +24,7 @@ export default function NutritionPage() {
   const [newMealName, setNewMealName] = useState("");
   const [newMealIcon, setNewMealIcon] = useState(MEAL_ICON_KEYS[0]);
   const [pendingDeleteMeal, setPendingDeleteMeal] = useState(null);
+  const [showMicros, setShowMicros] = useState(false);
 
   const todayLog = useMemo(() => foodLog.filter((e) => e.date === today), [foodLog, today]);
 
@@ -45,6 +46,13 @@ export default function NutritionPage() {
     { key: "protein", short: t.proteinShort, val: Math.round(totals.protein), goal: nutritionGoals.protein, color: "var(--protein)" },
     { key: "carbs", short: t.carbsShort, val: Math.round(totals.carbs), goal: nutritionGoals.carbs, color: "var(--carbs)" },
     { key: "fat", short: t.fatShort, val: Math.round(totals.fat), goal: nutritionGoals.fat, color: "var(--fat)" },
+  ];
+
+  const micros = [
+    { key: "fiber", label: t.fiber, val: Math.round(totals.fiber), goal: MICRONUTRIENT_RDA.fiber, unit: "g", color: "var(--accent)" },
+    { key: "sugar", label: t.sugar, val: Math.round(totals.sugar), goal: MICRONUTRIENT_RDA.sugar, unit: "g", color: "var(--carbs)" },
+    { key: "saturatedFat", label: t.saturatedFat, val: Math.round(totals.saturatedFat), goal: MICRONUTRIENT_RDA.saturatedFat, unit: "g", color: "var(--fat)" },
+    { key: "sodium", label: t.sodium, val: Math.round(totals.sodium), goal: MICRONUTRIENT_RDA.sodium, unit: "mg", color: "var(--danger)" },
   ];
 
   function addMealType() {
@@ -104,6 +112,43 @@ export default function NutritionPage() {
               </div>
             ))}
           </div>
+
+          <button
+            className="flex items-center justify-center w-full"
+            style={{ color: "var(--muted)", background: "none", border: "none" }}
+            onClick={() => setShowMicros((v) => !v)}
+            aria-expanded={showMicros}
+            aria-label={t.moreDetails}
+          >
+            <ChevronDown
+              size={20}
+              style={{ transform: showMicros ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
+            />
+          </button>
+
+          {showMicros && (
+            <div className="flex flex-col fade-in" style={{ gap: 12 }}>
+              {micros.map((m) => (
+                <div key={m.key} className="flex flex-col" style={{ gap: 5 }}>
+                  <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+                    <span className="font-semibold" style={{ color: "var(--text)" }}>{m.label}</span>
+                    <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{m.val} / {m.goal}{m.unit}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        width: `${Math.min(100, (m.val / m.goal) * 100)}%`,
+                        background: m.color,
+                        transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Water ── */}
