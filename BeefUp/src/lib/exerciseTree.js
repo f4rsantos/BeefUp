@@ -5,6 +5,18 @@ import { localizedName } from './localizedName'
 const BASE_BY_ID = Object.fromEntries(exercisesBase.map((b) => [b.id, b]))
 const EQUIPMENT_BY_ID = Object.fromEntries(exerciseEquipment.map((e) => [e.id, e]))
 
+let customBase = []
+let CUSTOM_BY_ID = {}
+
+export function registerCustomExercises(list) {
+  customBase = list ?? []
+  CUSTOM_BY_ID = Object.fromEntries(customBase.map((b) => [b.id, b]))
+}
+
+function findBase(id) {
+  return BASE_BY_ID[id] ?? CUSTOM_BY_ID[id]
+}
+
 const REF_SEP = '|'
 
 // Builds the composite reference string stored in workout/session data:
@@ -106,7 +118,7 @@ function composeName(base, equipment, variant, field) {
 
 export function resolveExercise(ref) {
   const { baseId, equipmentId, variantId } = parseExerciseRef(ref)
-  const base = BASE_BY_ID[baseId]
+  const base = findBase(baseId)
   if (!base) return null
 
   const equipment = EQUIPMENT_BY_ID[equipmentId] ?? EQUIPMENT_BY_ID[base.equipment[0]]
@@ -135,7 +147,7 @@ export function resolveExercise(ref) {
 }
 
 export function listBaseExercises() {
-  return exercisesBase
+  return [...exercisesBase, ...customBase]
 }
 
 export function matchesExerciseQuery(ex, query) {
@@ -145,24 +157,24 @@ export function matchesExerciseQuery(ex, query) {
 }
 
 export function getBaseExercise(baseId) {
-  return BASE_BY_ID[baseId] ?? null
+  return findBase(baseId) ?? null
 }
 
 export function getEquipmentOptions(baseId) {
-  const base = BASE_BY_ID[baseId]
+  const base = findBase(baseId)
   if (!base) return []
   return base.equipment.map((id) => EQUIPMENT_BY_ID[id]).filter(Boolean)
 }
 
 export function getVariantOptions(baseId, equipmentId) {
-  const variants = BASE_BY_ID[baseId]?.variants ?? []
+  const variants = findBase(baseId)?.variants ?? []
   if (!equipmentId) return variants
   return variants.filter((v) => !v.equipmentOnly || v.equipmentOnly.includes(equipmentId))
 }
 
 export function repUnitFor(ref) {
   const { baseId } = parseExerciseRef(ref)
-  return BASE_BY_ID[baseId]?.repUnit || 'reps'
+  return findBase(baseId)?.repUnit || 'reps'
 }
 
 export function normalizeWorkoutExercises(list) {
@@ -176,6 +188,14 @@ export function listBodyParts() {
 export function listEquipmentUsed() {
   const used = new Set(exercisesBase.flatMap((b) => b.equipment))
   return exerciseEquipment.filter((e) => used.has(e.id))
+}
+
+export function listAllEquipment() {
+  return exerciseEquipment
+}
+
+export function listMuscles() {
+  return Object.keys(MUSCLE_LABELS)
 }
 
 export function getEquipmentLabel(id, lang) {

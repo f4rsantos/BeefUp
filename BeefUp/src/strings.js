@@ -63,6 +63,17 @@ const strings = {
     toggleCardView: 'Ver em cartões',
     toggleListView: 'Ver em lista',
 
+    // Custom exercise
+    createCustomExercise: 'Criar exercício',
+    customExerciseBadge: 'Personalizado',
+    exerciseName: 'Nome do exercício',
+    repUnitLabel: 'Unidade',
+    unitReps: 'Reps',
+    unitMeters: 'Metros',
+    defaultSetsLabel: 'Séries padrão',
+    defaultRepsLabel: 'Reps padrão',
+    notesLabel: 'Notas',
+
     // History
     noHistory: 'Sem histórico ainda',
     historyEmpty: 'Completa um treino para começar.',
@@ -449,6 +460,16 @@ const strings = {
     secondaryMusclesLabel: 'Secondary muscles',
     toggleCardView: 'Card view',
     toggleListView: 'List view',
+
+    createCustomExercise: 'Create exercise',
+    customExerciseBadge: 'Custom',
+    exerciseName: 'Exercise name',
+    repUnitLabel: 'Unit',
+    unitReps: 'Reps',
+    unitMeters: 'Meters',
+    defaultSetsLabel: 'Default sets',
+    defaultRepsLabel: 'Default reps',
+    notesLabel: 'Notes',
 
     noHistory: 'No history yet',
     historyEmpty: 'Complete a workout to get started.',

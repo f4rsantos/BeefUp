@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {listBaseExercises, matchesExerciseQuery, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import BodyPartFilter from "../components/BodyPartFilter";
+import CustomExerciseEditor from "../components/CustomExerciseEditor";
 import { localizedName } from "../lib/localizedName"
 
 export default function ExercisesPage({ onBack }) {
@@ -16,6 +17,7 @@ export default function ExercisesPage({ onBack }) {
   const [bodyView, setBodyView] = useState("front");
   const [selectedId, setSelectedId] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
+  const [creatingCustom, setCreatingCustom] = useState(false);
 
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
@@ -50,6 +52,18 @@ export default function ExercisesPage({ onBack }) {
       .sort()
       .map((letter) => ({ letter, items: byLetter[letter] }));
   }, [sortedExercises, lang]);
+
+  if (creatingCustom) {
+    return (
+      <CustomExerciseEditor
+        onClose={() => setCreatingCustom(false)}
+        onCreated={(exercise) => {
+          setCreatingCustom(false);
+          setSelectedId(exercise.id);
+        }}
+      />
+    );
+  }
 
   if (selectedId) {
     const selected = getBaseExercise(selectedId);
@@ -249,6 +263,19 @@ export default function ExercisesPage({ onBack }) {
             </div>
           ))
         )}
+        <button
+          className="flex items-center gap-3"
+          onClick={() => setCreatingCustom(true)}
+          style={{ padding: "12px 4px", textAlign: "left", width: "100%", color: "var(--accent)" }}
+        >
+          <div
+            className="flex items-center justify-center flex-shrink-0"
+            style={{ width: 32, height: 32, borderRadius: 999, border: "1px dashed var(--accent)" }}
+          >
+            <Plus size={16} />
+          </div>
+          <span className="text-sm font-semibold">{t.createCustomExercise}</span>
+        </button>
       </div>
 
       {showFilters && (

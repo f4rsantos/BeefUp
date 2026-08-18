@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
 import { todayISO } from '../lib/planUtils'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
+import { registerCustomExercises } from '../lib/exerciseTree'
 import strings from '../strings'
 
 const AppContext = createContext(null)
@@ -62,6 +63,8 @@ export function AppProvider({ children }) {
   // Nutrition
   const [foodLog, setFoodLog] = useState([])
   const [customFoods, setCustomFoods] = useState([])
+  const [customExercises, setCustomExercises] = useState([])
+  const customExercisesRef = useRef([])
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
   const [nutritionGoals, setNutritionGoalsState] = useState(() =>
     getLS('nutritionGoals', { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 }),
@@ -127,7 +130,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water, cli] = await Promise.all([
+      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water, cli, customEx] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -138,6 +141,7 @@ export function AppProvider({ children }) {
         db.getAllFoods(),
         db.getAllWater(),
         db.getAllClients(),
+        db.getAllCustomExercises(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -148,6 +152,9 @@ export function AppProvider({ children }) {
       setStepsMap(map)
       setFoodLog(log)
       setCustomFoods(foods)
+      setCustomExercises(customEx)
+      customExercisesRef.current = customEx
+      registerCustomExercises(customEx)
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
@@ -241,6 +248,14 @@ export function AppProvider({ children }) {
     setCustomFoods(prev => upsertById(prev, food))
   }, [])
 
+  const saveCustomExercise = useCallback(async (exercise) => {
+    await db.saveCustomExercise(exercise)
+    const next = upsertById(customExercisesRef.current, exercise)
+    customExercisesRef.current = next
+    registerCustomExercises(next)
+    setCustomExercises(next)
+  }, [])
+
   const setWaterToday = useCallback(async (date, ml) => {
     await db.setWater(date, ml)
     setWaterMap(prev => ({ ...prev, [date]: ml }))
@@ -302,6 +317,7 @@ export function AppProvider({ children }) {
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
     customFoods, saveCustomFood,
+    customExercises, saveCustomExercise,
     favouriteFoods, toggleFavouriteFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,

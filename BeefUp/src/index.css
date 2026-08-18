@@ -617,7 +617,7 @@ input.field:focus, select.field:focus, textarea.field:focus {
 .pill-toggle .pill-option {
   flex: 1;
   text-align: center;
-  padding: 8px 0;
+  padding: 8px 16px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle, LayoutGrid, List, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {
   listBaseExercises,
@@ -14,6 +14,7 @@ import {
   buildExerciseRef,
 } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName";
+import CustomExerciseEditor from "./CustomExerciseEditor";
 
 export default function AddExercisesPicker({ onConfirm, onClose }) {
   const { t, lang } = useApp();
@@ -23,7 +24,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
 
-  const [step, setStep] = useState("list"); // 'list' | 'equipment' | 'variant'
+  const [step, setStep] = useState("list"); // 'list' | 'equipment' | 'variant' | 'custom'
   const [activeBase, setActiveBase] = useState(null);
   const [activeEquipmentId, setActiveEquipmentId] = useState(null);
   const [queue, setQueue] = useState(() => new Map()); // baseId -> ref
@@ -100,6 +101,11 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     addToQueue(base.id, equipmentId, "");
   }
 
+  function handleCustomCreated(exercise) {
+    setStep("list");
+    toggleRow(exercise);
+  }
+
   function pickEquipment(equipmentId) {
     const variantOptions = getVariantOptions(activeBase.id, equipmentId);
     if (variantOptions.length > 0) {
@@ -130,6 +136,10 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
 
   const equipmentOptions = activeBase ? getEquipmentOptions(activeBase.id) : [];
   const variantOptions = activeBase ? getVariantOptions(activeBase.id, activeEquipmentId) : [];
+
+  if (step === "custom") {
+    return <CustomExerciseEditor onClose={() => setStep("list")} onCreated={handleCustomCreated} />;
+  }
 
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
@@ -305,6 +315,19 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                   </div>
                 ))
               )}
+              <button
+                className="flex items-center gap-3"
+                onClick={() => setStep("custom")}
+                style={{ padding: "12px 4px", textAlign: "left", width: "100%", color: "var(--accent)" }}
+              >
+                <div
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{ width: 32, height: 32, borderRadius: 999, border: "1px dashed var(--accent)" }}
+                >
+                  <Plus size={16} />
+                </div>
+                <span className="text-sm font-semibold">{t.createCustomExercise}</span>
+              </button>
             </div>
       </div>
 

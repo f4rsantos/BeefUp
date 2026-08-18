@@ -31,9 +31,22 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
         <button className="btn-back" onClick={onBack} aria-label={t.back}>
           <ChevronLeft size={24} style={{ color: "var(--text)" }} />
         </button>
-        <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+        <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
           {name}
         </h1>
+        {exercise.custom && (
+          <span
+            className="text-xs font-semibold"
+            style={{
+              color: "var(--accent)",
+              background: "var(--accent-soft)",
+              padding: "4px 10px",
+              borderRadius: 999,
+            }}
+          >
+            {t.customExerciseBadge}
+          </span>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide">
