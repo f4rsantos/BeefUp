@@ -376,6 +376,15 @@ const strings = {
     startWorkoutAria: "Iniciar treino",
     valuesPer100g: "Valores por 100 g",
     weekMuscles: "Músculos esta semana",
+    pwaInstallTitle: 'Instalar a BeefUp',
+    pwaInstallDesc: 'Adiciona a app ao teu dispositivo e usa-a offline.',
+    pwaInstall: 'Instalar',
+    pwaInstallIosDesc: 'Toca em Partilhar e depois em "Adicionar ao ecrã principal".',
+    pwaUpdateTitle: 'Nova versão disponível',
+    pwaUpdateDesc: 'Recarrega para atualizar a app.',
+    pwaUpdate: 'Atualizar',
+    pwaOfflineReady: 'App pronta para funcionar offline.',
+    pwaDismiss: 'Agora não',
 
   },
 
@@ -746,6 +755,15 @@ const strings = {
     startWorkoutAria: "Start workout",
     valuesPer100g: "Values per 100 g",
     weekMuscles: "This week's muscles",
+    pwaInstallTitle: 'Install BeefUp',
+    pwaInstallDesc: 'Add the app to your device and use it offline.',
+    pwaInstall: 'Install',
+    pwaInstallIosDesc: 'Tap Share, then "Add to Home Screen".',
+    pwaUpdateTitle: 'New version available',
+    pwaUpdateDesc: 'Reload to update the app.',
+    pwaUpdate: 'Update',
+    pwaOfflineReady: 'App ready to work offline.',
+    pwaDismiss: 'Not now',
 
   },
 }

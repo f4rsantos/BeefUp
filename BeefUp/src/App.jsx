@@ -14,6 +14,7 @@ import Onboarding from "./onboarding/Onboarding";
 import HelperDashboard from "./dashboard/HelperDashboard";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
+import PwaPrompts from "./components/PwaPrompts";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
@@ -275,6 +276,8 @@ function AppInner() {
           ))}
         </nav>
       )}
+
+      <PwaPrompts aboveNav={showNav} />
     </div>
   );
 }
