@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Apple, Database, Dumbbell, Monitor, Moon, Sparkles, Sun } from "lucide-react";
+import { Apple, Database, Dumbbell, Monitor, Moon, Sparkles, Sun, Volume2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 import { PRESET_ACCENTS } from "../lib/colorTheme";
@@ -27,6 +27,8 @@ export default function SettingsPage() {
     setTheme,
     fontScale,
     setFontScale,
+    soundEnabled,
+    setSoundEnabled,
     accentColor,
     setAccentColor,
     customAccentHex,
@@ -147,6 +149,26 @@ export default function SettingsPage() {
                 {label}
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* Sound */}
+        <section>
+          <p className="section-title" style={{ marginBottom: 6 }}>{t.sound}</p>
+          <div className="card flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
+                <Volume2 size={16} style={{ color: "var(--text)" }} />
+              </div>
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.soundToggle}</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={soundEnabled}
+              aria-label={t.soundToggle}
+              className={`switch ${soundEnabled ? "on" : ""}`}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            />
           </div>
         </section>
 

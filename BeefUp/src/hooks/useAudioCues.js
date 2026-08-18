@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { useApp } from '../context/AppContext'
 
 // sintetizado via Web Audio (sem ficheiros)
 export function useAudioCues() {
+  const { soundEnabled } = useApp()
   const ctxRef = useRef(null)
 
   function getContext() {
@@ -34,6 +36,7 @@ export function useAudioCues() {
   }, [])
 
   const play = useCallback((kind) => {
+    if (!soundEnabled) return
     if (kind === 'tick') beep(880, 100)
     else if (kind === 'done') beep(1320, 250)
     else if (kind === 'finish') {
@@ -43,7 +46,7 @@ export function useAudioCues() {
       beep(G5, 100, 0.2)
       beep(C6, 300, 0.3)
     }
-  }, [beep])
+  }, [beep, soundEnabled])
 
   useEffect(() => {
     return () => { ctxRef.current?.close() }
