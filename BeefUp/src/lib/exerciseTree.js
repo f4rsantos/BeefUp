@@ -1,8 +1,10 @@
 import exercisesBase from '../data/exercisesBase.json'
+import exercisesBulk from '../data/exercisesBulk.json'
 import exerciseEquipment from '../data/exerciseEquipment.json'
 import { localizedName } from './localizedName'
 
-const BASE_BY_ID = Object.fromEntries(exercisesBase.map((b) => [b.id, b]))
+const ALL_BASE = [...exercisesBase, ...exercisesBulk]
+const BASE_BY_ID = Object.fromEntries(ALL_BASE.map((b) => [b.id, b]))
 const EQUIPMENT_BY_ID = Object.fromEntries(exerciseEquipment.map((e) => [e.id, e]))
 
 let customBase = []
@@ -40,6 +42,7 @@ const BODY_PART_LABELS = {
   chest: 'Peito',
   legs: 'Pernas',
   'lower legs': 'Pernas inferiores',
+  neck: 'Pescoço',
   shoulders: 'Ombros',
   'upper arms': 'Braços',
   'upper legs': 'Pernas',
@@ -47,22 +50,58 @@ const BODY_PART_LABELS = {
 }
 
 const MUSCLE_LABELS = {
+  abductors: 'Abdutores',
+  abdominals: 'Abdominais',
   abs: 'Abdominais',
+  adductors: 'Adutores',
   back: 'Costas',
   biceps: 'Bíceps',
+  brachialis: 'Braquial',
   calves: 'Gémeos',
   cardio: 'Cardio',
+  'cardiovascular system': 'Sistema cardiovascular',
   chest: 'Peito',
+  core: 'Core',
   delts: 'Deltoides',
+  deltoids: 'Deltoides',
   forearms: 'Antebraços',
   glutes: 'Glúteos',
+  'grip muscles': 'Músculos de preensão',
+  groin: 'Virilha',
   hamstrings: 'Isquiotibiais',
+  'hip flexors': 'Flexores da anca',
+  'inner thighs': 'Parte interna da coxa',
   lats: 'Dorsais',
+  'latissimus dorsi': 'Grande dorsal',
+  'levator scapulae': 'Elevador da escápula',
+  'lower abs': 'Abdominais inferiores',
+  'lower back': 'Lombar',
+  neck: 'Pescoço',
+  obliques: 'Oblíquos',
   pectorals: 'Peitorais',
   quads: 'Quadríceps',
+  quadriceps: 'Quadríceps',
+  'rear deltoids': 'Deltoides posteriores',
+  rhomboids: 'Rombóides',
+  'rotator cuff': 'Manguito rotador',
+  'serratus anterior': 'Serrátil anterior',
   shoulders: 'Ombros',
+  soleus: 'Solear',
+  spine: 'Coluna',
+  sternocleidomastoid: 'Esternocleidomastoideu',
   traps: 'Trapézios',
+  trapezius: 'Trapézios',
   triceps: 'Tríceps',
+  'upper back': 'Costas superiores',
+  'upper chest': 'Peito superior',
+  'wrist extensors': 'Extensores do pulso',
+  'wrist flexors': 'Flexores do pulso',
+  wrists: 'Pulsos',
+  ankles: 'Tornozelos',
+  'ankle stabilizers': 'Estabilizadores do tornozelo',
+  feet: 'Pés',
+  hands: 'Mãos',
+  shins: 'Canelas',
 }
 
 // Which MUSCLE_LABELS keys belong under each bodyPart — lets the custom-exercise
@@ -77,6 +116,7 @@ const BODY_PART_MUSCLES = {
   'lower legs': ['calves'],
   waist: ['abs'],
   cardio: ['cardio'],
+  neck: ['levator scapulae', 'sternocleidomastoid', 'trapezius'],
 }
 
 function lookupLabel(labels, key, lang) {
@@ -102,10 +142,12 @@ export const BODY_PART_ACCENT = {
   'lower legs': '#14b8a6',
   waist: '#eab308',
   cardio: '#ec4899',
+  neck: '#64748b',
 }
 
 export const BODY_PART_POSITIONS = {
   front: {
+    neck: { x: 47, y: 9, side: 'left' },
     shoulders: { x: 26, y: 16, side: 'left' },
     'upper arms': { x: 18, y: 28, side: 'left' },
     waist: { x: 32, y: 42, side: 'left' },
@@ -114,6 +156,7 @@ export const BODY_PART_POSITIONS = {
     'lower legs': { x: 68, y: 86, side: 'right' },
   },
   back: {
+    neck: { x: 47, y: 9, side: 'left' },
     shoulders: { x: 26, y: 16, side: 'left' },
     'upper arms': { x: 18, y: 30, side: 'left' },
     'upper legs': { x: 32, y: 63, side: 'left' },
@@ -161,7 +204,7 @@ export function resolveExercise(ref) {
 }
 
 export function listBaseExercises() {
-  return [...exercisesBase, ...customBase]
+  return [...ALL_BASE, ...customBase]
 }
 
 export function matchesExerciseQuery(ex, query) {
@@ -196,11 +239,11 @@ export function normalizeWorkoutExercises(list) {
 }
 
 export function listBodyParts() {
-  return [...new Set(exercisesBase.map((b) => b.bodyPart))]
+  return [...new Set(ALL_BASE.map((b) => b.bodyPart))]
 }
 
 export function listEquipmentUsed() {
-  const used = new Set(exercisesBase.flatMap((b) => b.equipment))
+  const used = new Set(ALL_BASE.flatMap((b) => b.equipment))
   return exerciseEquipment.filter((e) => used.has(e.id))
 }
 

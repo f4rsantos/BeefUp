@@ -1,13 +1,117 @@
 [
-  { "id": "bodyweight", "name": "Bodyweight", "namePt": "Peso do corpo" },
-  { "id": "barbell", "name": "Barbell", "namePt": "Barra" },
-  { "id": "dumbbell", "name": "Dumbbell", "namePt": "Halteres" },
-  { "id": "cable", "name": "Cable", "namePt": "Cabo" },
-  { "id": "machine", "name": "Machine", "namePt": "Máquina" },
-  { "id": "smith_machine", "name": "Smith machine", "namePt": "Máquina smith" },
-  { "id": "kettlebell", "name": "Kettlebell", "namePt": "Kettlebell" },
-  { "id": "band", "name": "Band", "namePt": "Elástico" },
-  { "id": "rings", "name": "Rings", "namePt": "Argolas" },
-  { "id": "medicine_ball", "name": "Medicine ball", "namePt": "Bola medicinal" },
-  { "id": "sandbag", "name": "Sandbag", "namePt": "Saco de areia" }
+  {
+    "id": "bodyweight",
+    "name": "Bodyweight",
+    "namePt": "Peso do corpo"
+  },
+  {
+    "id": "barbell",
+    "name": "Barbell",
+    "namePt": "Barra"
+  },
+  {
+    "id": "dumbbell",
+    "name": "Dumbbell",
+    "namePt": "Halteres"
+  },
+  {
+    "id": "cable",
+    "name": "Cable",
+    "namePt": "Cabo"
+  },
+  {
+    "id": "machine",
+    "name": "Machine",
+    "namePt": "Máquina"
+  },
+  {
+    "id": "smith_machine",
+    "name": "Smith machine",
+    "namePt": "Máquina smith"
+  },
+  {
+    "id": "kettlebell",
+    "name": "Kettlebell",
+    "namePt": "Kettlebell"
+  },
+  {
+    "id": "band",
+    "name": "Band",
+    "namePt": "Elástico"
+  },
+  {
+    "id": "rings",
+    "name": "Rings",
+    "namePt": "Argolas"
+  },
+  {
+    "id": "medicine_ball",
+    "name": "Medicine ball",
+    "namePt": "Bola medicinal"
+  },
+  {
+    "id": "sandbag",
+    "name": "Sandbag",
+    "namePt": "Saco de areia"
+  },
+  {
+    "id": "weighted",
+    "name": "Weighted",
+    "namePt": "Peso adicional"
+  },
+  {
+    "id": "stability_ball",
+    "name": "Stability ball",
+    "namePt": "Bola de equilíbrio"
+  },
+  {
+    "id": "assisted",
+    "name": "Assisted machine",
+    "namePt": "Máquina assistida"
+  },
+  {
+    "id": "sled",
+    "name": "Sled",
+    "namePt": "Trenó"
+  },
+  {
+    "id": "rope",
+    "name": "Rope",
+    "namePt": "Corda"
+  },
+  {
+    "id": "roller",
+    "name": "Roller",
+    "namePt": "Rolo"
+  },
+  {
+    "id": "bosu_ball",
+    "name": "Bosu ball",
+    "namePt": "Bosu"
+  },
+  {
+    "id": "cardio_machine",
+    "name": "Cardio machine",
+    "namePt": "Máquina de cardio"
+  },
+  {
+    "id": "sledgehammer",
+    "name": "Sledgehammer",
+    "namePt": "Marreta"
+  },
+  {
+    "id": "tire",
+    "name": "Tire",
+    "namePt": "Pneu"
+  },
+  {
+    "id": "plate",
+    "name": "Weight plate",
+    "namePt": "Disco"
+  },
+  {
+    "id": "bicycle",
+    "name": "Bicycle",
+    "namePt": "Bicicleta"
+  }
 ]
