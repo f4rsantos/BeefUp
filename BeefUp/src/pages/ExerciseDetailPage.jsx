@@ -1,10 +1,13 @@
-import { ChevronLeft, Image as ImageIcon } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName"
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function ExerciseDetailPage({ exercise, onBack }) {
-  const { t, lang } = useApp();
+  const { t, lang, deleteCustomExercise } = useApp();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const name = localizedName(exercise, lang);
   const description = lang === "pt" ? exercise.descriptionPt : exercise.description;
@@ -50,6 +53,15 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
             >
               {t.customExerciseBadge}
             </span>
+          )}
+          {exercise.custom && (
+            <button
+              className="btn btn-ghost p-2"
+              onClick={() => setConfirmingDelete(true)}
+              aria-label={t.delete}
+            >
+              <Trash2 size={18} color="var(--muted)" />
+            </button>
           )}
         </div>
         <div
@@ -103,6 +115,20 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
           ))}
         </div>
       </div>
+      {confirmingDelete && (
+        <ConfirmModal
+          title={t.deleteCustomExerciseTitle}
+          message={t.deleteCustomExerciseConfirm.replace("{name}", name)}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={() => {
+            deleteCustomExercise(exercise.id);
+            setConfirmingDelete(false);
+            onBack();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -300,6 +300,8 @@ const strings = {
     deleteFoodConfirm: 'Isto elimina "{name}" do dia de hoje.',
     deleteCustomFoodTitle: 'Eliminar alimento?',
     deleteCustomFoodConfirm: 'Isto elimina "{name}" da tua lista de alimentos personalizados.',
+    deleteCustomExerciseTitle: 'Eliminar exercício?',
+    deleteCustomExerciseConfirm: 'Isto elimina "{name}" dos teus exercícios personalizados.',
     macrosFromGoal: 'Macros dão {kcal} kcal',
     favouriteFood: 'Marcar como favorito',
 
@@ -707,6 +709,8 @@ const strings = {
     deleteFoodConfirm: 'This removes "{name}" from today.',
     deleteCustomFoodTitle: 'Delete food?',
     deleteCustomFoodConfirm: 'This removes "{name}" from your custom foods.',
+    deleteCustomExerciseTitle: 'Delete exercise?',
+    deleteCustomExerciseConfirm: 'This removes "{name}" from your custom exercises.',
     macrosFromGoal: 'Macros add up to {kcal} kcal',
     favouriteFood: 'Mark as favourite',
 

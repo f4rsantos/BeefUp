@@ -126,4 +126,5 @@ export const db = {
   // Custom exercises helpers
   saveCustomExercise: (exercise) => tx(STORES.customExercises, 'readwrite', s => s.put(exercise)),
   getAllCustomExercises: () => tx(STORES.customExercises, 'readonly', s => s.getAll()),
+  removeCustomExercise: (id) => tx(STORES.customExercises, 'readwrite', s => s.delete(id)),
 }

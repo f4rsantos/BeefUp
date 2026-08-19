@@ -293,6 +293,20 @@ export function AppProvider({ children }) {
     setCustomExercises(next)
   }, [])
 
+  const deleteCustomExercise = useCallback(async (id) => {
+    await db.removeCustomExercise(id)
+    const next = removeById(customExercisesRef.current, id)
+    customExercisesRef.current = next
+    registerCustomExercises(next)
+    setCustomExercises(next)
+    setFavouriteExercises(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      setLS('favExercises', next)
+      return next
+    })
+  }, [])
+
   const setWaterToday = useCallback(async (date, ml) => {
     await db.setWater(date, ml)
     setWaterMap(prev => ({ ...prev, [date]: ml }))
@@ -365,7 +379,7 @@ export function AppProvider({ children }) {
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
     customFoods, saveCustomFood, deleteCustomFood,
-    customExercises, saveCustomExercise,
+    customExercises, saveCustomExercise, deleteCustomExercise,
     favouriteFoods, toggleFavouriteFood,
     recentFoodIds, addRecentFood,
     waterMap, setWaterToday,
