@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, Plus, ChevronLeft, ChevronDown, X, Star, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { foodProvider, scaleFood, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
+import { foodProvider, scaleFood, MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
+import { RateLimitError } from "../lib/openFoodFacts";
 import { uid, todayISO } from "../lib/planUtils";
 import { setLS } from "../lib/crypto";
 import { macroShares } from "../lib/nutritionCalc";
@@ -10,14 +11,29 @@ import NumberField from "./NumberField";
 import ConfirmModal from "./ConfirmModal";
 import { localizedNameOrEnglish } from "../lib/localizedName"
 
-const EMPTY_CUSTOM_FOOD = { name: "", kcal: "", protein: "", carbs: "", fat: "", fiber: "", sugar: "", saturatedFat: "", sodium: "" };
+const SEARCH_DEBOUNCE_MS = 500;
+
+const EMPTY_CUSTOM_FOOD = {
+  name: "", kcal: "", protein: "", carbs: "", fat: "",
+  ...Object.fromEntries(MICRONUTRIENT_KEYS.map((k) => [k, ""])),
+};
+
+function matchesFood(food, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (food.name || "").toLowerCase().includes(q)
+    || (food.namePt || "").toLowerCase().includes(q);
+}
 
 export default function FoodSearchModal({ meal, onClose, initialDraft }) {
-  const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, deleteCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
+  const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, deleteCustomFood, favouriteFoods, toggleFavouriteFood, recentFoodIds, addRecentFood } = useApp();
   const [pendingDelete, setPendingDelete] = useState(null); // custom food awaiting delete confirmation
-  const isCustom = (food) => customFoods.some((f) => f.id === food.id);
+  const isCustom = (food) => customFoods.some((f) => f.id === food.id && f.source !== "off");
   const [query, setQuery] = useState(() => initialDraft?.query ?? "");
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState([]); 
+  const [searchState, setSearchState] = useState("idle"); // idle | loading | error | limited
+  const [retryAfter, setRetryAfter] = useState(0); 
+  const [retryNonce, setRetryNonce] = useState(0);
   const [selected, setSelected] = useState(() => initialDraft?.selected ?? null); // food being portioned
   const [grams, setGrams] = useState(() => initialDraft?.grams ?? 100);
   const [unitMode, setUnitMode] = useState(() => initialDraft?.unitMode ?? false); // false = grams, true = whole-unit count (servings)
@@ -36,26 +52,91 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
     return () => clearTimeout(id);
   }, [meal, query, selected, grams, unitMode, unitCount, creating, cf]);
 
-  useEffect(() => {
-    let alive = true;
-    foodProvider.searchFoods(query).then((r) => {
-      if (alive) {
-        // merge custom foods matching the query at the top
-        const q = query.toLowerCase();
-        const custom = customFoods.filter(
-          (f) => !q || f.name.toLowerCase().includes(q),
-        );
-        setResults([...custom, ...r]);
-      }
-    });
-    return () => { alive = false; };
-  }, [query, customFoods]);
+  const localMatches = useMemo(
+    () => customFoods.filter((f) => matchesFood(f, query.trim())),
+    [customFoods, query],
+  );
 
-  // Favourites always float to the top, otherwise same order as returned.
-  const sortedResults = [
-    ...results.filter((f) => favouriteFoods.includes(f.id)),
-    ...results.filter((f) => !favouriteFoods.includes(f.id)),
-  ];
+  useEffect(() => {
+    const q = query.trim();
+
+    if (!q) return;
+
+    const controller = new AbortController();
+    const id = setTimeout(() => {
+      setSearchState("loading");
+      foodProvider
+        .searchFoods(q, lang, controller.signal)
+        .then((r) => {
+          setResults(r);
+          setSearchState("idle");
+        })
+        .catch((err) => {
+          if (err?.name === "AbortError") return; // superseded by a newer query
+          setResults([]);
+          if (err instanceof RateLimitError) {
+            setRetryAfter(Math.max(1, Math.ceil(err.retryAfterMs / 1000)));
+            setSearchState("limited");
+          } else {
+            setSearchState("error");
+          }
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(id);
+      controller.abort();
+    };
+  }, [query, lang, retryNonce]);
+
+  useEffect(() => {
+    if (searchState !== "limited") return;
+    const id = setInterval(() => {
+      setRetryAfter((s) => {
+        if (s <= 1) {
+          setRetryNonce((n) => n + 1);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [searchState]);
+
+  const isSearching = query.trim().length > 0;
+
+  const sortedResults = useMemo(() => {
+    const seen = new Set();
+    const merged = [];
+    for (const f of [...localMatches, ...(isSearching ? results : [])]) {
+      if (seen.has(f.id)) continue;
+      seen.add(f.id);
+      merged.push(f);
+    }
+    return [
+      ...merged.filter((f) => favouriteFoods.includes(f.id)),
+      ...merged.filter((f) => !favouriteFoods.includes(f.id)),
+    ];
+  }, [localMatches, results, favouriteFoods, isSearching]);
+
+  const initialRows = useMemo(() => {
+    const recentIds = new Set(recentFoodIds);
+    const recent = recentFoodIds.map((id) => customFoods.find((f) => f.id === id)).filter(Boolean);
+    const rest = localMatches.filter((f) => !recentIds.has(f.id));
+    const combined = [...recent, ...rest];
+    return [
+      ...combined.filter((f) => favouriteFoods.includes(f.id)),
+      ...combined.filter((f) => !favouriteFoods.includes(f.id)),
+    ];
+  }, [recentFoodIds, customFoods, localMatches, favouriteFoods]);
+
+  async function handleToggleFavourite(food) {
+    const alreadyFav = favouriteFoods.includes(food.id);
+    if (!alreadyFav && !customFoods.some((f) => f.id === food.id)) {
+      await saveCustomFood(food);
+    }
+    toggleFavouriteFood(food.id);
+  }
 
   function pick(food) {
     setSelected(food);
@@ -64,16 +145,18 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
     setUnitMode(false);
   }
 
-  const effectiveGrams = unitMode ? unitCount * (selected?.serving || 100) : grams;
+  const unitSize = selected?.unitGrams || selected?.serving || 100;
+  const effectiveGrams = unitMode ? unitCount * unitSize : grams;
+  const unitEquivalent = effectiveGrams / unitSize;
+  const unitEquivalentLabel = Number.isInteger(unitEquivalent) ? unitEquivalent : unitEquivalent.toFixed(1);
 
   function switchToUnitMode() {
-    const serving = selected?.serving || 100;
-    setUnitCount(Math.max(1, Math.round(grams / serving)));
+    setUnitCount(Math.max(1, Math.round(grams / unitSize)));
     setUnitMode(true);
   }
 
   function switchToGramsMode() {
-    setGrams(unitCount * (selected?.serving || 100));
+    setGrams(unitCount * unitSize);
     setUnitMode(false);
   }
 
@@ -88,6 +171,10 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
       qty: effectiveGrams,
       ...m,
     });
+    if (!customFoods.some((f) => f.id === selected.id)) {
+      await saveCustomFood(selected);
+    }
+    addRecentFood(selected.id);
     onClose();
   }
 
@@ -113,6 +200,50 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
 
   const mealLabel = mealTypes.find((m) => m.id === meal)?.label || t[meal] || meal;
 
+  function renderFoodRow(f) {
+    return (
+      <button
+        key={f.id}
+        className="flex items-center justify-between"
+        style={{
+          padding: "16px 16px",
+          borderRadius: 14,
+          background: "var(--surface2)",
+          cursor: "pointer",
+          textAlign: "left",
+          border: "none",
+        }}
+        onClick={() => pick(f)}
+      >
+        <div style={{ minWidth: 0 }}>
+          <p className="font-semibold truncate" style={{ color: "var(--text)", marginBottom: 4, fontSize: 15 }}>
+            {localizedNameOrEnglish(f, lang)}
+          </p>
+          <p style={{ color: "var(--muted)", fontSize: 13 }}>
+            {f.kcal} {t.kcal} · {f.servingLabel}
+          </p>
+        </div>
+        <div className="flex items-center gap-1" style={{ flexShrink: 0, marginLeft: 12 }}>
+          <span
+            role="button"
+            tabIndex={0}
+            className="btn-icon"
+            style={{ padding: 6, display: "inline-flex", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); handleToggleFavourite(f); }}
+            aria-label={t.favouriteFood}
+          >
+            <Star
+              size={17}
+              fill={favouriteFoods.includes(f.id) ? "var(--accent-2)" : "none"}
+              color={favouriteFoods.includes(f.id) ? "var(--accent-2)" : "var(--muted)"}
+            />
+          </span>
+          <Plus size={18} style={{ color: "var(--accent-2)" }} />
+        </div>
+      </button>
+    );
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-center" style={{ maxWidth: 440, padding: 26 }} onClick={(e) => e.stopPropagation()}>
@@ -129,7 +260,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               </h3>
               <button
                 className="btn btn-ghost p-2"
-                onClick={() => toggleFavouriteFood(selected.id)}
+                onClick={() => handleToggleFavourite(selected)}
                 aria-label={t.favouriteFood}
               >
                 <Star
@@ -148,7 +279,10 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
                 </button>
               )}
             </div>
-            <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>{selected.servingLabel}</p>
+            {/* grams<->units */}
+            <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>
+              {Math.round(effectiveGrams)}g ({unitEquivalentLabel}un)
+            </p>
 
             <div className="flex items-center justify-between mt-1 mb-2">
               <label className="section-title" style={{ fontSize: 13, margin: 0 }}>{t.quantity}</label>
@@ -185,6 +319,8 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
             )}
 
             <MacroPreview macros={scaleFood(selected, effectiveGrams)} t={t} />
+
+            <MicroPreview food={selected} macros={scaleFood(selected, effectiveGrams)} t={t} />
 
             <button className="btn btn-primary w-full py-3.5" style={{ fontSize: 15, marginTop: 15 }} onClick={confirmAdd}>
               <Plus size={18} /> {t.add} · {mealLabel}
@@ -241,15 +377,17 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
 
             {showMicros && (
               <div className="grid grid-cols-2 gap-4 fade-in" style={{ marginBottom: 15 }}>
-                {MICRONUTRIENT_KEYS.map((field) => (
-                  <div key={field}>
-                    <label className="section-title" style={{ fontSize: 13 }}>{t[field]}</label>
+                {MICRONUTRIENTS.map(({ key, unit }) => (
+                  <div key={key}>
+                    <label className="section-title" style={{ fontSize: 13 }}>
+                      {t[key]} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({unit})</span>
+                    </label>
                     <NumberField
                       className="field mt-2"
                       style={{ fontSize: 16, padding: "13px 14px" }}
-                      placeholder={t[field]}
-                      value={cf[field]}
-                      onChange={(e) => setCf({ ...cf, [field]: e.target.value })}
+                      placeholder={unit}
+                      value={cf[key]}
+                      onChange={(e) => setCf({ ...cf, [key]: e.target.value })}
                     />
                   </div>
                 ))}
@@ -289,49 +427,32 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
 
             {/* Rows should use `--surface2`, evitando o contraste branco-sobre-branco. */}
             <div className="flex flex-col gap-2.5" style={{ maxHeight: "50vh", overflowY: "auto" }}>
-              {sortedResults.map((f) => (
-                <button
-                  key={f.id}
-                  className="flex items-center justify-between"
-                  style={{
-                    padding: "16px 16px",
-                    borderRadius: 14,
-                    background: "var(--surface2)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    border: "none",
-                  }}
-                  onClick={() => pick(f)}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <p className="font-semibold truncate" style={{ color: "var(--text)", marginBottom: 4, fontSize: 15 }}>
-                      {localizedNameOrEnglish(f, lang)}
-                    </p>
-                    <p style={{ color: "var(--muted)", fontSize: 13 }}>
-                      {f.kcal} {t.kcal} · {f.servingLabel}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1" style={{ flexShrink: 0, marginLeft: 12 }}>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className="btn-icon"
-                      style={{ padding: 6, display: "inline-flex", cursor: "pointer" }}
-                      onClick={(e) => { e.stopPropagation(); toggleFavouriteFood(f.id); }}
-                      aria-label={t.favouriteFood}
-                    >
-                      <Star
-                        size={17}
-                        fill={favouriteFoods.includes(f.id) ? "var(--accent-2)" : "none"}
-                        color={favouriteFoods.includes(f.id) ? "var(--accent-2)" : "var(--muted)"}
-                      />
-                    </span>
-                    <Plus size={18} style={{ color: "var(--accent-2)" }} />
-                  </div>
-                </button>
-              ))}
-              {results.length === 0 && (
-                <p className="text-center py-6" style={{ color: "var(--muted)", fontSize: 15 }}>{t.noResults}</p>
+              {(isSearching ? sortedResults : initialRows).map(renderFoodRow)}
+              {/* Status sits below the rows*/}
+              {isSearching && searchState === "loading" && (
+                <p className="text-center py-4" style={{ color: "var(--muted)", fontSize: 14 }}>{t.searchingFood}</p>
+              )}
+              {isSearching && searchState === "error" && (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <p style={{ color: "var(--danger)", fontSize: 14 }}>{t.foodSearchFailed}</p>
+                  {/* All 5 built-in retries already failed by the time this shows*/}
+                  <button
+                    className="btn btn-ghost py-2 px-4 text-sm"
+                    onClick={() => { setSearchState("loading"); setRetryNonce((n) => n + 1); }}
+                  >
+                    {t.retry}
+                  </button>
+                </div>
+              )}
+              {isSearching && searchState === "limited" && (
+                <p className="text-center py-4" style={{ color: "var(--warn)", fontSize: 14 }}>
+                  {t.foodSearchLimit.replace("{n}", retryAfter)}
+                </p>
+              )}
+              {sortedResults.length === 0 && (!isSearching || searchState === "idle") && (
+                <p className="text-center py-6" style={{ color: "var(--muted)", fontSize: 15 }}>
+                  {isSearching ? t.noResults : t.typeToSearch}
+                </p>
               )}
             </div>
           </div>
@@ -352,6 +473,32 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function MicroPreview({ food, macros, t }) {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-2" style={{ marginTop: 16 }}>
+      {MICRONUTRIENTS.map(({ key, unit }) => {
+        const known = food[key] != null;
+        return (
+          <div key={key} className="flex items-center justify-between gap-2" style={{ minWidth: 0 }}>
+            <span className="text-xs" style={{ color: "var(--muted)", lineHeight: 1.25 }}>{t[key]}</span>
+            <span
+              className="text-xs font-semibold"
+              style={{
+                color: known ? "var(--text)" : "var(--muted)",
+                fontStyle: known ? "normal" : "italic",
+                fontVariantNumeric: "tabular-nums",
+                flexShrink: 0,
+              }}
+            >
+              {known ? `${macros[key]} ${unit}` : t.noData}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
