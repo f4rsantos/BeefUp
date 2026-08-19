@@ -89,6 +89,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer });
     }, 300);
     return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt]);
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
