@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, ChevronLeft, ChevronDown, X, Star } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronDown, X, Star, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { foodProvider, scaleFood, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { uid, todayISO } from "../lib/planUtils";
@@ -7,12 +7,15 @@ import { setLS } from "../lib/crypto";
 import { macroShares } from "../lib/nutritionCalc";
 import MacroRing from "./MacroRing";
 import NumberField from "./NumberField";
+import ConfirmModal from "./ConfirmModal";
 import { localizedNameOrEnglish } from "../lib/localizedName"
 
 const EMPTY_CUSTOM_FOOD = { name: "", kcal: "", protein: "", carbs: "", fat: "", fiber: "", sugar: "", saturatedFat: "", sodium: "" };
 
 export default function FoodSearchModal({ meal, onClose, initialDraft }) {
-  const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
+  const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, deleteCustomFood, favouriteFoods, toggleFavouriteFood } = useApp();
+  const [pendingDelete, setPendingDelete] = useState(null); // custom food awaiting delete confirmation
+  const isCustom = (food) => customFoods.some((f) => f.id === food.id);
   const [query, setQuery] = useState(() => initialDraft?.query ?? "");
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(() => initialDraft?.selected ?? null); // food being portioned
@@ -135,6 +138,15 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
                   color={favouriteFoods.includes(selected.id) ? "var(--accent-2)" : "var(--muted)"}
                 />
               </button>
+              {isCustom(selected) && (
+                <button
+                  className="btn btn-ghost p-2"
+                  onClick={() => setPendingDelete(selected)}
+                  aria-label={t.delete}
+                >
+                  <Trash2 size={20} color="var(--muted)" />
+                </button>
+              )}
             </div>
             <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>{selected.servingLabel}</p>
 
@@ -323,6 +335,21 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               )}
             </div>
           </div>
+        )}
+
+        {pendingDelete && (
+          <ConfirmModal
+            title={t.deleteCustomFoodTitle}
+            message={t.deleteCustomFoodConfirm.replace("{name}", localizedNameOrEnglish(pendingDelete, lang))}
+            cancelLabel={t.cancel}
+            confirmLabel={t.delete}
+            onCancel={() => setPendingDelete(null)}
+            onConfirm={() => {
+              deleteCustomFood(pendingDelete.id);
+              if (selected?.id === pendingDelete.id) setSelected(null);
+              setPendingDelete(null);
+            }}
+          />
         )}
       </div>
     </div>

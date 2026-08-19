@@ -259,6 +259,17 @@ export function AppProvider({ children }) {
     setCustomFoods(prev => upsertById(prev, food))
   }, [])
 
+  const deleteCustomFood = useCallback(async (id) => {
+    await db.removeFood(id)
+    setCustomFoods(prev => removeById(prev, id))
+    setFavouriteFoods(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      setLS('favFoods', next)
+      return next
+    })
+  }, [])
+
   const saveCustomExercise = useCallback(async (exercise) => {
     await db.saveCustomExercise(exercise)
     const next = upsertById(customExercisesRef.current, exercise)
@@ -328,7 +339,7 @@ export function AppProvider({ children }) {
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
-    customFoods, saveCustomFood,
+    customFoods, saveCustomFood, deleteCustomFood,
     customExercises, saveCustomExercise,
     favouriteFoods, toggleFavouriteFood,
     waterMap, setWaterToday,

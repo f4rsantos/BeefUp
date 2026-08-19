@@ -288,6 +288,8 @@ const strings = {
     fatShort: 'G',
     deleteFoodTitle: 'Eliminar registo?',
     deleteFoodConfirm: 'Isto elimina "{name}" do dia de hoje.',
+    deleteCustomFoodTitle: 'Eliminar alimento?',
+    deleteCustomFoodConfirm: 'Isto elimina "{name}" da tua lista de alimentos personalizados.',
     macrosFromGoal: 'Macros dão {kcal} kcal',
     favouriteFood: 'Marcar como favorito',
 
@@ -683,6 +685,8 @@ const strings = {
     fatShort: 'F',
     deleteFoodTitle: 'Delete entry?',
     deleteFoodConfirm: 'This removes "{name}" from today.',
+    deleteCustomFoodTitle: 'Delete food?',
+    deleteCustomFoodConfirm: 'This removes "{name}" from your custom foods.',
     macrosFromGoal: 'Macros add up to {kcal} kcal',
     favouriteFood: 'Mark as favourite',
 
