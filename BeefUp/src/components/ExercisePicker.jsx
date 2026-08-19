@@ -29,6 +29,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [activeBase, setActiveBase] = useState(null);
   const [activeEquipmentId, setActiveEquipmentId] = useState(null);
   const [activeBarType, setActiveBarType] = useState("");
+  const [selectedVariantIds, setSelectedVariantIds] = useState([]);
   const [queue, setQueue] = useState(() => new Map()); // baseId -> ref
 
   const bodyParts = useMemo(() => listBodyParts(), []);
@@ -76,9 +77,11 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     setActiveBase(null);
     setActiveEquipmentId(null);
     setActiveBarType("");
+    setSelectedVariantIds([]);
   }
 
   function proceedAfterEquipment(baseId, equipmentId) {
+    setSelectedVariantIds([]);
     if (equipmentId === "barbell") {
       setActiveEquipmentId(equipmentId);
       setStep("bartype");
@@ -123,6 +126,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
 
   function pickBarType(barType) {
     setActiveBarType(barType);
+    setSelectedVariantIds([]);
     const variantOptions = getVariantOptions(activeBase.id, activeEquipmentId);
     if (variantOptions.length > 0) {
       setStep("variant");
@@ -131,8 +135,14 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     addToQueue(activeBase.id, activeEquipmentId, "", barType);
   }
 
-  function pickVariant(variantId) {
-    addToQueue(activeBase.id, activeEquipmentId, variantId, activeBarType);
+  function toggleVariant(variantId) {
+    setSelectedVariantIds((prev) =>
+      prev.includes(variantId) ? prev.filter((id) => id !== variantId) : [...prev, variantId]
+    );
+  }
+
+  function confirmVariants() {
+    addToQueue(activeBase.id, activeEquipmentId, selectedVariantIds.join("+"), activeBarType);
   }
 
   function backFromCustomize() {
@@ -393,13 +403,26 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
             )}
 
             {step === "variant" && (
-              <div className="flex flex-wrap gap-2">
-                {variantOptions.map((v) => (
-                  <button key={v.id} className="chip" onClick={() => pickVariant(v.id)}>
-                    {localizedName(v, lang)}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {variantOptions.map((v) => (
+                    <button
+                      key={v.id}
+                      className={`chip ${selectedVariantIds.includes(v.id) ? "active" : ""}`}
+                      onClick={() => toggleVariant(v.id)}
+                    >
+                      {localizedName(v, lang)}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="btn btn-primary w-full mt-4"
+                  disabled={selectedVariantIds.length === 0}
+                  onClick={confirmVariants}
+                >
+                  {t.confirm}
+                </button>
+              </>
             )}
           </div>
         </div>

@@ -165,9 +165,12 @@ export const BODY_PART_POSITIONS = {
   },
 }
 
-function composeName(base, equipment, variant, field) {
+// `variants` is an array: a ref can combine more than one variant of the same
+// base (e.g. dumbbell bicep curl, standing + alternating at once) via a
+// '+'-joined variantId (see buildExerciseRef/parseExerciseRef below).
+function composeName(base, equipment, variants, field) {
   let name = base[field]
-  if (variant) name += ` ${lowerFirst(variant[field])}`
+  for (const variant of variants) name += ` ${lowerFirst(variant[field])}`
   const showEquipment = equipment && equipment.id !== 'bodyweight' && base.equipment.length > 1
   if (showEquipment) name += ` (${lowerFirst(equipment[field])})`
   return name
@@ -179,13 +182,15 @@ export function resolveExercise(ref) {
   if (!base) return null
 
   const equipment = EQUIPMENT_BY_ID[equipmentId] ?? EQUIPMENT_BY_ID[base.equipment[0]]
-  const variant = base.variants.find((v) => v.id === variantId) ?? null
+  const variants = variantId
+    ? variantId.split('+').map((id) => base.variants.find((v) => v.id === id)).filter(Boolean)
+    : []
 
   return {
     id: ref,
     baseId: base.id,
-    name: composeName(base, equipment, variant, 'name'),
-    namePt: composeName(base, equipment, variant, 'namePt'),
+    name: composeName(base, equipment, variants, 'name'),
+    namePt: composeName(base, equipment, variants, 'namePt'),
     bodyPart: base.bodyPart,
     target: base.target,
     muscleGroup: base.muscleGroup,
@@ -196,7 +201,7 @@ export function resolveExercise(ref) {
     instructions: base.instructions,
     instructionsPt: base.instructionsPt,
     equipment: equipment?.id ?? null,
-    variant: variant?.id ?? null,
+    variant: variants.length ? variants.map((v) => v.id).join('+') : null,
     defaultSets: base.defaultSets,
     defaultReps: base.defaultReps,
     defaultWeight: base.defaultWeight,
