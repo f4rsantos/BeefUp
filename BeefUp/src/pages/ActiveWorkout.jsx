@@ -34,13 +34,14 @@ function restoreSetTimer(saved) {
 }
 
 // Priority for weight/reps/note when a set isn't covered by real history:
-function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null) {
+function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null, barType = "") {
   return {
     id: uid(),
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
     note: lastNote || workoutItem?.note || "",
+    barType: barType || workoutItem?.barType || "",
     sets: Array.from({ length: ex.defaultSets }, (_, i) => {
       const last = lastSets[Math.min(i, lastSets.length - 1)];
       const fallbackWeight = workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : "");
@@ -270,11 +271,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
 
-  const addExercises = useCallback((refs) => {
-    const entries = refs
-      .map(resolveExercise)
-      .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id)));
+  const addExercises = useCallback((picks) => {
+    const entries = picks
+      .map(({ ref, barType }) => {
+        const ex = resolveExercise(ref);
+        return ex && buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, barType);
+      })
+      .filter(Boolean);
     if (entries.length === 0) return;
     setExercises((prev) => [...prev, ...entries]);
     setShowExPicker(false);
@@ -295,6 +298,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           name: e.name,
           namePt: e.namePt,
           note: e.note?.trim() ?? "",
+          barType: e.barType ?? "",
           sets: e.sets
             .filter((s) => s.done)
             .map((s) => ({ weight: s.weight, reps: s.reps, type: s.type })),

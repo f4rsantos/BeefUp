@@ -264,3 +264,18 @@ export function getEquipmentLabel(id, lang) {
   if (!eq) return id
   return localizedName(eq, lang)
 }
+
+export const BAR_TYPES = [
+  { id: 'olympic', name: 'Olympic (20kg)', namePt: 'Olímpica (20kg)' },
+  { id: 'women', name: "Women's (15kg)", namePt: 'Feminina (15kg)' },
+  { id: 'ez', name: 'EZ', namePt: 'EZ' },
+  { id: 'trap', name: 'Trap bar', namePt: 'Trap bar' },
+  { id: 'safety_squat', name: 'Safety squat', namePt: 'Safety squat' },
+]
+const BAR_TYPE_BY_ID = Object.fromEntries(BAR_TYPES.map((b) => [b.id, b]))
+
+export function getBarTypeLabel(id, lang) {
+  const bt = BAR_TYPE_BY_ID[id]
+  if (!bt) return id
+  return localizedName(bt, lang)
+}

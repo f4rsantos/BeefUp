@@ -180,10 +180,10 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
     setItems((prev) => prev.map((it, j) => (j === idx ? { ...it, ...patch } : it)));
   }
 
-  function addPicks(refs) {
+  function addPicks(picks) {
     setItems((prev) => [
       ...prev,
-      ...refs.map((ref) => ({ exerciseId: ref, sets: 3, reps: 10, rest: 90, weight: "" })),
+      ...picks.map(({ ref }) => ({ exerciseId: ref, sets: 3, reps: 10, rest: 90, weight: "" })),
     ]);
     setPicking(false);
   }
