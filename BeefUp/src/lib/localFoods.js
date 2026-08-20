@@ -1,5 +1,5 @@
 let catalog = null
-let foldedNames = null
+let foldedNamesByLang = {}
 let pending = null
 
 const DEFAULT_LIMIT = 25
@@ -20,7 +20,8 @@ export function loadLocalFoods() {
   if (!pending) {
     pending = import('../data/foodsBase.json').then((mod) => {
       catalog = mod.default
-      foldedNames = catalog.map((f) => foldText(f.namePt || f.name))
+      foldedNamesByLang.pt = catalog.map((f) => foldText(f.namePt || f.name))
+      foldedNamesByLang.en = catalog.map((f) => foldText(f.nameEn || f.namePt || f.name))
       return catalog
     })
   }
@@ -28,8 +29,9 @@ export function loadLocalFoods() {
 }
 
 // Todas as palavras, em qualquer ordem e posição.
-export function searchLocalFoods(query, limit = DEFAULT_LIMIT) {
+export function searchLocalFoods(query, limit = DEFAULT_LIMIT, lang = 'pt') {
   if (!catalog) return []
+  const foldedNames = foldedNamesByLang[lang] || foldedNamesByLang.pt
   const terms = foldText(query).split(/[^a-z0-9]+/).filter(Boolean)
   if (!terms.length) return []
 

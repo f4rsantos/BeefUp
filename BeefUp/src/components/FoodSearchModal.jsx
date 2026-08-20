@@ -71,8 +71,8 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
   );
 
   const catalogMatches = useMemo(
-    () => (catalogReady ? searchLocalFoods(query.trim()) : []),
-    [query, catalogReady],
+    () => (catalogReady ? searchLocalFoods(query.trim(), 25, lang) : []),
+    [query, catalogReady, lang],
   );
 
   // A API só entra quando a base local não responde, ou a pedido.
