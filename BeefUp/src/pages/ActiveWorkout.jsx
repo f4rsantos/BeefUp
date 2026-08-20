@@ -378,6 +378,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         onEnd={() => setEndModal("confirm")}
         onMinimize={onMinimize}
         minimizeLabel={t.minimize}
+        t={t}
       />
 
       {workoutName && (

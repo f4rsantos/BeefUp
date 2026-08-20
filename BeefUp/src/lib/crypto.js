@@ -1,4 +1,4 @@
-// AES-GCM encryption for localStorage values
+// AES-GCM helpers below are unused by setLS/getLS/removeLS — those are plain JSON, not encrypted.
 const ENC_KEY_NAME = 'beefup_enc_key'
 
 async function getKey() {

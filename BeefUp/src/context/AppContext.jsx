@@ -24,6 +24,12 @@ function removeById(list, id) {
   return list.filter((item) => item.id !== id)
 }
 
+function pruneOrphanFoodIds(prev, knownIds, lsKey) {
+  const kept = prev.filter((id) => knownIds.has(id))
+  if (kept.length !== prev.length) setLS(lsKey, kept)
+  return kept
+}
+
 const DEFAULT_MEAL_TYPES = [
   { id: 'breakfast', icon: 'coffee' },
   { id: 'morningSnack', icon: 'cookie' },
@@ -165,19 +171,9 @@ export function AppProvider({ children }) {
       setFoodLog(log)
       setCustomFoods(foods)
 
-      setFavouriteFoods(prev => {
-        const known = new Set(foods.map(f => f.id))
-        const kept = prev.filter(id => known.has(id))
-        if (kept.length !== prev.length) setLS('favFoods', kept)
-        return kept
-      })
-
-      setRecentFoodIds(prev => {
-        const known = new Set(foods.map(f => f.id))
-        const kept = prev.filter(id => known.has(id))
-        if (kept.length !== prev.length) setLS('recentFoods', kept)
-        return kept
-      })
+      const knownFoodIds = new Set(foods.map(f => f.id))
+      setFavouriteFoods(prev => pruneOrphanFoodIds(prev, knownFoodIds, 'favFoods'))
+      setRecentFoodIds(prev => pruneOrphanFoodIds(prev, knownFoodIds, 'recentFoods'))
       setCustomExercises(customEx)
       customExercisesRef.current = customEx
       registerCustomExercises(customEx)

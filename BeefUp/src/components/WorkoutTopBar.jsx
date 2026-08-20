@@ -2,7 +2,7 @@ import { ChevronDown, Dumbbell, Square, Timer as TimerIcon } from "lucide-react"
 import { formatElapsedClock } from "../lib/planUtils";
 import ProgressRing from "./ProgressRing";
 
-export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onEnd, onMinimize, minimizeLabel }) {
+export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onEnd, onMinimize, minimizeLabel, t }) {
   const restRunning = restState?.running ?? false;
   const restRemaining = restRunning ? Math.max(0, restState.duration - restState.elapsed) : 0;
 
@@ -20,10 +20,10 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
         >
           <ChevronDown size={16} />
         </button>
-        <button className="btn btn-ghost p-2.5" title="1RM" onClick={onOneRM}>
+        <button className="btn btn-ghost p-2.5" title={t.oneRM} onClick={onOneRM}>
           <Dumbbell size={16} />
         </button>
-        <button className={`btn btn-ghost ${restRunning ? "p-1.5" : "p-2.5"}`} title="Rest" onClick={onRest}>
+        <button className={`btn btn-ghost ${restRunning ? "p-1.5" : "p-2.5"}`} title={t.rest} onClick={onRest}>
           {restRunning ? (
             <ProgressRing value={restRemaining} max={restState.duration} size={26} stroke={3} color="var(--accent)">
               <span
@@ -61,7 +61,7 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
         </span>
       </div>
 
-      <button className="btn btn-danger p-2.5" title="End" onClick={onEnd}>
+      <button className="btn btn-danger p-2.5" title={t.end} onClick={onEnd}>
         <Square size={16} fill="currentColor" />
       </button>
     </div>

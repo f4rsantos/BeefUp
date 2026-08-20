@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import NumberField from './NumberField'
+import { epley } from '../lib/planUtils'
 
 export default function OneRMModal({ onClose }) {
   const { t } = useApp()
@@ -13,7 +14,7 @@ export default function OneRMModal({ onClose }) {
     const r = parseInt(reps)
     if (!w || !r || r <= 0) return null
     if (r === 1) return w
-    return (w * (1 + r / 30)).toFixed(1)
+    return epley(weight, reps).toFixed(1)
   })()
 
   return (

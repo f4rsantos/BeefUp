@@ -44,26 +44,24 @@ export function nowISO() {
   return new Date().toISOString()
 }
 
-export function lastCompletedSets(sessions, exerciseId) {
+function latestExerciseField(sessions, exerciseId, getField) {
   let latest = null
   for (const s of sessions) {
     const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
-    if (entry?.sets?.length && (!latest || s.date > latest.date)) {
-      latest = { date: s.date, sets: entry.sets }
+    const value = entry && getField(entry)
+    if (value && (!latest || s.date > latest.date)) {
+      latest = { date: s.date, value }
     }
   }
-  return latest?.sets ?? []
+  return latest?.value
+}
+
+export function lastCompletedSets(sessions, exerciseId) {
+  return latestExerciseField(sessions, exerciseId, (e) => (e.sets?.length ? e.sets : undefined)) ?? []
 }
 
 export function lastExerciseNote(sessions, exerciseId) {
-  let latest = null
-  for (const s of sessions) {
-    const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
-    if (entry?.note && (!latest || s.date > latest.date)) {
-      latest = { date: s.date, note: entry.note }
-    }
-  }
-  return latest?.note ?? ''
+  return latestExerciseField(sessions, exerciseId, (e) => e.note) ?? ''
 }
 
 export function formatElapsedClock(seconds) {
@@ -164,6 +162,18 @@ export function getMonthActivity(year, month, sessions, plans, activePlanId) {
 
 export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
+}
+
+export function addPlanDay(days, type, workouts) {
+  return [...days, { id: uid(), type, workoutId: type === 'workout' ? (workouts[0]?.id ?? null) : null }]
+}
+
+export function updatePlanDay(days, index, patch) {
+  return days.map((d, j) => (j === index ? { ...d, ...patch } : d))
+}
+
+export function removePlanDay(days, index) {
+  return days.filter((_, j) => j !== index)
 }
 
 // Warmup sets are excluded here and in every other stat helper below, so the

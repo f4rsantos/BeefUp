@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 import { getLS, setLS } from "../lib/crypto";
 
 export default function WorkoutPicker({ onSelect, onBack }) {
-  const { t, workouts } = useApp();
+  const { t, lang, workouts } = useApp();
   const [query, setQuery] = useState("");
   const [favIds, setFavIds] = useState(() => getLS("favWorkouts", []));
 

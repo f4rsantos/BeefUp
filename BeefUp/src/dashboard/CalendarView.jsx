@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import ConfirmModal from "../components/ConfirmModal";
 
-const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function localizedDow(lang) {
+  const locale = lang === "pt" ? "pt-PT" : undefined;
+  const monday = new Date(2024, 0, 1);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d.toLocaleDateString(locale, { weekday: "short" });
+  });
+}
 
 function isoOf(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
 export default function CalendarView() {
-  const { t, clients, saveClient } = useApp();
+  const { t, lang, clients, saveClient } = useApp();
+  const dow = useMemo(() => localizedDow(lang), [lang]);
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -62,7 +71,7 @@ export default function CalendarView() {
       </div>
 
       <div className="dash-cal-head">
-        {DOW.map((d) => <div key={d}>{d}</div>)}
+        {dow.map((d, i) => <div key={i}>{d}</div>)}
       </div>
       <div className="dash-cal-grid">
         {cells.map((d, i) => {

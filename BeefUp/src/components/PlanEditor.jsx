@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Plus, Trash2, Dumbbell, Moon } from "lucide-react";
-import { uid, todayISO } from "../lib/planUtils";
+import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import WorkoutEditor from "./WorkoutEditor";
 import ConfirmModal from "./ConfirmModal";
 
@@ -19,22 +19,15 @@ export default function PlanEditor({
   const [pendingRemoveDay, setPendingRemoveDay] = useState(null);
 
   function addDay(type) {
-    setDays((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        type,
-        workoutId: type === "workout" ? (workouts[0]?.id ?? null) : null,
-      },
-    ]);
+    setDays((prev) => addPlanDay(prev, type, workouts));
   }
 
   function updateDay(i, patch) {
-    setDays((prev) => prev.map((d, j) => (j === i ? { ...d, ...patch } : d)));
+    setDays((prev) => updatePlanDay(prev, i, patch));
   }
 
   function removeDay(i) {
-    setDays((prev) => prev.filter((_, j) => j !== i));
+    setDays((prev) => removePlanDay(prev, i));
   }
 
   function save() {

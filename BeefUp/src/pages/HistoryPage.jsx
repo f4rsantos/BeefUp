@@ -323,7 +323,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                 {['front', 'back'].map((view) => (
                   <div key={view} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '45%' }}>
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                      {view === 'front' ? 'Frente' : 'Costas'}
+                      {view === 'front' ? t.bodyFront : t.bodyBack}
                     </div>
                     <div style={{
                       transform: `scale(${SCALE})`,

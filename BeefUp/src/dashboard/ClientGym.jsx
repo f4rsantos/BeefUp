@@ -1,18 +1,12 @@
 import { useState } from "react";
 import { Plus, Trash2, Dumbbell, Moon, Pencil, Play, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO } from "../lib/planUtils";
-import { resolveExercise } from "../lib/exerciseTree";
+import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
+import { resolvedExerciseName } from "../lib/exerciseTree";
 import ExercisePicker from "../components/ExercisePicker";
 import WorkoutPreview from "./WorkoutPreview";
 import ConfirmModal from "../components/ConfirmModal";
 import NumberField from "../components/NumberField";
-import { localizedName } from "../lib/localizedName"
-
-function exName(id, lang) {
-  const ex = resolveExercise(id);
-  return ex ? (localizedName(ex, lang)) : id;
-}
 
 function normalizeExercises(list) {
   return (list || []).map((e) => (typeof e === "string" ? { exerciseId: e, sets: 3, reps: 10, rest: 90, weight: "" } : e));
@@ -37,15 +31,15 @@ export default function ClientGym({ client }) {
   }
 
   function addDay(type) {
-    setPlan({ ...plan, days: [...plan.days, { id: uid(), type, workoutId: type === "workout" ? (workouts[0]?.id ?? null) : null }] });
+    setPlan({ ...plan, days: addPlanDay(plan.days, type, workouts) });
   }
 
   function updateDay(i, dpatch) {
-    setPlan({ ...plan, days: plan.days.map((d, j) => (j === i ? { ...d, ...dpatch } : d)) });
+    setPlan({ ...plan, days: updatePlanDay(plan.days, i, dpatch) });
   }
 
   function removeDay(i) {
-    setPlan({ ...plan, days: plan.days.filter((_, j) => j !== i) });
+    setPlan({ ...plan, days: removePlanDay(plan.days, i) });
   }
 
   async function createWorkout() {
@@ -204,7 +198,7 @@ function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
           {items.map((it, idx) => (
             <div key={idx} className="dash-ex-row">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm" style={{ color: "var(--text)", fontWeight: 600 }}>{exName(it.exerciseId, lang)}</span>
+                <span className="text-sm" style={{ color: "var(--text)", fontWeight: 600 }}>{resolvedExerciseName(it.exerciseId, lang)}</span>
                 <button className="btn-icon" onClick={() => setItems((p) => p.filter((_, j) => j !== idx))}><Trash2 size={14} style={{ color: "var(--muted)" }} /></button>
               </div>
               <div className="grid grid-cols-4 gap-2">

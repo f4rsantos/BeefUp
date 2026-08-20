@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import {listBaseExercises, matchesExerciseQuery, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
+import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import BodyPartFilter from "../components/BodyPartFilter";
 import CustomExerciseEditor from "../components/CustomExerciseEditor";
@@ -22,36 +22,15 @@ export default function ExercisesPage({ onBack }) {
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
-  const sortedExercises = useMemo(() => {
-    const q = query.trim();
-    const filtered = listBaseExercises().filter((ex) => {
-      if (!matchesExerciseQuery(ex, q)) return false;
-      if (bodyPart && ex.bodyPart !== bodyPart) return false;
-      if (equipment && !ex.equipment.includes(equipment)) return false;
-      return true;
-    });
+  const sortedExercises = useMemo(
+    () => filterAndSortExercises(listBaseExercises(), { query, bodyPart, equipment, lang }),
+    [query, lang, bodyPart, equipment],
+  );
 
-    return [...filtered].sort((a, b) => {
-      const la = localizedName(a, lang);
-      const lb = localizedName(b, lang);
-      return la.localeCompare(lb);
-    });
-  }, [query, lang, bodyPart, equipment]);
-
-  const groups = useMemo(() => {
-    const sorted = sortedExercises;
-    const byLetter = {};
-    sorted.forEach((ex) => {
-      const label = localizedName(ex, lang);
-      const letter = label[0]?.toUpperCase() ?? "#";
-      if (!byLetter[letter]) byLetter[letter] = [];
-      byLetter[letter].push(ex);
-    });
-
-    return Object.keys(byLetter)
-      .sort()
-      .map((letter) => ({ letter, items: byLetter[letter] }));
-  }, [sortedExercises, lang]);
+  const groups = useMemo(
+    () => groupExercisesByLetter(sortedExercises, lang),
+    [sortedExercises, lang],
+  );
 
   if (creatingCustom) {
     return (

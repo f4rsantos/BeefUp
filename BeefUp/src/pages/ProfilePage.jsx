@@ -32,7 +32,7 @@ function buildSummaryTiles(overall, t) {
 }
 
 export default function ProfilePage({ onOpenMeasures }) {
-  const { t, lang, statsLayout, setStatsLayout } = useApp();
+  const { t, statsLayout, setStatsLayout } = useApp();
 
   const [showSteps, setShowSteps] = useState(false);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
@@ -139,7 +139,7 @@ export default function ProfilePage({ onOpenMeasures }) {
                 </span>
               </p>
               <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
-                {lang === "pt" ? `Melhor: ${stats.bestStreak} dias` : `Best: ${stats.bestStreak} days`}
+                {t.bestStreakLabel.replace("{n}", stats.bestStreak)}
               </p>
             </div>
             <Flame size={40} style={{ opacity: 0.9 }} fill="currentColor" />

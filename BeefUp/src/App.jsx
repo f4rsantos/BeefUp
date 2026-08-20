@@ -25,10 +25,10 @@ function PageFallback() {
 }
 
 const TABS = [
-  { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
-  { id: "nutrition", Icon: Apple, labelPt: "Nutrição", labelEn: "Nutrition" },
-  { id: "progress", Icon: TrendingUp, labelPt: "Progresso", labelEn: "Progress" },
-  { id: "settings", Icon: Settings, labelPt: "Definições", labelEn: "Settings" },
+  { id: "home", Icon: Dumbbell, tKey: "homeTitle" },
+  { id: "nutrition", Icon: Apple, tKey: "nutrition" },
+  { id: "progress", Icon: TrendingUp, tKey: "progress" },
+  { id: "settings", Icon: Settings, tKey: "settings" },
 ];
 
 function NavTabButton({ Icon, label, active, onClick }) {
@@ -51,7 +51,7 @@ function AppInner() {
     const code = new URLSearchParams(window.location.search).get("w");
     return code ? decodeWorkoutShare(code) : null;
   });
-  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
+  const { activeWorkout, setActiveWorkout, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("w")) {
@@ -261,11 +261,11 @@ function AppInner() {
         <nav className="bottom-nav">
           {TABS.slice(0, 2)
             .filter(({ id }) => (id === "home" ? showGym : id === "nutrition" ? showNutrition : true))
-            .map(({ id, Icon, labelPt, labelEn }) => (
+            .map(({ id, Icon, tKey }) => (
               <NavTabButton
                 key={id}
                 Icon={Icon}
-                label={lang === "pt" ? labelPt : labelEn}
+                label={t[tKey]}
                 active={tab2 === id}
                 onClick={() => setTab(id)}
               />
@@ -281,11 +281,11 @@ function AppInner() {
             </button>
           )}
 
-          {TABS.slice(2).map(({ id, Icon, labelPt, labelEn }) => (
+          {TABS.slice(2).map(({ id, Icon, tKey }) => (
             <NavTabButton
               key={id}
               Icon={Icon}
-              label={lang === "pt" ? labelPt : labelEn}
+              label={t[tKey]}
               active={tab2 === id}
               onClick={() => setTab(id)}
             />

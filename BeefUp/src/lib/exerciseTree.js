@@ -218,8 +218,38 @@ export function matchesExerciseQuery(ex, query) {
   return ex.name.toLowerCase().includes(q) || ex.namePt.toLowerCase().includes(q)
 }
 
+export function filterAndSortExercises(list, { query, bodyPart, equipment, lang }) {
+  const q = (query || '').trim()
+  const filtered = list.filter((ex) => {
+    if (!matchesExerciseQuery(ex, q)) return false
+    if (bodyPart && ex.bodyPart !== bodyPart) return false
+    if (equipment && !ex.equipment.includes(equipment)) return false
+    return true
+  })
+  return [...filtered].sort((a, b) => localizedName(a, lang).localeCompare(localizedName(b, lang)))
+}
+
+export function groupExercisesByLetter(sortedList, lang) {
+  const byLetter = {}
+  sortedList.forEach((ex) => {
+    const label = localizedName(ex, lang)
+    const letter = label[0]?.toUpperCase() ?? '#'
+    if (!byLetter[letter]) byLetter[letter] = []
+    byLetter[letter].push(ex)
+  })
+  return Object.keys(byLetter)
+    .sort()
+    .map((letter) => ({ letter, items: byLetter[letter] }))
+}
+
 export function getBaseExercise(baseId) {
   return findBase(baseId) ?? null
+}
+
+// Falls back to the raw id when the ref can't be resolved (e.g. a since-deleted exercise).
+export function resolvedExerciseName(ref, lang) {
+  const ex = resolveExercise(ref)
+  return ex ? localizedName(ex, lang) : ref
 }
 
 export function getEquipmentOptions(baseId) {
