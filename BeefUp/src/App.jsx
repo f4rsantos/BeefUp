@@ -3,21 +3,26 @@ import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
 import ExercisesPage from "./pages/ExercisesPage";
-import ProfilePage from "./pages/ProfilePage";
-import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
 import PlanSettings from "./pages/PlanSettings";
 import WorkoutSettings from "./pages/WorkoutSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
-import HelperDashboard from "./dashboard/HelperDashboard";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const MeasuresPage = lazy(() => import("./pages/MeasuresPage"));
+const HelperDashboard = lazy(() => import("./dashboard/HelperDashboard"));
+
+function PageFallback() {
+  return <div style={{ height: "100%", background: "var(--bg)" }} />;
+}
 
 const TABS = [
   { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
@@ -57,7 +62,13 @@ function AppInner() {
   if (!onboarded) return <Onboarding />;
 
   if (appMode === "helper") {
-    if (isDesktop) return <HelperDashboard />;
+    if (isDesktop) {
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <HelperDashboard />
+        </Suspense>
+      );
+    }
     return (
       <div style={{ height: "100%", display: "grid", placeItems: "center", padding: 32, textAlign: "center", background: "var(--bg)" }}>
         <p style={{ color: "var(--muted)", maxWidth: 320 }}>{t.obDesktopOnly}</p>
@@ -164,9 +175,11 @@ function AppInner() {
         )}
         {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
         {overlay === null && tab2 === "progress" && (
-          <ProfilePage
-            onOpenMeasures={() => setOverlay("measures")}
-          />
+          <Suspense fallback={<PageFallback />}>
+            <ProfilePage
+              onOpenMeasures={() => setOverlay("measures")}
+            />
+          </Suspense>
         )}
         {overlay === null && tab2 === "settings" && <SettingsPage />}
 
@@ -194,7 +207,11 @@ function AppInner() {
             initialWorkout={workoutSettingsWorkout}
           />
         )}
-        {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
+        {overlay === "measures" && (
+          <Suspense fallback={<PageFallback />}>
+            <MeasuresPage onBack={closeOverlay} />
+          </Suspense>
+        )}
 
         {/* Stays mounted while minimized */}
         {activeWorkout && (

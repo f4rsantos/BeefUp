@@ -73,6 +73,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       );
   });
 
+  const exercisesRef = useRef(exercises);
+  useEffect(() => {
+    exercisesRef.current = exercises;
+  }, [exercises]);
+
   const [restState, setRestState] = useState(() => {
     const draft = getLS("activeWorkoutDraft", null);
     if (draft && draft.startedAt === activeWorkout?.startedAt) return restoreRestState(draft.restState);
@@ -106,11 +111,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [pendingTemplateUpdate, setPendingTemplateUpdate] = useState(false);
   const [viewingExercise, setViewingExercise] = useState(null);
 
-  function openExerciseInfo(ref) {
+  const openExerciseInfo = useCallback((ref) => {
     const { baseId } = parseExerciseRef(ref);
     const base = getBaseExercise(baseId);
     if (base) setViewingExercise(base);
-  }
+  }, []);
   const { unlock: unlockAudio, play: playAudioCue } = useAudioCues();
   const restAnnouncedRef = useRef(null);
   const setTimerAnnouncedKeyRef = useRef(null);
@@ -172,7 +177,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [setTimer, playAudioCue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setTimer?.endsAt, playAudioCue]);
 
   const updateSet = useCallback((exIdx, setIdx, field, val) => {
     setExercises((prev) =>
@@ -204,7 +210,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   const toggleSet = useCallback(
     (exIdx, setIdx) => {
-      const wasDone = exercises[exIdx]?.sets[setIdx]?.done;
+      const wasDone = exercisesRef.current[exIdx]?.sets[setIdx]?.done;
 
       setExercises((prev) =>
         prev.map((e, i) => {
@@ -231,7 +237,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx, setIdx) ? null : prevTimer));
       }
     },
-    [exercises, restAfterSet],
+    [restAfterSet],
   );
 
   const dismissSetTimer = useCallback(() => setSetTimer(null), []);
@@ -399,7 +405,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onSetType={setSetType}
             note={ex.note}
             onUpdateNote={updateNote}
-            setTimer={setTimer}
+            setTimer={setTimer?.exIdx === exIdx ? setTimer : null}
             onSkipSetTimer={dismissSetTimer}
             onOpenInfo={openExerciseInfo}
           />

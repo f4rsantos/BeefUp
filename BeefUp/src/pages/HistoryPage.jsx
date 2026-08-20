@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Trash2, ChevronLeft } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import HumanBody from '../components/HumanBody'
@@ -352,12 +352,20 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
 
 export default function HistoryPage({ onBack }) {
   const { t, lang, sessions, deleteSession } = useApp()
-  const sorted = [...sessions].sort((a, b) => {
-    const da = new Date(a.date).getTime()
-    const db = new Date(b.date).getTime()
-    if (db !== da) return db - da
-    return b.id.localeCompare(a.id)
-  })
+  const sorted = useMemo(
+    () =>
+      [...sessions].sort((a, b) => {
+        const da = new Date(a.date).getTime()
+        const db = new Date(b.date).getTime()
+        if (db !== da) return db - da
+        return b.id.localeCompare(a.id)
+      }),
+    [sessions],
+  )
+  const bodyAreasBySessionId = useMemo(
+    () => Object.fromEntries(sorted.map((s) => [s.id, bodyAreasForSessions([s])])),
+    [sorted],
+  )
 
   const handleDelete = (sessionId) => {
     deleteSession?.(sessionId)
@@ -383,7 +391,7 @@ export default function HistoryPage({ onBack }) {
             <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.historyEmpty}</p>
           </div>
         ) : sorted.map(s => {
-          const sessionBodyAreas = bodyAreasForSessions([s])
+          const sessionBodyAreas = bodyAreasBySessionId[s.id]
           return (
             <SwipeableCard
               key={s.id}

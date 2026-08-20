@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { Trophy, Flame } from 'lucide-react'
-import confetti from 'canvas-confetti'
 import { useApp } from '../context/AppContext'
 
 function formatSessionLength(seconds) {
@@ -17,14 +16,16 @@ export default function EndWorkoutModal({ stats, onClose }) {
   const prs = stats.prs || []
 
   useEffect(() => {
-    if (!fired.current) {
-      fired.current = true
+    if (fired.current) return
+    fired.current = true
+    
+    import('canvas-confetti').then(({ default: confetti }) => {
       confetti({ particleCount: 130, spread: 80, origin: { y: 0.5 } })
       if (prs.length) {
         setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 65, origin: { x: 0 } }), 200)
         setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 65, origin: { x: 1 } }), 350)
       }
-    }
+    })
   }, [prs.length])
 
   return (

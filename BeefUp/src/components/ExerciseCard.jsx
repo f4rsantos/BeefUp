@@ -1,6 +1,6 @@
 import ProgressRing from "./ProgressRing";
 import NumberField from "./NumberField";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, memo } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
 import { repUnitFor, getBarTypeLabel } from "../lib/exerciseTree"
@@ -237,7 +237,7 @@ function InlineSetTimer({ remaining, total, onSkip }) {
   );
 }
 
-export default function ExerciseCard({
+function ExerciseCard({
   exercise,
   exIdx,
   lang,
@@ -375,3 +375,5 @@ export default function ExerciseCard({
     </div>
   );
 }
+
+export default memo(ExerciseCard);
