@@ -3,7 +3,8 @@ import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown } from "luc
 import { useApp } from "../context/AppContext";
 import { todayISO, uid } from "../lib/planUtils";
 import { getLS, removeLS } from "../lib/crypto";
-import { macroGoalShares, MICRONUTRIENT_RDA } from "../lib/nutritionCalc";
+import { macroGoalShares } from "../lib/nutritionCalc";
+import { MICRONUTRIENTS } from "../lib/foodProvider";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
 import PageHeader from "../components/PageHeader";
@@ -13,6 +14,17 @@ import FoodSearchModal from "../components/FoodSearchModal";
 import MacroGoalModal from "../components/MacroGoalModal";
 
 const GLASS_ML = 250;
+
+const MICRO_COLORS = {
+  fiber: "var(--accent)",
+  sugar: "var(--carbs)",
+  saturatedFat: "var(--fat)",
+  transFat: "var(--danger)",
+  sodium: "var(--warn)",
+  potassium: "var(--accent-2)",
+  calcium: "var(--protein)",
+  iron: "var(--muted)",
+};
 
 export default function NutritionPage() {
   const { t, foodLog, deleteFoodLog, nutritionGoals, waterMap, setWaterToday, mealTypes, setMealTypes } = useApp();
@@ -50,12 +62,14 @@ export default function NutritionPage() {
     { key: "fat", short: t.fatShort, val: Math.round(totals.fat), goal: nutritionGoals.fat, color: "var(--fat)" },
   ];
 
-  const micros = [
-    { key: "fiber", label: t.fiber, val: Math.round(totals.fiber), goal: MICRONUTRIENT_RDA.fiber, unit: "g", color: "var(--accent)" },
-    { key: "sugar", label: t.sugar, val: Math.round(totals.sugar), goal: MICRONUTRIENT_RDA.sugar, unit: "g", color: "var(--carbs)" },
-    { key: "saturatedFat", label: t.saturatedFat, val: Math.round(totals.saturatedFat), goal: MICRONUTRIENT_RDA.saturatedFat, unit: "g", color: "var(--fat)" },
-    { key: "sodium", label: t.sodium, val: Math.round(totals.sodium), goal: MICRONUTRIENT_RDA.sodium, unit: "mg", color: "var(--danger)" },
-  ];
+  const micros = MICRONUTRIENTS.map((m) => ({
+    key: m.key,
+    label: t[m.key],
+    val: Math.round(totals[m.key] ?? 0),
+    goal: m.rda,
+    unit: m.unit,
+    color: MICRO_COLORS[m.key] ?? "var(--muted)",
+  }));
 
   function addMealType() {
     const name = newMealName.trim();

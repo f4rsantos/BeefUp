@@ -58,6 +58,7 @@ export function AppProvider({ children }) {
   )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
+  const [recentFoodIds, setRecentFoodIds] = useState(() => getLS('recentFoods', []))
   const [activeWorkout, setActiveWorkoutState] = useState(() => getLS('activeWorkout', null))
   const [clients, setClients] = useState([])
 
@@ -163,6 +164,20 @@ export function AppProvider({ children }) {
       setStepsMap(map)
       setFoodLog(log)
       setCustomFoods(foods)
+
+      setFavouriteFoods(prev => {
+        const known = new Set(foods.map(f => f.id))
+        const kept = prev.filter(id => known.has(id))
+        if (kept.length !== prev.length) setLS('favFoods', kept)
+        return kept
+      })
+
+      setRecentFoodIds(prev => {
+        const known = new Set(foods.map(f => f.id))
+        const kept = prev.filter(id => known.has(id))
+        if (kept.length !== prev.length) setLS('recentFoods', kept)
+        return kept
+      })
       setCustomExercises(customEx)
       customExercisesRef.current = customEx
       registerCustomExercises(customEx)
@@ -259,12 +274,37 @@ export function AppProvider({ children }) {
     setCustomFoods(prev => upsertById(prev, food))
   }, [])
 
+  const deleteCustomFood = useCallback(async (id) => {
+    await db.removeFood(id)
+    setCustomFoods(prev => removeById(prev, id))
+    setFavouriteFoods(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      setLS('favFoods', next)
+      return next
+    })
+  }, [])
+
   const saveCustomExercise = useCallback(async (exercise) => {
     await db.saveCustomExercise(exercise)
     const next = upsertById(customExercisesRef.current, exercise)
     customExercisesRef.current = next
     registerCustomExercises(next)
     setCustomExercises(next)
+  }, [])
+
+  const deleteCustomExercise = useCallback(async (id) => {
+    await db.removeCustomExercise(id)
+    const next = removeById(customExercisesRef.current, id)
+    customExercisesRef.current = next
+    registerCustomExercises(next)
+    setCustomExercises(next)
+    setFavouriteExercises(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      setLS('favExercises', next)
+      return next
+    })
   }, [])
 
   const setWaterToday = useCallback(async (date, ml) => {
@@ -304,6 +344,16 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const RECENT_FOODS_LIMIT = 10
+
+  const addRecentFood = useCallback((id) => {
+    setRecentFoodIds(prev => {
+      const next = [id, ...prev.filter(x => x !== id)].slice(0, RECENT_FOODS_LIMIT)
+      setLS('recentFoods', next)
+      return next
+    })
+  }, [])
+
   const deleteSession = useCallback(async (sessionId) => {
     await db.remove(STORES.sessions, sessionId)
     setSessions(prev => removeById(prev, sessionId))
@@ -328,9 +378,10 @@ export function AppProvider({ children }) {
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
-    customFoods, saveCustomFood,
-    customExercises, saveCustomExercise,
+    customFoods, saveCustomFood, deleteCustomFood,
+    customExercises, saveCustomExercise, deleteCustomExercise,
     favouriteFoods, toggleFavouriteFood,
+    recentFoodIds, addRecentFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
     clients, saveClient, deleteClient,

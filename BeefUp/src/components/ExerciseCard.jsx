@@ -3,7 +3,7 @@ import NumberField from "./NumberField";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
-import { repUnitFor } from "../lib/exerciseTree"
+import { repUnitFor, getBarTypeLabel } from "../lib/exerciseTree"
 
 const SWIPE_THRESHOLD = 90;
 const SET_ROW_GRID_TEMPLATE = "22px minmax(0,1fr) minmax(0,1fr) 28px";
@@ -256,6 +256,7 @@ export default function ExerciseCard({
 }) {
   const [showNote, setShowNote] = useState(() => !!note);
   const exLabel = localizedName(exercise, lang);
+  const barTypeLabel = exercise.barType ? getBarTypeLabel(exercise.barType, lang) : null;
   const repUnit = repUnitFor(exercise.exerciseId);
   const addSetLabel = t.setSingular;
   const doneCount = exercise.sets.filter((s) => s.done).length;
@@ -288,6 +289,11 @@ export default function ExerciseCard({
             }}
           >
             {exLabel}
+            {barTypeLabel && (
+              <span className="font-normal" style={{ color: "var(--muted)" }}>
+                {" "}({barTypeLabel})
+              </span>
+            )}
           </p>
         </button>
         <div className="flex items-center" style={{ gap: 4, flexShrink: 0 }}>

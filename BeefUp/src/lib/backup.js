@@ -15,6 +15,8 @@ const PREF_KEYS = [
   'sectionPrefs',
   'statsLayout',
   'favExercises',
+  'favFoods',
+  'recentFoods',
   'nutritionGoals',
 ]
 

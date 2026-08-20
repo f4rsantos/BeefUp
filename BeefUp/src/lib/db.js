@@ -108,6 +108,7 @@ export const db = {
   // Custom foods helpers
   saveFood: (food) => tx(STORES.foods, 'readwrite', s => s.put(food)),
   getAllFoods: () => tx(STORES.foods, 'readonly', s => s.getAll()),
+  removeFood: (id) => tx(STORES.foods, 'readwrite', s => s.delete(id)),
 
   // Food log (diary) helpers
   addFoodLog: (entry) => tx(STORES.foodLog, 'readwrite', s => s.put(entry)),
@@ -125,4 +126,5 @@ export const db = {
   // Custom exercises helpers
   saveCustomExercise: (exercise) => tx(STORES.customExercises, 'readwrite', s => s.put(exercise)),
   getAllCustomExercises: () => tx(STORES.customExercises, 'readonly', s => s.getAll()),
+  removeCustomExercise: (id) => tx(STORES.customExercises, 'readwrite', s => s.delete(id)),
 }
