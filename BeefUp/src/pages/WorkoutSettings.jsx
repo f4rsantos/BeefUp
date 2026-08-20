@@ -11,6 +11,7 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
     workouts,
     saveWorkout,
     deleteWorkout,
+    activeWorkout,
   } = useApp();
 
   const [view, setView] = useState(initialView); // 'main' | 'editWorkout'
@@ -25,6 +26,7 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
         onBack={() => (initialView === "editWorkout" ? onBack() : setView("main"))}
         lang={lang}
         t={t}
+        isActiveWorkout={!!editingWorkout && editingWorkout.id === activeWorkout?.workoutId}
       />
     );
   }

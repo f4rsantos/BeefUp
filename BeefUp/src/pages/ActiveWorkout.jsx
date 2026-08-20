@@ -57,7 +57,7 @@ function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null
 }
 
 export default function ActiveWorkout({ onEnd, onMinimize }) {
-  const { t, lang, activeWorkout, workouts, addSession, sessions } = useApp();
+  const { t, lang, activeWorkout, workouts, addSession, sessions, saveWorkout } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
@@ -103,6 +103,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
+  const [pendingTemplateUpdate, setPendingTemplateUpdate] = useState(false);
   const [viewingExercise, setViewingExercise] = useState(null);
 
   function openExerciseInfo(ref) {
@@ -329,6 +330,31 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const workoutName = activeWorkout?.workoutName ?? "";
   const anySetDone = exercises.some(e => e.sets.some(s => s.done));
 
+  const templateItems = sourceWorkout ? normalizeWorkoutExercises(sourceWorkout.exercises) : [];
+  const templateRefs = templateItems.map((i) => i.ref);
+  const currentRefs = exercises.map((e) => e.exerciseId);
+  const workoutChanged =
+    !!sourceWorkout &&
+    (templateRefs.length !== currentRefs.length ||
+      !templateRefs.every((r) => currentRefs.includes(r)) ||
+      !currentRefs.every((r) => templateRefs.includes(r)));
+
+  function applyTemplateUpdate() {
+    const byRef = Object.fromEntries(templateItems.map((i) => [i.ref, i]));
+    const newExercises = exercises.map((e) => {
+      const orig = byRef[e.exerciseId];
+      const item = { ref: e.exerciseId };
+      if (orig?.weight) item.weight = orig.weight;
+      if (orig?.reps) item.reps = orig.reps;
+      const note = e.note?.trim() || orig?.note;
+      if (note) item.note = note;
+      const barType = e.barType || orig?.barType;
+      if (barType) item.barType = barType;
+      return item;
+    });
+    saveWorkout({ ...sourceWorkout, exercises: newExercises });
+  }
+
   return (
     <div
       className="flex flex-col h-full overflow-y-auto"
@@ -422,6 +448,28 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           }}
           onConfirm={() => {
             setEndModal(null);
+            if (workoutChanged) {
+              setPendingTemplateUpdate(true);
+            } else {
+              handleEnd();
+            }
+          }}
+        />
+      )}
+
+      {pendingTemplateUpdate && (
+        <ConfirmModal
+          title={t.workoutChangedTitle}
+          message={t.workoutChangedMessage.replace("{name}", sourceWorkout?.name ?? "")}
+          cancelLabel={t.discardChanges}
+          confirmLabel={t.save}
+          onCancel={() => {
+            setPendingTemplateUpdate(false);
+            handleEnd();
+          }}
+          onConfirm={() => {
+            applyTemplateUpdate();
+            setPendingTemplateUpdate(false);
             handleEnd();
           }}
         />

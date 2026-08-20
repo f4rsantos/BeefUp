@@ -4,6 +4,7 @@ import { uid } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
 import NumberField from "./NumberField";
+import ConfirmModal from "./ConfirmModal";
 import { localizedName } from "../lib/localizedName"
 
 function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
@@ -63,15 +64,15 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   );
 }
 
-export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
+export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActiveWorkout = false }) {
   const [name, setName] = useState(workout?.name ?? "");
   const [exItems, setExItems] = useState(() => normalizeWorkoutExercises(workout?.exercises));
   const [restAfterSet, setRestAfterSet] = useState(workout?.restAfterSet ?? 120);
   const [showPicker, setShowPicker] = useState(false);
   const [editingExIdx, setEditingExIdx] = useState(null);
+  const [confirmingSave, setConfirmingSave] = useState(false);
 
-  function save() {
-    if (!name.trim()) return;
+  function commit() {
     onSave({
       ...workout,
       id: workout?.id ?? uid(),
@@ -80,6 +81,15 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
       restAfterSet: Math.max(0, parseInt(restAfterSet) || 120),
     });
     onBack();
+  }
+
+  function save() {
+    if (!name.trim()) return;
+    if (isActiveWorkout) {
+      setConfirmingSave(true);
+      return;
+    }
+    commit();
   }
 
   return (
@@ -185,6 +195,17 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
             setShowPicker(false);
           }}
           onClose={() => setShowPicker(false)}
+        />
+      )}
+
+      {confirmingSave && (
+        <ConfirmModal
+          title={t.activeWorkoutEditTitle}
+          message={t.activeWorkoutEditMessage}
+          cancelLabel={t.cancel}
+          confirmLabel={t.save}
+          onCancel={() => setConfirmingSave(false)}
+          onConfirm={commit}
         />
       )}
 
