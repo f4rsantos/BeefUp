@@ -3,6 +3,7 @@ import { Search, Plus, ChevronLeft, ChevronDown, X, Star, Trash2 } from "lucide-
 import { useApp } from "../context/AppContext";
 import { foodProvider, scaleFood, MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { RateLimitError } from "../lib/openFoodFacts";
+import { loadLocalFoods, searchLocalFoods, isCatalogLoaded, foldText } from "../lib/localFoods";
 import { uid, todayISO } from "../lib/planUtils";
 import { setLS } from "../lib/crypto";
 import { macroShares } from "../lib/nutritionCalc";
@@ -20,20 +21,21 @@ const EMPTY_CUSTOM_FOOD = {
 
 function matchesFood(food, query) {
   if (!query) return true;
-  const q = query.toLowerCase();
-  return (food.name || "").toLowerCase().includes(q)
-    || (food.namePt || "").toLowerCase().includes(q);
+  const q = foldText(query);
+  return foldText(food.name).includes(q) || foldText(food.namePt).includes(q);
 }
 
 export default function FoodSearchModal({ meal, onClose, initialDraft }) {
   const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, deleteCustomFood, favouriteFoods, toggleFavouriteFood, recentFoodIds, addRecentFood } = useApp();
   const [pendingDelete, setPendingDelete] = useState(null); // custom food awaiting delete confirmation
-  const isCustom = (food) => customFoods.some((f) => f.id === food.id && f.source !== "off");
+  const isCustom = (food) => customFoods.some((f) => f.id === food.id && !f.source);
   const [query, setQuery] = useState(() => initialDraft?.query ?? "");
   const [results, setResults] = useState([]); 
   const [searchState, setSearchState] = useState("idle"); // idle | loading | error | limited
   const [retryAfter, setRetryAfter] = useState(0); 
   const [retryNonce, setRetryNonce] = useState(0);
+  const [catalogReady, setCatalogReady] = useState(isCatalogLoaded);
+  const [onlineRequested, setOnlineRequested] = useState(false); // botão "procurar online"
   const [selected, setSelected] = useState(() => initialDraft?.selected ?? null); // food being portioned
   const [grams, setGrams] = useState(() => initialDraft?.grams ?? 100);
   const [unitMode, setUnitMode] = useState(() => initialDraft?.unitMode ?? false); // false = grams, true = whole-unit count (servings)
@@ -52,15 +54,31 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
     return () => clearTimeout(id);
   }, [meal, query, selected, grams, unitMode, unitCount, creating, cf]);
 
+  useEffect(() => {
+    if (catalogReady) return;
+    let alive = true;
+    loadLocalFoods().then(() => alive && setCatalogReady(true));
+    return () => { alive = false; };
+  }, [catalogReady]);
+
   const localMatches = useMemo(
     () => customFoods.filter((f) => matchesFood(f, query.trim())),
     [customFoods, query],
   );
 
+  const catalogMatches = useMemo(
+    () => (catalogReady ? searchLocalFoods(query.trim()) : []),
+    [query, catalogReady],
+  );
+
+  // A API só entra quando a base local não responde, ou a pedido.
+  const autoOnline = catalogReady && catalogMatches.length === 0 && localMatches.length === 0;
+  const wantOnline = autoOnline || onlineRequested;
+
   useEffect(() => {
     const q = query.trim();
 
-    if (!q) return;
+    if (!q || !wantOnline) return;
 
     const controller = new AbortController();
     const id = setTimeout(() => {
@@ -87,7 +105,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
       clearTimeout(id);
       controller.abort();
     };
-  }, [query, lang, retryNonce]);
+  }, [query, lang, retryNonce, wantOnline]);
 
   useEffect(() => {
     if (searchState !== "limited") return;
@@ -104,11 +122,13 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
   }, [searchState]);
 
   const isSearching = query.trim().length > 0;
+  const onlineState = wantOnline ? searchState : "idle";
 
   const sortedResults = useMemo(() => {
+    const online = isSearching && wantOnline ? results : [];
     const seen = new Set();
     const merged = [];
-    for (const f of [...localMatches, ...(isSearching ? results : [])]) {
+    for (const f of [...localMatches, ...catalogMatches, ...online]) {
       if (seen.has(f.id)) continue;
       seen.add(f.id);
       merged.push(f);
@@ -117,7 +137,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
       ...merged.filter((f) => favouriteFoods.includes(f.id)),
       ...merged.filter((f) => !favouriteFoods.includes(f.id)),
     ];
-  }, [localMatches, results, favouriteFoods, isSearching]);
+  }, [localMatches, catalogMatches, results, favouriteFoods, isSearching, wantOnline]);
 
   const initialRows = useMemo(() => {
     const recentIds = new Set(recentFoodIds);
@@ -409,7 +429,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               </button>
             </div>
 
-            <div style={{ position: "relative", marginBottom: 16 }}>
+            <div style={{ position: "relative", marginBottom: 12 }}>
               <Search size={17} style={{ position: "absolute", left: 13, top: 14, color: "var(--muted)" }} />
               <input
                 className="field"
@@ -417,22 +437,32 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
                 placeholder={t.searchFood}
                 value={query}
                 autoFocus
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setOnlineRequested(false); }}
               />
             </div>
 
-            <button className="btn btn-ghost w-full mb-4 py-3" style={{ fontSize: 14 }} onClick={() => setCreating(true)}>
-              <Plus size={16} /> {t.customFood}
-            </button>
+            {!isSearching && (
+              <button className="btn btn-ghost w-full py-3" style={{ fontSize: 14, marginBottom: 10 }} onClick={() => setCreating(true)}>
+                <Plus size={16} /> {t.customFood}
+              </button>
+            )}
 
             {/* Rows should use `--surface2`, evitando o contraste branco-sobre-branco. */}
             <div className="flex flex-col gap-2.5" style={{ maxHeight: "50vh", overflowY: "auto" }}>
               {(isSearching ? sortedResults : initialRows).map(renderFoodRow)}
               {/* Status sits below the rows*/}
-              {isSearching && searchState === "loading" && (
+              {isSearching && catalogReady && !wantOnline && (
+                <button
+                  className="btn btn-ghost py-2 px-4 text-sm"
+                  onClick={() => setOnlineRequested(true)}
+                >
+                  <Search size={15} /> {t.searchOnline}
+                </button>
+              )}
+              {isSearching && onlineState === "loading" && (
                 <p className="text-center py-4" style={{ color: "var(--muted)", fontSize: 14 }}>{t.searchingFood}</p>
               )}
-              {isSearching && searchState === "error" && (
+              {isSearching && onlineState === "error" && (
                 <div className="flex flex-col items-center gap-2 py-4">
                   <p style={{ color: "var(--danger)", fontSize: 14 }}>{t.foodSearchFailed}</p>
                   {/* All 5 built-in retries already failed by the time this shows*/}
@@ -444,17 +474,22 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
                   </button>
                 </div>
               )}
-              {isSearching && searchState === "limited" && (
+              {isSearching && onlineState === "limited" && (
                 <p className="text-center py-4" style={{ color: "var(--warn)", fontSize: 14 }}>
                   {t.foodSearchLimit.replace("{n}", retryAfter)}
                 </p>
               )}
-              {sortedResults.length === 0 && (!isSearching || searchState === "idle") && (
+              {/* Catálogo a carregar não é "sem resultados". */}
+              {sortedResults.length === 0 && (!isSearching || (catalogReady && onlineState === "idle")) && (
                 <p className="text-center py-6" style={{ color: "var(--muted)", fontSize: 15 }}>
                   {isSearching ? t.noResults : t.typeToSearch}
                 </p>
               )}
             </div>
+            {/* Atribuição exigida pela licença de utilização da tabela. */}
+            <p style={{ color: "var(--muted)", fontSize: 9, lineHeight: 1.35, marginTop: 12 }}>
+              {t.insaCredit}
+            </p>
           </div>
         )}
 
