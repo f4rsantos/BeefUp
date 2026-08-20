@@ -5,7 +5,7 @@ import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions } from "../lib/ex
 import { localizedName } from "../lib/localizedName"
 import ConfirmModal from "../components/ConfirmModal";
 
-export default function ExerciseDetailPage({ exercise, onBack }) {
+export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }) {
   const { t, lang, deleteCustomExercise } = useApp();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -13,6 +13,7 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
   const description = lang === "pt" ? exercise.descriptionPt : exercise.description;
   const instructions = lang === "pt" ? exercise.instructionsPt : exercise.instructions;
   const equipmentOptions = getEquipmentOptions(exercise.id);
+  const activeVariantIds = (activeVariantId || "").split("+").filter(Boolean);
 
   const basics = [
     { label: t.category, value: getBodyPartLabel(exercise.muscleGroup, lang) },
@@ -96,6 +97,36 @@ export default function ExerciseDetailPage({ exercise, onBack }) {
                 </li>
               ))}
             </ol>
+          </div>
+        )}
+
+        {exercise.variants?.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold mb-2" style={{ color: "var(--text)" }}>
+              {t.variantsTitle}
+            </h2>
+            <div className="flex flex-col gap-2">
+              {exercise.variants.map((variant) => {
+                const active = activeVariantIds.includes(variant.id);
+                const note = lang === "pt" ? variant.notePt : variant.note;
+                return (
+                  <div
+                    key={variant.id}
+                    className="card"
+                    style={active ? { borderColor: "var(--accent)" } : undefined}
+                  >
+                    <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                      {localizedName(variant, lang)}
+                    </p>
+                    {note && (
+                      <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                        {note}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

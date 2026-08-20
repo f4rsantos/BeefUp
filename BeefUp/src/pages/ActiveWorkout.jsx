@@ -112,9 +112,9 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [viewingExercise, setViewingExercise] = useState(null);
 
   const openExerciseInfo = useCallback((ref) => {
-    const { baseId } = parseExerciseRef(ref);
+    const { baseId, variantId } = parseExerciseRef(ref);
     const base = getBaseExercise(baseId);
-    if (base) setViewingExercise(base);
+    if (base) setViewingExercise({ base, activeVariantId: variantId });
   }, []);
   const { unlock: unlockAudio, play: playAudioCue } = useAudioCues();
   const restAnnouncedRef = useRef(null);
@@ -437,7 +437,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
       {viewingExercise && (
         <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
-          <ExerciseDetailPage exercise={viewingExercise} onBack={() => setViewingExercise(null)} />
+          <ExerciseDetailPage
+            exercise={viewingExercise.base}
+            activeVariantId={viewingExercise.activeVariantId}
+            onBack={() => setViewingExercise(null)}
+          />
         </div>
       )}
 
