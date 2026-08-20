@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, ChevronLeft, ChevronDown, X, Star, Trash2 } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronDown, X, Star, Trash2, Camera } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { foodProvider, scaleFood, MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { RateLimitError } from "../lib/openFoodFacts";
 import { loadLocalFoods, searchLocalFoods, isCatalogLoaded, foldText } from "../lib/localFoods";
+import { isScanSupported } from "../lib/barcodeDetector";
+import BarcodeScannerModal from "./BarcodeScannerModal";
 import { uid, todayISO } from "../lib/planUtils";
 import { setLS } from "../lib/crypto";
 import { macroShares } from "../lib/nutritionCalc";
@@ -13,6 +15,7 @@ import ConfirmModal from "./ConfirmModal";
 import { localizedNameOrEnglish } from "../lib/localizedName"
 
 const SEARCH_DEBOUNCE_MS = 500;
+const CAN_SCAN = isScanSupported();
 
 const EMPTY_CUSTOM_FOOD = {
   name: "", kcal: "", protein: "", carbs: "", fat: "",
@@ -28,6 +31,7 @@ function matchesFood(food, query) {
 export default function FoodSearchModal({ meal, onClose, initialDraft }) {
   const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, deleteCustomFood, favouriteFoods, toggleFavouriteFood, recentFoodIds, addRecentFood } = useApp();
   const [pendingDelete, setPendingDelete] = useState(null); // custom food awaiting delete confirmation
+  const [scanning, setScanning] = useState(false);
   const isCustom = (food) => customFoods.some((f) => f.id === food.id && !f.source);
   const [query, setQuery] = useState(() => initialDraft?.query ?? "");
   const [results, setResults] = useState([]); 
@@ -433,12 +437,22 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               <Search size={17} style={{ position: "absolute", left: 13, top: 14, color: "var(--muted)" }} />
               <input
                 className="field"
-                style={{ paddingLeft: 38, fontSize: 16, padding: "13px 14px 13px 38px" }}
+                style={{ fontSize: 16, padding: `13px ${CAN_SCAN ? 44 : 14}px 13px 38px` }}
                 placeholder={t.searchFood}
                 value={query}
                 autoFocus
                 onChange={(e) => { setQuery(e.target.value); setOnlineRequested(false); }}
               />
+              {CAN_SCAN && (
+                <button
+                  className="btn-icon"
+                  onClick={() => setScanning(true)}
+                  aria-label={t.scanBarcode}
+                  style={{ position: "absolute", right: 6, top: 6 }}
+                >
+                  <Camera size={19} style={{ color: "var(--muted)" }} />
+                </button>
+              )}
             </div>
 
             {!isSearching && (
@@ -505,6 +519,15 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               if (selected?.id === pendingDelete.id) setSelected(null);
               setPendingDelete(null);
             }}
+          />
+        )}
+
+        {scanning && (
+          <BarcodeScannerModal
+            lang={lang}
+            t={t}
+            onFound={(food) => { pick(food); setScanning(false); }}
+            onClose={() => setScanning(false)}
           />
         )}
       </div>
