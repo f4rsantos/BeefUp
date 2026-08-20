@@ -1,4 +1,4 @@
-// AES-GCM helpers below are unused by setLS/getLS/removeLS — those are plain JSON, not encrypted.
+// AES-GCM helpers for encrypting JSON payloads
 const ENC_KEY_NAME = 'beefup_enc_key'
 
 async function getKey() {
@@ -37,6 +37,9 @@ export async function decryptJSON(b64) {
   }
 }
 
+// Plain (unencrypted) localStorage JSON helpers for ephemeral, per-tab UI
+// state — draft recovery buffers that should not round-trip through
+// IndexedDB prefs or backups. See src/lib/prefs.js for durable settings.
 export function setLS(key, value) {
   localStorage.setItem(key, JSON.stringify(value))
 }

@@ -1,19 +1,29 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Star, Search, Play, Dumbbell } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { getLS, setLS } from "../lib/crypto";
+import { getPref, setPref } from "../lib/prefs";
 
 export default function WorkoutPicker({ onSelect, onBack }) {
   const { t, lang, workouts } = useApp();
   const [query, setQuery] = useState("");
-  const [favIds, setFavIds] = useState(() => getLS("favWorkouts", []));
+  // Favourites come from IndexedDB, so the list renders unsorted for the first
+  // frame and re-sorts once they arrive.
+  const [favIds, setFavIds] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPref("favWorkouts").then((ids) => {
+      if (!cancelled) setFavIds(ids ?? []);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   function toggleFav(id) {
     setFavIds((prev) => {
       const next = prev.includes(id)
         ? prev.filter((x) => x !== id)
         : [...prev, id];
-      setLS("favWorkouts", next);
+      setPref("favWorkouts", next);
       return next;
     });
   }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { db, STORES } from '../lib/db'
-import { getLS, setLS } from '../lib/crypto'
 import { todayISO } from '../lib/planUtils'
+import { getAllPrefs, migrateLegacyPrefs, setPref, PREF_DEFAULTS } from '../lib/prefs'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
@@ -24,10 +24,16 @@ function removeById(list, id) {
   return list.filter((item) => item.id !== id)
 }
 
-function pruneOrphanFoodIds(prev, knownIds, lsKey) {
+function pruneOrphanFoodIds(prev, knownIds, prefKey) {
   const kept = prev.filter((id) => knownIds.has(id))
-  if (kept.length !== prev.length) setLS(lsKey, kept)
+  if (kept.length !== prev.length) setPref(prefKey, kept)
   return kept
+}
+
+// `focus` picks which sections exist; sectionPrefs is the user's later
+// per-section toggle, seeded from focus the first time it is needed.
+function sectionPrefsFor(focus) {
+  return { gym: focus !== 'nutrition', nutrition: focus !== 'gym' }
 }
 
 const DEFAULT_MEAL_TYPES = [
@@ -39,33 +45,32 @@ const DEFAULT_MEAL_TYPES = [
 ]
 
 export function AppProvider({ children }) {
-  const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
-  const [fontScale, setFontScaleState] = useState(() => getLS('fontScale', 'medium'))
-  const [soundEnabled, setSoundEnabledState] = useState(() => getLS('soundEnabled', true))
-  const [accentColor, setAccentColorState] = useState(() => getLS('accentColor', 'green'))
-  const [customAccentHex, setCustomAccentHexState] = useState(() => getLS('customAccentHex', '#109a14'))
-  const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
-  const [onboarded, setOnboardedState] = useState(() => getLS('onboarded', false))
-  const [joinedAt, setJoinedAtState] = useState(() => getLS('joinedAt', null))
-  const [activePlanSince, setActivePlanSinceState] = useState(() => getLS('activePlanSince', null))
-  const [appMode, setAppModeState] = useState(() => getLS('appMode', 'solo'))
-  const [focus, setFocusState] = useState(() => getLS('focus', 'both'))
-  const [sectionPrefs, setSectionPrefsState] = useState(() =>
-    getLS('sectionPrefs', { gym: focus !== 'nutrition', nutrition: focus !== 'gym' }),
-  )
+  // Prefs live in IndexedDB, which cannot be read synchronously, so they start
+  // at their defaults and `hydrated` gates render until the real values land.
+  const [hydrated, setHydrated] = useState(false)
+  const [theme, setThemeState] = useState(PREF_DEFAULTS.theme)
+  const [fontScale, setFontScaleState] = useState(PREF_DEFAULTS.fontScale)
+  const [soundEnabled, setSoundEnabledState] = useState(PREF_DEFAULTS.soundEnabled)
+  const [accentColor, setAccentColorState] = useState(PREF_DEFAULTS.accentColor)
+  const [customAccentHex, setCustomAccentHexState] = useState(PREF_DEFAULTS.customAccentHex)
+  const [lang, setLangState] = useState(PREF_DEFAULTS.lang)
+  const [onboarded, setOnboardedState] = useState(PREF_DEFAULTS.onboarded)
+  const [joinedAt, setJoinedAtState] = useState(PREF_DEFAULTS.joinedAt)
+  const [activePlanSince, setActivePlanSinceState] = useState(PREF_DEFAULTS.activePlanSince)
+  const [appMode, setAppModeState] = useState(PREF_DEFAULTS.appMode)
+  const [focus, setFocusState] = useState(PREF_DEFAULTS.focus)
+  const [sectionPrefs, setSectionPrefsState] = useState(() => sectionPrefsFor(PREF_DEFAULTS.focus))
   const [plans, setPlans] = useState([])
   const [workouts, setWorkouts] = useState([])
   const [sessions, setSessions] = useState([])
   const [stepsMap, setStepsMap] = useState({})
   const [measurements, setMeasurements] = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
-  const [statsLayout, setStatsLayoutState] = useState(() =>
-    resolveStatsLayout(getLS('statsLayout', DEFAULT_STATS_LAYOUT), getLS('statsLayoutVersion', 1)),
-  )
-  const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
-  const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
-  const [recentFoodIds, setRecentFoodIds] = useState(() => getLS('recentFoods', []))
-  const [activeWorkout, setActiveWorkoutState] = useState(() => getLS('activeWorkout', null))
+  const [statsLayout, setStatsLayoutState] = useState(DEFAULT_STATS_LAYOUT)
+  const [favouriteExercises, setFavouriteExercises] = useState([])
+  const [favouriteFoods, setFavouriteFoods] = useState([])
+  const [recentFoodIds, setRecentFoodIds] = useState(PREF_DEFAULTS.recentFoods)
+  const [activeWorkout, setActiveWorkoutState] = useState(null)
   const [clients, setClients] = useState([])
 
   // Nutrition
@@ -74,86 +79,138 @@ export function AppProvider({ children }) {
   const [customExercises, setCustomExercises] = useState([])
   const customExercisesRef = useRef([])
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
-  const [nutritionGoals, setNutritionGoalsState] = useState(() =>
-    getLS('nutritionGoals', { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 }),
-  )
-  const [mealTypes, setMealTypesState] = useState(() => getLS('mealTypes', DEFAULT_MEAL_TYPES))
+  const [nutritionGoals, setNutritionGoalsState] = useState(PREF_DEFAULTS.nutritionGoals)
+  const [mealTypes, setMealTypesState] = useState(DEFAULT_MEAL_TYPES)
 
   const t = strings[lang] || strings.pt
 
   // Theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    setLS('theme', theme)
-  }, [theme])
+    // Before hydration `theme` is still the default, so persisting it would
+    // overwrite the stored value with a placeholder.
+    if (hydrated) setPref('theme', theme)
+  }, [theme, hydrated])
 
   const setTheme = useCallback((v) => setThemeState(v), [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-font-scale', fontScale)
-    setLS('fontScale', fontScale)
-  }, [fontScale])
+    if (hydrated) setPref('fontScale', fontScale)
+  }, [fontScale, hydrated])
 
   const setFontScale = useCallback((v) => setFontScaleState(v), [])
 
   const setSoundEnabled = useCallback((v) => {
     setSoundEnabledState(v)
-    setLS('soundEnabled', v)
+    setPref('soundEnabled', v)
   }, [])
 
   useEffect(() => {
     if (accentColor === 'custom') applyCustomAccent(customAccentHex)
     else if (accentColor === 'green') document.documentElement.removeAttribute('data-accent')
     else document.documentElement.setAttribute('data-accent', accentColor)
-    setLS('accentColor', accentColor)
-  }, [accentColor, customAccentHex])
+    if (hydrated) setPref('accentColor', accentColor)
+  }, [accentColor, customAccentHex, hydrated])
 
   const setAccentColor = useCallback((v) => setAccentColorState(v), [])
 
   const setActiveWorkout = useCallback((v) => {
     setActiveWorkoutState(v)
-    setLS('activeWorkout', v)
+    db.setSetting('activeWorkout', v)
   }, [])
 
   const setCustomAccentColor = useCallback((hex) => {
-    setLS('customAccentHex', hex)
+    setPref('customAccentHex', hex)
     setCustomAccentHexState(hex)
     setAccentColorState('custom')
   }, [])
 
   const completeOnboarding = useCallback(({ mode, focus }) => {
-    setLS('appMode', mode); setAppModeState(mode)
-    if (focus) { setLS('focus', focus); setFocusState(focus) }
-    setLS('onboarded', true); setOnboardedState(true)
+    setPref('appMode', mode); setAppModeState(mode)
+    if (focus) {
+      setPref('focus', focus); setFocusState(focus)
+      // Keep sectionPrefs consistent with the focus just chosen; hydration
+      // only derives it for users who never made an explicit choice.
+      const next = sectionPrefsFor(focus)
+      setPref('sectionPrefs', next); setSectionPrefsState(next)
+    }
+    setPref('onboarded', true); setOnboardedState(true)
     const joined = todayISO()
-    setLS('joinedAt', joined); setJoinedAtState(joined)
+    setPref('joinedAt', joined); setJoinedAtState(joined)
   }, [])
 
   const setSectionPrefs = useCallback((next) => {
     setSectionPrefsState(next)
-    setLS('sectionPrefs', next)
+    setPref('sectionPrefs', next)
   }, [])
 
   const setMealTypes = useCallback((next) => {
     setMealTypesState(next)
-    setLS('mealTypes', next)
+    setPref('mealTypes', next)
   }, [])
 
   // Lang
   const setLang = useCallback((v) => {
     setLangState(v)
-    setLS('lang', v)
+    setPref('lang', v)
+  }, [])
+
+  // Hydrate prefs before anything renders. Runs the one-time localStorage ->
+  // IndexedDB migration first so a returning user's settings survive.
+  useEffect(() => {
+    async function hydrate() {
+      try {
+        await migrateLegacyPrefs()
+      } catch (err) {
+        console.error('pref migration failed', err)
+      }
+
+      let prefs
+      try {
+        prefs = await getAllPrefs()
+      } catch (err) {
+        // Falling through with defaults keeps the app usable when IndexedDB is
+        // unavailable (private mode, blocked storage) instead of hanging on the
+        // splash forever.
+        console.error('pref hydration failed', err)
+        setHydrated(true)
+        return
+      }
+
+      setThemeState(prefs.theme)
+      setFontScaleState(prefs.fontScale)
+      setSoundEnabledState(prefs.soundEnabled)
+      setAccentColorState(prefs.accentColor)
+      setCustomAccentHexState(prefs.customAccentHex)
+      setLangState(prefs.lang)
+      setOnboardedState(prefs.onboarded)
+      setJoinedAtState(prefs.joinedAt)
+      setActivePlanSinceState(prefs.activePlanSince)
+      setAppModeState(prefs.appMode)
+      setFocusState(prefs.focus)
+      setSectionPrefsState(prefs.sectionPrefs ?? sectionPrefsFor(prefs.focus))
+      setStatsLayoutState(resolveStatsLayout(prefs.statsLayout ?? DEFAULT_STATS_LAYOUT, prefs.statsLayoutVersion))
+      setFavouriteExercises(prefs.favExercises)
+      setFavouriteFoods(prefs.favFoods)
+      setRecentFoodIds(prefs.recentFoods)
+      setNutritionGoalsState(prefs.nutritionGoals)
+      setMealTypesState(prefs.mealTypes ?? DEFAULT_MEAL_TYPES)
+      setHydrated(true)
+    }
+    hydrate()
   }, [])
 
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water, cli, customEx] = await Promise.all([
+      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
         db.getAllSteps(),
         db.getSetting('activePlanId', null),
+        db.getSetting('activeWorkout', null),
         db.getAllMeasurements(),
         db.getAllFoodLog(),
         db.getAllFoods(),
@@ -165,6 +222,7 @@ export function AppProvider({ children }) {
       setWorkouts(w)
       setSessions(s)
       setActivePlanId(apid)
+      setActiveWorkoutState(activeWo)
       const map = {}
       allSteps.forEach(e => { map[e.date] = e.count })
       setStepsMap(map)
@@ -210,7 +268,7 @@ export function AppProvider({ children }) {
     await db.setSetting('activePlanId', id)
     setActivePlanId(id)
     const since = todayISO()
-    setLS('activePlanSince', since)
+    setPref('activePlanSince', since)
     setActivePlanSinceState(since)
   }, [])
 
@@ -249,9 +307,9 @@ export function AppProvider({ children }) {
 
   const setStatsLayout = useCallback((layout) => {
     setStatsLayoutState(layout)
-    setLS('statsLayout', layout)
+    setPref('statsLayout', layout)
     // Stamp the version so this order survives the next boot.
-    setLS('statsLayoutVersion', STATS_LAYOUT_VERSION)
+    setPref('statsLayoutVersion', STATS_LAYOUT_VERSION)
   }, [])
 
   // Nutrition: food log
@@ -276,7 +334,7 @@ export function AppProvider({ children }) {
     setFavouriteFoods(prev => {
       if (!prev.includes(id)) return prev
       const next = prev.filter(x => x !== id)
-      setLS('favFoods', next)
+      setPref('favFoods', next)
       return next
     })
   }, [])
@@ -298,7 +356,7 @@ export function AppProvider({ children }) {
     setFavouriteExercises(prev => {
       if (!prev.includes(id)) return prev
       const next = prev.filter(x => x !== id)
-      setLS('favExercises', next)
+      setPref('favExercises', next)
       return next
     })
   }, [])
@@ -310,7 +368,7 @@ export function AppProvider({ children }) {
 
   const setNutritionGoals = useCallback((goals) => {
     setNutritionGoalsState(goals)
-    setLS('nutritionGoals', goals)
+    setPref('nutritionGoals', goals)
   }, [])
 
   const saveClient = useCallback(async (client) => {
@@ -327,7 +385,7 @@ export function AppProvider({ children }) {
   const toggleFavouriteExercise = useCallback((id) => {
     setFavouriteExercises(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-      setLS('favExercises', next)
+      setPref('favExercises', next)
       return next
     })
   }, [])
@@ -335,7 +393,7 @@ export function AppProvider({ children }) {
   const toggleFavouriteFood = useCallback((id) => {
     setFavouriteFoods(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-      setLS('favFoods', next)
+      setPref('favFoods', next)
       return next
     })
   }, [])
@@ -345,7 +403,7 @@ export function AppProvider({ children }) {
   const addRecentFood = useCallback((id) => {
     setRecentFoodIds(prev => {
       const next = [id, ...prev.filter(x => x !== id)].slice(0, RECENT_FOODS_LIMIT)
-      setLS('recentFoods', next)
+      setPref('recentFoods', next)
       return next
     })
   }, [])
@@ -356,6 +414,7 @@ export function AppProvider({ children }) {
   }, [])
 
   const value = {
+    hydrated,
     theme, setTheme,
     fontScale, setFontScale,
     soundEnabled, setSoundEnabled,
@@ -382,6 +441,10 @@ export function AppProvider({ children }) {
     nutritionGoals, setNutritionGoals,
     clients, saveClient, deleteClient,
   }
+
+  // Holding render until prefs land avoids a flash of the wrong language and a
+  // spurious onboarding screen for users who have already completed it.
+  if (!hydrated) return null
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

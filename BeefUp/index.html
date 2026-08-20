@@ -12,6 +12,23 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="BeefUp" />
     <title>BeefUp</title>
+    <script>
+      // Paint cache only - IndexedDB is the source of truth for these prefs,
+      // but it cannot be read synchronously, so the app mirrors theme/accent
+      // here on every write and this script replays them before first paint.
+      // Without it the page flashes the default theme until hydration lands.
+      (function () {
+        try {
+          var t = localStorage.getItem('paint:theme');
+          document.documentElement.setAttribute('data-theme', t ? JSON.parse(t) : 'system');
+          var a = localStorage.getItem('paint:accentColor');
+          a = a ? JSON.parse(a) : 'green';
+          if (a && a !== 'green') document.documentElement.setAttribute('data-accent', a);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'system');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
