@@ -15,6 +15,7 @@ import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
 import { useState, useEffect, lazy, Suspense } from "react";
+import ProfileSkeleton from "./pages/ProfileSkeleton";
 
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const MeasuresPage = lazy(() => import("./pages/MeasuresPage"));
@@ -175,7 +176,7 @@ function AppInner() {
         )}
         {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
         {overlay === null && tab2 === "progress" && (
-          <Suspense fallback={<PageFallback />}>
+          <Suspense fallback={<ProfileSkeleton />}>
             <ProfilePage
               onOpenMeasures={() => setOverlay("measures")}
             />
