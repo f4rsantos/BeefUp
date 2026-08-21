@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { registerSW } from "virtual:pwa-register";
+import { getPref, setPref } from "./prefs";
 
 const DISMISS_KEY = "pwaInstallDismissedAt";
 const DISMISS_MS = 1000 * 60 * 60 * 24 * 14; // ask again after two weeks
@@ -20,8 +21,7 @@ function isIos() {
   );
 }
 
-function dismissedRecently() {
-  const at = Number(localStorage.getItem(DISMISS_KEY) || 0);
+function dismissedRecently(at) {
   return at > 0 && Date.now() - at < DISMISS_MS;
 }
 
@@ -31,30 +31,41 @@ export default function usePwa() {
   const [needRefresh, setNeedRefresh] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);
   const [updateSW, setUpdateSW] = useState(null);
+  // `beforeinstallprompt` fires synchronously and cannot await a read, so the
+  // dismissal timestamp is kept in a ref that the async load fills in.
+  const dismissedAt = useRef(0);
 
   useEffect(() => {
     if (isStandalone()) return;
+
+    let cancelled = false;
 
     function onBeforeInstallPrompt(e) {
       // Chrome fires this when the app meets the installability criteria.
       // Keeping the event lets us show our own button instead of the mini-infobar.
       e.preventDefault();
-      if (!dismissedRecently()) setInstallPrompt(e);
+      if (!dismissedRecently(dismissedAt.current)) setInstallPrompt(e);
     }
 
     function onInstalled() {
       setInstallPrompt(null);
       setShowIosHint(false);
-      localStorage.removeItem(DISMISS_KEY);
+      dismissedAt.current = 0;
+      setPref(DISMISS_KEY, 0);
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.addEventListener("appinstalled", onInstalled);
 
-    // iOS has no beforeinstallprompt, so the only option is to explain the manual flow.
-    if (isIos() && !dismissedRecently()) setShowIosHint(true);
+    getPref(DISMISS_KEY, 0).then((at) => {
+      if (cancelled) return;
+      dismissedAt.current = Number(at) || 0;
+      // iOS has no beforeinstallprompt, so the only option is to explain the manual flow.
+      if (isIos() && !dismissedRecently(dismissedAt.current)) setShowIosHint(true);
+    });
 
     return () => {
+      cancelled = true;
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
@@ -73,12 +84,16 @@ export default function usePwa() {
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
     setInstallPrompt(null);
-    if (outcome === "dismissed") localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    if (outcome === "dismissed") {
+      dismissedAt.current = Date.now();
+      setPref(DISMISS_KEY, dismissedAt.current);
+    }
     return outcome === "accepted";
   }
 
   function dismissInstall() {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    dismissedAt.current = Date.now();
+    setPref(DISMISS_KEY, dismissedAt.current);
     setInstallPrompt(null);
     setShowIosHint(false);
   }

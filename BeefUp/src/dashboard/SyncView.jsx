@@ -1,25 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UploadCloud, DownloadCloud, Check, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { getLS, setLS } from "../lib/crypto";
+import { getPref, setPref } from "../lib/prefs";
 import { extractConfig, pushClients, pullClients } from "../lib/firebaseSync";
 
 export default function SyncView() {
   const { t, clients, saveClient } = useApp();
-  const [raw, setRaw] = useState(() => {
-    const saved = getLS("firebaseConfig", null);
-    return saved ? JSON.stringify(saved, null, 2) : "";
-  });
-  const [config, setConfig] = useState(() => getLS("firebaseConfig", null));
+  // Config lives in IndexedDB now, so the textarea starts empty and fills in
+  // once the stored value loads.
+  const [raw, setRaw] = useState("");
+  const [config, setConfig] = useState(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPref("firebaseConfig").then((saved) => {
+      if (cancelled || !saved) return;
+      setConfig(saved);
+      setRaw(JSON.stringify(saved, null, 2));
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   function saveConfig() {
     setError(""); setStatus("");
     try {
       const cfg = extractConfig(raw);
-      setLS("firebaseConfig", cfg);
+      setPref("firebaseConfig", cfg);
       setConfig(cfg);
       setRaw(JSON.stringify(cfg, null, 2));
       setStatus(t.dashConfigSaved);
