@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Sparkles } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { ACTIVITY, OBJECTIVE, calcGoals, activityFromSessions, latestWeight } from "../lib/nutritionCalc";
+import NumberField from "./NumberField";
 
 export default function MacroGoalModal({ onClose }) {
   const { t, nutritionGoals, setNutritionGoals, sessions, measurements } = useApp();
@@ -98,7 +99,7 @@ export default function MacroGoalModal({ onClose }) {
         ) : (
           <div className="flex flex-col gap-5">
             <div className="grid grid-cols-3 gap-3">
-              <Field label={t.age} value={calc.age} onChange={(v) => setCalc({ ...calc, age: v })} />
+              <Field label={t.age} allowDecimal={false} value={calc.age} onChange={(v) => setCalc({ ...calc, age: v })} />
               <Field label={t.height} value={calc.height} onChange={(v) => setCalc({ ...calc, height: v })} />
               <Field label={t.bodyWeight} value={calc.weight} onChange={(v) => setCalc({ ...calc, weight: v })} />
             </div>
@@ -170,14 +171,14 @@ export default function MacroGoalModal({ onClose }) {
   );
 }
 
-function Field({ label, value, onChange }) {
+function Field({ label, value, onChange, allowDecimal }) {
   return (
     <div>
       <label className="section-title" style={{ fontSize: 13 }}>{label}</label>
-      <input
+      <NumberField
         className="field mt-2"
         style={{ fontSize: 16, padding: "13px 14px" }}
-        type="number"
+        allowDecimal={allowDecimal}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

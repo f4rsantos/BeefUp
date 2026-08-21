@@ -1,9 +1,11 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { db, STORES } from '../lib/db'
 import { getLS, setLS } from '../lib/crypto'
+import { todayISO } from '../lib/planUtils'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
+import { registerCustomExercises } from '../lib/exerciseTree'
 import strings from '../strings'
 
 const AppContext = createContext(null)
@@ -22,6 +24,12 @@ function removeById(list, id) {
   return list.filter((item) => item.id !== id)
 }
 
+function pruneOrphanFoodIds(prev, knownIds, lsKey) {
+  const kept = prev.filter((id) => knownIds.has(id))
+  if (kept.length !== prev.length) setLS(lsKey, kept)
+  return kept
+}
+
 const DEFAULT_MEAL_TYPES = [
   { id: 'breakfast', icon: 'coffee' },
   { id: 'morningSnack', icon: 'cookie' },
@@ -32,10 +40,14 @@ const DEFAULT_MEAL_TYPES = [
 
 export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(() => getLS('theme', 'system'))
+  const [fontScale, setFontScaleState] = useState(() => getLS('fontScale', 'medium'))
+  const [soundEnabled, setSoundEnabledState] = useState(() => getLS('soundEnabled', true))
   const [accentColor, setAccentColorState] = useState(() => getLS('accentColor', 'green'))
   const [customAccentHex, setCustomAccentHexState] = useState(() => getLS('customAccentHex', '#109a14'))
   const [lang, setLangState] = useState(() => getLS('lang', 'pt'))
   const [onboarded, setOnboardedState] = useState(() => getLS('onboarded', false))
+  const [joinedAt, setJoinedAtState] = useState(() => getLS('joinedAt', null))
+  const [activePlanSince, setActivePlanSinceState] = useState(() => getLS('activePlanSince', null))
   const [appMode, setAppModeState] = useState(() => getLS('appMode', 'solo'))
   const [focus, setFocusState] = useState(() => getLS('focus', 'both'))
   const [sectionPrefs, setSectionPrefsState] = useState(() =>
@@ -52,12 +64,15 @@ export function AppProvider({ children }) {
   )
   const [favouriteExercises, setFavouriteExercises] = useState(() => getLS('favExercises', []))
   const [favouriteFoods, setFavouriteFoods] = useState(() => getLS('favFoods', []))
-  const [activeWorkout, setActiveWorkout] = useState(null) // null = not in session
+  const [recentFoodIds, setRecentFoodIds] = useState(() => getLS('recentFoods', []))
+  const [activeWorkout, setActiveWorkoutState] = useState(() => getLS('activeWorkout', null))
   const [clients, setClients] = useState([])
 
   // Nutrition
   const [foodLog, setFoodLog] = useState([])
   const [customFoods, setCustomFoods] = useState([])
+  const [customExercises, setCustomExercises] = useState([])
+  const customExercisesRef = useRef([])
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
   const [nutritionGoals, setNutritionGoalsState] = useState(() =>
     getLS('nutritionGoals', { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 }),
@@ -75,6 +90,18 @@ export function AppProvider({ children }) {
   const setTheme = useCallback((v) => setThemeState(v), [])
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-font-scale', fontScale)
+    setLS('fontScale', fontScale)
+  }, [fontScale])
+
+  const setFontScale = useCallback((v) => setFontScaleState(v), [])
+
+  const setSoundEnabled = useCallback((v) => {
+    setSoundEnabledState(v)
+    setLS('soundEnabled', v)
+  }, [])
+
+  useEffect(() => {
     if (accentColor === 'custom') applyCustomAccent(customAccentHex)
     else if (accentColor === 'green') document.documentElement.removeAttribute('data-accent')
     else document.documentElement.setAttribute('data-accent', accentColor)
@@ -82,6 +109,11 @@ export function AppProvider({ children }) {
   }, [accentColor, customAccentHex])
 
   const setAccentColor = useCallback((v) => setAccentColorState(v), [])
+
+  const setActiveWorkout = useCallback((v) => {
+    setActiveWorkoutState(v)
+    setLS('activeWorkout', v)
+  }, [])
 
   const setCustomAccentColor = useCallback((hex) => {
     setLS('customAccentHex', hex)
@@ -93,6 +125,8 @@ export function AppProvider({ children }) {
     setLS('appMode', mode); setAppModeState(mode)
     if (focus) { setLS('focus', focus); setFocusState(focus) }
     setLS('onboarded', true); setOnboardedState(true)
+    const joined = todayISO()
+    setLS('joinedAt', joined); setJoinedAtState(joined)
   }, [])
 
   const setSectionPrefs = useCallback((next) => {
@@ -114,7 +148,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water, cli] = await Promise.all([
+      const [p, w, s, allSteps, apid, allMeasurements, log, foods, water, cli, customEx] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -125,6 +159,7 @@ export function AppProvider({ children }) {
         db.getAllFoods(),
         db.getAllWater(),
         db.getAllClients(),
+        db.getAllCustomExercises(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -135,6 +170,13 @@ export function AppProvider({ children }) {
       setStepsMap(map)
       setFoodLog(log)
       setCustomFoods(foods)
+
+      const knownFoodIds = new Set(foods.map(f => f.id))
+      setFavouriteFoods(prev => pruneOrphanFoodIds(prev, knownFoodIds, 'favFoods'))
+      setRecentFoodIds(prev => pruneOrphanFoodIds(prev, knownFoodIds, 'recentFoods'))
+      setCustomExercises(customEx)
+      customExercisesRef.current = customEx
+      registerCustomExercises(customEx)
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
@@ -167,6 +209,9 @@ export function AppProvider({ children }) {
   const setActivePlan = useCallback(async (id) => {
     await db.setSetting('activePlanId', id)
     setActivePlanId(id)
+    const since = todayISO()
+    setLS('activePlanSince', since)
+    setActivePlanSinceState(since)
   }, [])
 
   // Workouts CRUD
@@ -225,6 +270,39 @@ export function AppProvider({ children }) {
     setCustomFoods(prev => upsertById(prev, food))
   }, [])
 
+  const deleteCustomFood = useCallback(async (id) => {
+    await db.removeFood(id)
+    setCustomFoods(prev => removeById(prev, id))
+    setFavouriteFoods(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      setLS('favFoods', next)
+      return next
+    })
+  }, [])
+
+  const saveCustomExercise = useCallback(async (exercise) => {
+    await db.saveCustomExercise(exercise)
+    const next = upsertById(customExercisesRef.current, exercise)
+    customExercisesRef.current = next
+    registerCustomExercises(next)
+    setCustomExercises(next)
+  }, [])
+
+  const deleteCustomExercise = useCallback(async (id) => {
+    await db.removeCustomExercise(id)
+    const next = removeById(customExercisesRef.current, id)
+    customExercisesRef.current = next
+    registerCustomExercises(next)
+    setCustomExercises(next)
+    setFavouriteExercises(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      setLS('favExercises', next)
+      return next
+    })
+  }, [])
+
   const setWaterToday = useCallback(async (date, ml) => {
     await db.setWater(date, ml)
     setWaterMap(prev => ({ ...prev, [date]: ml }))
@@ -262,6 +340,16 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const RECENT_FOODS_LIMIT = 10
+
+  const addRecentFood = useCallback((id) => {
+    setRecentFoodIds(prev => {
+      const next = [id, ...prev.filter(x => x !== id)].slice(0, RECENT_FOODS_LIMIT)
+      setLS('recentFoods', next)
+      return next
+    })
+  }, [])
+
   const deleteSession = useCallback(async (sessionId) => {
     await db.remove(STORES.sessions, sessionId)
     setSessions(prev => removeById(prev, sessionId))
@@ -269,10 +357,12 @@ export function AppProvider({ children }) {
 
   const value = {
     theme, setTheme,
+    fontScale, setFontScale,
+    soundEnabled, setSoundEnabled,
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,
-    onboarded, appMode, focus, completeOnboarding,
+    onboarded, appMode, focus, completeOnboarding, joinedAt, activePlanSince,
     sectionPrefs, setSectionPrefs,
     mealTypes, setMealTypes,
     plans, savePlan, deletePlan, activePlanId, setActivePlan,
@@ -284,8 +374,10 @@ export function AppProvider({ children }) {
     favouriteExercises, toggleFavouriteExercise,
     activeWorkout, setActiveWorkout,
     foodLog, addFoodLog, deleteFoodLog,
-    customFoods, saveCustomFood,
+    customFoods, saveCustomFood, deleteCustomFood,
+    customExercises, saveCustomExercise, deleteCustomExercise,
     favouriteFoods, toggleFavouriteFood,
+    recentFoodIds, addRecentFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
     clients, saveClient, deleteClient,

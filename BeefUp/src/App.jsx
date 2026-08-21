@@ -3,28 +3,34 @@ import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
 import ExercisesPage from "./pages/ExercisesPage";
-import ProfilePage from "./pages/ProfilePage";
-import MeasuresPage from "./pages/MeasuresPage";
 import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
 import PlanSettings from "./pages/PlanSettings";
 import WorkoutSettings from "./pages/WorkoutSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
-import HelperDashboard from "./dashboard/HelperDashboard";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
 import PwaPrompts from "./components/PwaPrompts";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import ProfileSkeleton from "./pages/ProfileSkeleton";
+
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const MeasuresPage = lazy(() => import("./pages/MeasuresPage"));
+const HelperDashboard = lazy(() => import("./dashboard/HelperDashboard"));
+
+function PageFallback() {
+  return <div style={{ height: "100%", background: "var(--bg)" }} />;
+}
 
 const TABS = [
-  { id: "home", Icon: Dumbbell, labelPt: "Treino", labelEn: "Workout" },
-  { id: "nutrition", Icon: Apple, labelPt: "Nutrição", labelEn: "Nutrition" },
-  { id: "progress", Icon: TrendingUp, labelPt: "Progresso", labelEn: "Progress" },
-  { id: "settings", Icon: Settings, labelPt: "Definições", labelEn: "Settings" },
+  { id: "home", Icon: Dumbbell, tKey: "homeTitle" },
+  { id: "nutrition", Icon: Apple, tKey: "nutrition" },
+  { id: "progress", Icon: TrendingUp, tKey: "progress" },
+  { id: "settings", Icon: Settings, tKey: "settings" },
 ];
 
 function NavTabButton({ Icon, label, active, onClick }) {
@@ -47,7 +53,7 @@ function AppInner() {
     const code = new URLSearchParams(window.location.search).get("w");
     return code ? decodeWorkoutShare(code) : null;
   });
-  const { activeWorkout, setActiveWorkout, lang, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
+  const { activeWorkout, setActiveWorkout, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("w")) {
@@ -58,7 +64,13 @@ function AppInner() {
   if (!onboarded) return <Onboarding />;
 
   if (appMode === "helper") {
-    if (isDesktop) return <HelperDashboard />;
+    if (isDesktop) {
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <HelperDashboard />
+        </Suspense>
+      );
+    }
     return (
       <div style={{ height: "100%", display: "grid", placeItems: "center", padding: 32, textAlign: "center", background: "var(--bg)" }}>
         <p style={{ color: "var(--muted)", maxWidth: 320 }}>{t.obDesktopOnly}</p>
@@ -165,9 +177,11 @@ function AppInner() {
         )}
         {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
         {overlay === null && tab2 === "progress" && (
-          <ProfilePage
-            onOpenMeasures={() => setOverlay("measures")}
-          />
+          <Suspense fallback={<ProfileSkeleton />}>
+            <ProfilePage
+              onOpenMeasures={() => setOverlay("measures")}
+            />
+          </Suspense>
         )}
         {overlay === null && tab2 === "settings" && <SettingsPage />}
 
@@ -195,7 +209,11 @@ function AppInner() {
             initialWorkout={workoutSettingsWorkout}
           />
         )}
-        {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
+        {overlay === "measures" && (
+          <Suspense fallback={<PageFallback />}>
+            <MeasuresPage onBack={closeOverlay} />
+          </Suspense>
+        )}
 
         {/* Stays mounted while minimized */}
         {activeWorkout && (
@@ -245,11 +263,11 @@ function AppInner() {
         <nav className="bottom-nav">
           {TABS.slice(0, 2)
             .filter(({ id }) => (id === "home" ? showGym : id === "nutrition" ? showNutrition : true))
-            .map(({ id, Icon, labelPt, labelEn }) => (
+            .map(({ id, Icon, tKey }) => (
               <NavTabButton
                 key={id}
                 Icon={Icon}
-                label={lang === "pt" ? labelPt : labelEn}
+                label={t[tKey]}
                 active={tab2 === id}
                 onClick={() => setTab(id)}
               />
@@ -265,11 +283,11 @@ function AppInner() {
             </button>
           )}
 
-          {TABS.slice(2).map(({ id, Icon, labelPt, labelEn }) => (
+          {TABS.slice(2).map(({ id, Icon, tKey }) => (
             <NavTabButton
               key={id}
               Icon={Icon}
-              label={lang === "pt" ? labelPt : labelEn}
+              label={t[tKey]}
               active={tab2 === id}
               onClick={() => setTab(id)}
             />

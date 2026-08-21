@@ -7,6 +7,7 @@ import { MEASURE_GROUPS, LEGACY_TYPE_MAP } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ClientGym from "./ClientGym";
 import ConfirmModal from "../components/ConfirmModal";
+import NumberField from "../components/NumberField";
 
 // Same current type set solo users' Measures page uses — client.measures can
 // still carry pre-migration type names (e.g. "arms"), which have no
@@ -191,7 +192,7 @@ function Measures({ client, saveClient, t }) {
 
       <div className="card mb-5">
         <div className="flex gap-3" style={{ maxWidth: 420 }}>
-          <input className="field flex-1" type="number" value={mVal} onChange={(e) => setMVal(e.target.value)} placeholder={t.measureValuePlaceholder} onKeyDown={(e) => e.key === "Enter" && addMeasure()} />
+          <NumberField className="field flex-1" value={mVal} onChange={(e) => setMVal(e.target.value)} placeholder={t.measureValuePlaceholder} onKeyDown={(e) => e.key === "Enter" && addMeasure()} />
           <button className="btn btn-primary flex items-center gap-2 px-5" onClick={addMeasure}><Plus size={16} /> {t.saveMeasure}</button>
         </div>
       </div>

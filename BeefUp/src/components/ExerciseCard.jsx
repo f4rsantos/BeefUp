@@ -1,7 +1,9 @@
 import ProgressRing from "./ProgressRing";
-import { useState, useRef, useCallback, useEffect } from "react";
+import NumberField from "./NumberField";
+import { useState, useRef, useCallback, useEffect, memo } from "react";
 import { Trash2, Plus, Check, StickyNote, Timer as TimerIcon } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
+import { repUnitFor, getBarTypeLabel } from "../lib/exerciseTree"
 
 const SWIPE_THRESHOLD = 90;
 const SET_ROW_GRID_TEMPLATE = "22px minmax(0,1fr) minmax(0,1fr) 28px";
@@ -158,18 +160,17 @@ function SetRow({ exIdx, setIdx, set, onUpdateSet, onToggleSet, onRemoveSet, onS
         >
           {set.type && set.type !== "normal" ? t[`setType_${set.type}`][0] : setIdx + 1}
         </button>
-        <input
+        <NumberField
           className="field text-center text-sm"
-          type="number"
           value={set.weight}
           onChange={(e) => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
           placeholder="kg"
           disabled={set.done}
           style={{ padding: "6px 8px" }}
         />
-        <input
+        <NumberField
           className="field text-center text-sm"
-          type="number"
+          allowDecimal={false}
           value={set.reps}
           onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", e.target.value)}
           placeholder="—"
@@ -236,7 +237,7 @@ function InlineSetTimer({ remaining, total, onSkip }) {
   );
 }
 
-export default function ExerciseCard({
+function ExerciseCard({
   exercise,
   exIdx,
   lang,
@@ -251,9 +252,12 @@ export default function ExerciseCard({
   onUpdateNote,
   setTimer,
   onSkipSetTimer,
+  onOpenInfo,
 }) {
   const [showNote, setShowNote] = useState(() => !!note);
   const exLabel = localizedName(exercise, lang);
+  const barTypeLabel = exercise.barType ? getBarTypeLabel(exercise.barType, lang) : null;
+  const repUnit = repUnitFor(exercise.exerciseId);
   const addSetLabel = t.setSingular;
   const doneCount = exercise.sets.filter((s) => s.done).length;
   const allDone = doneCount === exercise.sets.length && exercise.sets.length > 0;
@@ -261,7 +265,11 @@ export default function ExerciseCard({
   return ( 
     <div className="card" style={allDone ? { borderColor: "var(--accent)" } : undefined}>
       <div className="flex items-center justify-between mb-3 gap-2">
-        <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
+        <button
+          className="flex items-center gap-3"
+          style={{ minWidth: 0, textAlign: "left" }}
+          onClick={() => onOpenInfo(exercise.exerciseId)}
+        >
           <ProgressRing
             value={doneCount}
             max={exercise.sets.length}
@@ -281,8 +289,13 @@ export default function ExerciseCard({
             }}
           >
             {exLabel}
+            {barTypeLabel && (
+              <span className="font-normal" style={{ color: "var(--muted)" }}>
+                {" "}({barTypeLabel})
+              </span>
+            )}
           </p>
-        </div>
+        </button>
         <div className="flex items-center" style={{ gap: 4, flexShrink: 0 }}>
           <button
             className="btn btn-ghost p-1.5"
@@ -325,7 +338,7 @@ export default function ExerciseCard({
           kg
         </span>
         <span className="text-xs text-center" style={{ color: "var(--muted)" }}>
-          reps
+          {repUnit}
         </span>
         <span />
       </div>
@@ -362,3 +375,5 @@ export default function ExerciseCard({
     </div>
   );
 }
+
+export default memo(ExerciseCard);

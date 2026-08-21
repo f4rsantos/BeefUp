@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Timer } from "lucide-react";
-import { resolveExercise } from "../lib/exerciseTree";
-import { localizedName } from "../lib/localizedName"
-
-function exName(id, lang) {
-  const ex = resolveExercise(id);
-  return ex ? (localizedName(ex, lang)) : id;
-}
+import { resolvedExerciseName } from "../lib/exerciseTree";
 
 export default function WorkoutPreview({ workout, lang, t, onClose }) {
   const items = (workout.exercises || []).map((e) => (typeof e === "string" ? { exerciseId: e, sets: 3, reps: 10, rest: 90, weight: "" } : e));
@@ -40,7 +34,7 @@ export default function WorkoutPreview({ workout, lang, t, onClose }) {
         </div>
 
         <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", marginBottom: 16 }}>
-          {exName(cur.exerciseId, lang)}
+          {resolvedExerciseName(cur.exerciseId, lang)}
         </h2>
 
         <div className="grid grid-cols-3 gap-3 mb-4">

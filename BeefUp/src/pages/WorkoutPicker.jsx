@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 import { getLS, setLS } from "../lib/crypto";
 
 export default function WorkoutPicker({ onSelect, onBack }) {
-  const { t, workouts } = useApp();
+  const { t, lang, workouts } = useApp();
   const [query, setQuery] = useState("");
   const [favIds, setFavIds] = useState(() => getLS("favWorkouts", []));
 
@@ -33,29 +33,31 @@ export default function WorkoutPicker({ onSelect, onBack }) {
   }, [workouts, query, favIds]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
-          {t.startAnother}
-        </h1>
-      </div>
+    <div className="flex flex-col h-full" style={{ background: "var(--bg)", position: "relative" }}>
+      <div
+        className="flex-1 overflow-y-auto pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
+            {t.startAnother}
+          </h1>
+        </div>
 
-      <div className="px-4 mb-3" style={{ position: "relative" }}>
-        <Search size={16} style={{ position: "absolute", left: 28, top: 13, color: "var(--muted)" }} />
-        <input
-          className="field"
-          style={{ paddingLeft: 38 }}
-          placeholder={t.searchExercises}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-2.5 scrollbar-hide fade-in">
+        <div style={{ position: "relative" }}>
+          <Search size={16} style={{ position: "absolute", left: 12, top: 13, color: "var(--muted)" }} />
+          <input
+            className="field"
+            style={{ paddingLeft: 38 }}
+            placeholder={t.searchExercises}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+        </div>
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center flex-1 py-16">
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noResults}</p>
@@ -98,6 +100,30 @@ export default function WorkoutPicker({ onSelect, onBack }) {
           })
         )}
       </div>
+
+      <button
+        className="btn btn-primary"
+        style={{
+          position: "absolute",
+          bottom: 32,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "14px 24px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          fontSize: 18,
+          fontWeight: 700,
+          borderRadius: 16,
+          boxShadow: "var(--shadow-glow)",
+          zIndex: 50,
+          whiteSpace: "nowrap"
+        }}
+        onClick={() => onSelect({ id: null, name: lang === "pt" ? "Treino Livre" : "Empty Workout", exercises: [] })}
+      >
+        {lang === "pt" ? "Treino Livre" : "Empty Workout"}
+        <Play size={24} fill="currentColor" />
+      </button>
     </div>
   );
 }

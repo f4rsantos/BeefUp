@@ -1,69 +1,113 @@
-// Food lookup abstraction. Swappable backends behind one interface:
-//   searchFoods(query)  -> Promise<Food[]>
-//   getByBarcode(code)  -> Promise<Food | null>
-//
-// Food shape: { id, name, namePt, kcal, protein, carbs, fat, serving, servingLabel }
-// All macro values are per `serving` grams/ml (the default serving for that food).
-//
-// v1 ships the bundled local provider (fully offline, no secret).
-// A FatSecret-backed provider drops in behind the same interface once a
-// server-side proxy is available — FatSecret OAuth2 needs a secret that must
-// NOT live in the browser, so it is reached via VITE_FOOD_PROXY_URL.
+import { searchProducts, fetchProduct } from './openFoodFacts'
 
-import foodsData from '../data/foods.json'
+export const MICRONUTRIENTS = [
+  { key: 'fiber', unit: 'g', rda: 30, off: 'fiber_100g', factor: 1 },
+  { key: 'sugar', unit: 'g', rda: 50, off: 'sugars_100g', factor: 1 },
+  { key: 'saturatedFat', unit: 'g', rda: 20, off: 'saturated-fat_100g', factor: 1 },
+  { key: 'transFat', unit: 'g', rda: 2, off: 'trans-fat_100g', factor: 1 },
+  { key: 'sodium', unit: 'mg', rda: 2300, off: 'sodium_100g', factor: 1000 },
+  { key: 'potassium', unit: 'mg', rda: 3500, off: 'potassium_100g', factor: 1000 },
+  { key: 'calcium', unit: 'mg', rda: 1000, off: 'calcium_100g', factor: 1000 },
+  { key: 'iron', unit: 'mg', rda: 14, off: 'iron_100g', factor: 1000 },
+]
 
-const ACCENTS = /[̀-ͯ]/g
-function normalize(str) {
-  // strip accents so "maca" matches "maçã"
-  return (str || '').toLowerCase().normalize('NFD').replace(ACCENTS, '')
+export const MICRONUTRIENT_KEYS = MICRONUTRIENTS.map((m) => m.key)
+
+const KCAL_PER_KJ = 1 / 4.184
+
+function num(value) {
+  const n = typeof value === 'string' ? parseFloat(value) : value
+  return Number.isFinite(n) ? n : null
 }
 
-export const localFoodProvider = {
-  id: 'local',
-  async searchFoods(query) {
-    const q = normalize(query).trim()
-    if (!q) return foodsData.slice(0, 30)
-    return foodsData.filter(
-      (f) => normalize(f.name).includes(q) || normalize(f.namePt).includes(q),
-    )
-  },
-  async getByBarcode() {
-    // Local dataset has no barcodes; FatSecret provider will handle this.
-    return null
-  },
+function readKcal(nutriments) {
+  const kcal = num(nutriments['energy-kcal_100g'])
+  if (kcal != null) return Math.round(kcal)
+  const kj = num(nutriments.energy_100g)
+  return kj != null ? Math.round(kj * KCAL_PER_KJ) : null
 }
 
-// Stubbed FatSecret provider. Inactive unless VITE_FOOD_PROXY_URL is configured.
-// The proxy is expected to expose GET /search?q= and GET /barcode?code= and to
-// return the Food shape above. No client secret is ever handled here.
-export function createFatSecretProvider(proxyUrl) {
+function readMicros(nutriments) {
+  const out = {}
+  for (const { key, off, factor } of MICRONUTRIENTS) {
+    const raw = num(nutriments[off])
+    if (raw != null) out[key] = +(raw * factor).toFixed(2)
+  }
+  if (out.sodium == null) {
+    const salt = num(nutriments.salt_100g)
+    if (salt != null) out.sodium = +((salt / 2.5) * 1000).toFixed(2)
+  }
+  return out
+}
+
+function composeName(base, brands) {
+  const name = (base || '').trim()
+  if (!name) return ''
+  const brand = (brands || '').split(',')[0]?.trim()
+  return brand && !name.toLowerCase().includes(brand.toLowerCase())
+    ? `${name} (${brand})`
+    : name
+}
+
+export function normalizeProduct(product) {
+  if (!product?.code) return null
+  const nutriments = product.nutriments ?? {}
+
+  const kcal = readKcal(nutriments)
+  if (kcal == null) return null
+
+  const en = composeName(product.product_name, product.brands)
+  const pt = composeName(product.product_name_pt || product.product_name, product.brands)
+  if (!en && !pt) return null
+
+  const unitGrams = num(product.serving_quantity)
+
   return {
-    id: 'fatsecret',
-    async searchFoods(query) {
-      const res = await fetch(`${proxyUrl}/search?q=${encodeURIComponent(query)}`)
-      if (!res.ok) throw new Error(`food proxy ${res.status}`)
-      return res.json()
-    },
-    async getByBarcode(code) {
-      const res = await fetch(`${proxyUrl}/barcode?code=${encodeURIComponent(code)}`)
-      if (!res.ok) return null
-      return res.json()
-    },
+    id: String(product.code),
+    name: en || pt,
+    namePt: pt || en,
+    kcal,
+    protein: num(nutriments.proteins_100g) ?? 0,
+    carbs: num(nutriments.carbohydrates_100g) ?? 0,
+    fat: num(nutriments.fat_100g) ?? 0,
+    serving: 100,
+    servingLabel: '100 g',
+    ...(unitGrams ? { unitGrams } : {}),
+    ...readMicros(nutriments),
+    source: 'off',
   }
 }
 
-const proxyUrl = import.meta.env.VITE_FOOD_PROXY_URL
-export const foodProvider = proxyUrl
-  ? createFatSecretProvider(proxyUrl)
-  : localFoodProvider
+export const foodProvider = {
+  id: 'openfoodfacts',
+  async searchFoods(query, lang = 'pt', signal) {
+    const products = await searchProducts(query, lang, signal)
+    const seen = new Set()
+    const foods = []
+    for (const p of products) {
+      const food = normalizeProduct(p)
+      if (!food || seen.has(food.id)) continue
+      seen.add(food.id)
+      foods.push(food)
+    }
+    return foods
+  },
+  async getByBarcode(code, lang = 'pt', signal) {
+    const product = await fetchProduct(code, lang, signal)
+    return product ? normalizeProduct(product) : null
+  },
+}
 
-// Scale a food's macros to an arbitrary gram/ml amount.
 export function scaleFood(food, grams) {
   const factor = grams / (food.serving || 100)
-  return {
+  const scaled = {
     kcal: Math.round(food.kcal * factor),
     protein: +(food.protein * factor).toFixed(1),
     carbs: +(food.carbs * factor).toFixed(1),
     fat: +(food.fat * factor).toFixed(1),
   }
+  for (const key of MICRONUTRIENT_KEYS) {
+    if (food[key] != null) scaled[key] = +(food[key] * factor).toFixed(1)
+  }
+  return scaled
 }

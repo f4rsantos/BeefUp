@@ -6,6 +6,7 @@ import { uid, todayISO, measurementsForType } from "../lib/planUtils";
 import { MEASURE_GROUPS, getMeasureUnit } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ConfirmModal from "../components/ConfirmModal";
+import NumberField from "../components/NumberField";
 
 const MAX_VALUE = 1000;
 
@@ -45,9 +46,8 @@ function MeasureTypeCard({ t, type, measurements, onSave, onDelete }) {
       <p className="section-title" style={{ margin: 0 }}>{t[`measureType_${type}`]}</p>
       <div className="flex gap-3 items-center">
         <div className="flex-1" style={{ position: "relative" }}>
-          <input
+          <NumberField
             className="field"
-            type="number"
             placeholder={t.measureValuePlaceholder}
             value={val}
             onChange={(e) => { setVal(e.target.value); setError(null); }}
@@ -151,16 +151,18 @@ export default function MeasuresPage({ onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
-        <button className="btn-back" onClick={onBack}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
-          {t.measures}
-        </h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
+            {t.measures}
+          </h1>
+        </div>
         <div className="flex gap-2 flex-wrap">
           {MEASURE_GROUPS.map((g) => (
             <button

@@ -44,26 +44,24 @@ export function nowISO() {
   return new Date().toISOString()
 }
 
-export function lastCompletedSets(sessions, exerciseId) {
+function latestExerciseField(sessions, exerciseId, getField) {
   let latest = null
   for (const s of sessions) {
     const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
-    if (entry?.sets?.length && (!latest || s.date > latest.date)) {
-      latest = { date: s.date, sets: entry.sets }
+    const value = entry && getField(entry)
+    if (value && (!latest || s.date > latest.date)) {
+      latest = { date: s.date, value }
     }
   }
-  return latest?.sets ?? []
+  return latest?.value
+}
+
+export function lastCompletedSets(sessions, exerciseId) {
+  return latestExerciseField(sessions, exerciseId, (e) => (e.sets?.length ? e.sets : undefined)) ?? []
 }
 
 export function lastExerciseNote(sessions, exerciseId) {
-  let latest = null
-  for (const s of sessions) {
-    const entry = s.exercises?.find((e) => e.exerciseId === exerciseId)
-    if (entry?.note && (!latest || s.date > latest.date)) {
-      latest = { date: s.date, note: entry.note }
-    }
-  }
-  return latest?.note ?? ''
+  return latestExerciseField(sessions, exerciseId, (e) => e.note) ?? ''
 }
 
 export function formatElapsedClock(seconds) {
@@ -75,7 +73,7 @@ export function formatElapsedClock(seconds) {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-function activeDayFlags(sessions, plans, activePlanId, dayCount) {
+function activeDayFlags(sessions, plans, activePlanId, dayCount, activePlanSince) {
   const sessionDates = new Set(sessions.map(sessionDay))
   const plan = plans.find(p => p.id === activePlanId)
   const today = new Date()
@@ -87,14 +85,23 @@ function activeDayFlags(sessions, plans, activePlanId, dayCount) {
     d.setDate(d.getDate() - i)
     const iso = toLocalISO(d)
     const hasSession = sessionDates.has(iso)
-    const isRestDay = plan ? isPlannedRestDay(plan, d) : false
+    const withinCurrentPlanEra = !activePlanSince || iso >= activePlanSince
+    const isRestDay = plan && withinCurrentPlanEra ? isPlannedRestDay(plan, d) : false
     flags.push(hasSession || isRestDay)
   }
   return flags
 }
 
-export function computeStreak(sessions, plans, activePlanId) {
-  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+function resolveJoinedISO(joinedAt, sessions) {
+  if (joinedAt) return joinedAt
+  const sessionDates = sessions.map(sessionDay).filter(Boolean)
+  if (sessionDates.length === 0) return todayISO()
+  return sessionDates.reduce((earliest, d) => (d < earliest ? d : earliest))
+}
+
+export function computeStreak(sessions, plans, activePlanId, joinedAt, activePlanSince) {
+  const dayCount = daysBetween(resolveJoinedISO(joinedAt, sessions))
+  const flags = activeDayFlags(sessions, plans, activePlanId, dayCount, activePlanSince)
   let streak = 0
   for (const active of flags) {
     if (!active) break
@@ -103,8 +110,9 @@ export function computeStreak(sessions, plans, activePlanId) {
   return streak
 }
 
-export function computeBestStreak(sessions, plans, activePlanId) {
-  const flags = activeDayFlags(sessions, plans, activePlanId, 365)
+export function computeBestStreak(sessions, plans, activePlanId, joinedAt, activePlanSince) {
+  const dayCount = daysBetween(resolveJoinedISO(joinedAt, sessions))
+  const flags = activeDayFlags(sessions, plans, activePlanId, dayCount, activePlanSince)
   let best = 0
   let current = 0
   for (const active of flags) {
@@ -156,6 +164,18 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
+export function addPlanDay(days, type, workouts) {
+  return [...days, { id: uid(), type, workoutId: type === 'workout' ? (workouts[0]?.id ?? null) : null }]
+}
+
+export function updatePlanDay(days, index, patch) {
+  return days.map((d, j) => (j === index ? { ...d, ...patch } : d))
+}
+
+export function removePlanDay(days, index) {
+  return days.filter((_, j) => j !== index)
+}
+
 // Warmup sets are excluded here and in every other stat helper below, so the
 // same session never reports two different volumes depending on the screen.
 export function sessionVolume(session) {
@@ -165,7 +185,7 @@ export function sessionVolume(session) {
 }
 
 export function sessionSets(session) {
-  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter((s) => s.type !== 'warmup').length ?? 0), 0) ?? 0
+  return session.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter((s) => s.type !== 'warmup')?.length ?? 0), 0) ?? 0
 }
 
 function sessionReps(session) {

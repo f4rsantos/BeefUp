@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { Plus, Minus, Pencil, Droplet, Trash2, Check, X } from "lucide-react";
+import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { todayISO, uid } from "../lib/planUtils";
+import { getLS, removeLS } from "../lib/crypto";
 import { macroGoalShares } from "../lib/nutritionCalc";
+import { MICRONUTRIENTS } from "../lib/foodProvider";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
 import PageHeader from "../components/PageHeader";
@@ -13,10 +15,22 @@ import MacroGoalModal from "../components/MacroGoalModal";
 
 const GLASS_ML = 250;
 
+const MICRO_COLORS = {
+  fiber: "var(--accent)",
+  sugar: "var(--carbs)",
+  saturatedFat: "var(--fat)",
+  transFat: "var(--danger)",
+  sodium: "var(--warn)",
+  potassium: "var(--accent-2)",
+  calcium: "var(--protein)",
+  iron: "var(--muted)",
+};
+
 export default function NutritionPage() {
   const { t, foodLog, deleteFoodLog, nutritionGoals, waterMap, setWaterToday, mealTypes, setMealTypes } = useApp();
   const today = todayISO();
-  const [addMeal, setAddMeal] = useState(null);
+  const [foodDraft] = useState(() => getLS("foodEntryDraft", null));
+  const [addMeal, setAddMeal] = useState(() => foodDraft?.meal ?? null);
   const [showGoals, setShowGoals] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [editingMeals, setEditingMeals] = useState(false);
@@ -24,6 +38,7 @@ export default function NutritionPage() {
   const [newMealName, setNewMealName] = useState("");
   const [newMealIcon, setNewMealIcon] = useState(MEAL_ICON_KEYS[0]);
   const [pendingDeleteMeal, setPendingDeleteMeal] = useState(null);
+  const [showMicros, setShowMicros] = useState(false);
 
   const todayLog = useMemo(() => foodLog.filter((e) => e.date === today), [foodLog, today]);
 
@@ -47,6 +62,15 @@ export default function NutritionPage() {
     { key: "fat", short: t.fatShort, val: Math.round(totals.fat), goal: nutritionGoals.fat, color: "var(--fat)" },
   ];
 
+  const micros = MICRONUTRIENTS.map((m) => ({
+    key: m.key,
+    label: t[m.key],
+    val: Math.round(totals[m.key] ?? 0),
+    goal: m.rda,
+    unit: m.unit,
+    color: MICRO_COLORS[m.key] ?? "var(--muted)",
+  }));
+
   function addMealType() {
     const name = newMealName.trim();
     if (!name) return;
@@ -63,16 +87,18 @@ export default function NutritionPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <PageHeader
-        title={t.nutrition}
-        action={
-          <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={t.editGoals}>
-            <Pencil size={16} />
-          </button>
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-5 scrollbar-hide fade-in">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-5 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <PageHeader
+          title={t.nutrition}
+          action={
+            <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={t.editGoals}>
+              <Pencil size={16} />
+            </button>
+          }
+        />
         <div className="card card-elevated flex flex-col gap-4" style={{ padding: 20 }}>
           <div className="flex items-center justify-center">
             <MacroRing value={totals.kcal} max={kcalGoal || 1} shares={macroGoalShares(totals, nutritionGoals)}>
@@ -104,6 +130,43 @@ export default function NutritionPage() {
               </div>
             ))}
           </div>
+
+          <button
+            className="flex items-center justify-center w-full"
+            style={{ color: "var(--muted)", background: "none", border: "none" }}
+            onClick={() => setShowMicros((v) => !v)}
+            aria-expanded={showMicros}
+            aria-label={t.moreDetails}
+          >
+            <ChevronDown
+              size={20}
+              style={{ transform: showMicros ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
+            />
+          </button>
+
+          {showMicros && (
+            <div className="flex flex-col fade-in" style={{ gap: 12 }}>
+              {micros.map((m) => (
+                <div key={m.key} className="flex flex-col" style={{ gap: 5 }}>
+                  <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+                    <span className="font-semibold" style={{ color: "var(--text)" }}>{m.label}</span>
+                    <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{m.val} / {m.goal}{m.unit}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        width: `${Math.min(100, (m.val / m.goal) * 100)}%`,
+                        background: m.color,
+                        transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Water ── */}
@@ -303,7 +366,16 @@ export default function NutritionPage() {
         </section>
       </div>
 
-      {addMeal && <FoodSearchModal meal={addMeal} onClose={() => setAddMeal(null)} />}
+      {addMeal && (
+        <FoodSearchModal
+          meal={addMeal}
+          initialDraft={foodDraft?.meal === addMeal ? foodDraft : null}
+          onClose={() => {
+            removeLS("foodEntryDraft");
+            setAddMeal(null);
+          }}
+        />
+      )}
       {showGoals && <MacroGoalModal onClose={() => setShowGoals(false)} />}
       {pendingDelete && (
         <ConfirmModal

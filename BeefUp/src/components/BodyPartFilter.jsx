@@ -13,6 +13,7 @@ const BODY_PART_MUSCLE_GROUPS = {
   "upper legs": { front: ["Quads", "Adductors"], back: ["Hamstrings", "Glutes"] },
   "lower legs": { front: ["Calves"], back: ["Calves"] },
   cardio: { front: [], back: [] },
+  neck: { front: [], back: [] },
 };
 
 const MUSCLE_GROUP_TO_BODY_PART = { front: {}, back: {} };

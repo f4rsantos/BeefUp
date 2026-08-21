@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
-import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise } from "../lib/exerciseTree";
+import { useAudioCues } from "../hooks/useAudioCues";
+import { getLS, setLS, removeLS } from "../lib/crypto";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
@@ -10,20 +12,36 @@ import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
+import ExerciseDetailPage from "./ExerciseDetailPage";
 import { localizedName } from "../lib/localizedName"
 
 function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
 }
 
+function restoreRestState(saved) {
+  if (!saved || !saved.running || !saved.endsAt) return saved ?? null;
+  const remaining = Math.max(0, Math.round((saved.endsAt - Date.now()) / 1000));
+  if (remaining <= 0) return { ...saved, elapsed: saved.duration, running: false, done: true };
+  return { ...saved, elapsed: saved.duration - remaining };
+}
+
+// Drops the per-set auto-rest timer if it already expired while the app was away.
+function restoreSetTimer(saved) {
+  if (!saved) return null;
+  const remaining = Math.max(0, Math.round((saved.endsAt - Date.now()) / 1000));
+  return remaining <= 0 ? null : saved;
+}
+
 // Priority for weight/reps/note when a set isn't covered by real history:
-function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null) {
+function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null, barType = "") {
   return {
     id: uid(),
     exerciseId: ex.id,
     name: ex.name,
     namePt: ex.namePt,
     note: lastNote || workoutItem?.note || "",
+    barType: barType || workoutItem?.barType || "",
     sets: Array.from({ length: ex.defaultSets }, (_, i) => {
       const last = lastSets[Math.min(i, lastSets.length - 1)];
       const fallbackWeight = workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : "");
@@ -39,11 +57,13 @@ function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null
 }
 
 export default function ActiveWorkout({ onEnd, onMinimize }) {
-  const { t, lang, activeWorkout, workouts, addSession, sessions } = useApp();
+  const { t, lang, activeWorkout, workouts, addSession, sessions, saveWorkout } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
   const [exercises, setExercises] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return draft.exercises;
     if (!sourceWorkout) return [];
     return normalizeWorkoutExercises(sourceWorkout.exercises)
       .map((item) => ({ item, ex: resolveExercise(item.ref) }))
@@ -53,18 +73,52 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       );
   });
 
+  const exercisesRef = useRef(exercises);
+  useEffect(() => {
+    exercisesRef.current = exercises;
+  }, [exercises]);
+
+  const [restState, setRestState] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return restoreRestState(draft.restState);
+    return null;
+  });
+  const [setTimer, setSetTimer] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return restoreSetTimer(draft.setTimer);
+    return null;
+  });
+
+  useEffect(() => {
+    if (!activeWorkout) return;
+    const id = setTimeout(() => {
+      setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer });
+    }, 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt]);
+
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
   const startedAt = activeWorkout?.startedAt ?? fallbackStart;
   const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
-  const [restState, setRestState] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
-  const [setTimer, setSetTimer] = useState(null);
+  const [pendingTemplateUpdate, setPendingTemplateUpdate] = useState(false);
+  const [viewingExercise, setViewingExercise] = useState(null);
+
+  const openExerciseInfo = useCallback((ref) => {
+    const { baseId, variantId } = parseExerciseRef(ref);
+    const base = getBaseExercise(baseId);
+    if (base) setViewingExercise({ base, activeVariantId: variantId });
+  }, []);
+  const { unlock: unlockAudio, play: playAudioCue } = useAudioCues();
+  const restAnnouncedRef = useRef(null);
+  const setTimerAnnouncedKeyRef = useRef(null);
 
   useEffect(() => {
     const id = setInterval(
@@ -76,10 +130,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   useEffect(() => {
     if (!restState?.running) return;
+    restAnnouncedRef.current = null; // fresh rest session starting
     const id = setInterval(() => {
       setRestState((prev) => {
         if (!prev) return prev;
         const nextElapsed = prev.elapsed + 1;
+        const remaining = prev.duration - nextElapsed;
+        if (remaining >= 0 && remaining <= 3 && restAnnouncedRef.current !== remaining) {
+          restAnnouncedRef.current = remaining;
+          playAudioCue(remaining === 0 ? "done" : "tick");
+        }
         if (nextElapsed >= prev.duration) {
           return { ...prev, elapsed: prev.duration, running: false, done: true };
         }
@@ -87,7 +147,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [restState?.running]);
+  }, [restState?.running, playAudioCue]);
 
   useEffect(() => {
     if (!setTimer) return;
@@ -97,6 +157,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         0,
         Math.round((currentEndsAt - Date.now()) / 1000),
       );
+      if (remaining <= 3) {
+        const key = `${currentEndsAt}:${remaining}`;
+        if (setTimerAnnouncedKeyRef.current !== key) {
+          setTimerAnnouncedKeyRef.current = key;
+          playAudioCue(remaining === 0 ? "done" : "tick");
+        }
+      }
       if (remaining <= 0) {
         setSetTimer(null);
         return;
@@ -110,7 +177,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [setTimer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setTimer?.endsAt, playAudioCue]);
 
   const updateSet = useCallback((exIdx, setIdx, field, val) => {
     setExercises((prev) =>
@@ -142,7 +210,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   const toggleSet = useCallback(
     (exIdx, setIdx) => {
-      const wasDone = exercises[exIdx]?.sets[setIdx]?.done;
+      const wasDone = exercisesRef.current[exIdx]?.sets[setIdx]?.done;
 
       setExercises((prev) =>
         prev.map((e, i) => {
@@ -169,7 +237,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx, setIdx) ? null : prevTimer));
       }
     },
-    [exercises, restAfterSet],
+    [restAfterSet],
   );
 
   const dismissSetTimer = useCallback(() => setSetTimer(null), []);
@@ -210,11 +278,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
 
-  const addExercises = useCallback((refs) => {
-    const entries = refs
-      .map(resolveExercise)
-      .filter(Boolean)
-      .map((ex) => buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id)));
+  const addExercises = useCallback((picks) => {
+    const entries = picks
+      .map(({ ref, barType }) => {
+        const ex = resolveExercise(ref);
+        return ex && buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, barType);
+      })
+      .filter(Boolean);
     if (entries.length === 0) return;
     setExercises((prev) => [...prev, ...entries]);
     setShowExPicker(false);
@@ -235,6 +305,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           name: e.name,
           namePt: e.namePt,
           note: e.note?.trim() ?? "",
+          barType: e.barType ?? "",
           sets: e.sets
             .filter((s) => s.done)
             .map((s) => ({ weight: s.weight, reps: s.reps, type: s.type })),
@@ -257,10 +328,38 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       .map((e) => localizedName(e, lang));
 
     await addSession(session);
+    removeLS("activeWorkoutDraft");
+    playAudioCue("finish");
     setEndModal({ stats: { duration, totalSets, totalVolume, prs } });
   }
 
   const workoutName = activeWorkout?.workoutName ?? "";
+  const anySetDone = exercises.some(e => e.sets.some(s => s.done));
+
+  const templateItems = sourceWorkout ? normalizeWorkoutExercises(sourceWorkout.exercises) : [];
+  const templateRefs = templateItems.map((i) => i.ref);
+  const currentRefs = exercises.map((e) => e.exerciseId);
+  const workoutChanged =
+    !!sourceWorkout &&
+    (templateRefs.length !== currentRefs.length ||
+      !templateRefs.every((r) => currentRefs.includes(r)) ||
+      !currentRefs.every((r) => templateRefs.includes(r)));
+
+  function applyTemplateUpdate() {
+    const byRef = Object.fromEntries(templateItems.map((i) => [i.ref, i]));
+    const newExercises = exercises.map((e) => {
+      const orig = byRef[e.exerciseId];
+      const item = { ref: e.exerciseId };
+      if (orig?.weight) item.weight = orig.weight;
+      if (orig?.reps) item.reps = orig.reps;
+      const note = e.note?.trim() || orig?.note;
+      if (note) item.note = note;
+      const barType = e.barType || orig?.barType;
+      if (barType) item.barType = barType;
+      return item;
+    });
+    saveWorkout({ ...sourceWorkout, exercises: newExercises });
+  }
 
   return (
     <div
@@ -269,6 +368,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         background: "var(--bg)",
         touchAction: "pan-x pan-y pinch-zoom",
       }}
+      onPointerDownCapture={unlockAudio}
     >
       <WorkoutTopBar
         elapsed={elapsed}
@@ -278,6 +378,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         onEnd={() => setEndModal("confirm")}
         onMinimize={onMinimize}
         minimizeLabel={t.minimize}
+        t={t}
       />
 
       {workoutName && (
@@ -289,7 +390,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         </p>
       )}
 
-      <div className="px-4 pb-8 flex flex-col gap-3">
+      <div className="pb-8 flex flex-col gap-3" style={{ paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}>
         {exercises.map((ex, exIdx) => (
           <ExerciseCard
             key={ex.id}
@@ -305,8 +406,9 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onSetType={setSetType}
             note={ex.note}
             onUpdateNote={updateNote}
-            setTimer={setTimer}
+            setTimer={setTimer?.exIdx === exIdx ? setTimer : null}
             onSkipSetTimer={dismissSetTimer}
+            onOpenInfo={openExerciseInfo}
           />
         ))}
 
@@ -334,18 +436,51 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         />
       )}
 
+      {viewingExercise && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
+          <ExerciseDetailPage
+            exercise={viewingExercise.base}
+            activeVariantId={viewingExercise.activeVariantId}
+            onBack={() => setViewingExercise(null)}
+          />
+        </div>
+      )}
+
       {endModal === "confirm" && (
         <ConfirmModal
           title={t.endWorkout}
-          message={t.endConfirm}
+          message={anySetDone ? t.endConfirm : t.noSetsDone}
           cancelLabel={t.cancelWorkout}
           confirmLabel={t.end}
+          confirmDisabled={!anySetDone}
           onCancel={() => {
             setCancelModal(true);
             setEndModal(null);
           }}
           onConfirm={() => {
             setEndModal(null);
+            if (workoutChanged) {
+              setPendingTemplateUpdate(true);
+            } else {
+              handleEnd();
+            }
+          }}
+        />
+      )}
+
+      {pendingTemplateUpdate && (
+        <ConfirmModal
+          title={t.workoutChangedTitle}
+          message={t.workoutChangedMessage.replace("{name}", sourceWorkout?.name ?? "")}
+          cancelLabel={t.discardChanges}
+          confirmLabel={t.save}
+          onCancel={() => {
+            setPendingTemplateUpdate(false);
+            handleEnd();
+          }}
+          onConfirm={() => {
+            applyTemplateUpdate();
+            setPendingTemplateUpdate(false);
             handleEnd();
           }}
         />
@@ -358,7 +493,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           cancelLabel={t.back}
           confirmLabel={t.confirm}
           onCancel={() => setCancelModal(false)}
-          onConfirm={onEnd}
+          onConfirm={() => {
+            removeLS("activeWorkoutDraft");
+            onEnd();
+          }}
         />
       )}
 

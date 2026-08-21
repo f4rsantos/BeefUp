@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import NumberField from './NumberField'
+import { epley } from '../lib/planUtils'
 
 export default function OneRMModal({ onClose }) {
   const { t } = useApp()
@@ -12,7 +14,7 @@ export default function OneRMModal({ onClose }) {
     const r = parseInt(reps)
     if (!w || !r || r <= 0) return null
     if (r === 1) return w
-    return (w * (1 + r / 30)).toFixed(1)
+    return epley(weight, reps).toFixed(1)
   })()
 
   return (
@@ -26,9 +28,8 @@ export default function OneRMModal({ onClose }) {
         <div className="flex gap-3 mb-4">
           <div className="flex-1">
             <label className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>{t.weight}</label>
-            <input
+            <NumberField
               className="field w-full"
-              type="number"
               placeholder="kg"
               value={weight}
               onChange={e => setWeight(e.target.value)}
@@ -36,9 +37,9 @@ export default function OneRMModal({ onClose }) {
           </div>
           <div className="flex-1">
             <label className="text-xs mb-1 block" style={{ color: 'var(--muted)' }}>{t.reps}</label>
-            <input
+            <NumberField
               className="field w-full"
-              type="number"
+              allowDecimal={false}
               placeholder="reps"
               value={reps}
               onChange={e => setReps(e.target.value)}

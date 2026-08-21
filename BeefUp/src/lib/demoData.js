@@ -11,19 +11,19 @@ export function buildDemoPreset() {
       id: 'demo_push',
       name: 'Push',
       exercises: [
-        ref('bench_press', 'barbell', 'flat'),
-        ref('overhead_press', 'barbell', 'standing'),
+        ref('bench_press', 'barbell', 'reto'),
+        ref('overhead_press', 'barbell', 'em_pe'),
         ref('lateral_raise', 'dumbbell', ''),
-        ref('tricep_extension', 'cable', 'rope'),
+        ref('tricep_extension', 'cable', 'de_pe'),
       ].filter(Boolean),
     },
     {
       id: 'demo_pull',
       name: 'Pull',
       exercises: [
-        ref('lat_pulldown', 'cable', 'wide'),
-        ref('row', 'barbell', 'bent_over'),
-        ref('bicep_curl', 'dumbbell', 'standard'),
+        ref('lat_pulldown', 'cable', 'aberta'),
+        ref('row', 'barbell', 'curvado'),
+        ref('bicep_curl', 'dumbbell', 'normal'),
       ].filter(Boolean),
     },
     {
@@ -32,7 +32,7 @@ export function buildDemoPreset() {
       exercises: [
         ref('squat', 'barbell', 'back'),
         ref('leg_extension', 'machine', ''),
-        ref('leg_curl', 'machine', 'lying'),
+        ref('leg_curl', 'machine', 'deitado'),
         ref('calf_raise', 'bodyweight', 'standing'),
       ].filter(Boolean),
     },

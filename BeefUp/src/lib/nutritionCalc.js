@@ -15,11 +15,11 @@ export const OBJECTIVE = [
 export function activityFromSessions(sessions) {
   const since = Date.now() - 7 * 24 * 60 * 60 * 1000
   const count = sessions.filter((s) => new Date(s.date).getTime() >= since).length
-  if (count >= 7) return 1.9
-  if (count >= 6) return 1.725
-  if (count >= 4) return 1.55
-  if (count >= 2) return 1.375
-  return 1.2
+  if (count >= 7) return ACTIVITY[4].f
+  if (count >= 6) return ACTIVITY[3].f
+  if (count >= 4) return ACTIVITY[2].f
+  if (count >= 2) return ACTIVITY[1].f
+  return ACTIVITY[0].f
 }
 
 export function latestWeight(measurements) {

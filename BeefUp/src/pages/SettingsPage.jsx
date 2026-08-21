@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Apple, Database, Dumbbell, Monitor, Moon, Sparkles, Sun } from "lucide-react";
+import { Apple, Database, Dumbbell, Monitor, Moon, Sparkles, Sun, Volume2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 import { PRESET_ACCENTS } from "../lib/colorTheme";
@@ -25,6 +25,10 @@ export default function SettingsPage() {
     setLang,
     theme,
     setTheme,
+    fontScale,
+    setFontScale,
+    soundEnabled,
+    setSoundEnabled,
     accentColor,
     setAccentColor,
     customAccentHex,
@@ -60,6 +64,13 @@ export default function SettingsPage() {
     { id: "system", Icon: Monitor, label: t.themeSystem },
   ];
 
+  const fontScaleOptions = [
+    { id: "small", size: 14, label: t.fontSizeSmall },
+    { id: "medium", size: 17, label: t.fontSizeMedium },
+    { id: "large", size: 20, label: t.fontSizeLarge },
+    { id: "extraLarge", size: 23, label: t.fontSizeExtraLarge },
+  ];
+
   async function loadDemoPreset() {
     setLoadingDemo(true);
     setDemoLoaded(false);
@@ -81,9 +92,12 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <PageHeader title={t.settingsTitle} />
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-6 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <PageHeader title={t.settingsTitle} />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-6 scrollbar-hide fade-in">
         {/* Theme */}
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>{t.theme}</p>
@@ -121,6 +135,44 @@ export default function SettingsPage() {
               }}
             />
           </button>
+        </section>
+
+        {/* Font scale */}
+        <section>
+          <p className="section-title" style={{ marginBottom: 6 }}>{t.fontSize}</p>
+          <div className="card flex gap-2 p-2">
+            {fontScaleOptions.map(({ id, size, label }) => (
+              <button
+                key={id}
+                onClick={() => setFontScale(id)}
+                className="btn flex-1 flex-col gap-1 py-3 text-xs"
+                style={selectableButtonStyle(fontScale === id)}
+              >
+                <span style={{ fontSize: size, fontWeight: 800, lineHeight: 1 }}>A</span>
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Sound */}
+        <section>
+          <p className="section-title" style={{ marginBottom: 6 }}>{t.sound}</p>
+          <div className="card flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
+                <Volume2 size={16} style={{ color: "var(--text)" }} />
+              </div>
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.soundToggle}</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={soundEnabled}
+              aria-label={t.soundToggle}
+              className={`switch ${soundEnabled ? "on" : ""}`}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            />
+          </div>
         </section>
 
         {/* Language */}

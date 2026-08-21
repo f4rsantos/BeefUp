@@ -5,6 +5,12 @@ import { PRESET_ACCENTS, hexToRgb, rgbToHex, hsvToRgb, rgbToHsv } from "../lib/c
 const WHEEL_SIZE = 180;
 const RADIUS = WHEEL_SIZE / 2;
 
+function cartesianToHue(dx, dy) {
+  let hue = (Math.atan2(dy, dx) * 180) / Math.PI;
+  if (hue < 0) hue += 360;
+  return hue;
+}
+
 function drawWheel(canvas, value) {
   const ctx = canvas.getContext("2d");
   const image = ctx.createImageData(WHEEL_SIZE, WHEEL_SIZE);
@@ -18,8 +24,7 @@ function drawWheel(canvas, value) {
         image.data[i + 3] = 0;
         continue;
       }
-      let hue = (Math.atan2(dy, dx) * 180) / Math.PI;
-      if (hue < 0) hue += 360;
+      const hue = cartesianToHue(dx, dy);
       const sat = Math.min(1, dist / RADIUS);
       const { r, g, b } = hsvToRgb(hue, sat, value);
       image.data[i] = r;
@@ -52,8 +57,7 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
     const dx = x - RADIUS;
     const dy = y - RADIUS;
     const dist = Math.min(RADIUS, Math.sqrt(dx * dx + dy * dy));
-    let hue = (Math.atan2(dy, dx) * 180) / Math.PI;
-    if (hue < 0) hue += 360;
+    const hue = cartesianToHue(dx, dy);
     const sat = dist / RADIUS;
     const angle = (hue * Math.PI) / 180;
     setMarker({ x: RADIUS + dist * Math.cos(angle), y: RADIUS + dist * Math.sin(angle) });
@@ -71,8 +75,7 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
     const dx = marker.x - RADIUS;
     const dy = marker.y - RADIUS;
     const dist = Math.min(RADIUS, Math.sqrt(dx * dx + dy * dy));
-    let hue = (Math.atan2(dy, dx) * 180) / Math.PI;
-    if (hue < 0) hue += 360;
+    const hue = cartesianToHue(dx, dy);
     onPickCustom(rgbToHex(hsvToRgb(hue, dist / RADIUS, v)));
   }
 

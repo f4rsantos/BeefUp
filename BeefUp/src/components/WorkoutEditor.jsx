@@ -3,6 +3,8 @@ import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
+import NumberField from "./NumberField";
+import ConfirmModal from "./ConfirmModal";
 import { localizedName } from "../lib/localizedName"
 
 function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
@@ -28,18 +30,17 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.weight}</label>
-              <input
+              <NumberField
                 className="field w-full"
-                type="number"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
               />
             </div>
             <div className="flex-1">
               <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.reps}</label>
-              <input
+              <NumberField
                 className="field w-full"
-                type="number"
+                allowDecimal={false}
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
               />
@@ -63,15 +64,15 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   );
 }
 
-export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
+export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActiveWorkout = false }) {
   const [name, setName] = useState(workout?.name ?? "");
   const [exItems, setExItems] = useState(() => normalizeWorkoutExercises(workout?.exercises));
   const [restAfterSet, setRestAfterSet] = useState(workout?.restAfterSet ?? 120);
   const [showPicker, setShowPicker] = useState(false);
   const [editingExIdx, setEditingExIdx] = useState(null);
+  const [confirmingSave, setConfirmingSave] = useState(false);
 
-  function save() {
-    if (!name.trim()) return;
+  function commit() {
     onSave({
       ...workout,
       id: workout?.id ?? uid(),
@@ -82,18 +83,29 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
     onBack();
   }
 
+  function save() {
+    if (!name.trim()) return;
+    if (isActiveWorkout) {
+      setConfirmingSave(true);
+      return;
+    }
+    commit();
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-          {workout?.id ? t.editWorkout : t.newWorkout}
-        </h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide fade-in">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            {workout?.id ? t.editWorkout : t.newWorkout}
+          </h1>
+        </div>
         <div className="card flex flex-col gap-3">
           <div>
             <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
@@ -113,11 +125,9 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
             >
               Tempo entre sets (s)
             </label>
-            <input
+            <NumberField
               className="field w-full"
-              type="number"
-              min="0"
-              step="1"
+              allowDecimal={false}
               value={restAfterSet}
               onChange={(e) => setRestAfterSet(e.target.value)}
               placeholder="120"
@@ -177,11 +187,25 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t }) {
 
       {showPicker && (
         <ExercisePicker
-          onConfirm={(refs) => {
-            setExItems((prev) => [...prev, ...refs.map((ref) => ({ ref }))]);
+          onConfirm={(picks) => {
+            setExItems((prev) => [
+              ...prev,
+              ...picks.map(({ ref, barType }) => (barType ? { ref, barType } : { ref })),
+            ]);
             setShowPicker(false);
           }}
           onClose={() => setShowPicker(false)}
+        />
+      )}
+
+      {confirmingSave && (
+        <ConfirmModal
+          title={t.activeWorkoutEditTitle}
+          message={t.activeWorkoutEditMessage}
+          cancelLabel={t.cancel}
+          confirmLabel={t.save}
+          onCancel={() => setConfirmingSave(false)}
+          onConfirm={commit}
         />
       )}
 

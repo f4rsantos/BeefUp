@@ -1,5 +1,5 @@
 const DB_NAME = 'beefup'
-const DB_VERSION = 4
+const DB_VERSION = 5
 
 const STORES = {
   workouts: 'workouts',       // custom workout definitions
@@ -12,6 +12,7 @@ const STORES = {
   foodLog: 'foodLog',         // diary entries { id, date, meal, name, qty, kcal, protein, carbs, fat }
   water: 'water',             // daily water { date, ml }
   clients: 'clients',
+  customExercises: 'customExercises'
 }
 
 export { STORES }
@@ -37,6 +38,7 @@ function openDB() {
       ensureStore(db, STORES.foodLog, { keyPath: 'id' }, [['date', 'date', { unique: false }]])
       ensureStore(db, STORES.water, { keyPath: 'date' })
       ensureStore(db, STORES.clients, { keyPath: 'id' })
+      ensureStore(db, STORES.customExercises, { keyPath: 'id' })
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)
@@ -106,6 +108,7 @@ export const db = {
   // Custom foods helpers
   saveFood: (food) => tx(STORES.foods, 'readwrite', s => s.put(food)),
   getAllFoods: () => tx(STORES.foods, 'readonly', s => s.getAll()),
+  removeFood: (id) => tx(STORES.foods, 'readwrite', s => s.delete(id)),
 
   // Food log (diary) helpers
   addFoodLog: (entry) => tx(STORES.foodLog, 'readwrite', s => s.put(entry)),
@@ -119,4 +122,9 @@ export const db = {
   getAllClients: () => tx(STORES.clients, 'readonly', s => s.getAll()),
   saveClient: (client) => tx(STORES.clients, 'readwrite', s => s.put(client)),
   removeClient: (id) => tx(STORES.clients, 'readwrite', s => s.delete(id)),
+
+  // Custom exercises helpers
+  saveCustomExercise: (exercise) => tx(STORES.customExercises, 'readwrite', s => s.put(exercise)),
+  getAllCustomExercises: () => tx(STORES.customExercises, 'readonly', s => s.getAll()),
+  removeCustomExercise: (id) => tx(STORES.customExercises, 'readwrite', s => s.delete(id)),
 }

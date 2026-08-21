@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import {listBaseExercises, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
+import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import BodyPartFilter from "../components/BodyPartFilter";
+import CustomExerciseEditor from "../components/CustomExerciseEditor";
 import { localizedName } from "../lib/localizedName"
 
 export default function ExercisesPage({ onBack }) {
@@ -16,41 +17,32 @@ export default function ExercisesPage({ onBack }) {
   const [bodyView, setBodyView] = useState("front");
   const [selectedId, setSelectedId] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
+  const [creatingCustom, setCreatingCustom] = useState(false);
 
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
-  const sortedExercises = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = listBaseExercises().filter((ex) => {
-      const label = localizedName(ex, lang);
-      if (q && !label.toLowerCase().includes(q)) return false;
-      if (bodyPart && ex.bodyPart !== bodyPart) return false;
-      if (equipment && !ex.equipment.includes(equipment)) return false;
-      return true;
-    });
+  const sortedExercises = useMemo(
+    () => filterAndSortExercises(listBaseExercises(), { query, bodyPart, equipment, lang }),
+    [query, lang, bodyPart, equipment],
+  );
 
-    return [...filtered].sort((a, b) => {
-      const la = localizedName(a, lang);
-      const lb = localizedName(b, lang);
-      return la.localeCompare(lb);
-    });
-  }, [query, lang, bodyPart, equipment]);
+  const groups = useMemo(
+    () => groupExercisesByLetter(sortedExercises, lang),
+    [sortedExercises, lang],
+  );
 
-  const groups = useMemo(() => {
-    const sorted = sortedExercises;
-    const byLetter = {};
-    sorted.forEach((ex) => {
-      const label = localizedName(ex, lang);
-      const letter = label[0]?.toUpperCase() ?? "#";
-      if (!byLetter[letter]) byLetter[letter] = [];
-      byLetter[letter].push(ex);
-    });
-
-    return Object.keys(byLetter)
-      .sort()
-      .map((letter) => ({ letter, items: byLetter[letter] }));
-  }, [sortedExercises, lang]);
+  if (creatingCustom) {
+    return (
+      <CustomExerciseEditor
+        onClose={() => setCreatingCustom(false)}
+        onCreated={(exercise) => {
+          setCreatingCustom(false);
+          setSelectedId(exercise.id);
+        }}
+      />
+    );
+  }
 
   if (selectedId) {
     const selected = getBaseExercise(selectedId);
@@ -59,16 +51,20 @@ export default function ExercisesPage({ onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "38px 16px 16px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
-          {t.exercisesTitle}
-        </h1>
-      </div>
+      <div
+        className="flex-1 overflow-y-auto pb-4 scrollbar-hide"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1" style={{ marginBottom: 16 }}>
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
+            {t.exercisesTitle}
+          </h1>
+        </div>
 
-      <div className="px-4 flex items-center gap-2" style={{ marginBottom: 8 }}>
+        <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
         <div className="relative flex items-center flex-1">
           <Search size={16} style={{ position: "absolute", left: 12, color: "var(--muted)" }} />
           <input
@@ -120,7 +116,6 @@ export default function ExercisesPage({ onBack }) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
         {sortedExercises.length === 0 ? (
           <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "40px 0" }}>
             {t.noResults}
@@ -250,6 +245,19 @@ export default function ExercisesPage({ onBack }) {
             </div>
           ))
         )}
+        <button
+          className="flex items-center gap-3"
+          onClick={() => setCreatingCustom(true)}
+          style={{ padding: "12px 4px", textAlign: "left", width: "100%", color: "var(--accent)" }}
+        >
+          <div
+            className="flex items-center justify-center flex-shrink-0"
+            style={{ width: 32, height: 32, borderRadius: 999, border: "1px dashed var(--accent)" }}
+          >
+            <Plus size={16} />
+          </div>
+          <span className="text-sm font-semibold">{t.createCustomExercise}</span>
+        </button>
       </div>
 
       {showFilters && (

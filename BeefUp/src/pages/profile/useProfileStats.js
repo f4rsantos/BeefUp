@@ -13,17 +13,17 @@ export const MIN_CHART_DAYS = 7
 export const DEFAULT_CHART_DAYS = 30
 
 export function useProfileStats({ metric, chartDays }) {
-  const { lang, plans, activePlanId, sessions, stepsMap } = useApp()
+  const { lang, plans, activePlanId, sessions, stepsMap, joinedAt, activePlanSince } = useApp()
 
   const today = todayISO()
 
   const streak = useMemo(
-    () => computeStreak(sessions, plans, activePlanId),
-    [sessions, plans, activePlanId],
+    () => computeStreak(sessions, plans, activePlanId, joinedAt, activePlanSince),
+    [sessions, plans, activePlanId, joinedAt, activePlanSince],
   )
   const bestStreak = useMemo(
-    () => computeBestStreak(sessions, plans, activePlanId),
-    [sessions, plans, activePlanId],
+    () => computeBestStreak(sessions, plans, activePlanId, joinedAt, activePlanSince),
+    [sessions, plans, activePlanId, joinedAt, activePlanSince],
   )
 
   const now = new Date()

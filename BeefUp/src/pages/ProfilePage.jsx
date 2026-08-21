@@ -32,7 +32,7 @@ function buildSummaryTiles(overall, t) {
 }
 
 export default function ProfilePage({ onOpenMeasures }) {
-  const { t, lang, statsLayout, setStatsLayout } = useApp();
+  const { t, statsLayout, setStatsLayout } = useApp();
 
   const [showSteps, setShowSteps] = useState(false);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
@@ -101,21 +101,23 @@ export default function ProfilePage({ onOpenMeasures }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "38px 20px 16px" }}>
-        <h1 className="display flex-1" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
-          {t.profileTitle}
-        </h1>
-        <button
-          aria-label={reorder.editing ? t.doneEditing : t.customizeStats}
-          title={reorder.editing ? t.doneEditing : t.customizeStats}
-          className={`btn ${reorder.editing ? "btn-primary" : "btn-ghost"} p-2`}
-          onClick={() => (reorder.editing ? reorder.setEditing(false) : reorder.startEditing())}
-        >
-          <SlidersHorizontal size={16} />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4 scrollbar-hide fade-in">
+      <div
+        className="flex-1 overflow-y-auto pb-4 flex flex-col gap-4 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <h1 className="display flex-1" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
+            {t.profileTitle}
+          </h1>
+          <button
+            aria-label={reorder.editing ? t.doneEditing : t.customizeStats}
+            title={reorder.editing ? t.doneEditing : t.customizeStats}
+            className={`btn ${reorder.editing ? "btn-primary" : "btn-ghost"} p-2`}
+            onClick={() => (reorder.editing ? reorder.setEditing(false) : reorder.startEditing())}
+          >
+            <SlidersHorizontal size={16} />
+          </button>
+        </div>
         <button
           className="btn btn-ghost w-full py-3 text-sm flex items-center justify-center gap-2"
           onClick={onOpenMeasures}
@@ -137,7 +139,7 @@ export default function ProfilePage({ onOpenMeasures }) {
                 </span>
               </p>
               <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
-                {lang === "pt" ? `Melhor: ${stats.bestStreak} dias` : `Best: ${stats.bestStreak} days`}
+                {t.bestStreakLabel.replace("{n}", stats.bestStreak)}
               </p>
             </div>
             <Flame size={40} style={{ opacity: 0.9 }} fill="currentColor" />

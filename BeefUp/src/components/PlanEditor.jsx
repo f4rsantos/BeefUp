@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Plus, Trash2, Dumbbell, Moon } from "lucide-react";
-import { uid, todayISO } from "../lib/planUtils";
+import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import WorkoutEditor from "./WorkoutEditor";
 import ConfirmModal from "./ConfirmModal";
 
@@ -19,22 +19,15 @@ export default function PlanEditor({
   const [pendingRemoveDay, setPendingRemoveDay] = useState(null);
 
   function addDay(type) {
-    setDays((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        type,
-        workoutId: type === "workout" ? (workouts[0]?.id ?? null) : null,
-      },
-    ]);
+    setDays((prev) => addPlanDay(prev, type, workouts));
   }
 
   function updateDay(i, patch) {
-    setDays((prev) => prev.map((d, j) => (j === i ? { ...d, ...patch } : d)));
+    setDays((prev) => updatePlanDay(prev, i, patch));
   }
 
   function removeDay(i) {
-    setDays((prev) => prev.filter((_, j) => j !== i));
+    setDays((prev) => removePlanDay(prev, i));
   }
 
   function save() {
@@ -51,16 +44,18 @@ export default function PlanEditor({
 
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center gap-1" style={{ padding: "34px 12px 14px" }}>
-        <button className="btn-back" onClick={onBack} aria-label={t.back}>
-          <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-        </button>
-        <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-          {plan?.id ? t.editPlan : t.newPlan}
-        </h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4 scrollbar-hide fade-in">
+      <div
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in"
+        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="btn-back" onClick={onBack} aria-label={t.back}>
+            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+          </button>
+          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            {plan?.id ? t.editPlan : t.newPlan}
+          </h1>
+        </div>
         <div className="card">
           <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
             {t.planName}

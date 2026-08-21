@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Trash2, ChevronLeft } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import HumanBody from '../components/HumanBody'
@@ -323,7 +323,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                 {['front', 'back'].map((view) => (
                   <div key={view} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '45%' }}>
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                      {view === 'front' ? 'Frente' : 'Costas'}
+                      {view === 'front' ? t.bodyFront : t.bodyBack}
                     </div>
                     <div style={{
                       transform: `scale(${SCALE})`,
@@ -352,12 +352,20 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
 
 export default function HistoryPage({ onBack }) {
   const { t, lang, sessions, deleteSession } = useApp()
-  const sorted = [...sessions].sort((a, b) => {
-    const da = new Date(a.date).getTime()
-    const db = new Date(b.date).getTime()
-    if (db !== da) return db - da
-    return b.id.localeCompare(a.id)
-  })
+  const sorted = useMemo(
+    () =>
+      [...sessions].sort((a, b) => {
+        const da = new Date(a.date).getTime()
+        const db = new Date(b.date).getTime()
+        if (db !== da) return db - da
+        return b.id.localeCompare(a.id)
+      }),
+    [sessions],
+  )
+  const bodyAreasBySessionId = useMemo(
+    () => Object.fromEntries(sorted.map((s) => [s.id, bodyAreasForSessions([s])])),
+    [sorted],
+  )
 
   const handleDelete = (sessionId) => {
     deleteSession?.(sessionId)
@@ -365,23 +373,25 @@ export default function HistoryPage({ onBack }) {
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
-      <div className="flex items-center gap-1" style={{ padding: '38px 16px 16px' }}>
-        {onBack && (
-          <button className="btn-back" onClick={onBack} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: 'var(--text)' }} />
-          </button>
-        )}
-        <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: 'var(--text)' }}>{t.history}</h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-3 scrollbar-hide">
+      <div
+        className="flex-1 overflow-y-auto pb-4 flex flex-col gap-3 scrollbar-hide"
+        style={{ paddingTop: 'var(--page-py-top)', paddingLeft: 'var(--page-px)', paddingRight: 'var(--page-px)' }}
+      >
+        <div className="flex items-center gap-1">
+          {onBack && (
+            <button className="btn-back" onClick={onBack} aria-label={t.back}>
+              <ChevronLeft size={24} style={{ color: 'var(--text)' }} />
+            </button>
+          )}
+          <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: 'var(--text)' }}>{t.history}</h1>
+        </div>
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 py-20">
             <p className="font-semibold mb-1" style={{ color: 'var(--text)' }}>{t.noHistory}</p>
             <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.historyEmpty}</p>
           </div>
         ) : sorted.map(s => {
-          const sessionBodyAreas = bodyAreasForSessions([s])
+          const sessionBodyAreas = bodyAreasBySessionId[s.id]
           return (
             <SwipeableCard
               key={s.id}
