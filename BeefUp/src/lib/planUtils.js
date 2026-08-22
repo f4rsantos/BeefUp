@@ -164,6 +164,10 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
+export function isPrescribed(item) {
+  return !!item?.prescribedBy
+}
+
 export function addPlanDay(days, type, workouts) {
   return [...days, { id: uid(), type, workoutId: type === 'workout' ? (workouts[0]?.id ?? null) : null }]
 }

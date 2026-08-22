@@ -1,11 +1,19 @@
-import { useState } from "react";
-import { Apple, Database, Dumbbell, Monitor, Moon, Sparkles, Sun, Volume2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Apple, Database, Dumbbell, Monitor, Moon, RefreshCw, Sparkles, Sun, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 import { PRESET_ACCENTS } from "../lib/colorTheme";
+import { isConfigured } from "../lib/auth";
+import { getLink, setScopes as applyScopes, unlink } from "../lib/sync/link";
+import { useSync } from "../lib/sync/useSync";
 import AccentColorModal from "../components/AccentColorModal";
 import BackupSection from "../components/BackupSection";
+import ConfirmModal from "../components/ConfirmModal";
 import PageHeader from "../components/PageHeader";
+import TrainerLinkModal from "../components/TrainerLinkModal";
+
+const SUPABASE_CONFIGURED = isConfigured();
+const SCOPE_IDS = ["workouts", "nutrition", "measures"];
 
 const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
 
@@ -42,6 +50,57 @@ export default function SettingsPage() {
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showTrainerLink, setShowTrainerLink] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+  const [trainerLink, setTrainerLink] = useState(null);
+  const [scopeSaving, setScopeSaving] = useState(false);
+  const [scopeError, setScopeError] = useState(false);
+  const [unlinkError, setUnlinkError] = useState(false);
+  const { status: syncStatus, lastSyncAt, syncNow } = useSync();
+
+  useEffect(() => {
+    if (!SUPABASE_CONFIGURED) return;
+    getLink().then(setTrainerLink).catch(() => setTrainerLink(null));
+  }, []);
+
+  async function toggleTrainerScope(id) {
+    if (!trainerLink) return;
+    const next = trainerLink.scopes.includes(id)
+      ? trainerLink.scopes.filter((s) => s !== id)
+      : [...trainerLink.scopes, id];
+    setScopeSaving(true);
+    setScopeError(false);
+    try {
+      setTrainerLink(await applyScopes(next));
+    } catch {
+      setScopeError(true);
+    } finally {
+      setScopeSaving(false);
+    }
+  }
+
+  async function handleUnlink() {
+    setUnlinkError(false);
+    try {
+      await unlink();
+      setTrainerLink(null);
+      setShowUnlinkConfirm(false);
+    } catch {
+      setUnlinkError(true);
+    }
+  }
+
+  const syncStatusLabel = {
+    off: t.trainerSyncStatusOff,
+    idle: t.trainerSyncStatusIdle,
+    syncing: t.trainerSyncStatusSyncing,
+    offline: t.trainerSyncStatusOffline,
+    error: t.trainerSyncStatusError,
+  }[syncStatus] ?? t.trainerSyncStatusOff;
+
+  const lastSyncedLabel = lastSyncAt
+    ? t.trainerLastSyncedAt.replace("{time}", new Date(lastSyncAt).toLocaleString(lang === "pt" ? "pt-PT" : undefined))
+    : t.trainerNeverSynced;
 
   const sections = [
     { id: "gym", Icon: Dumbbell, label: t.sectionGym },
@@ -221,6 +280,87 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Personal trainer link */}
+        <section>
+          <p className="section-title" style={{ marginBottom: 6 }}>{t.trainerSectionTitle}</p>
+          {!SUPABASE_CONFIGURED ? (
+            <div className="card">
+              <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerUnavailable}</p>
+            </div>
+          ) : !trainerLink ? (
+            <div className="card flex flex-col gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={SETTINGS_ICON_WRAPPER_STYLE}>
+                  <UserCheck size={16} style={{ color: "var(--text)" }} />
+                </div>
+                <p className="text-sm" style={{ color: "var(--text)" }}>{t.trainerLinkExplain}</p>
+              </div>
+              <button className="btn btn-primary w-full" onClick={() => setShowTrainerLink(true)}>
+                {t.trainerLinkButton}
+              </button>
+            </div>
+          ) : (
+            <div className="card flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div style={SETTINGS_ICON_WRAPPER_STYLE}>
+                    <UserCheck size={16} style={{ color: "var(--text)" }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: "var(--text)" }}>
+                      {trainerLink.trainerName}
+                    </p>
+                    <p className="text-xs truncate" style={{ color: "var(--muted)" }}>{syncStatusLabel}</p>
+                  </div>
+                </div>
+                <button
+                  className="btn btn-ghost p-2"
+                  onClick={() => syncNow?.()}
+                  disabled={syncStatus === "syncing"}
+                  aria-label={t.trainerSyncNowLabel}
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>{lastSyncedLabel}</p>
+
+              <div className="divider" />
+
+              <p className="section-title" style={{ fontSize: 12 }}>{t.trainerShareSectionTitle}</p>
+              {SCOPE_IDS.map((id) => (
+                <div key={id} className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t[id]}</p>
+                  <button
+                    role="switch"
+                    aria-checked={trainerLink.scopes.includes(id)}
+                    aria-label={t[id]}
+                    className={`switch ${trainerLink.scopes.includes(id) ? "on" : ""}`}
+                    disabled={scopeSaving}
+                    onClick={() => toggleTrainerScope(id)}
+                  />
+                </div>
+              ))}
+              <p className="text-xs" style={{ color: "var(--muted)" }}>{t.trainerScopesNote}</p>
+              {scopeError && (
+                <p className="text-xs" style={{ color: "var(--danger)" }}>{t.trainerScopeUpdateFailed}</p>
+              )}
+
+              <div className="divider" />
+
+              <button
+                className="btn btn-ghost w-full"
+                style={{ color: "var(--danger)" }}
+                onClick={() => setShowUnlinkConfirm(true)}
+              >
+                {t.trainerUnlinkButton}
+              </button>
+              {unlinkError && (
+                <p className="text-xs" style={{ color: "var(--danger)" }}>{t.trainerUnlinkFailed}</p>
+              )}
+            </div>
+          )}
+        </section>
+
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>
             {t.advanced}
@@ -271,6 +411,24 @@ export default function SettingsPage() {
           onSelectPreset={(id) => { setAccentColor(id); setShowColorPicker(false); }}
           onPickCustom={setCustomAccentColor}
           onClose={() => setShowColorPicker(false)}
+        />
+      )}
+
+      {showTrainerLink && (
+        <TrainerLinkModal
+          onClose={() => setShowTrainerLink(false)}
+          onLinked={(link) => setTrainerLink(link)}
+        />
+      )}
+
+      {showUnlinkConfirm && (
+        <ConfirmModal
+          title={t.trainerUnlinkTitle}
+          message={t.trainerUnlinkMessage}
+          cancelLabel={t.cancel}
+          confirmLabel={t.trainerUnlinkButton}
+          onCancel={() => setShowUnlinkConfirm(false)}
+          onConfirm={handleUnlink}
         />
       )}
     </div>

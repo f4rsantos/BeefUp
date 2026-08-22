@@ -161,7 +161,7 @@ export default function ClientGym({ client }) {
   );
 }
 
-function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
+export function WorkoutDefEditor({ workout, lang, t, onSave, onClose }) {
   const [name, setName] = useState(workout.name);
   const [items, setItems] = useState(normalizeExercises(workout.exercises));
   const [picking, setPicking] = useState(false);

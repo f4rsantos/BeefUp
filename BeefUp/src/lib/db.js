@@ -1,19 +1,9 @@
+import { STORES } from './stores.js'
+import { isSynced, keyFieldOf } from './sync/stores.js'
+import { stampLocal, stampDeleted, stripMeta, isDeleted } from './sync/meta.js'
+
 const DB_NAME = 'beefup'
 const DB_VERSION = 5
-
-const STORES = {
-  workouts: 'workouts',       // custom workout definitions
-  plans: 'plans',             // training plans
-  sessions: 'sessions',       // completed workout sessions
-  steps: 'steps',             // daily step entries { date, count }
-  settings: 'settings',       // key/value app settings
-  measurements: 'measurements', // body measurement entries { id, date, weight }
-  foods: 'foods',             // custom/cached food items { id, name, namePt, kcal, protein, carbs, fat, serving }
-  foodLog: 'foodLog',         // diary entries { id, date, meal, name, qty, kcal, protein, carbs, fat }
-  water: 'water',             // daily water { date, ml }
-  clients: 'clients',
-  customExercises: 'customExercises'
-}
 
 export { STORES }
 
@@ -61,20 +51,42 @@ async function tx(storeName, mode, fn) {
   })
 }
 
+function writeRow(store, value) {
+  return tx(store, 'readwrite', s => s.put(isSynced(store) ? stampLocal(value) : value))
+}
+
+async function deleteRow(store, key) {
+  if (!isSynced(store)) return tx(store, 'readwrite', s => s.delete(key))
+  const tombstone = stampDeleted({ [keyFieldOf(store)]: key })
+  return tx(store, 'readwrite', s => s.put(tombstone))
+}
+
+async function readAll(store) {
+  const rows = await tx(store, 'readonly', s => s.getAll())
+  if (!isSynced(store)) return rows
+  return rows.filter(r => !isDeleted(r)).map(stripMeta)
+}
+
+async function readOne(store, key) {
+  const row = await tx(store, 'readonly', s => s.get(key))
+  if (!isSynced(store)) return row
+  return isDeleted(row) ? undefined : stripMeta(row)
+}
+
 export const db = {
   // Generic get all
-  getAll: (store) => tx(store, 'readonly', s => s.getAll()),
+  getAll: (store) => readAll(store),
 
   // Generic get by key
-  get: (store, key) => tx(store, 'readonly', s => s.get(key)),
+  get: (store, key) => readOne(store, key),
 
   // Generic put
-  put: (store, value) => tx(store, 'readwrite', s => s.put(value)),
+  put: (store, value) => writeRow(store, value),
 
   // Generic delete
-  remove: (store, key) => tx(store, 'readwrite', s => s.delete(key)),
+  remove: (store, key) => deleteRow(store, key),
 
-  // When restoring a backup replaces the current data 
+  // When restoring a backup replaces the current data
   clear: (store) => tx(store, 'readwrite', s => s.clear()),
 
   // Settings helpers
@@ -85,15 +97,15 @@ export const db = {
   setSetting: (key, value) => tx(STORES.settings, 'readwrite', s => s.put({ key, value })),
 
   // Steps helpers
-  getSteps: (date) => tx(STORES.steps, 'readonly', s => s.get(date)),
-  setSteps: (date, count) => tx(STORES.steps, 'readwrite', s => s.put({ date, count })),
-  getAllSteps: () => tx(STORES.steps, 'readonly', s => s.getAll()),
+  getSteps: (date) => readOne(STORES.steps, date),
+  setSteps: (date, count) => writeRow(STORES.steps, { date, count }),
+  getAllSteps: () => readAll(STORES.steps),
 
   // Sessions helpers
-  addSession: (session) => tx(STORES.sessions, 'readwrite', s => s.put(session)),
-  getAllSessions: () => tx(STORES.sessions, 'readonly', s => s.getAll()),
+  addSession: (session) => writeRow(STORES.sessions, session),
+  getAllSessions: () => readAll(STORES.sessions),
   getSessionsByMonth: async (year, month) => {
-    const all = await tx(STORES.sessions, 'readonly', s => s.getAll())
+    const all = await readAll(STORES.sessions)
     return all.filter(s => {
       const d = new Date(s.date)
       return d.getFullYear() === year && d.getMonth() === month
@@ -101,30 +113,33 @@ export const db = {
   },
 
   // Measurements helpers
-  addMeasurement: (entry) => tx(STORES.measurements, 'readwrite', s => s.put(entry)),
-  getAllMeasurements: () => tx(STORES.measurements, 'readonly', s => s.getAll()),
-  deleteMeasurement: (id) => tx(STORES.measurements, 'readwrite', s => s.delete(id)),
+  addMeasurement: (entry) => writeRow(STORES.measurements, entry),
+  getAllMeasurements: () => readAll(STORES.measurements),
+  deleteMeasurement: (id) => deleteRow(STORES.measurements, id),
 
   // Custom foods helpers
-  saveFood: (food) => tx(STORES.foods, 'readwrite', s => s.put(food)),
-  getAllFoods: () => tx(STORES.foods, 'readonly', s => s.getAll()),
-  removeFood: (id) => tx(STORES.foods, 'readwrite', s => s.delete(id)),
+  saveFood: (food) => writeRow(STORES.foods, food),
+  getAllFoods: () => readAll(STORES.foods),
+  removeFood: (id) => deleteRow(STORES.foods, id),
 
   // Food log (diary) helpers
-  addFoodLog: (entry) => tx(STORES.foodLog, 'readwrite', s => s.put(entry)),
-  removeFoodLog: (id) => tx(STORES.foodLog, 'readwrite', s => s.delete(id)),
-  getAllFoodLog: () => tx(STORES.foodLog, 'readonly', s => s.getAll()),
+  addFoodLog: (entry) => writeRow(STORES.foodLog, entry),
+  removeFoodLog: (id) => deleteRow(STORES.foodLog, id),
+  getAllFoodLog: () => readAll(STORES.foodLog),
 
   // Water helpers
-  setWater: (date, ml) => tx(STORES.water, 'readwrite', s => s.put({ date, ml })),
-  getAllWater: () => tx(STORES.water, 'readonly', s => s.getAll()),
+  setWater: (date, ml) => writeRow(STORES.water, { date, ml }),
+  getAllWater: () => readAll(STORES.water),
 
-  getAllClients: () => tx(STORES.clients, 'readonly', s => s.getAll()),
-  saveClient: (client) => tx(STORES.clients, 'readwrite', s => s.put(client)),
-  removeClient: (id) => tx(STORES.clients, 'readwrite', s => s.delete(id)),
+  getAllClients: () => readAll(STORES.clients),
+  saveClient: (client) => writeRow(STORES.clients, client),
+  removeClient: (id) => deleteRow(STORES.clients, id),
 
   // Custom exercises helpers
-  saveCustomExercise: (exercise) => tx(STORES.customExercises, 'readwrite', s => s.put(exercise)),
-  getAllCustomExercises: () => tx(STORES.customExercises, 'readonly', s => s.getAll()),
-  removeCustomExercise: (id) => tx(STORES.customExercises, 'readwrite', s => s.delete(id)),
+  saveCustomExercise: (exercise) => writeRow(STORES.customExercises, exercise),
+  getAllCustomExercises: () => readAll(STORES.customExercises),
+  removeCustomExercise: (id) => deleteRow(STORES.customExercises, id),
+  rawAll: (store) => tx(store, 'readonly', s => s.getAll()),
+  rawPut: (store, value) => tx(store, 'readwrite', s => s.put(value)),
+  rawDelete: (store, key) => tx(store, 'readwrite', s => s.delete(key)),
 }

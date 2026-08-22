@@ -6,6 +6,9 @@ import { ACTIVITY, OBJECTIVE, calcGoals } from "../lib/nutritionCalc";
 import { getMeasureUnit } from "../lib/measureTypes";
 import { buildDemoPreset } from "../lib/demoData";
 import NumberField from "../components/NumberField";
+import { signIn, signUp, setProfileRole } from "../lib/auth";
+import { isConfigured } from "../lib/supabaseClient";
+import { useIsDesktop } from "../lib/useIsDesktop";
 import "./onboarding.css";
 
 function soloSteps(focus) {
@@ -22,6 +25,19 @@ export default function Onboarding() {
   const [measures, setMeasures] = useState({ height: "", weight: "", chest: "", biceps: "", quadriceps: "", waist: "" });
   const [calc, setCalc] = useState({ sex: "male", age: 28, height: 175, weight: 75, activity: 1.55, obj: 0 });
   const [loadPlan, setLoadPlan] = useState(true);
+  const [account, setAccount] = useState({ name: "", email: "", password: "", existing: false });
+  const [accountReady, setAccountReady] = useState(false);
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [accountError, setAccountError] = useState("");
+
+  const isDesktop = useIsDesktop();
+  // A trainer needs an account to receive client data, and the dashboard only
+  // renders on desktop. Say which one is missing instead of a blank refusal.
+  const helperBlockedReason = !isConfigured()
+    ? t.obHelperNeedsSync
+    : !isDesktop
+      ? t.obDesktopOnly
+      : null;
 
   function startMode(m) {
     setMode(m);
@@ -50,24 +66,93 @@ export default function Onboarding() {
             <span className="ob-mode-desc">{t.obStartDesc}</span>
           </button>
           <button
-            className="ob-mode ob-mode--coach ob-mode--disabled"
-            disabled
-            aria-disabled="true"
-            tabIndex={-1}
+            className={`ob-mode ob-mode--coach ${helperBlockedReason ? "ob-mode--disabled" : ""}`}
+            disabled={!!helperBlockedReason}
+            aria-disabled={!!helperBlockedReason}
+            tabIndex={helperBlockedReason ? -1 : 0}
+            onClick={() => !helperBlockedReason && startMode("helper")}
           >
             <TrendingUp size={24} />
             <span className="ob-mode-title">
               {t.obHelping}
-              <span className="ob-focus-badge">{t.unavailable}</span>
+              {helperBlockedReason && <span className="ob-focus-badge">{t.unavailable}</span>}
             </span>
-            <span className="ob-mode-desc">{t.obHelpingDesc}</span>
+            <span className="ob-mode-desc">{helperBlockedReason || t.obHelpingDesc}</span>
           </button>
         </div>
       </div>
     );
   }
 
+  async function submitAccount() {
+    setAccountBusy(true);
+    setAccountError("");
+    try {
+      if (account.existing) {
+        await signIn(account.email.trim(), account.password);
+      } else {
+        await signUp(account.email.trim(), account.password, account.name.trim() || account.email.trim());
+      }
+      await setProfileRole("trainer");
+      setAccountReady(true);
+    } catch (e) {
+      setAccountError(e?.message || t.obHelperAccountFailed);
+    } finally {
+      setAccountBusy(false);
+    }
+  }
+
   if (mode === "helper") {
+    if (!accountReady) {
+      const canSubmit =
+        account.email.trim() && account.password && (account.existing || account.name.trim());
+      return (
+        <Frame t={t} onBack={back} total={0} current={0} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang}>
+          <h1 className="ob-title">{account.existing ? t.obHelperSignIn : t.obHelperCreateAccount}</h1>
+          <p className="ob-sub">{t.obHelperAccountWhy}</p>
+          <div className="flex flex-col gap-3" style={{ marginTop: 16 }}>
+            {!account.existing && (
+              <input
+                className="field"
+                placeholder={t.dashDisplayName}
+                value={account.name}
+                onChange={(e) => setAccount((a) => ({ ...a, name: e.target.value }))}
+              />
+            )}
+            <input
+              className="field"
+              type="email"
+              autoComplete="email"
+              placeholder={t.dashEmail}
+              value={account.email}
+              onChange={(e) => setAccount((a) => ({ ...a, email: e.target.value }))}
+            />
+            <input
+              className="field"
+              type="password"
+              autoComplete={account.existing ? "current-password" : "new-password"}
+              placeholder={t.dashPassword}
+              value={account.password}
+              onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
+            />
+            {accountError && (
+              <p className="text-sm" style={{ color: "var(--accent-2, orange)" }}>{accountError}</p>
+            )}
+            <button
+              className="btn btn-ghost text-sm"
+              onClick={() => { setAccount((a) => ({ ...a, existing: !a.existing })); setAccountError(""); }}
+            >
+              {account.existing ? t.dashNeedAccount : t.dashHaveAccount}
+            </button>
+          </div>
+          <div className="ob-spacer" />
+          <button className="btn btn-primary w-full" onClick={submitAccount} disabled={!canSubmit || accountBusy}>
+            {accountBusy ? "…" : t.obHelperContinue}
+          </button>
+        </Frame>
+      );
+    }
+
     return (
       <Frame t={t} onBack={back} total={0} current={0} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang}>
         <FocusStep t={t} value={focus} onChange={setFocus} />

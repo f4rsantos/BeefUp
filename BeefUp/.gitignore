@@ -29,3 +29,6 @@ dist-ssr
 
 /graphify-out
 CLAUDE.md
+
+.env.env.local
+.env

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Trash2, Lock } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import WorkoutEditor from "../components/WorkoutEditor";
 import ConfirmModal from "../components/ConfirmModal";
+import { isPrescribed } from "../lib/planUtils";
 
 export default function WorkoutSettings({ onBack, initialView = "main", initialWorkout = null }) {
   const {
@@ -53,22 +54,29 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
                 {w.exercises?.length ?? 0} {t.exercises}
+                {isPrescribed(w) && <> · {t.prescribedBadge}</>}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                className="btn btn-ghost p-1.5"
-                onClick={() => {
-                  setEditingWorkout(w);
-                  setView("editWorkout");
-                }}
-                aria-label={t.edit}
-              >
-                <Pencil size={14} style={{ color: "var(--muted)" }} />
-              </button>
-              <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(w)} aria-label={t.delete}>
-                <Trash2 size={14} style={{ color: "var(--muted)" }} />
-              </button>
+              {isPrescribed(w) ? (
+                <Lock size={14} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />
+              ) : (
+                <>
+                  <button
+                    className="btn btn-ghost p-1.5"
+                    onClick={() => {
+                      setEditingWorkout(w);
+                      setView("editWorkout");
+                    }}
+                    aria-label={t.edit}
+                  >
+                    <Pencil size={14} style={{ color: "var(--muted)" }} />
+                  </button>
+                  <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(w)} aria-label={t.delete}>
+                    <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}

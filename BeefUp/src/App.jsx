@@ -9,6 +9,7 @@ import PlanSettings from "./pages/PlanSettings";
 import WorkoutSettings from "./pages/WorkoutSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
+import { useIsDesktop } from "./lib/useIsDesktop";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
 import PwaPrompts from "./components/PwaPrompts";
@@ -298,19 +299,6 @@ function AppInner() {
       <PwaPrompts aboveNav={showNav} />
     </div>
   );
-}
-
-function useIsDesktop() {
-  const [desktop, setDesktop] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(min-width: 900px)").matches : false,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 900px)");
-    const fn = (e) => setDesktop(e.matches);
-    mq.addEventListener("change", fn);
-    return () => mq.removeEventListener("change", fn);
-  }, []);
-  return desktop;
 }
 
 export default function App() {

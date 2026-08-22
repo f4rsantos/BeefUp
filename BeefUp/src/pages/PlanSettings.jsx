@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Trash2, Lock } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import PlanEditor from "../components/PlanEditor";
 import ConfirmModal from "../components/ConfirmModal";
+import { isPrescribed } from "../lib/planUtils";
 
 export default function PlanSettings({ onBack, initialPlanId = null }) {
   const {
@@ -58,6 +59,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
                 {plan.days?.length ?? 0} {t.days}
+                {isPrescribed(plan) && <> · {t.prescribedBadge}</>}
               </p>
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -77,19 +79,25 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
                 </button>
               )}
               <div className="flex items-center gap-2">
-                <button
-                  className="btn btn-ghost p-1.5"
-                  onClick={() => {
-                    setEditingPlan(plan);
-                    setView("editPlan");
-                  }}
-                  aria-label={t.edit}
-                >
-                  <Pencil size={14} style={{ color: "var(--muted)" }} />
-                </button>
-                <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(plan)} aria-label={t.delete}>
-                  <Trash2 size={14} style={{ color: "var(--muted)" }} />
-                </button>
+                {isPrescribed(plan) ? (
+                  <Lock size={14} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />
+                ) : (
+                  <>
+                    <button
+                      className="btn btn-ghost p-1.5"
+                      onClick={() => {
+                        setEditingPlan(plan);
+                        setView("editPlan");
+                      }}
+                      aria-label={t.edit}
+                    >
+                      <Pencil size={14} style={{ color: "var(--muted)" }} />
+                    </button>
+                    <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(plan)} aria-label={t.delete}>
+                      <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

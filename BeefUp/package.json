@@ -8,13 +8,14 @@
     "build": "vite build",
     "icons": "node scripts/generate-icons.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test \"src/**/*.test.js\""
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "@tailwindcss/vite": "^4.2.4",
     "barcode-detector": "^3.2.2",
     "canvas-confetti": "^1.9.4",
-    "firebase": "^12.15.0",
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -29,6 +30,7 @@
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^17.5.0",
     "sharp": "^0.35.3",
     "vite": "^8.0.10",

@@ -6,7 +6,7 @@ const BACKUP_APP = 'BeefUp'
 const BACKUP_VERSION = 1
 
 // Distinguishes "pref absent" from a stored null, which is a legitimate value
-// for prefs like sectionPrefs and firebaseConfig.
+// for prefs like sectionPrefs and syncLink.
 const MISSING = Symbol('missing')
 
 // Prefs live in the settings store; PREF_KEYS is owned by prefs.js so a newly

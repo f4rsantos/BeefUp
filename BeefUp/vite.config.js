@@ -90,8 +90,8 @@ export default defineConfig({
             },
           },
           {
-            // Firestore/Auth must always hit the network; never serve a stale response.
-            urlPattern: ({ url }) => /(firestore|firebaseio|identitytoolkit)\./.test(url.hostname),
+            // Sync and auth must always hit the network
+            urlPattern: ({ url }) => /\.supabase\.(co|in)$/.test(url.hostname),
             handler: 'NetworkOnly',
           },
         ],

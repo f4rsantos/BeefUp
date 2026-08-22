@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote } from "lucide-react";
+import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, User, Utensils } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, measurementsForType } from "../lib/planUtils";
+import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats } from "../lib/planUtils";
+import { dailyNutritionTotals } from "../lib/nutritionStats";
 import { MEASURE_GROUPS, LEGACY_TYPE_MAP } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
+import { resolvedExerciseName } from "../lib/exerciseTree";
+import { isConfigured } from "../lib/supabaseClient";
+import { getClientData, unlinkClient } from "../lib/trainerData";
 import ClientGym from "./ClientGym";
+import LinkedClientGym from "./LinkedClientGym";
 import ConfirmModal from "../components/ConfirmModal";
 import NumberField from "../components/NumberField";
 
@@ -15,6 +20,11 @@ import NumberField from "../components/NumberField";
 const MEASURE_TYPES = MEASURE_GROUPS.flatMap((g) => g.types);
 
 export default function ClientDetail({ client, onDeleted }) {
+  if (client.linkedUserId) return <LinkedClientDetail client={client} onUnlinked={onDeleted} />;
+  return <ManualClientDetail client={client} onDeleted={onDeleted} />;
+}
+
+function ManualClientDetail({ client, onDeleted }) {
   const { t, saveClient, deleteClient } = useApp();
   const [section, setSection] = useState("overview");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -36,6 +46,9 @@ export default function ClientDetail({ client, onDeleted }) {
       <div className="dash-detail-head">
         <div>
           <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>{client.name}</h2>
+          <p className="flex items-center gap-2 text-sm" style={{ color: "var(--muted)" }}>
+            <User size={13} /> {t.dashManual}
+          </p>
           {client.info && <p className="text-sm" style={{ color: "var(--muted)" }}>{client.info}</p>}
         </div>
         <button className="btn btn-ghost btn-icon" onClick={() => setConfirmingDelete(true)} title={t.dashDelete} aria-label={t.dashDelete}>
@@ -263,6 +276,241 @@ function Notes({ client, saveClient, t }) {
             setPendingDelete(null);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+// A linked client's data lives in Supabase, not the local `clients` store 
+function LinkedClientDetail({ client, onUnlinked }) {
+  const { t, lang } = useApp();
+  const configured = isConfigured();
+  const [section, setSection] = useState("overview");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(configured);
+  const [error, setError] = useState("");
+  const [confirmingUnlink, setConfirmingUnlink] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
+
+  const scopes = client.scopes || [];
+  const hasWorkouts = scopes.includes("workouts");
+  const hasNutrition = scopes.includes("nutrition");
+  const hasMeasures = scopes.includes("measures");
+
+  useEffect(() => {
+    if (!configured) return;
+    let cancelled = false;
+    getClientData(client.linkedUserId, scopes)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => { if (!cancelled) setError(String(e?.message || e)); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client.linkedUserId, configured]);
+
+  async function unlink() {
+    setUnlinking(true);
+    try {
+      await unlinkClient(client.linkedUserId);
+      setConfirmingUnlink(false);
+      onUnlinked?.();
+    } catch (e) {
+      setError(String(e?.message || e));
+      setConfirmingUnlink(false);
+    } finally {
+      setUnlinking(false);
+    }
+  }
+
+  const sections = [
+    { id: "overview", Icon: LayoutDashboard, label: t.dashOverview },
+    ...(hasWorkouts ? [{ id: "gym", Icon: Dumbbell, label: t.dashGym }] : []),
+    ...(hasWorkouts ? [{ id: "sessions", Icon: Dumbbell, label: t.dashSessions }] : []),
+    ...(hasNutrition ? [{ id: "nutrition", Icon: Utensils, label: t.dashNutrition }] : []),
+    ...(hasMeasures ? [{ id: "measures", Icon: Ruler, label: t.dashMeasures }] : []),
+  ];
+
+  return (
+    <div className="dash-detail-wrap">
+      <div className="dash-detail-head">
+        <div>
+          <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>{client.name}</h2>
+          <p className="flex items-center gap-2 text-sm" style={{ color: "var(--accent)" }}>
+            <LinkIcon size={13} /> {t.dashLinked}
+          </p>
+        </div>
+        {configured && (
+          <button className="btn btn-ghost text-sm" onClick={() => setConfirmingUnlink(true)} disabled={unlinking}>
+            {t.dashUnlinkClient}
+          </button>
+        )}
+      </div>
+
+      {confirmingUnlink && (
+        <ConfirmModal
+          title={t.dashUnlinkClientTitle.replace("{name}", client.name)}
+          message={t.dashUnlinkClientMessage}
+          confirmLabel={t.dashUnlinkClient}
+          cancelLabel={t.cancel}
+          onConfirm={unlink}
+          onCancel={() => setConfirmingUnlink(false)}
+        />
+      )}
+
+      {!configured ? (
+        <div className="dash-section">
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashSyncUnavailable}</p>
+        </div>
+      ) : loading ? (
+        <div className="dash-section">
+          <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>
+        </div>
+      ) : error ? (
+        <div className="dash-section">
+          <p className="text-sm" style={{ color: "var(--accent-2, orange)" }}>{error}</p>
+        </div>
+      ) : (
+        <div className="dash-detail-body">
+          <nav className="dash-subnav">
+            {sections.map(({ id, Icon, label }) => (
+              <button key={id} className={`dash-subnav-item ${section === id ? "active" : ""}`} onClick={() => setSection(id)}>
+                <Icon size={16} /> <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="dash-section">
+            {section === "overview" && <LinkedOverview data={data} hasWorkouts={hasWorkouts} hasMeasures={hasMeasures} t={t} />}
+            {section === "gym" && hasWorkouts && (
+              <LinkedClientGym client={client} data={data} lang={lang} t={t} />
+            )}
+            {section === "sessions" && hasWorkouts && <LinkedSessions sessions={data.sessions || []} lang={lang} t={t} />}
+            {section === "nutrition" && hasNutrition && <LinkedNutrition foodLog={data.foodLog || []} />}
+            {section === "measures" && hasMeasures && <LinkedMeasures measurements={data.measurements || []} t={t} />}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LinkedOverview({ data, hasWorkouts, hasMeasures, t }) {
+  const sessions = data.sessions || [];
+  const measurements = data.measurements || [];
+  const stats = hasWorkouts ? computeOverallStats(sessions) : null;
+  const weight = hasMeasures ? measurementsForType(measurements, "weight").slice(-1)[0] : null;
+
+  if (!hasWorkouts && !hasMeasures) {
+    return <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNothingShared}</p>;
+  }
+
+  return (
+    <div className="dash-grid">
+      {hasWorkouts && (
+        <div className="card">
+          <p className="section-title mb-3">{t.dashSessions}</p>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>{stats.totalSessions}</div>
+          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{stats.totalSets} {t.sets.toLowerCase()}</p>
+        </div>
+      )}
+      {hasMeasures && (
+        <div className="card">
+          <p className="section-title mb-3">{t.dashMeasures}</p>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
+            {weight ? weight.value : "—"}
+            <span className="text-sm" style={{ color: "var(--muted)" }}> kg</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LinkedSessions({ sessions, lang, t }) {
+  const recent = sessions.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
+  return (
+    <div className="flex flex-col gap-3">
+      {recent.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
+      {recent.map((s) => (
+        <div key={s.id} className="card">
+          <div className="flex items-center justify-between mb-2">
+            <span style={{ fontWeight: 700, color: "var(--text)" }}>{s.date}</span>
+            <span className="text-sm" style={{ color: "var(--muted)" }}>{Math.round(sessionVolume(s))} kg · {sessionSets(s)} {t.sets.toLowerCase()}</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            {(s.exercises || []).map((e, i) => (
+              <span key={i} className="text-xs" style={{ color: "var(--muted)" }}>{resolvedExerciseName(e.exerciseId, lang)}</span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LinkedNutrition({ foodLog }) {
+  const byDay = dailyNutritionTotals(foodLog);
+  const days = [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 14);
+  return (
+    <div className="flex flex-col gap-3">
+      {days.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
+      {days.map(([date, totals]) => (
+        <div key={date} className="card flex items-center justify-between">
+          <span style={{ fontWeight: 700, color: "var(--text)" }}>{date}</span>
+          <span className="text-sm" style={{ color: "var(--muted)" }}>
+            {Math.round(totals.kcal)} kcal · {Math.round(totals.protein)}P {Math.round(totals.carbs)}C {Math.round(totals.fat)}F
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LinkedMeasures({ measurements, t }) {
+  const [mType, setMType] = useState("weight");
+  const measures = useMemo(
+    () => measurements.map((m) => (LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m)),
+    [measurements],
+  );
+  const chart = measurementsForType(measures, mType);
+  const list = measures.filter((m) => m.type === mType).slice().reverse();
+
+  return (
+    <div className="dash-measures">
+      <div className="flex gap-2" style={{ flexWrap: "wrap", marginBottom: 28 }}>
+        {MEASURE_TYPES.map((m) => (
+          <button key={m} className={`chip ${mType === m ? "active" : ""}`} onClick={() => setMType(m)}>{t[`measureType_${m}`]}</button>
+        ))}
+      </div>
+
+      <div className="card mb-5">
+        <p className="section-title mb-4">{t.progression}</p>
+        {chart.length === 0 ? (
+          <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>{t.noMeasures}</p>
+        ) : (
+          <div style={{ width: "100%", height: 260 }}>
+            <ResponsiveContainer>
+              <LineChart data={chart} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: "var(--muted)" }} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} width={36} domain={["auto", "auto"]} />
+                <Tooltip {...CHART_TOOLTIP_STYLE} />
+                <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--accent)" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {list.length > 0 && (
+        <div className="card">
+          <div className="dash-measure-list">
+            {list.map((m) => (
+              <div key={m.id} className="flex justify-between text-sm py-1">
+                <span style={{ color: "var(--muted)" }}>{m.date}</span>
+                <span style={{ color: "var(--text)" }}>{m.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
