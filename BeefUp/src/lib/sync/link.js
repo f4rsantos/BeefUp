@@ -34,7 +34,13 @@ export async function getLink() {
       .eq('client_id', session.user.id)
       .eq('status', 'accepted')
       .maybeSingle()
-    if (error || !row) return cached
+    // A query error tells us nothing; keep believing the cache.
+    if (error) return cached
+    // The server answered and there is no accepted link: revoked, not offline.
+    if (!row) {
+      await writeCache(null, [])
+      return null
+    }
 
     let trainerName = cached?.trainerName ?? null
     const { data: profile } = await supabase

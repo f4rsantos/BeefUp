@@ -103,10 +103,32 @@ begin
 
   -- Safe to call twice: upsert, not insert-only. A second redemption of the
   -- same (or a fresh) code from the same student just re-affirms the link.
+  --
+  -- want_scopes is near-always '{}' in practice — the client (redeemInvite()
+  -- in src/lib/sync/link.js) always redeems with no scopes, then applies the
+  -- student's actual choice with a separate setScopes() call right after.
+  -- Letting an empty incoming array unconditionally overwrite scopes would
+  -- silently wipe a re-redeemed *already-accepted* link's real scopes back
+  -- to nothing (a real bug this once was) — so an empty incoming array never
+  -- clobbers an existing accepted link's scopes; only a genuinely non-empty
+  -- incoming array does.
+  --
+  -- Reconnecting an already-*revoked* link is treated as a fresh consent
+  -- event instead: its old scopes are not carried forward. The client just
+  -- withdrew consent (possibly a while ago, possibly for a reason), so
+  -- silently restoring whatever was last shared — without the student
+  -- choosing again — would over-share by default. This costs nothing in the
+  -- normal flow either, since setScopes() runs immediately after anyway.
   insert into public.trainer_links (trainer_id, client_id, status, scopes)
   values (v_invite.trainer_id, v_client, 'accepted', coalesce(want_scopes, '{}'))
   on conflict (trainer_id, client_id)
-  do update set status = 'accepted', scopes = excluded.scopes;
+  do update set
+    status = 'accepted',
+    scopes = case
+      when trainer_links.status = 'revoked' then excluded.scopes
+      when array_length(excluded.scopes, 1) is null then trainer_links.scopes
+      else excluded.scopes
+    end;
 
   select p.display_name into v_name
   from public.profiles p
@@ -118,55 +140,6 @@ $$;
 
 revoke all on function public.redeem_invite(text, text[]) from public;
 grant execute on function public.redeem_invite(text, text[]) to authenticated;
-
--- ---------------------------------------------------------------------------
--- new_invite_code()
--- ---------------------------------------------------------------------------
--- Generates an unused 8-char code from the contract's alphabet (no 0/O,
--- 1/I/L). Pure generation — does not insert into trainer_invites; the
--- trainer's own INSERT (allowed by policies.sql for trainer_id = auth.uid())
--- supplies the code this returns.
---
--- SECURITY DEFINER so the uniqueness check sees *every* trainer's codes, not
--- just the caller's own (trainer_invites' SELECT policy is scoped to
--- trainer_id = auth.uid()). The code is a single global primary key, so
--- uniqueness must be checked globally — collision odds are astronomically
--- low (32^8 alphabet) but there is no reason to let RLS visibility make the
--- check wrong when correctness is free.
-create or replace function public.new_invite_code()
-returns text
-language plpgsql
-security definer
-volatile
-set search_path = public, pg_temp
-as $$
-declare
-  alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  -- v_-prefixed to avoid shadowing/colliding with trainer_invites.code below
-  -- (an unqualified `code` in the EXIT WHEN was ambiguous between this
-  -- variable and the column — caught by testing against a live table).
-  v_code   text;
-  attempt  int := 0;
-begin
-  loop
-    attempt := attempt + 1;
-    select string_agg(substr(alphabet, (floor(random() * length(alphabet)) + 1)::int, 1), '')
-    into v_code
-    from generate_series(1, 8);
-
-    exit when not exists (select 1 from public.trainer_invites ti where ti.code = v_code);
-
-    if attempt > 20 then
-      raise exception 'could not generate a unique invite code, please retry';
-    end if;
-  end loop;
-
-  return v_code;
-end;
-$$;
-
-revoke all on function public.new_invite_code() from public;
-grant execute on function public.new_invite_code() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- server_now()

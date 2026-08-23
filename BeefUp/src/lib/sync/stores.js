@@ -25,6 +25,14 @@ export function isSynced(store) {
   return Object.prototype.hasOwnProperty.call(SYNCED_STORES, store)
 }
 
+// Lives here, not in engine.js, so db.js can clear a cursor without
+// importing the engine (which imports db.js back).
+const CURSOR_PREFIX = 'sync:cursor:'
+
+export function cursorKey(store) {
+  return CURSOR_PREFIX + store
+}
+
 export function keyFieldOf(store) {
   return SYNCED_STORES[store]?.key ?? 'id'
 }

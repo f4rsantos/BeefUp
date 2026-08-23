@@ -1,20 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { syncAll } from './engine.js'
 import { createSupabaseBackend } from './backends/supabase.js'
-import { isLinked } from './link.js'
+import { getLink } from './link.js'
 import { getPref, setPref } from '../prefs.js'
 import { isConfigured } from '../supabaseClient.js'
 
 // The in-flight guard below is per hook instance, so two mounted callers
 // would each start a run and race each other's cursor writes. Share the
-// actual engine pass across every caller instead.
-let enginePass = null
+// actual engine pass across every caller instead, keyed by scopes so a
+// caller with a different scope set gets its own pass instead of silently
+// riding along on whatever the first caller happened to pass in.
+const enginePasses = new Map()
+
+function scopesKey(scopes) {
+  return JSON.stringify([...scopes].sort())
+}
 
 function runEngineOnce(backend, scopes) {
-  if (!enginePass) {
-    enginePass = syncAll(backend, { scopes }).finally(() => { enginePass = null })
+  const key = scopesKey(scopes)
+  let pass = enginePasses.get(key)
+  if (!pass) {
+    pass = syncAll(backend, { scopes }).finally(() => {
+      if (enginePasses.get(key) === pass) enginePasses.delete(key)
+    })
+    enginePasses.set(key, pass)
   }
-  return enginePass
+  return pass
 }
 
 // status: 'off' | 'idle' | 'syncing' | 'offline' | 'error'
@@ -59,8 +70,14 @@ export function useSync() {
         if (mounted.current) setStatus('off')
         return
       }
-      const linked = await isLinked()
-      if (!linked) {
+      // Reconciled against the server, not just the local cache: a trainer
+      // revoking access must stop this device from syncing on its very next
+      // run, not whenever the user happens to open Settings next. getLink()
+      // already draws the offline-vs-revoked distinction — a network error
+      // keeps believing the cache (so a dropped wifi never looks like a
+      // revoke), only an authoritative "no accepted link" clears it.
+      const link = await getLink()
+      if (!link || link.status !== 'accepted') {
         if (mounted.current) setStatus('off')
         return
       }

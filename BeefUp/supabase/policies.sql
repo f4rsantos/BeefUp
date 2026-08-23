@@ -87,12 +87,15 @@ create policy trainer_links_update_client on public.trainer_links
   using (client_id = auth.uid())
   with check (client_id = auth.uid());
 
--- A trainer may only revoke a link (status), never touch scopes — a
--- trainer must not be able to grant itself broader access than the client
--- consented to. RLS alone can't express "this column may change, that one
--- may not" (WITH CHECK sees only the NEW row, not OLD), so the identity- and
--- scope-immutability rules are enforced by the BEFORE UPDATE trigger below,
--- which runs for every update regardless of which policy admitted it.
+-- A trainer may only revoke a link (status), never touch scopes, and never
+-- flip a revoked link back to accepted — a trainer must not be able to grant
+-- itself broader access, or restore access at all, without fresh client
+-- consent (redeem_invite() is the only door back in, and that requires the
+-- client to type the code again). RLS alone can't express "this column may
+-- change, that one may not" (WITH CHECK sees only the NEW row, not OLD), so
+-- the identity-, scope-, and status-immutability rules are enforced by the
+-- BEFORE UPDATE trigger below, which runs for every update regardless of
+-- which policy admitted it.
 drop policy if exists trainer_links_update_trainer on public.trainer_links;
 create policy trainer_links_update_trainer on public.trainer_links
   for update
@@ -104,9 +107,11 @@ create policy trainer_links_update_trainer on public.trainer_links
 
 -- Belt-and-braces for the trainer_id column check above: even if a future
 -- change loosened trainer_links_update_trainer's WITH CHECK, this trigger
--- still refuses (a) moving a link to a different trainer/client pair, and
--- (b) a trainer editing scopes. SECURITY INVOKER (default) is correct here:
--- it only inspects NEW/OLD and auth.uid(), no elevated access needed.
+-- still refuses (a) moving a link to a different trainer/client pair, (b) a
+-- trainer editing scopes, and (c) a trainer moving status to anything but
+-- 'revoked' (in particular, un-revoking a link the client turned off).
+-- SECURITY INVOKER (default) is correct here: it only inspects NEW/OLD and
+-- auth.uid(), no elevated access needed.
 create or replace function public.trainer_links_guard()
 returns trigger
 language plpgsql
@@ -119,6 +124,15 @@ begin
 
   if auth.uid() = old.trainer_id and new.scopes is distinct from old.scopes then
     raise exception 'trainer_links: a trainer cannot change shared scopes';
+  end if;
+
+  -- A client unlinking (status -> 'revoked') is that client's own consent
+  -- decision; a trainer re-accepting it afterwards is not — it would restore
+  -- access the client just withdrew, with no consent step in between. The
+  -- app's own trainer code (unlinkClient() in trainerData.js) only ever
+  -- sends status = 'revoked', so this costs a legitimate trainer nothing.
+  if auth.uid() = old.trainer_id and new.status <> old.status and new.status <> 'revoked' then
+    raise exception 'trainer_links: a trainer may only revoke';
   end if;
 
   return new;

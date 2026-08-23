@@ -6,6 +6,8 @@ import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { isPrescribed, uid } from "../lib/planUtils";
 import { STORES } from "../lib/stores";
 
+// Prescribing writes straight into the client's own rows; their device pulls
+// the change on its next sync. Rows the client made themselves stay theirs.
 export default function LinkedClientGym({ client, data, lang, t, onChanged }) {
   const [workouts, setWorkouts] = useState(() => data.workouts || []);
   const [editing, setEditing] = useState(null);

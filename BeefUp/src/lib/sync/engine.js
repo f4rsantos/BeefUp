@@ -1,19 +1,17 @@
 import { db } from '../db.js'
-import { SCOPES, keyFieldOf, storesForScopes } from './stores.js'
+import { SCOPES, cursorKey, keyFieldOf, storesForScopes } from './stores.js'
 import { stampSynced, stampFromRemote, isDeleted, stripMeta } from './meta.js'
 import { mergeStore, pendingPush, purgeableKeys } from './merge.js'
 
 // Backend contract, so Supabase can drop in without touching this file:
 //
 //   pull(store, sinceMs) -> { items: [{ key, row, serverAt, deleted }], serverNow }
-//   push(store, items)   -> { acked: [{ key, serverAt }], serverNow }
+//   push(store, items)   -> { acked: [{ key, serverAt }] }
 //     items: [{ key, row, deleted }]
+//     push needs no serverNow of its own: acks are only used to stamp rows
+//     synced, the cursor advances from pull's serverNow alone (see below).
 
-const CURSOR_PREFIX = 'sync:cursor:'
-
-export function cursorKey(store) {
-  return CURSOR_PREFIX + store
-}
+export { cursorKey }
 
 async function readCursor(store) {
   return db.getSetting(cursorKey(store), 0)
@@ -38,14 +36,26 @@ function toLocalRow(item, keyField) {
 
 export async function syncStore(backend, store) {
   const keyField = keyFieldOf(store)
-  let serverNow = 0
+
+  // Pull before push: a remote change (including a deletion) must land on
+  // this device before a dirty local row gets a chance to push over it. The
+  // other order lets an unrelated local edit resurrect a row the trainer
+  // just deleted, by upserting deleted_at back to null before the tombstone
+  // is ever seen.
+  const since = await readCursor(store)
+  const pullRes = await backend.pull(store, since)
+  const remote = (pullRes.items || []).map((item) => ({ row: toLocalRow(item, keyField), serverAt: item.serverAt }))
+  const beforeMerge = await db.rawAll(store)
+  const { writes, kept } = mergeStore(beforeMerge, remote, keyField)
+  for (const row of writes) await db.rawPut(store, row)
 
   const local = await db.rawAll(store)
   const outgoing = pendingPush(local).map((r) => toPushItem(r, keyField))
+  let pushed = 0
 
   if (outgoing.length) {
     const res = await backend.push(store, outgoing)
-    serverNow = res.serverNow || serverNow
+    pushed = outgoing.length
     const byKey = new Map(local.map((r) => [r[keyField], r]))
     for (const ack of res.acked || []) {
       const row = byKey.get(ack.key)
@@ -53,17 +63,17 @@ export async function syncStore(backend, store) {
     }
   }
 
-  const since = await readCursor(store)
-  const res = await backend.pull(store, since)
-  serverNow = res.serverNow || serverNow
-
-  const remote = (res.items || []).map((item) => ({ row: toLocalRow(item, keyField), serverAt: item.serverAt }))
-  const fresh = await db.rawAll(store)
-  const { writes, kept } = mergeStore(fresh, remote, keyField)
-  for (const row of writes) await db.rawPut(store, row)
-
-  await writeCursor(store, serverNow)
-  return { pushed: outgoing.length, pulled: writes.length, kept }
+  // The cursor advances to this round's PULL time only, never to a push
+  // ack's later timestamp, even though that means an immediate next sync
+  // may re-pull a row this round just pushed (harmless: it is not dirty
+  // any more, so it merges back to identical data). The alternative is
+  // unsafe: another device can commit a row between the moment pull reads
+  // the clock and the moment our push lands. If the cursor jumped forward
+  // to cover our own push, that row's updated_at would sit behind the new
+  // cursor and never be pulled again — silent, permanent data loss. Losing
+  // nothing is worth re-fetching one row once.
+  await writeCursor(store, pullRes.serverNow)
+  return { pushed, pulled: writes.length, kept }
 }
 
 export async function purgeStore(store, { linked, now = Date.now() } = {}) {

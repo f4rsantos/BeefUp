@@ -1,5 +1,5 @@
 import { STORES } from './stores.js'
-import { isSynced, keyFieldOf } from './sync/stores.js'
+import { isSynced, keyFieldOf, cursorKey } from './sync/stores.js'
 import { stampLocal, stampDeleted, stripMeta, isDeleted } from './sync/meta.js'
 
 const DB_NAME = 'beefup'
@@ -86,8 +86,12 @@ export const db = {
   // Generic delete
   remove: (store, key) => deleteRow(store, key),
 
-  // When restoring a backup replaces the current data
-  clear: (store) => tx(store, 'readwrite', s => s.clear()),
+  // When restoring a backup replaces the current data. 
+  // A synced store also drops its sync cursor
+  clear: async (store) => {
+    await tx(store, 'readwrite', s => s.clear())
+    if (isSynced(store)) await tx(STORES.settings, 'readwrite', s => s.delete(cursorKey(store)))
+  },
 
   // Settings helpers
   getSetting: async (key, fallback = null) => {

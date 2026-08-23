@@ -53,6 +53,8 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
       const redeemed = await redeemInvite(code);
       if (!redeemed) throw new Error("redeem failed");
       let finalLink = redeemed;
+      // Redeeming shares nothing on its own, so a failure here means the
+      // student is sharing less than they picked. Say so, never imply it worked.
       try {
         finalLink = await applyScopes(scopes);
         setScopesPending(false);

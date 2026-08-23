@@ -52,7 +52,8 @@ export function onAuthChange(cb) {
   }
 }
 
-// profiles.role is informational — RLS never reads it — but a trainer account should say so
+// profiles.role is informational — RLS never reads it — but a trainer account
+// should say so. The row is created by a trigger on signup, so this updates it.
 export async function setProfileRole(role) {
   const supabase = await getSupabase()
   if (!supabase) return

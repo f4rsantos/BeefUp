@@ -88,7 +88,7 @@ export function createSupabaseBackend() {
     },
 
     async push(store, items) {
-      if (!items.length) return { acked: [], serverNow: 0 }
+      if (!items.length) return { acked: [] }
 
       const client = await requireClient()
       const userId = await currentUserId(client)
@@ -107,8 +107,10 @@ export function createSupabaseBackend() {
         }
       }
 
-      const serverNow = await serverNowMs(client)
-      return { acked, serverNow }
+      // No serverNowMs() call here: each ack above already carries the row's
+      // real server timestamp, and engine.js only ever needed pull's clock
+      // reading to advance the cursor — this one was thrown away every time.
+      return { acked }
     },
   }
 }

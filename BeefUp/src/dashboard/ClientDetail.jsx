@@ -281,7 +281,7 @@ function Notes({ client, saveClient, t }) {
   );
 }
 
-// A linked client's data lives in Supabase, not the local `clients` store 
+// A linked client's data lives in Supabase, not the local `clients` store — it is fetched read-only, scoped to exactly what the student shared.
 function LinkedClientDetail({ client, onUnlinked }) {
   const { t, lang } = useApp();
   const configured = isConfigured();

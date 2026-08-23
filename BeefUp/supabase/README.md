@@ -3,16 +3,49 @@
 Everything a fresh Supabase project needs for sync: tables, RPCs, RLS. No
 application code lives here — this directory is SQL only.
 
-## Apply, in order
+## Quickest route: `setup.sql`
 
-Paste each file's contents into the Supabase SQL editor (or run via
-`supabase db execute` / `psql`, however your project applies migrations) as
-**one transaction each, in this order**:
+**Nothing here applies itself.** Until you run it against your project, the
+app signs in fine (Supabase Auth is built in) but every query fails with
+`Could not find the table 'public.…' in the schema cache`.
+
+Open your project's SQL editor, paste the whole of `setup.sql`, and run it.
+It is the three files below concatenated in dependency order, wrapped in a
+single transaction, and it is idempotent — re-running it is safe.
+
+Then check it did what it claims:
+
+```bash
+bash supabase/verify-rls.sh
+```
+
+That spins up a throwaway local PostgreSQL, stands in for the pieces Supabase
+provides (the `auth` schema, `auth.uid()`, the `authenticated` role), applies
+`setup.sql`, and runs 21 assertions across the security boundary: a student
+sees only their own rows, a trainer sees only the scopes their client shared,
+a trainer is refused nutrition and measures writes, a trainer cannot widen
+their own `scopes[]`, narrowing takes effect at once, revoking cuts access,
+invite codes stay private to the trainer who made them, a trainer cannot
+flip a client's revoke back to accepted, re-redeeming an invite never wipes
+existing scopes (and resets them on a genuine reconnect instead of silently
+restoring what was revoked), and `new_invite_code()` no longer exists. It
+needs a local `initdb`/`pg_ctl`/`psql` on PATH and touches nothing outside a
+temp directory.
+
+Note what that does **not** cover: it exercises the policies through plain
+SQL, not through PostgREST with a real JWT. The manual test plan further down
+is still worth running once against the live project.
+
+## Applying the pieces separately
+
+If you would rather apply them one at a time, the order matters:
 
 1. `schema.sql` — tables, indexes, `updated_at` trigger, the
    `auth.users -> profiles` trigger.
-2. `functions.sql` — `has_scope`, `redeem_invite`, `new_invite_code`,
-   `server_now`. Depends on the tables from step 1.
+2. `functions.sql` — `has_scope`, `redeem_invite`, `server_now`. Depends on
+   the tables from step 1. Invite codes themselves are generated client-side
+   (`src/lib/trainerData.js`'s `randomCode()`) — there is no server-side
+   generator; only one alphabet/format should exist, not two.
 3. `policies.sql` — enables RLS and adds every policy. Depends on
    `has_scope()` from step 2.
 
@@ -53,12 +86,15 @@ Create three real users via Supabase Auth (sign-up flow, or the dashboard):
 call them `A`, `B`, `T` below.
 
 As `T` (or via the SQL editor authenticated as service_role for setup
-convenience), create an invite:
+convenience), create an invite. Codes are generated client-side (there is no
+server-side generator — see "Applying the pieces separately" above), so for
+this manual SQL test just pick any 8-char string matching the alphabet the
+`trainer_invites.code` CHECK constraint expects:
 
 ```sql
 insert into trainer_invites (code, trainer_id)
-values (new_invite_code(), 'T');
--- note the returned code, call it CODE
+values ('ABCDEFGH', 'T');
+-- note the code you chose, call it CODE
 ```
 
 As `A`, redeem it sharing only `workouts` and `measures` (not `nutrition`):
@@ -197,7 +233,10 @@ This caught two real bugs before they reached anyone:
 
 Both were genuine "this SQL does not run" bugs — pure reasoning-through would
 not have reliably caught either, since both read as correct until Postgres's
-plpgsql name resolution is actually exercised.
+plpgsql name resolution is actually exercised. (`new_invite_code()` itself
+was later deleted outright, as a duplicate of the client-side generator in
+`src/lib/trainerData.js` — see "Decisions" below — but the plpgsql-shadowing
+lesson generalizes and is kept here for that reason.)
 
 With those fixed, every scenario in this test plan (1 through 5) was run for
 real, on top of the exact `schema.sql`/`functions.sql`/`policies.sql` in this
@@ -220,9 +259,9 @@ verified, beyond what's written out above:
   database's own clock.
 - **The `SECURITY DEFINER` privilege-bypass assumption held**, in this exact
   setup: `app_test_user` (non-superuser, not a table owner, only granted
-  `authenticated`) could still successfully call `redeem_invite`,
-  `new_invite_code`, and trigger `handle_new_auth_user` — all three
-  correctly reached past `trainer_invites`/`trainer_links`/`profiles`' RLS
+  `authenticated`) could still successfully call `redeem_invite` and trigger
+  `handle_new_auth_user` — both correctly reached past
+  `trainer_invites`/`trainer_links`/`profiles`' RLS
   because the functions were owned by `postgres`, the role every file was
   applied as. This is the standard Supabase pattern (migrations applied as
   `postgres` via the SQL editor/CLI) and it worked exactly as designed here.
@@ -237,12 +276,6 @@ deserving a real run against an actual Supabase project before shipping:
   with a real signed JWT populating `auth.uid()`/`auth.role()` from Supabase's
   actual `auth` schema, not the two-line stub used here. The RLS logic itself
   was exercised for real; the transport in front of it was not.
-- **`new_invite_code()` under real concurrency** — the uniqueness loop is
-  correct but not itself locking; two trainers calling it in the same
-  instant could theoretically both pick the same free code and race to
-  insert it. The `trainer_invites` primary key makes the *losing* insert
-  fail loudly (never silently double-issues a code), but that failure path
-  (retry with a fresh code) is untested against a live database.
 - **PostgREST's `onConflict` behavior against this exact primary key** — the
   "Sanity check" section above states the requirement; I could not run the
   adapter's actual `push()` against a live table to confirm the upsert
@@ -271,8 +304,34 @@ deserving a real run against an actual Supabase project before shipping:
   row, so it can gate "who may update this row" but not "which columns may
   they change." Added a `BEFORE UPDATE` trigger so a trainer's UPDATE can
   never change `scopes` (only a client's consent should ever widen or
-  narrow what's shared) and neither side can repoint a link's
-  `trainer_id`/`client_id` to a different pair.
+  narrow what's shared), neither side can repoint a link's
+  `trainer_id`/`client_id` to a different pair, and — closing a since-found
+  consent-bypass hole — a trainer's UPDATE can never move `status` to
+  anything other than `'revoked'`. Without that last rule, a trainer could
+  flip a client's own `'revoked'` back to `'accepted'` and silently restore
+  access the client had just withdrawn, with no consent step in between; the
+  app's trainer code only ever sends `status: 'revoked'` (`unlinkClient()` in
+  `src/lib/trainerData.js`), so a trainer legitimately never needs anything
+  else. `redeem_invite()` (the client's own re-consent path) is unaffected —
+  it runs with `auth.uid()` equal to the *client*, not the trainer, so this
+  guard's trainer-only checks don't apply to it.
+- **`redeem_invite()` no longer lets an empty incoming `scopes` clobber an
+  existing link's real scopes.** The client always redeems with
+  `want_scopes: []` and applies the real choice via a separate `setScopes()`
+  call right after (`src/lib/sync/link.js`) — so re-redeeming an already-
+  `'accepted'` link (an idempotent retry, say) used to silently wipe its
+  scopes back to nothing. Fixed: an empty incoming array never overwrites an
+  existing accepted link's scopes, only a genuinely non-empty one does.
+  Separately, reconnecting a `'revoked'` link is treated as a fresh consent
+  event — its old scopes are *not* carried forward, since silently restoring
+  whatever was last shared, without the student choosing again, would
+  over-share by default; this costs nothing in the normal flow since
+  `setScopes()` runs immediately after redemption anyway.
+- **Deleted `new_invite_code()`.** It duplicated the client's own code
+  generator (`randomCode()` in `src/lib/trainerData.js`) — two sources of
+  truth for the invite-code alphabet, never called from the app, only from
+  this file's own now-updated manual test plan. Removed the function and its
+  grants; codes are generated client-side only.
 - **No DELETE policy on `trainer_links` or `trainer_invites`.** Both model
   "off" as a status flag (`status = 'revoked'`, `revoked = true`) rather
   than row removal, preserving an audit trail of past consent/invites. Only

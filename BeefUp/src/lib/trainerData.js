@@ -180,10 +180,16 @@ export async function createInvite() {
 }
 
 export async function revokeInvite(code) {
-  if (!isConfigured()) throw new Error('sync not configured')
-  const supabase = await getSupabase()
-  if (!supabase) throw new Error('sync not configured')
+  const ctx = await trainerClient()
+  if (!ctx) throw new Error('not signed in')
+  const { supabase, trainerId } = ctx
 
-  const { error } = await supabase.from('trainer_invites').update({ revoked: true }).eq('code', code)
+  const { data, error } = await supabase
+    .from('trainer_invites')
+    .update({ revoked: true })
+    .eq('code', code)
+    .eq('trainer_id', trainerId)
+    .select('code')
   if (error) throw error
+  if (!data?.length) throw new Error('invite not found')
 }

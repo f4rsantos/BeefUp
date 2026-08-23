@@ -17,6 +17,7 @@
     "barcode-detector": "^3.2.2",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.14.0",
+    "p": "^0.2.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "recharts": "^3.9.0",
