@@ -5,17 +5,17 @@ import { scopeOf, storesForScopes } from './sync/stores.js'
 
 // Trainer-side access to sync_rows/trainer_links/trainer_invites through the
 // shared Supabase client. Reads cover whatever the client shared; writes are
-// confined to prescribing plans and workouts. Nutrition and measures are
-// read-only here, and the database refuses a write to them regardless.
+// confined to prescribing plans, workouts, and measure types — never the
+// measured values themselves. The database refuses anything else regardless.
 
 // Single source of truth for invite-code shape: the SQL generator is gone,
 // so this alphabet is the only place it's defined. Don't change it or the
 // length, clients read codes aloud.
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
-// A trainer prescribes plans and workouts, nothing else. Sessions and custom
-// exercises share the 'workouts' scope but belong to the client.
-const PRESCRIBABLE = [STORES.plans, STORES.workouts]
+// Trainer defines what to measure and may log a value in person too — never
+// steps or nutrition, which stay the client's own logged data.
+const PRESCRIBABLE = [STORES.plans, STORES.workouts, STORES.measureTypes, STORES.measurements]
 
 export function isPrescribable(store) {
   return PRESCRIBABLE.includes(store)

@@ -79,6 +79,8 @@ export function AppProvider({ children }) {
   const [customFoods, setCustomFoods] = useState([])
   const [customExercises, setCustomExercises] = useState([])
   const customExercisesRef = useRef([])
+  const [measureTypes, setMeasureTypes] = useState([])
+  const measureTypesRef = useRef([])
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
   const [nutritionGoals, setNutritionGoalsState] = useState(PREF_DEFAULTS.nutritionGoals)
   const [mealTypes, setMealTypesState] = useState(DEFAULT_MEAL_TYPES)
@@ -206,7 +208,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx] = await Promise.all([
+      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -219,6 +221,7 @@ export function AppProvider({ children }) {
         db.getAllWater(),
         db.getAllClients(),
         db.getAllCustomExercises(),
+        db.getAllMeasureTypes(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -237,6 +240,8 @@ export function AppProvider({ children }) {
       setCustomExercises(customEx)
       customExercisesRef.current = customEx
       registerCustomExercises(customEx)
+      setMeasureTypes(measureTy)
+      measureTypesRef.current = measureTy
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
@@ -363,6 +368,20 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const saveMeasureType = useCallback(async (entry) => {
+    await db.saveMeasureType(entry)
+    const next = upsertById(measureTypesRef.current, entry)
+    measureTypesRef.current = next
+    setMeasureTypes(next)
+  }, [])
+
+  const deleteMeasureType = useCallback(async (id) => {
+    await db.removeMeasureType(id)
+    const next = removeById(measureTypesRef.current, id)
+    measureTypesRef.current = next
+    setMeasureTypes(next)
+  }, [])
+
   const setWaterToday = useCallback(async (date, ml) => {
     await db.setWater(date, ml)
     setWaterMap(prev => ({ ...prev, [date]: ml }))
@@ -437,6 +456,7 @@ export function AppProvider({ children }) {
     foodLog, addFoodLog, deleteFoodLog,
     customFoods, saveCustomFood, deleteCustomFood,
     customExercises, saveCustomExercise, deleteCustomExercise,
+    measureTypes, saveMeasureType, deleteMeasureType,
     favouriteFoods, toggleFavouriteFood,
     recentFoodIds, addRecentFood,
     waterMap, setWaterToday,

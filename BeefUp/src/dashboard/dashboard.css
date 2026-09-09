@@ -137,11 +137,12 @@
 .dash-measures, .dash-notes { max-width: 860px; }
 .dash-notes { max-width: 760px; }
 
-.dash-measure-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 32px;
+.chip-add {
+  background: transparent;
+  color: var(--accent);
+  border: 1px dashed var(--accent);
 }
+.chip-add:hover { background: var(--accent-soft); }
 
 .dash-sync {
   max-width: 760px;

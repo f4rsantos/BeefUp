@@ -118,6 +118,23 @@ test('offline writes push once online and stop being dirty', async () => {
   assert.deepEqual(backend._dump(STORES.sessions)[0].row, { id: 's1', date: '2026-01-01', duration: 60 })
 })
 
+test('custom measure types sync like any other store', async () => {
+  await reset()
+  const backend = createMemoryBackend()
+
+  await db.saveMeasureType({ id: 'm1', name: 'Gémeo esquerdo', group: 'legs', createdAt: 1 })
+
+  const report = await syncStore(backend, STORES.measureTypes)
+  assert.equal(report.pushed, 1)
+
+  const [raw] = await db.rawAll(STORES.measureTypes)
+  assert.ok(!isDirty(raw), 'clean after push')
+
+  assert.deepEqual(backend._dump(STORES.measureTypes)[0].row, {
+    id: 'm1', name: 'Gémeo esquerdo', group: 'legs', createdAt: 1,
+  })
+})
+
 test('rows written by another device arrive on pull', async () => {
   await reset()
   const backend = createMemoryBackend()

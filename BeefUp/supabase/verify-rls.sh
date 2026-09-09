@@ -214,6 +214,33 @@ A7=$(run_as $ANA "insert into public.trainer_invites(code, trainer_id) values ('
 case "$A7" in *"violates row-level security"*) A7=DENIED;; esac
 check "a non-trainer cannot insert trainer_invites" "$(echo $A7 | xargs)" "DENIED"
 
+# --- F8: trainer can prescribe measure types AND log a measurement value,
+#         but never steps -------------------------------------------------
+# RUI already has an accepted link with scopes={workouts} from F7 above.
+echo "== F8: trainer prescribes measure types and values on a linked client =="
+
+MT_NOSHARE=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureTypes','mt1','measures','{\"id\":\"mt1\",\"name\":\"Calf\"}') returning row_key")
+case "$MT_NOSHARE" in *"violates row-level security"*) MT_NOSHARE=DENIED;; esac
+check "trainer blocked from measureTypes before client shares measures" "$(echo $MT_NOSHARE | xargs)" "DENIED"
+
+run_as $RUI "update public.trainer_links set scopes=array['workouts','measures'] where trainer_id='$TRAINER' and client_id='$RUI'" >/dev/null
+
+MT_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureTypes','mt1','measures','{\"id\":\"mt1\",\"name\":\"Calf\"}') returning row_key")
+check "trainer prescribes a measure type once measures is shared" "$(echo $MT_OK | xargs)" "mt1"
+
+MV_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measurements','m9','measures','{\"id\":\"m9\",\"value\":80}') returning row_key")
+check "trainer logs a measurement value once measures is shared" "$(echo $MV_OK | xargs)" "m9"
+
+STEPS_DENIED=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','steps','s1','measures','{\"id\":\"s1\",\"count\":8000}') returning row_key")
+case "$STEPS_DENIED" in *"violates row-level security"*) STEPS_DENIED=DENIED;; esac
+check "trainer still cannot write the client's own step count" "$(echo $STEPS_DENIED | xargs)" "DENIED"
+
+MT_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measureTypes' and row_key='mt1' returning row_key")
+check "trainer can unprescribe (tombstone) a measure type" "$(echo $MT_UNPRESCRIBE | xargs)" "mt1"
+
+MV_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measurements' and row_key='m9' returning row_key")
+check "trainer can unprescribe (tombstone) a measurement value" "$(echo $MV_UNPRESCRIBE | xargs)" "m9"
+
 echo
 echo "passed: $pass   failed: $fail"
 pg_ctl -D "$PGDATA" -w stop >/dev/null 2>&1 || true

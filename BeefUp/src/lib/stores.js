@@ -11,5 +11,6 @@ export const STORES = {
   foodLog: 'foodLog',         // diary entries { id, date, meal, name, qty, kcal, protein, carbs, fat }
   water: 'water',             // daily water { date, ml }
   clients: 'clients',
-  customExercises: 'customExercises'
+  customExercises: 'customExercises',
+  measureTypes: 'measureTypes'
 }

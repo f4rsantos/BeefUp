@@ -3,7 +3,7 @@ import { isSynced, keyFieldOf, cursorKey } from './sync/stores.js'
 import { stampLocal, stampDeleted, stripMeta, isDeleted } from './sync/meta.js'
 
 const DB_NAME = 'beefup'
-const DB_VERSION = 5
+const DB_VERSION = 6
 
 export { STORES }
 
@@ -29,6 +29,7 @@ function openDB() {
       ensureStore(db, STORES.water, { keyPath: 'date' })
       ensureStore(db, STORES.clients, { keyPath: 'id' })
       ensureStore(db, STORES.customExercises, { keyPath: 'id' })
+      ensureStore(db, STORES.measureTypes, { keyPath: 'id' })
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)
@@ -144,6 +145,9 @@ export const db = {
   saveCustomExercise: (exercise) => writeRow(STORES.customExercises, exercise),
   getAllCustomExercises: () => readAll(STORES.customExercises),
   removeCustomExercise: (id) => deleteRow(STORES.customExercises, id),
+  saveMeasureType: (measureType) => writeRow(STORES.measureTypes, measureType),
+  getAllMeasureTypes: () => readAll(STORES.measureTypes),
+  removeMeasureType: (id) => deleteRow(STORES.measureTypes, id),
 
   rawAll: (store) => tx(store, 'readonly', s => s.getAll()),
   rawPut: (store, value) => tx(store, 'readwrite', s => s.put(value)),

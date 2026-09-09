@@ -27,7 +27,6 @@ export default function Onboarding() {
   const [calc, setCalc] = useState({ sex: "male", age: 28, height: 175, weight: 75, activity: 1.55, obj: 0 });
   const [loadPlan, setLoadPlan] = useState(true);
   const [account, setAccount] = useState({ name: "", email: "", password: "", existing: false });
-  const [accountReady, setAccountReady] = useState(false);
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountError, setAccountError] = useState("");
 
@@ -99,7 +98,7 @@ export default function Onboarding() {
         return;
       }
       await setProfileRole("trainer");
-      setAccountReady(true);
+      completeOnboarding({ mode: "helper" });
     } catch (e) {
       setAccountError(isTrainerTakenError(e) ? t.trainerSetupTrainerTaken : (e?.message || t.obHelperAccountFailed));
     } finally {
@@ -116,62 +115,50 @@ export default function Onboarding() {
       );
     }
 
-    if (!accountReady) {
-      const canSubmit =
-        account.email.trim() && account.password && (account.existing || account.name.trim());
-      return (
-        <Frame t={t} onBack={back} total={0} current={0} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang}>
-          <h1 className="ob-title">{account.existing ? t.obHelperSignIn : t.obHelperCreateAccount}</h1>
-          <p className="ob-sub">{t.obHelperAccountWhy}</p>
-          <div className="flex flex-col gap-3" style={{ marginTop: 16 }}>
-            {!account.existing && (
-              <input
-                className="field"
-                placeholder={t.dashDisplayName}
-                value={account.name}
-                onChange={(e) => setAccount((a) => ({ ...a, name: e.target.value }))}
-              />
-            )}
-            <input
-              className="field"
-              type="email"
-              autoComplete="email"
-              placeholder={t.dashEmail}
-              value={account.email}
-              onChange={(e) => setAccount((a) => ({ ...a, email: e.target.value }))}
-            />
-            <input
-              className="field"
-              type="password"
-              autoComplete={account.existing ? "current-password" : "new-password"}
-              placeholder={t.dashPassword}
-              value={account.password}
-              onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
-            />
-            {accountError && (
-              <p className="text-sm" style={{ color: "var(--accent-2, orange)" }}>{accountError}</p>
-            )}
-            <button
-              className="btn btn-ghost text-sm"
-              onClick={() => { setAccount((a) => ({ ...a, existing: !a.existing })); setAccountError(""); }}
-            >
-              {account.existing ? t.dashNeedAccount : t.dashHaveAccount}
-            </button>
-          </div>
-          <div className="ob-spacer" />
-          <button className="btn btn-primary w-full" onClick={submitAccount} disabled={!canSubmit || accountBusy}>
-            {accountBusy ? "…" : t.obHelperContinue}
-          </button>
-        </Frame>
-      );
-    }
-
+    const canSubmit =
+      account.email.trim() && account.password && (account.existing || account.name.trim());
     return (
       <Frame t={t} onBack={back} total={0} current={0} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang}>
-        <FocusStep t={t} value={focus} onChange={setFocus} />
+        <h1 className="ob-title">{account.existing ? t.obHelperSignIn : t.obHelperCreateAccount}</h1>
+        <p className="ob-sub">{t.obHelperAccountWhy}</p>
+        <div className="flex flex-col gap-3" style={{ marginTop: 16 }}>
+          {!account.existing && (
+            <input
+              className="field"
+              placeholder={t.dashDisplayName}
+              value={account.name}
+              onChange={(e) => setAccount((a) => ({ ...a, name: e.target.value }))}
+            />
+          )}
+          <input
+            className="field"
+            type="email"
+            autoComplete="email"
+            placeholder={t.dashEmail}
+            value={account.email}
+            onChange={(e) => setAccount((a) => ({ ...a, email: e.target.value }))}
+          />
+          <input
+            className="field"
+            type="password"
+            autoComplete={account.existing ? "current-password" : "new-password"}
+            placeholder={t.dashPassword}
+            value={account.password}
+            onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
+          />
+          {accountError && (
+            <p className="text-sm" style={{ color: "var(--accent-2, orange)" }}>{accountError}</p>
+          )}
+          <button
+            className="btn btn-ghost text-sm"
+            onClick={() => { setAccount((a) => ({ ...a, existing: !a.existing })); setAccountError(""); }}
+          >
+            {account.existing ? t.dashNeedAccount : t.dashHaveAccount}
+          </button>
+        </div>
         <div className="ob-spacer" />
-        <button className="btn btn-primary w-full" onClick={() => completeOnboarding({ mode: "helper", focus })}>
-          {t.obFinish}
+        <button className="btn btn-primary w-full" onClick={submitAccount} disabled={!canSubmit || accountBusy}>
+          {accountBusy ? "…" : t.obHelperContinue}
         </button>
       </Frame>
     );

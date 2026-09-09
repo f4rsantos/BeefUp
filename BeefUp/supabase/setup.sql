@@ -105,7 +105,7 @@ create table if not exists public.sync_rows (
   constraint sync_rows_store_scope_check check (
     (store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts')
     or (store in ('foodLog', 'foods', 'water') and scope = 'nutrition')
-    or (store in ('measurements', 'steps') and scope = 'measures')
+    or (store in ('measurements', 'steps', 'measureTypes') and scope = 'measures')
   )
 );
 
@@ -613,25 +613,36 @@ create policy sync_rows_select on public.sync_rows
   );
 
 -- Student: full write of their own rows, any scope.
--- Trainer: write ONLY scope = 'workouts', and only for a client who has
--- shared that scope with them. WITH CHECK (not just USING) is what actually
--- blocks a trainer from writing nutrition/measures: it re-validates the
--- *new* row being written, not just which existing rows are visible.
+-- Trainer: write ONLY scope = 'workouts', plus the narrow exception below for
+-- measure types AND measurement values (a trainer taking/logging a client's
+-- measurement in person), never `steps` or nutrition, and only for a client
+-- who has shared that scope with them. WITH CHECK (not just USING) is what
+-- actually blocks a trainer from writing nutrition/steps: it re-validates
+-- the *new* row being written, not just which existing rows are visible.
+--
+-- The measures clause is deliberately store-scoped, not scope-scoped:
+-- opening up `scope = 'measures'` outright would also let a trainer write
+-- `steps`, which is the client's own logged data with no trainer-facing
+-- equivalent. Restricting to `store in ('measureTypes', 'measurements')`
+-- keeps the trainer able to prescribe *what* to measure and log a value for
+-- it (both stamped `prescribedBy` client-side, same as a prescribed
+-- workout) without ever touching step counts.
 drop policy if exists sync_rows_insert on public.sync_rows;
 create policy sync_rows_insert on public.sync_rows
   for insert
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
+    or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
   );
 
 -- Same rule for UPDATE, on both clauses:
 --   USING   — a trainer can only reach an existing row that is already
---             scope = 'workouts' for a client that shared it (a nutrition
---             or measures row is invisible to UPDATE, never mind write).
+--             scope = 'workouts' (or store in ('measureTypes', 'measurements'))
+--             for a client that shared it (a nutrition/steps row is
+--             invisible to UPDATE, never mind write).
 --   WITH CHECK — even for a row USING admitted, the trainer cannot flip its
---             scope away from 'workouts' on the way out, and cannot write
---             a row whose resulting scope isn't 'workouts'.
+--             scope/store away from what's allowed on the way out.
 -- The sync_rows_store_scope_check table constraint (schema.sql) is a second,
 -- independent backstop: it makes "store = foodLog but scope = workouts" an
 -- invalid row regardless of what any policy allows.
@@ -641,10 +652,12 @@ create policy sync_rows_update on public.sync_rows
   using (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
+    or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
   )
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
+    or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
   );
 
 -- DELETE: student only, own rows. The app itself never issues a hard

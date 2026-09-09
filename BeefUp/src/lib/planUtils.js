@@ -277,7 +277,7 @@ export function measurementsForType(measurements, type) {
   return measurements
     .filter((m) => m.type === type)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value }))
+    .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value, prescribedBy: m.prescribedBy }))
 }
 
 export const epley = (weight, reps) => (parseFloat(weight) || 0) * (1 + (parseInt(reps) || 0) / 30)
