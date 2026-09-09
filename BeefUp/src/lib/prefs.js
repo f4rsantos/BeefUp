@@ -27,7 +27,7 @@ export const PREF_DEFAULTS = {
   syncLink: null,     // cached { trainerId, trainerName, status } | null
   syncScopes: [],      // areas the student shares: workouts/nutrition/measures
   syncLastSyncAt: null, // epoch ms of the last successful sync
-  pendingTrainerInvite: null, // decoded
+  pendingTrainerInvite: null, // decoded { url, anonKey, code } from a ?t= link, until consumed
 }
 
 export const PREF_KEYS = Object.keys(PREF_DEFAULTS)
@@ -51,12 +51,14 @@ function mirrorForPaint(key, value) {
   }
 }
 
+// Trainer's Supabase project and this device's sync bookkeeping: never leave.
 const LOCAL_ONLY_SETTING_PREFIXES = ['supabase:', 'sync:cursor:', 'sync:owner']
 
 export function isLocalOnlySetting(key) {
   return LOCAL_ONLY_SETTING_PREFIXES.some(prefix => key.startsWith(prefix))
 }
 
+// Prefs that describe a link to a trainer's project, not the project itself.
 export const NON_PORTABLE_PREFS = ['syncLink', 'syncScopes', 'syncLastSyncAt', 'pendingTrainerInvite']
 
 export function getPref(key, fallback) {

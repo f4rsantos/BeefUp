@@ -6,6 +6,7 @@ import { listInvites, createInvite, revokeInvite } from "../lib/trainerData";
 import { encodeTrainerInvite } from "../lib/trainerInvite";
 import { getConfigSync } from "../lib/supabaseConfig";
 
+// Spaced: easier to read and copy.
 function formatCode(code) {
   return `${code.slice(0, 4)} ${code.slice(4)}`;
 }

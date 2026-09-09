@@ -1,5 +1,8 @@
 import { getSupabase } from './supabaseClient.js'
 
+// Email + password only, no magic links, no email infra. Built on the shared
+// lazy client in supabaseClient.js so there is only ever one GoTrue instance.
+
 export async function getSession() {
   const supabase = await getSupabase()
   if (!supabase) return null
@@ -61,7 +64,8 @@ export async function setProfileRole(role) {
   if (error) throw error
 }
 
-// setup.sql's profiles_guard() trigger raises this exact wording when a second account tries to become 'trainer' on an already-claimed project.
+// setup.sql's profiles_guard() trigger raises this exact wording when a
+// second account tries to become 'trainer' on an already-claimed project.
 export function isTrainerTakenError(err) {
   return /already has a trainer/i.test(err?.message || '')
 }

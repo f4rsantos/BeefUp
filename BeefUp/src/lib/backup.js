@@ -59,6 +59,8 @@ export function parseBackup(text) {
   }
 }
 
+// Trainer link survives a restore; sync cursors don't (they must reset so
+// the next sync re-pulls anything older than a stale cursor, not skip it).
 const PRESERVED_ON_RESTORE = ['supabase:config', 'sync:owner']
 
 // Replaces everything

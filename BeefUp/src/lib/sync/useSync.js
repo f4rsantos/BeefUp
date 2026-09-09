@@ -12,6 +12,8 @@ import { loadSupabaseConfig, getConfigEpoch } from '../supabaseConfig.js'
 // riding along on whatever the first caller happened to pass in.
 const enginePasses = new Map()
 
+const SYNC_INTERVAL_MS = 5 * 60 * 1000
+
 // Epoch in the key too: a pass in flight when the project switches must not
 // be reused by (or block) a pass meant for the new project.
 function scopesKey(scopes, epoch) {
@@ -115,6 +117,20 @@ export function useSync() {
   useEffect(() => {
     window.addEventListener('online', run)
     return () => window.removeEventListener('online', run)
+  }, [run])
+
+  // Mount and 'online' alone leave a session open for hours never syncing
+  // again — a workout finished after boot would never reach the trainer.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') run()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    const timer = setInterval(run, SYNC_INTERVAL_MS)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(timer)
+    }
   }, [run])
 
   return { status, lastSyncAt, syncNow: run, error }

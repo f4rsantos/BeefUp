@@ -83,7 +83,7 @@ const strings = {
     // History
     noHistory: 'Sem histórico ainda',
     historyEmpty: 'Completa um treino para começar.',
-    volume: 'Volume',
+    volume: 'volume',
     sets: 'séries',
     exercises: 'exercícios',
     importWorkoutTitle: 'Importar treino?',
@@ -624,7 +624,7 @@ const strings = {
 
     noHistory: 'No history yet',
     historyEmpty: 'Complete a workout to get started.',
-    volume: 'Volume',
+    volume: 'volume',
     sets: 'sets',
     exercises: 'exercises',
     importWorkoutTitle: 'Import workout?',

@@ -18,6 +18,7 @@ import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
 import { decodeTrainerInvite } from "./lib/trainerInvite";
+import { useSync } from "./lib/sync/useSync";
 import { getPref, setPref } from "./lib/prefs";
 import { useState, useEffect, lazy, Suspense } from "react";
 import ProfileSkeleton from "./pages/ProfileSkeleton";
@@ -64,6 +65,9 @@ function AppInner() {
   const [showTrainerLinkModal, setShowTrainerLinkModal] = useState(false);
   const { activeWorkout, setActiveWorkout, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
+  // App-wide: Settings used to be the only caller, so data only reached the
+  // trainer while that tab happened to be open.
+  useSync();
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("w")) {
       window.history.replaceState(null, "", window.location.pathname);
@@ -76,6 +80,7 @@ function AppInner() {
     }
   }, []);
 
+  // Survives onboarding: a first-time invitee has no account yet when the link opens.
   useEffect(() => {
     if (incomingTrainerInvite) setPref("pendingTrainerInvite", incomingTrainerInvite);
   }, [incomingTrainerInvite]);

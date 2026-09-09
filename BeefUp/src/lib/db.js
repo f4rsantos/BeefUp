@@ -51,6 +51,8 @@ async function tx(storeName, mode, fn) {
   })
 }
 
+// Synced stores stamp writes/deletes, hide metadata from reads.
+
 function writeRow(store, value) {
   return tx(store, 'readwrite', s => s.put(isSynced(store) ? stampLocal(value) : value))
 }

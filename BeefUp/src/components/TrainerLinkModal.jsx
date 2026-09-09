@@ -9,6 +9,7 @@ import { setSupabaseConfig, testConnection } from "../lib/supabaseConfig";
 const STEPS = ["scopes", "connect", "account", "confirm", "done"];
 const SCOPE_IDS = ["workouts", "nutrition", "measures"];
 
+// testConnection()'s reason codes; setSupabaseConfig's validate() throws these too.
 const CONNECT_REASON_KEYS = {
   "schema-missing": "trainerLinkConnectSchemaMissing",
   unreachable: "trainerLinkConnectUnreachable",
@@ -17,6 +18,7 @@ const INVALID_LINK_CODES = new Set(["bad-url", "not-https", "bad-host", "bad-key
 
 export default function TrainerLinkModal({ onClose, onLinked }) {
   const { t } = useApp();
+  // undefined while loading, null once confirmed there is none.
   const [pendingInvite, setPendingInvite] = useState(undefined);
   const [step, setStep] = useState("scopes");
   const [mode, setMode] = useState("signup");
@@ -51,6 +53,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
     setScopes((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
   }
 
+  // Clears the pending invite whether the wizard finished or was abandoned.
   function dismiss() {
     setPref("pendingTrainerInvite", null);
     onClose();
