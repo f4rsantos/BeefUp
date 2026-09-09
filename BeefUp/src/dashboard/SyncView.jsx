@@ -1,14 +1,26 @@
 import { useState, useEffect } from "react";
-import { LogIn, LogOut, Cloud, CloudOff } from "lucide-react";
+import { LogIn, LogOut, Cloud, Pencil } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { isConfigured, getSession, signIn, signUp, signOut, onAuthChange } from "../lib/auth";
+import { getSession, signIn, signUp, signOut, onAuthChange, setProfileRole, isTrainerTakenError } from "../lib/auth";
+import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
+import { getConfigSync } from "../lib/supabaseConfig";
+import TrainerSetup from "../onboarding/TrainerSetup";
 import InviteCodes from "./InviteCodes";
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url || "";
+  }
+}
 
 export default function SyncView() {
   const { t } = useApp();
-  const configured = isConfigured();
+  const configured = useSupabaseConfigured();
   const [session, setSession] = useState(null);
   const [ready, setReady] = useState(!configured);
+  const [editingConfig, setEditingConfig] = useState(false);
   const [mode, setMode] = useState("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,10 +28,19 @@ export default function SyncView() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  function refreshSession() {
+    setReady(false);
+    getSession().then((s) => { setSession(s); setReady(true); });
+  }
+
   useEffect(() => {
     if (!configured) return;
     let cancelled = false;
-    getSession().then((s) => { if (!cancelled) { setSession(s); setReady(true); } });
+    function run() {
+      setReady(false);
+      getSession().then((s) => { if (!cancelled) { setSession(s); setReady(true); } });
+    }
+    run();
     const unsubscribe = onAuthChange((s) => setSession(s));
     return () => { cancelled = true; unsubscribe?.(); };
   }, [configured]);
@@ -28,10 +49,11 @@ export default function SyncView() {
     setError(""); setBusy(true);
     try {
       const s = mode === "signIn" ? await signIn(email, password) : await signUp(email, password, name.trim());
+      if (s) await setProfileRole("trainer");
       setSession(s);
       setPassword("");
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(isTrainerTakenError(e) ? t.trainerSetupTrainerTaken : String(e?.message || e));
     }
     setBusy(false);
   }
@@ -47,14 +69,24 @@ export default function SyncView() {
     setBusy(false);
   }
 
+  if (editingConfig) {
+    return (
+      <div className="dash-sync">
+        <div className="card mb-5" style={{ maxWidth: 640 }}>
+          <TrainerSetup
+            onCancel={() => setEditingConfig(false)}
+            onDone={() => { setEditingConfig(false); refreshSession(); }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!configured) {
     return (
       <div className="dash-sync">
-        <div className="card mb-5" style={{ maxWidth: 720 }}>
-          <h3 className="dash-card-title">{t.dashAccount}</h3>
-          <p className="flex items-center gap-2 text-sm" style={{ color: "var(--muted)" }}>
-            <CloudOff size={15} /> {t.dashSyncUnavailable}
-          </p>
+        <div className="card mb-5" style={{ maxWidth: 640 }}>
+          <TrainerSetup />
         </div>
       </div>
     );
@@ -62,11 +94,18 @@ export default function SyncView() {
 
   if (!ready) return null;
 
+  const host = hostOf(getConfigSync()?.url);
+
   if (!session) {
     return (
       <div className="dash-sync">
         <div className="card mb-5" style={{ maxWidth: 420 }}>
-          <h3 className="dash-card-title">{mode === "signIn" ? t.dashSignIn : t.dashSignUp}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="dash-card-title" style={{ marginBottom: 0 }}>{mode === "signIn" ? t.dashSignIn : t.dashSignUp}</h3>
+            <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => setEditingConfig(true)}>
+              <Pencil size={12} /> {host}
+            </button>
+          </div>
           <div className="flex flex-col gap-3">
             {mode === "signUp" && (
               <div>
@@ -114,9 +153,14 @@ export default function SyncView() {
               <Cloud size={15} /> {t.dashConnected}
             </p>
           </div>
-          <button className="btn btn-ghost flex items-center gap-2" disabled={busy} onClick={doSignOut}>
-            <LogOut size={15} /> {t.dashSignOut}
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => setEditingConfig(true)}>
+              <Pencil size={12} /> {host}
+            </button>
+            <button className="btn btn-ghost flex items-center gap-2" disabled={busy} onClick={doSignOut}>
+              <LogOut size={15} /> {t.dashSignOut}
+            </button>
+          </div>
         </div>
         {error && <p className="text-sm mt-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
       </div>

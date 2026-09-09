@@ -1,5 +1,5 @@
-import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree'
-import { localizedName } from './localizedName'
+import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree.js'
+import { localizedName } from './localizedName.js'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
 export function todaysPlanEntry(plan) {
@@ -164,6 +164,7 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
+// Prescribed rows are read-only — trainer is authority.
 export function isPrescribed(item) {
   return !!item?.prescribedBy
 }

@@ -1,5 +1,4 @@
-import { getSupabase, isConfigured } from './supabaseClient.js'
-export { isConfigured }
+import { getSupabase } from './supabaseClient.js'
 
 export async function getSession() {
   const supabase = await getSupabase()
@@ -35,8 +34,6 @@ export async function signOut() {
 }
 
 export function onAuthChange(cb) {
-  if (!isConfigured()) return () => {}
-
   let cancelled = false
   let unsubscribe = () => {}
 
@@ -62,4 +59,9 @@ export async function setProfileRole(role) {
   if (!id) return
   const { error } = await supabase.from('profiles').update({ role }).eq('id', id)
   if (error) throw error
+}
+
+// setup.sql's profiles_guard() trigger raises this exact wording when a second account tries to become 'trainer' on an already-claimed project.
+export function isTrainerTakenError(err) {
+  return /already has a trainer/i.test(err?.message || '')
 }

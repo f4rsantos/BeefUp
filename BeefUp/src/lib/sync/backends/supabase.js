@@ -4,6 +4,7 @@
 // testable without a live Supabase project.
 
 import { getSupabase } from '../../supabaseClient.js'
+import { getConfigSync } from '../../supabaseConfig.js'
 import { scopeOf } from '../stores.js'
 
 const PUSH_BATCH_SIZE = 500
@@ -64,6 +65,13 @@ async function serverNowMs(client) {
 
 export function createSupabaseBackend() {
   return {
+    // projectRef, not the URL: what the sync:owner guard compares against.
+    async identity() {
+      const client = await requireClient()
+      const userId = await currentUserId(client)
+      return { projectRef: getConfigSync()?.projectRef ?? null, userId }
+    },
+
     async pull(store, sinceMs = 0) {
       const client = await requireClient()
       const userId = await currentUserId(client)

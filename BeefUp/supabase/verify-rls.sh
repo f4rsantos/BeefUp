@@ -31,11 +31,12 @@ STUB
 
 psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
 
-# Grants PostgREST normally issues for the authenticated role.
-psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<'GRANTS'
-grant select, insert, update, delete on all tables in schema public to authenticated;
-grant execute on all functions in schema public to authenticated;
-GRANTS
+# No blanket grant here on purpose: setup.sql above must already grant
+# everything `authenticated` needs on its own — Supabase does not always set
+# up default table privileges for a hand-run `create table` (this bit a real
+# project: "permission denied for table trainer_invites" despite correct
+# RLS policies, traced to setup.sql never granting the base table privilege).
+# Adding a fallback grant here would let that regression back in unnoticed.
 
 # Two students and one trainer. Ana shares workouts only; Rui shares nothing.
 psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<'SEED'
@@ -167,6 +168,51 @@ echo "== F5: new_invite_code() no longer exists =="
 F5=$(run_as $ANA "select new_invite_code()")
 case "$F5" in *"does not exist"*) F5=GONE;; esac
 check "new_invite_code() has been removed" "$(echo $F5 | xargs)" "GONE"
+
+# --- F6 regression: a profile missing for an existing auth user (e.g. a
+# signup that predates the on_auth_user_created trigger) breaks any FK to
+# profiles, and re-pasting setup.sql is the documented fix -----------------
+echo "== F6: profiles backfill heals a pre-trigger signup =="
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "delete from public.profiles where id='$TRAINER'" >/dev/null
+F6_BEFORE=$(psql -U postgres -d postgres -Atc "insert into public.trainer_invites(code, trainer_id) values ('F6TESTPT','$TRAINER')" 2>&1 || true)
+case "$F6_BEFORE" in *"trainer_invites_trainer_id_fkey"*) F6_BEFORE=FK_VIOLATION;; esac
+check "missing profile blocks trainer_invites insert (sanity check)" "$(echo $F6_BEFORE | xargs)" "FK_VIOLATION"
+
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "insert into public.trainer_invites(code, trainer_id) values ('F6TESTPT','$TRAINER')" >/dev/null
+check "re-running setup.sql backfills the missing profile" \
+  "$(psql -U postgres -d postgres -Atc "select count(*) from public.trainer_invites where code='F6TESTPT' and trainer_id='$TRAINER'" | xargs)" "1"
+
+# --- F7: only one trainer per project ---------------------------------
+# None of the seeded profiles has had `role` touched yet -- all three are
+# still the schema default 'solo', which makes $TRAINER a clean "first
+# user" and $RUI a clean "second user who tries and fails".
+echo "== F7: só pode haver um treinador no projeto =="
+
+T7=$(run_as $TRAINER "update public.profiles set role='trainer' where id='$TRAINER' returning role")
+check "the first user can become trainer" "$(echo $T7 | xargs)" "trainer"
+
+T7B=$(run_as $RUI "update public.profiles set role='trainer' where id='$RUI' returning role")
+case "$T7B" in *"this project already has a trainer"*) T7B=DENIED;; esac
+check "a second user cannot also become trainer" "$(echo $T7B | xargs)" "DENIED"
+check "the second user's role is still solo" \
+  "$(run_as $RUI "select role from public.profiles where id='$RUI'" | xargs)" "solo"
+
+T7C=$(run_as $TRAINER "update public.profiles set display_name='Trainer Renamed' where id='$TRAINER' returning role")
+check "trainer can re-save their profile without changing role" "$(echo $T7C | xargs)" "trainer"
+
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<SEED3
+insert into public.trainer_invites(code, trainer_id) values ('F7TESTCD', '$TRAINER');
+SEED3
+run_as $RUI "select redeem_invite('F7TESTCD', array['workouts'])" >/dev/null
+check "the blocked user can still redeem an invite as a student" \
+  "$(run_as $RUI "select status from public.trainer_links where trainer_id='$TRAINER' and client_id='$RUI'" | xargs)" "accepted"
+check "the blocked user can still share a scope" \
+  "$(run_as $RUI "select scopes from public.trainer_links where trainer_id='$TRAINER' and client_id='$RUI'" | xargs)" "{workouts}"
+
+A7=$(run_as $ANA "insert into public.trainer_invites(code, trainer_id) values ('ANATEST2','$ANA') returning code")
+case "$A7" in *"violates row-level security"*) A7=DENIED;; esac
+check "a non-trainer cannot insert trainer_invites" "$(echo $A7 | xargs)" "DENIED"
 
 echo
 echo "passed: $pass   failed: $fail"

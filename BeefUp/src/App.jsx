@@ -13,9 +13,12 @@ import { useIsDesktop } from "./lib/useIsDesktop";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
 import PwaPrompts from "./components/PwaPrompts";
+import TrainerLinkModal from "./components/TrainerLinkModal";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
+import { decodeTrainerInvite } from "./lib/trainerInvite";
+import { getPref, setPref } from "./lib/prefs";
 import { useState, useEffect, lazy, Suspense } from "react";
 import ProfileSkeleton from "./pages/ProfileSkeleton";
 
@@ -54,6 +57,11 @@ function AppInner() {
     const code = new URLSearchParams(window.location.search).get("w");
     return code ? decodeWorkoutShare(code) : null;
   });
+  const [incomingTrainerInvite] = useState(() => {
+    const payload = new URLSearchParams(window.location.search).get("t");
+    return payload ? decodeTrainerInvite(payload) : null;
+  });
+  const [showTrainerLinkModal, setShowTrainerLinkModal] = useState(false);
   const { activeWorkout, setActiveWorkout, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
   const isDesktop = useIsDesktop();
   useEffect(() => {
@@ -61,6 +69,25 @@ function AppInner() {
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, []);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("t")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (incomingTrainerInvite) setPref("pendingTrainerInvite", incomingTrainerInvite);
+  }, [incomingTrainerInvite]);
+
+  useEffect(() => {
+    if (!onboarded) return;
+    let cancelled = false;
+    getPref("pendingTrainerInvite", null).then((pending) => {
+      if (!cancelled && pending) setShowTrainerLinkModal(true);
+    });
+    return () => { cancelled = true; };
+  }, [onboarded]);
 
   if (!onboarded) return <Onboarding />;
 
@@ -256,6 +283,13 @@ function AppInner() {
             await saveWorkout({ id: uid(), ...incomingShare });
             setIncomingShare(null);
           }}
+        />
+      )}
+
+      {showTrainerLinkModal && (
+        <TrainerLinkModal
+          onClose={() => setShowTrainerLinkModal(false)}
+          onLinked={() => setShowTrainerLinkModal(false)}
         />
       )}
 

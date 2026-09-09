@@ -1,4 +1,5 @@
-import { getSupabase, isConfigured } from './supabaseClient.js'
+import { getSupabase } from './supabaseClient.js'
+import { loadSupabaseConfig } from './supabaseConfig.js'
 import { STORES } from './stores.js'
 import { scopeOf, storesForScopes } from './sync/stores.js'
 
@@ -7,6 +8,9 @@ import { scopeOf, storesForScopes } from './sync/stores.js'
 // confined to prescribing plans and workouts. Nutrition and measures are
 // read-only here, and the database refuses a write to them regardless.
 
+// Single source of truth for invite-code shape: the SQL generator is gone,
+// so this alphabet is the only place it's defined. Don't change it or the
+// length, clients read codes aloud.
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 // A trainer prescribes plans and workouts, nothing else. Sessions and custom
@@ -27,7 +31,6 @@ function randomCode(len = 8) {
 // Resolves the signed-in trainer's id on the same client instance used for
 // every query below. Returns null when unconfigured or signed out.
 async function trainerClient() {
-  if (!isConfigured()) return null
   const supabase = await getSupabase()
   if (!supabase) return null
   const { data } = await supabase.auth.getSession()
@@ -69,7 +72,7 @@ export async function listTrainerLinks() {
 // One store's rows for a client, shaped exactly like db.js's getAll() —
 // so planUtils/nutritionStats work on them unchanged.
 export async function getClientRows(clientId, store) {
-  if (!isConfigured()) return []
+  if (!(await loadSupabaseConfig())) return []
   const supabase = await getSupabase()
   if (!supabase) return []
 
@@ -179,6 +182,8 @@ export async function createInvite() {
   throw new Error('could not generate a unique code')
 }
 
+// Scoped to trainerId, not left to RLS alone, so a stale/foreign code fails
+// loudly (see the .length check) instead of silently no-op'ing.
 export async function revokeInvite(code) {
   const ctx = await trainerClient()
   if (!ctx) throw new Error('not signed in')

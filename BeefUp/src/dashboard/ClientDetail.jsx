@@ -7,7 +7,7 @@ import { dailyNutritionTotals } from "../lib/nutritionStats";
 import { MEASURE_GROUPS, LEGACY_TYPE_MAP } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import { resolvedExerciseName } from "../lib/exerciseTree";
-import { isConfigured } from "../lib/supabaseClient";
+import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getClientData, unlinkClient } from "../lib/trainerData";
 import ClientGym from "./ClientGym";
 import LinkedClientGym from "./LinkedClientGym";
@@ -281,10 +281,9 @@ function Notes({ client, saveClient, t }) {
   );
 }
 
-// A linked client's data lives in Supabase, not the local `clients` store — it is fetched read-only, scoped to exactly what the student shared.
 function LinkedClientDetail({ client, onUnlinked }) {
   const { t, lang } = useApp();
-  const configured = isConfigured();
+  const configured = useSupabaseConfigured();
   const [section, setSection] = useState("overview");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(configured);
@@ -300,10 +299,14 @@ function LinkedClientDetail({ client, onUnlinked }) {
   useEffect(() => {
     if (!configured) return;
     let cancelled = false;
-    getClientData(client.linkedUserId, scopes)
-      .then((d) => { if (!cancelled) setData(d); })
-      .catch((e) => { if (!cancelled) setError(String(e?.message || e)); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    function run() {
+      setLoading(true);
+      getClientData(client.linkedUserId, scopes)
+        .then((d) => { if (!cancelled) setData(d); })
+        .catch((e) => { if (!cancelled) setError(String(e?.message || e)); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    }
+    run();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client.linkedUserId, configured]);

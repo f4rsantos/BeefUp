@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Check } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { signUp } from "../lib/auth";
+import { signIn, signUp } from "../lib/auth";
 import { redeemInvite, setScopes as applyScopes } from "../lib/sync/link";
+import { getPref, setPref } from "../lib/prefs";
+import { setSupabaseConfig, testConnection } from "../lib/supabaseConfig";
 
-const STEPS = ["code", "scopes", "account", "confirm", "done"];
+const STEPS = ["scopes", "connect", "account", "confirm", "done"];
 const SCOPE_IDS = ["workouts", "nutrition", "measures"];
 
-function sanitizeCode(raw) {
-  return raw.toUpperCase().replace(/[\s-]/g, "").slice(0, 8);
-}
+const CONNECT_REASON_KEYS = {
+  "schema-missing": "trainerLinkConnectSchemaMissing",
+  unreachable: "trainerLinkConnectUnreachable",
+};
+const INVALID_LINK_CODES = new Set(["bad-url", "not-https", "bad-host", "bad-key"]);
 
 export default function TrainerLinkModal({ onClose, onLinked }) {
   const { t } = useApp();
-  const [step, setStep] = useState("code");
-  const [code, setCode] = useState("");
+  const [pendingInvite, setPendingInvite] = useState(undefined);
+  const [step, setStep] = useState("scopes");
+  const [mode, setMode] = useState("signup");
   const [scopes, setScopes] = useState(SCOPE_IDS.slice());
   const [scopesPending, setScopesPending] = useState(false);
   const [email, setEmail] = useState("");
@@ -23,24 +28,62 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
   const [submitting, setSubmitting] = useState(false);
   const [resultLink, setResultLink] = useState(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    getPref("pendingTrainerInvite", null).then((inv) => {
+      if (!cancelled) setPendingInvite(inv);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const stepIndex = STEPS.indexOf(step);
-  const codeValid = code.length === 8;
   const emailValid = /\S+@\S+\.\S+/.test(email);
   const passwordValid = password.length >= 6;
+  const hostname = (() => {
+    try {
+      return pendingInvite ? new URL(pendingInvite.url).hostname : "";
+    } catch {
+      return pendingInvite?.url || "";
+    }
+  })();
 
   function toggleScope(id) {
     setScopes((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
   }
 
-  async function handleCreateAccount() {
+  function dismiss() {
+    setPref("pendingTrainerInvite", null);
+    onClose();
+  }
+
+  async function handleConnect() {
+    setSubmitting(true);
+    setError("");
+    try {
+      const probe = await testConnection({ url: pendingInvite.url, anonKey: pendingInvite.anonKey });
+      if (!probe.ok) {
+        setError(t[CONNECT_REASON_KEYS[probe.reason]] || t.trainerLinkConnectUnknown);
+        return;
+      }
+      await setSupabaseConfig({ url: pendingInvite.url, anonKey: pendingInvite.anonKey });
+      setStep("account");
+    } catch (e) {
+      setError(INVALID_LINK_CODES.has(e.message) ? t.trainerLinkConnectInvalidLink : t.trainerLinkConnectUnknown);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleAccount() {
     if (!emailValid || !passwordValid) return;
     setSubmitting(true);
     setError("");
     try {
-      await signUp(email, password, email.split("@")[0]);
+      if (mode === "signup") await signUp(email, password, email.split("@")[0]);
+      else await signIn(email, password);
       setStep("confirm");
-    } catch {
-      setError(t.trainerLinkAccountFailed);
+    } catch (e) {
+      setError(String(e?.message || e));
     } finally {
       setSubmitting(false);
     }
@@ -50,7 +93,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
     setSubmitting(true);
     setError("");
     try {
-      const redeemed = await redeemInvite(code);
+      const redeemed = await redeemInvite(pendingInvite.code);
       if (!redeemed) throw new Error("redeem failed");
       let finalLink = redeemed;
       // Redeeming shares nothing on its own, so a failure here means the
@@ -63,9 +106,10 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
       }
       setResultLink(finalLink);
       onLinked?.(finalLink);
+      await setPref("pendingTrainerInvite", null);
       setStep("done");
-    } catch {
-      setError(t.trainerLinkFailed);
+    } catch (e) {
+      setError(String(e?.message || e));
     } finally {
       setSubmitting(false);
     }
@@ -78,40 +122,24 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
           <span className="font-semibold" style={{ color: "var(--text)", fontSize: 18 }}>
             {t.trainerLinkButton}
           </span>
-          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
+          <button className="btn btn-ghost p-2" onClick={dismiss} aria-label={t.cancel}>
             <X size={18} />
           </button>
         </div>
 
-        {step !== "done" && (
+        {pendingInvite && step !== "done" && (
           <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
             {t.trainerLinkStep.replace("{n}", stepIndex + 1).replace("{total}", 4)}
           </p>
         )}
 
-        {step === "code" && (
-          <div className="flex flex-col gap-2" style={{ marginTop: 8 }}>
-            <label className="section-title">{t.trainerLinkCodeLabel}</label>
-            <input
-              className="field"
-              style={{ fontSize: 20, letterSpacing: 4, textAlign: "center", fontWeight: 700 }}
-              value={code}
-              onChange={(e) => setCode(sanitizeCode(e.target.value))}
-              placeholder={t.trainerLinkCodePlaceholder}
-              maxLength={8}
-              autoFocus
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-            <p className="text-xs" style={{ color: "var(--muted)" }}>{t.trainerLinkCodeHelp}</p>
-            {code.length > 0 && !codeValid && (
-              <p className="text-xs" style={{ color: "var(--danger)" }}>{t.trainerLinkCodeInvalid}</p>
-            )}
-          </div>
+        {pendingInvite === null && (
+          <p className="text-sm" style={{ color: "var(--muted)", marginTop: 8 }}>
+            {t.trainerLinkNeedsInvite}
+          </p>
         )}
 
-        {step === "scopes" && (
+        {pendingInvite && step === "scopes" && (
           <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkScopesExplain}</p>
             {SCOPE_IDS.map((id) => (
@@ -130,9 +158,21 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
           </div>
         )}
 
-        {step === "account" && (
+        {pendingInvite && step === "connect" && (
           <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkAccountExplain}</p>
+            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkConnectExplain}</p>
+            <div className="card card-flat" style={{ padding: 12, background: "var(--surface2)" }}>
+              <SummaryRow label={t.trainerLinkConnectHostLabel} value={hostname} />
+            </div>
+            {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
+          </div>
+        )}
+
+        {pendingInvite && step === "account" && (
+          <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
+            <p className="text-sm" style={{ color: "var(--muted)" }}>
+              {mode === "signup" ? t.trainerLinkAccountExplain : t.trainerLinkSignInExplain}
+            </p>
             <div>
               <label className="section-title">{t.trainerLinkEmailLabel}</label>
               <input
@@ -151,18 +191,24 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
                 className="field mt-1"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
               />
             </div>
             {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
+            <button
+              type="button"
+              className="btn btn-ghost text-xs"
+              onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(""); }}
+            >
+              {mode === "signup" ? t.trainerLinkHaveAccount : t.trainerLinkNeedAccount}
+            </button>
           </div>
         )}
 
-        {step === "confirm" && (
+        {pendingInvite && step === "confirm" && (
           <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
             <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkConfirmExplain}</p>
             <div className="card card-flat" style={{ padding: 12, background: "var(--surface2)" }}>
-              <SummaryRow label={t.trainerLinkCodeLabel} value={code} />
               <SummaryRow label={t.trainerLinkEmailLabel} value={email} />
               <SummaryRow
                 label={t.trainerLinkScopesTitle}
@@ -173,7 +219,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
           </div>
         )}
 
-        {step === "done" && resultLink && (
+        {pendingInvite && step === "done" && resultLink && (
           <div className="flex flex-col items-center text-center gap-2" style={{ marginTop: 8 }}>
             <div
               style={{
@@ -194,42 +240,47 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
         )}
 
         <div className="flex gap-3" style={{ marginTop: 20 }}>
-          {step === "code" && (
+          {pendingInvite === null && (
+            <button className="btn btn-primary flex-1" onClick={onClose}>{t.done}</button>
+          )}
+          {pendingInvite && step === "scopes" && (
             <>
-              <button className="btn btn-ghost flex-1" onClick={onClose}>{t.cancel}</button>
-              <button className="btn btn-primary flex-1" disabled={!codeValid} onClick={() => setStep("scopes")}>
+              <button className="btn btn-ghost flex-1" onClick={dismiss}>{t.cancel}</button>
+              <button className="btn btn-primary flex-1" onClick={() => setStep("connect")}>
                 {t.trainerLinkNext}
               </button>
             </>
           )}
-          {step === "scopes" && (
-            <>
-              <button className="btn btn-ghost flex-1" onClick={() => setStep("code")}>{t.back}</button>
-              <button className="btn btn-primary flex-1" onClick={() => setStep("account")}>
-                {t.trainerLinkNext}
-              </button>
-            </>
-          )}
-          {step === "account" && (
+          {pendingInvite && step === "connect" && (
             <>
               <button className="btn btn-ghost flex-1" onClick={() => setStep("scopes")} disabled={submitting}>
+                {t.back}
+              </button>
+              <button className="btn btn-primary flex-1" disabled={submitting} onClick={handleConnect}>
+                {t.trainerLinkNext}
+              </button>
+            </>
+          )}
+          {pendingInvite && step === "account" && (
+            <>
+              <button className="btn btn-ghost flex-1" onClick={() => setStep("connect")} disabled={submitting}>
                 {t.back}
               </button>
               <button
                 className="btn btn-primary flex-1"
                 disabled={!emailValid || !passwordValid || submitting}
-                onClick={handleCreateAccount}
+                onClick={handleAccount}
               >
                 {t.trainerLinkNext}
               </button>
             </>
           )}
-          {step === "confirm" && (
+          {pendingInvite && step === "confirm" && (
             <button className="btn btn-primary flex-1" disabled={submitting} onClick={handleRedeem}>
               {t.confirm}
             </button>
           )}
-          {step === "done" && (
+          {pendingInvite && step === "done" && (
             <button className="btn btn-primary flex-1" onClick={onClose}>{t.done}</button>
           )}
         </div>

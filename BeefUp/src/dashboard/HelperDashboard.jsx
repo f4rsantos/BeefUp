@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Link as LinkIcon, User } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { isConfigured } from "../lib/supabaseClient";
+import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { listTrainerLinks } from "../lib/trainerData";
 import CalendarView from "./CalendarView";
 import ClientDetail from "./ClientDetail";
@@ -15,9 +15,10 @@ export default function HelperDashboard() {
   const [selectedId, setSelectedId] = useState(null);
   const [creating, setCreating] = useState(false);
   const [linkedClients, setLinkedClients] = useState([]);
+  const configured = useSupabaseConfigured();
 
   useEffect(() => {
-    if (!isConfigured()) return;
+    if (!configured) return;
     let cancelled = false;
     listTrainerLinks()
       .then((links) => {
@@ -26,7 +27,7 @@ export default function HelperDashboard() {
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [configured]);
 
   const allClients = useMemo(() => [...clients, ...linkedClients], [clients, linkedClients]);
   const selected = allClients.find((c) => c.id === selectedId) || null;

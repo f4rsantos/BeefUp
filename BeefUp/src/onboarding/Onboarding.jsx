@@ -6,9 +6,10 @@ import { ACTIVITY, OBJECTIVE, calcGoals } from "../lib/nutritionCalc";
 import { getMeasureUnit } from "../lib/measureTypes";
 import { buildDemoPreset } from "../lib/demoData";
 import NumberField from "../components/NumberField";
-import { signIn, signUp, setProfileRole } from "../lib/auth";
-import { isConfigured } from "../lib/supabaseClient";
+import { signIn, signUp, setProfileRole, isTrainerTakenError } from "../lib/auth";
 import { useIsDesktop } from "../lib/useIsDesktop";
+import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
+import TrainerSetup from "./TrainerSetup";
 import "./onboarding.css";
 
 function soloSteps(focus) {
@@ -31,13 +32,9 @@ export default function Onboarding() {
   const [accountError, setAccountError] = useState("");
 
   const isDesktop = useIsDesktop();
-  // A trainer needs an account to receive client data, and the dashboard only
-  // renders on desktop. Say which one is missing instead of a blank refusal.
-  const helperBlockedReason = !isConfigured()
-    ? t.obHelperNeedsSync
-    : !isDesktop
-      ? t.obDesktopOnly
-      : null;
+  const supabaseConfigured = useSupabaseConfigured();
+  // A trainer without config yet still needs to get in — that's how they get it.
+  const helperBlockedReason = !isDesktop ? t.obDesktopOnly : null;
 
   function startMode(m) {
     setMode(m);
@@ -88,21 +85,37 @@ export default function Onboarding() {
     setAccountBusy(true);
     setAccountError("");
     try {
+      let session;
       if (account.existing) {
-        await signIn(account.email.trim(), account.password);
+        session = await signIn(account.email.trim(), account.password);
       } else {
-        await signUp(account.email.trim(), account.password, account.name.trim() || account.email.trim());
+        session = await signUp(account.email.trim(), account.password, account.name.trim() || account.email.trim());
+      }
+      if (!session) {
+        // Email confirmation is required on this project: signUp() succeeds
+        // but returns no session until the link is clicked, so there is no
+        // one to call setProfileRole() for yet.
+        setAccountError(t.obHelperConfirmEmail);
+        return;
       }
       await setProfileRole("trainer");
       setAccountReady(true);
     } catch (e) {
-      setAccountError(e?.message || t.obHelperAccountFailed);
+      setAccountError(isTrainerTakenError(e) ? t.trainerSetupTrainerTaken : (e?.message || t.obHelperAccountFailed));
     } finally {
       setAccountBusy(false);
     }
   }
 
   if (mode === "helper") {
+    if (!supabaseConfigured) {
+      return (
+        <Frame t={t} onBack={back} total={0} current={0} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang}>
+          <TrainerSetup />
+        </Frame>
+      );
+    }
+
     if (!accountReady) {
       const canSubmit =
         account.email.trim() && account.password && (account.existing || account.name.trim());

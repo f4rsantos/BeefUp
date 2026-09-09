@@ -1,4 +1,4 @@
-import { db, STORES } from './db'
+import { db, STORES } from './db.js'
 
 // Preferences live in the IndexedDB `settings` store. They used to live in
 // localStorage; `migrateLegacyPrefs()` moves any leftovers over on first boot.
@@ -27,6 +27,7 @@ export const PREF_DEFAULTS = {
   syncLink: null,     // cached { trainerId, trainerName, status } | null
   syncScopes: [],      // areas the student shares: workouts/nutrition/measures
   syncLastSyncAt: null, // epoch ms of the last successful sync
+  pendingTrainerInvite: null, // decoded
 }
 
 export const PREF_KEYS = Object.keys(PREF_DEFAULTS)
@@ -49,6 +50,14 @@ function mirrorForPaint(key, value) {
     // pref itself — it is already committed to IndexedDB.
   }
 }
+
+const LOCAL_ONLY_SETTING_PREFIXES = ['supabase:', 'sync:cursor:', 'sync:owner']
+
+export function isLocalOnlySetting(key) {
+  return LOCAL_ONLY_SETTING_PREFIXES.some(prefix => key.startsWith(prefix))
+}
+
+export const NON_PORTABLE_PREFS = ['syncLink', 'syncScopes', 'syncLastSyncAt', 'pendingTrainerInvite']
 
 export function getPref(key, fallback) {
   return db.getSetting(key, fallback !== undefined ? fallback : PREF_DEFAULTS[key] ?? null)

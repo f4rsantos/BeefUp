@@ -179,6 +179,17 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_auth_user();
 
+-- The trigger only fires on new signups — anyone who signed up before this
+-- trigger existed on the project has an auth.users row with no matching
+-- profiles row, and later fails a foreign key check (e.g. trainer_invites)
+-- with no obvious link back to "your profile is missing". Safe to re-run:
+-- the left join only inserts rows that are actually absent.
+insert into public.profiles (id, display_name)
+select u.id, coalesce(u.raw_user_meta_data ->> 'display_name', split_part(u.email, '@', 1))
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null;
+
 -- ============================================================
 -- functions.sql
 -- ============================================================
@@ -368,6 +379,22 @@ grant execute on function public.server_now() to authenticated;
 -- service_role (used only by trusted server-side code, never the client
 -- bundle) bypasses RLS by Supabase default and needs no policy here.
 
+-- RLS narrows access, it does not grant it: without the table-level GRANTs
+-- below, PostgREST fails every request with "permission denied for table
+-- ...", before a single policy is even evaluated. A hand-run `create table`
+-- does not always inherit Supabase's usual anon/authenticated defaults (that
+-- depends on ALTER DEFAULT PRIVILEGES having been set for the role that ran
+-- this script) — so this is granted explicitly instead of assumed. Each
+-- grant lists exactly the operations a policy exists for below; nothing here
+-- widens access beyond what the policies already carve out. INSERT is
+-- absent for profiles/trainer_links because those rows are only ever created
+-- by SECURITY DEFINER functions (schema.sql's trigger, functions.sql's
+-- redeem_invite()), which run as the table owner and need no grant.
+grant select, update on public.profiles to authenticated;
+grant select, update on public.trainer_links to authenticated;
+grant select, insert, update on public.trainer_invites to authenticated;
+grant select, insert, update, delete on public.sync_rows to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- profiles
 -- ---------------------------------------------------------------------------
@@ -417,6 +444,36 @@ create policy profiles_update_own on public.profiles
   for update
   using (id = auth.uid())
   with check (id = auth.uid());
+
+-- One trainer per project: the anon key ships inside every invite a trainer
+-- hands out, so once a project has a trainer, letting a second profile also
+-- become one would let a student the first trainer invited turn around and
+-- recruit their own clients into that same project. WITH CHECK above only
+-- proves identity, not which columns changed, so that alone can't stop a
+-- role flip -- this trigger is the belt to trainer_invites_insert's braces
+-- below. SECURITY DEFINER (unlike trainer_links_guard below, which only
+-- ever looks at NEW/OLD) is required because profiles_select_own limits a
+-- plain SELECT to the caller's own row -- an invoker-rights check here would
+-- never see an existing trainer other than itself.
+create or replace function public.profiles_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if new.role = 'trainer' and old.role is distinct from 'trainer'
+     and exists (select 1 from public.profiles where role = 'trainer' and id <> new.id) then
+    raise exception 'profiles: this project already has a trainer';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_before_update on public.profiles;
+create trigger profiles_before_update
+  before update on public.profiles
+  for each row execute function public.profiles_guard();
 
 -- ---------------------------------------------------------------------------
 -- trainer_links
@@ -518,7 +575,15 @@ create policy trainer_invites_select on public.trainer_invites
 drop policy if exists trainer_invites_insert on public.trainer_invites;
 create policy trainer_invites_insert on public.trainer_invites
   for insert
-  with check (trainer_id = auth.uid());
+  with check (
+    trainer_id = auth.uid()
+    -- Second door on the same hole profiles_guard closes above: even before
+    -- any self-promotion attempt, a plain 'solo' profile must not be able to
+    -- create invites at all.
+    and exists (
+      select 1 from public.profiles p where p.id = auth.uid() and p.role = 'trainer'
+    )
+  );
 
 -- WITH CHECK trainer_id = auth.uid() also blocks reassigning an invite to a
 -- different trainer: the new row must still belong to the caller.

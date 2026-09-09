@@ -3,7 +3,7 @@ import { Apple, Database, Dumbbell, Monitor, Moon, RefreshCw, Sparkles, Sun, Use
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
 import { PRESET_ACCENTS } from "../lib/colorTheme";
-import { isConfigured } from "../lib/auth";
+import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getLink, setScopes as applyScopes, unlink } from "../lib/sync/link";
 import { useSync } from "../lib/sync/useSync";
 import AccentColorModal from "../components/AccentColorModal";
@@ -12,7 +12,6 @@ import ConfirmModal from "../components/ConfirmModal";
 import PageHeader from "../components/PageHeader";
 import TrainerLinkModal from "../components/TrainerLinkModal";
 
-const SUPABASE_CONFIGURED = isConfigured();
 const SCOPE_IDS = ["workouts", "nutrition", "measures"];
 
 const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
@@ -57,11 +56,12 @@ export default function SettingsPage() {
   const [scopeError, setScopeError] = useState(false);
   const [unlinkError, setUnlinkError] = useState(false);
   const { status: syncStatus, lastSyncAt, syncNow } = useSync();
+  const configured = useSupabaseConfigured();
 
   useEffect(() => {
-    if (!SUPABASE_CONFIGURED) return;
+    if (!configured) return;
     getLink().then(setTrainerLink).catch(() => setTrainerLink(null));
-  }, []);
+  }, [configured]);
 
   async function toggleTrainerScope(id) {
     if (!trainerLink) return;
@@ -283,7 +283,7 @@ export default function SettingsPage() {
         {/* Personal trainer link */}
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>{t.trainerSectionTitle}</p>
-          {!SUPABASE_CONFIGURED ? (
+          {!configured ? (
             <div className="card">
               <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerUnavailable}</p>
             </div>

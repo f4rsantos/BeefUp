@@ -1,31 +1,48 @@
-// Lazily creates and memoises the Supabase client. When the env vars are
-// absent this stays completely silent: no throw, no console noise, no
-// network — the app runs fully local, which is the normal path.
+// Lazily creates and memoises the Supabase client, keyed by url|anonKey so a
+// trainer switching config never gets handed the previous project's client.
 //
-// The SDK is imported dynamically (only once a client is actually needed)
-// so an unconfigured app never even resolves the module.
+// The SDK is imported dynamically (only once a client is actually needed) so
+// an unconfigured app never even resolves the module.
+import { getConfigSync, isConfigured } from './supabaseConfig.js'
 
+export { isConfigured }
+
+let clientKey = null
 let clientPromise = null
-
-function readEnv() {
-  const url = import.meta.env.VITE_SUPABASE_URL
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
-  return url && key ? { url, key } : null
-}
-
-export function isConfigured() {
-  return !!readEnv()
-}
 
 // Always returns a Promise<client | null>, never throws.
 export function getSupabase() {
-  const env = readEnv()
-  if (!env) return Promise.resolve(null)
+  const cfg = getConfigSync()
+  if (!cfg) return Promise.resolve(null)
 
-  if (!clientPromise) {
+  const key = `${cfg.url}|${cfg.anonKey}`
+  if (key !== clientKey) {
+    clientKey = key
     clientPromise = import('@supabase/supabase-js').then(({ createClient }) =>
-      createClient(env.url, env.key)
+      createClient(cfg.url, cfg.anonKey)
     )
   }
   return clientPromise
+}
+
+// Clears the memo first so nobody can grab the outgoing client mid-swap.
+export async function resetSupabase({ signOut = false } = {}) {
+  const oldPromise = clientPromise
+  const projectRef = getConfigSync()?.projectRef
+  clientKey = null
+  clientPromise = null
+
+  if (signOut && oldPromise) {
+    const old = await oldPromise
+    // scope: 'local' never hits the network — works offline.
+    await old?.auth.signOut({ scope: 'local' })
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    for (const k of Object.keys(localStorage)) {
+      if (/^sb-.+-auth-token/.test(k) && !k.startsWith(`sb-${projectRef}-`)) {
+        localStorage.removeItem(k)
+      }
+    }
+  }
 }

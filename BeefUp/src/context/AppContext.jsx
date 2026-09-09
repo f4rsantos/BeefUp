@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { db, STORES } from '../lib/db'
 import { todayISO } from '../lib/planUtils'
 import { getAllPrefs, migrateLegacyPrefs, setPref, PREF_DEFAULTS } from '../lib/prefs'
+import { loadSupabaseConfig } from '../lib/supabaseConfig'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
@@ -168,7 +169,8 @@ export function AppProvider({ children }) {
 
       let prefs
       try {
-        prefs = await getAllPrefs()
+        const results = await Promise.all([getAllPrefs(), loadSupabaseConfig()])
+        prefs = results[0]
       } catch (err) {
         // Falling through with defaults keeps the app usable when IndexedDB is
         // unavailable (private mode, blocked storage) instead of hanging on the

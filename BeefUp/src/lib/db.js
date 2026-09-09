@@ -86,8 +86,7 @@ export const db = {
   // Generic delete
   remove: (store, key) => deleteRow(store, key),
 
-  // When restoring a backup replaces the current data. 
-  // A synced store also drops its sync cursor
+  // Restore wipes cursor too — next sync starts from scratch.
   clear: async (store) => {
     await tx(store, 'readwrite', s => s.clear())
     if (isSynced(store)) await tx(STORES.settings, 'readwrite', s => s.delete(cursorKey(store)))
@@ -143,6 +142,7 @@ export const db = {
   saveCustomExercise: (exercise) => writeRow(STORES.customExercises, exercise),
   getAllCustomExercises: () => readAll(STORES.customExercises),
   removeCustomExercise: (id) => deleteRow(STORES.customExercises, id),
+
   rawAll: (store) => tx(store, 'readonly', s => s.getAll()),
   rawPut: (store, value) => tx(store, 'readwrite', s => s.put(value)),
   rawDelete: (store, key) => tx(store, 'readwrite', s => s.delete(key)),

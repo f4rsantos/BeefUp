@@ -1,6 +1,8 @@
-import { getSupabase, isConfigured } from '../supabaseClient.js'
+import { getSupabase } from '../supabaseClient.js'
+import { loadSupabaseConfig } from '../supabaseConfig.js'
 import { getSession } from '../auth.js'
 import { getPref, setPref } from '../prefs.js'
+import { clearAllCursors } from './engine.js'
 
 // Typing an invite code is the consent step. Nothing shares until the
 // student also picks scopes with setScopes(); redeeming alone shares nothing.
@@ -21,7 +23,7 @@ async function writeCache(link, scopes) {
 // current truth whenever it is reachable and reconciled back into the cache.
 export async function getLink() {
   const cached = await readCache()
-  if (!isConfigured()) return cached
+  if (!(await loadSupabaseConfig())) return cached
 
   const session = await getSession()
   if (!session) return cached
@@ -66,7 +68,7 @@ export async function isLinked() {
 }
 
 export async function redeemInvite(code) {
-  if (!isConfigured()) return null
+  if (!(await loadSupabaseConfig())) return null
   const session = await getSession()
   if (!session) throw new Error('Sign in before redeeming an invite')
 
@@ -92,7 +94,7 @@ export async function setScopes(scopes) {
   await setPref('syncScopes', scopes)
   if (!cached) return getLink()
 
-  if (isConfigured()) {
+  if (await loadSupabaseConfig()) {
     const session = await getSession()
     if (session) {
       try {
@@ -120,8 +122,10 @@ export async function unlink() {
   await setPref('syncLink', null)
   await setPref('syncScopes', [])
   await setPref('syncLastSyncAt', null)
+  // A stale cursor would make the next trainer's own rows look already-seen.
+  await clearAllCursors()
 
-  if (!isConfigured() || !cached) return
+  if (!cached || !(await loadSupabaseConfig())) return
   const session = await getSession()
   if (!session) return
 
