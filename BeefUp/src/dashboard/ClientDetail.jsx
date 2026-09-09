@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, User, Utensils, X } from "lucide-react";
+import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, User, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
 import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort } from "../lib/planUtils";
-import { dailyNutritionTotals } from "../lib/nutritionStats";
+import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
+import { macroGoalShares, MICRO_COLORS } from "../lib/nutritionCalc";
+import { MICRONUTRIENTS } from "../lib/foodProvider";
 import { MEASURE_GROUPS, LEGACY_TYPE_MAP, getMeasureUnit, measureTypeLabel, UNIT_PRESETS } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import { resolvedExerciseName } from "../lib/exerciseTree";
@@ -11,9 +13,11 @@ import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getClientData, unlinkClient, prescribeRow } from "../lib/trainerData";
 import { STORES } from "../lib/stores";
 import ClientGym from "./ClientGym";
-import LinkedClientGym from "./LinkedClientGym";
+import { LinkedPlan, LinkedWorkoutsList } from "./LinkedClientGym";
+import LinkedNutritionGoals from "./LinkedNutritionGoals";
 import ConfirmModal from "../components/ConfirmModal";
 import NumberField from "../components/NumberField";
+import MacroRing from "../components/MacroRing";
 
 const MAX_MEASURE_VALUE = 1000;
 
@@ -445,6 +449,8 @@ function LinkedClientDetail({ client, onUnlinked }) {
   const { t, lang } = useApp();
   const configured = useSupabaseConfigured();
   const [section, setSection] = useState("overview");
+  const [gymSub, setGymSub] = useState("plan");
+  const [nutritionSub, setNutritionSub] = useState("goals");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(configured);
   const [error, setError] = useState("");
@@ -487,9 +493,27 @@ function LinkedClientDetail({ client, onUnlinked }) {
 
   const sections = [
     { id: "overview", Icon: LayoutDashboard, label: t.dashOverview },
-    ...(hasWorkouts ? [{ id: "gym", Icon: Dumbbell, label: t.dashGym }] : []),
-    ...(hasWorkouts ? [{ id: "sessions", Icon: Dumbbell, label: t.dashSessions }] : []),
-    ...(hasNutrition ? [{ id: "nutrition", Icon: Utensils, label: t.dashNutrition }] : []),
+    ...(hasWorkouts
+      ? [{
+          id: "gym", Icon: Dumbbell, label: t.dashGym,
+          children: [
+            { id: "plan", label: t.dashPlanTab },
+            { id: "workouts", label: t.workouts },
+            { id: "sessions", label: t.dashSessions },
+          ],
+          sub: gymSub, setSub: setGymSub,
+        }]
+      : []),
+    ...(hasNutrition
+      ? [{
+          id: "nutrition", Icon: Utensils, label: t.dashNutrition,
+          children: [
+            { id: "goals", label: t.nutritionGoals },
+            { id: "daily", label: t.dashDailyData },
+          ],
+          sub: nutritionSub, setSub: setNutritionSub,
+        }]
+      : []),
     ...(hasMeasures ? [{ id: "measures", Icon: Ruler, label: t.dashMeasures }] : []),
   ];
 
@@ -535,19 +559,46 @@ function LinkedClientDetail({ client, onUnlinked }) {
       ) : (
         <div className="dash-detail-body">
           <nav className="dash-subnav">
-            {sections.map(({ id, Icon, label }) => (
-              <button key={id} className={`dash-subnav-item ${section === id ? "active" : ""}`} onClick={() => setSection(id)}>
-                <Icon size={16} /> <span>{label}</span>
-              </button>
+            {sections.map((s) => (
+              <div key={s.id}>
+                <button className={`dash-subnav-item ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>
+                  <s.Icon size={16} /> <span className="flex-1">{s.label}</span>
+                  {s.children && (
+                    <ChevronDown size={14} style={{ transform: section === s.id ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                  )}
+                </button>
+                {s.children && section === s.id && (
+                  <div className="flex flex-col" style={{ gap: 2, marginLeft: 22, marginTop: 2, marginBottom: 4 }}>
+                    {s.children.map((c) => (
+                      <button
+                        key={c.id}
+                        className={`dash-subnav-item ${s.sub === c.id ? "active" : ""}`}
+                        style={{ padding: "8px 14px", fontSize: 13, fontWeight: 500 }}
+                        onClick={() => s.setSub(c.id)}
+                      >
+                        <span>{c.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
           <div className="dash-section">
             {section === "overview" && <LinkedOverview data={data} hasWorkouts={hasWorkouts} hasMeasures={hasMeasures} t={t} />}
             {section === "gym" && hasWorkouts && (
-              <LinkedClientGym client={client} data={data} lang={lang} t={t} />
+              <>
+                {gymSub === "plan" && <LinkedPlan client={client} plans={data.plans || []} workouts={data.workouts || []} t={t} />}
+                {gymSub === "workouts" && <LinkedWorkoutsList client={client} workouts={data.workouts || []} lang={lang} t={t} />}
+                {gymSub === "sessions" && <LinkedSessions sessions={data.sessions || []} lang={lang} t={t} />}
+              </>
             )}
-            {section === "sessions" && hasWorkouts && <LinkedSessions sessions={data.sessions || []} lang={lang} t={t} />}
-            {section === "nutrition" && hasNutrition && <LinkedNutrition foodLog={data.foodLog || []} />}
+            {section === "nutrition" && hasNutrition && (
+              <>
+                {nutritionSub === "goals" && <LinkedNutritionGoals client={client} goals={data.nutritionGoals?.[0] || null} t={t} />}
+                {nutritionSub === "daily" && <LinkedNutrition foodLog={data.foodLog || []} goals={data.nutritionGoals?.[0] || null} t={t} />}
+              </>
+            )}
             {section === "measures" && hasMeasures && (
               <LinkedMeasures client={client} measurements={data.measurements || []} customTypes={data.measureTypes || []} t={t} />
             )}
@@ -612,21 +663,139 @@ function LinkedSessions({ sessions, lang, t }) {
   );
 }
 
-function LinkedNutrition({ foodLog }) {
+function mealLabel(mealId, t) {
+  return t[mealId] || mealId;
+}
+
+function LinkedNutrition({ foodLog, goals, t }) {
   const byDay = dailyNutritionTotals(foodLog);
-  const days = [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 14);
+  const days = [...byDay.keys()].sort((a, b) => b.localeCompare(a)).slice(0, 14);
+  const [index, setIndex] = useState(0);
+  const [showMicros, setShowMicros] = useState(false);
+
+  if (days.length === 0) {
+    return (
+      <section className="card">
+        <h3 className="dash-card-title" style={{ marginBottom: 12 }}>{t.dashNutrition}</h3>
+        <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoNutritionData}</p>
+      </section>
+    );
+  }
+
+  const selected = days[Math.min(index, days.length - 1)];
+  const totals = byDay.get(selected) ?? EMPTY_DAY;
+  const dayItems = foodLog.filter((e) => e.date === selected);
+  const shares = macroGoalShares(totals, goals || undefined);
+
+  const macros = [
+    { key: "protein", short: t.proteinShort, val: Math.round(totals.protein), color: "var(--protein)" },
+    { key: "carbs", short: t.carbsShort, val: Math.round(totals.carbs), color: "var(--carbs)" },
+    { key: "fat", short: t.fatShort, val: Math.round(totals.fat), color: "var(--fat)" },
+  ];
+
+  const micros = MICRONUTRIENTS.map((m) => ({
+    key: m.key,
+    label: t[m.key],
+    val: Math.round(totals[m.key] ?? 0),
+    goal: goals?.[m.key] ?? m.rda,
+    unit: m.unit,
+    color: MICRO_COLORS[m.key] ?? "var(--muted)",
+  }));
+
+  const mealGroups = [];
+  for (const item of dayItems) {
+    let group = mealGroups.find((g) => g.meal === item.meal);
+    if (!group) { group = { meal: item.meal, items: [] }; mealGroups.push(group); }
+    group.items.push(item);
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      {days.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
-      {days.map(([date, totals]) => (
-        <div key={date} className="card flex items-center justify-between">
-          <span className="text-sm" style={{ color: "var(--muted)" }}>
-            {Math.round(totals.kcal)} kcal · {Math.round(totals.protein)}P {Math.round(totals.carbs)}C {Math.round(totals.fat)}F
-          </span>
-          <span style={{ fontWeight: 700, color: "var(--text)" }}>{formatDateShort(date)}</span>
+    <section className="card">
+      <h3 className="dash-card-title" style={{ marginBottom: 16 }}>{t.dashNutrition}</h3>
+
+      <div className="flex items-center justify-between mb-5">
+        <button className="btn-icon" onClick={() => setIndex((i) => Math.min(days.length - 1, i + 1))} disabled={index >= days.length - 1} aria-label={t.dashPrevDay}>
+          <ChevronLeft size={18} style={{ color: "var(--text)" }} />
+        </button>
+        <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{formatDateShort(selected)}</span>
+        <button className="btn-icon" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index <= 0} aria-label={t.dashNextDay}>
+          <ChevronRight size={18} style={{ color: "var(--text)" }} />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-center">
+        <MacroRing value={totals.kcal} max={totals.kcal || 1} shares={shares} size={140}>
+          <span className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>{Math.round(totals.kcal)}</span>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>{t.kcal}</span>
+        </MacroRing>
+      </div>
+
+      <div className="flex" style={{ marginTop: 20 }}>
+        {macros.map((m) => (
+          <div key={m.key} className="flex-1 flex flex-col items-center">
+            <div className="flex items-center gap-1.5">
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: m.color }} />
+              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{m.short}</span>
+            </div>
+            <span className="text-sm font-bold mt-1" style={{ color: "var(--text)" }}>{m.val}g</span>
+          </div>
+        ))}
+      </div>
+
+      <button
+        className="flex items-center justify-center gap-1 w-full"
+        style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, background: "none", border: "none", marginTop: 18 }}
+        onClick={() => setShowMicros((v) => !v)}
+        aria-expanded={showMicros}
+      >
+        {t.micronutrients}
+        <ChevronDown size={15} style={{ transform: showMicros ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+      </button>
+
+      {showMicros && (
+        <div className="flex flex-col fade-in" style={{ gap: 12, marginTop: 12 }}>
+          {micros.map((m) => (
+            <div key={m.key} className="flex flex-col" style={{ gap: 5 }}>
+              <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+                <span className="font-semibold" style={{ color: "var(--text)" }}>{m.label}</span>
+                <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{m.val} / {m.goal}{m.unit}</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    borderRadius: 999,
+                    width: `${Math.min(100, (m.val / m.goal) * 100)}%`,
+                    background: m.color,
+                    transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
+                  }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+
+      <p className="section-title" style={{ fontSize: 13, marginTop: 20, marginBottom: 10 }}>{t.meals}</p>
+
+      <div className="flex flex-col" style={{ gap: 16 }}>
+        {mealGroups.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
+        {mealGroups.map((group) => (
+          <div key={group.meal} className="flex flex-col" style={{ gap: 6 }}>
+            <p className="section-title" style={{ fontSize: 12, margin: 0 }}>{mealLabel(group.meal, t)}</p>
+            {group.items.map((item) => (
+              <div key={item.id} className="dash-day">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{item.name}</div>
+                  <div className="text-xs" style={{ color: "var(--muted)" }}>{item.qty}</div>
+                </div>
+                <span className="text-xs" style={{ color: "var(--muted)" }}>{Math.round(item.kcal)} kcal</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

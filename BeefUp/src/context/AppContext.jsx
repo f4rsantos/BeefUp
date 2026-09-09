@@ -83,6 +83,7 @@ export function AppProvider({ children }) {
   const measureTypesRef = useRef([])
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
   const [nutritionGoals, setNutritionGoalsState] = useState(PREF_DEFAULTS.nutritionGoals)
+  const [prescribedGoals, setPrescribedGoals] = useState(null)
   const [mealTypes, setMealTypesState] = useState(DEFAULT_MEAL_TYPES)
 
   const t = strings[lang] || strings.pt
@@ -208,7 +209,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy] = await Promise.all([
+      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -222,6 +223,7 @@ export function AppProvider({ children }) {
         db.getAllClients(),
         db.getAllCustomExercises(),
         db.getAllMeasureTypes(),
+        db.getNutritionGoalsRow(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -242,6 +244,7 @@ export function AppProvider({ children }) {
       registerCustomExercises(customEx)
       setMeasureTypes(measureTy)
       measureTypesRef.current = measureTy
+      setPrescribedGoals(prescribedGoalsRow)
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
@@ -392,6 +395,10 @@ export function AppProvider({ children }) {
     setPref('nutritionGoals', goals)
   }, [])
 
+  // A trainer-prescribed goal always wins over the local pref, but never
+  // erases it -- removing the prescription falls straight back to it.
+  const effectiveNutritionGoals = prescribedGoals || nutritionGoals
+
   const saveClient = useCallback(async (client) => {
     await db.saveClient(client)
     setClients(prev => upsertById(prev, client))
@@ -461,6 +468,7 @@ export function AppProvider({ children }) {
     recentFoodIds, addRecentFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
+    prescribedGoals, effectiveNutritionGoals,
     clients, saveClient, deleteClient,
   }
 

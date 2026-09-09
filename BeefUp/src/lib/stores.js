@@ -12,5 +12,6 @@ export const STORES = {
   water: 'water',             // daily water { date, ml }
   clients: 'clients',
   customExercises: 'customExercises',
-  measureTypes: 'measureTypes'  // user-defined body measurement types { id, name, group, createdAt }
+  measureTypes: 'measureTypes',  // user-defined body measurement types { id, name, group, createdAt }
+  nutritionGoals: 'nutritionGoals' // trainer-definable targets { id: 'default', kcal, protein, carbs, fat, waterMl }
 }

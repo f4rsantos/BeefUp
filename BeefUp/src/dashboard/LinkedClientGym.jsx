@@ -6,9 +6,11 @@ import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { isPrescribed, uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import { STORES } from "../lib/stores";
 
-export default function LinkedClientGym({ client, data, lang, t, onChanged }) {
-  const [workouts, setWorkouts] = useState(() => data.workouts || []);
-  const [plans, setPlans] = useState(() => data.plans || []);
+// Own card for the workouts library a trainer prescribes to a linked
+// client. Split out from the plan editor so each can live on its own
+// sub-nav entry (Plano / Treinos / Sessões) instead of side by side.
+export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t, onChanged }) {
+  const [workouts, setWorkouts] = useState(initialWorkouts);
   const [editing, setEditing] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -48,64 +50,54 @@ export default function LinkedClientGym({ client, data, lang, t, onChanged }) {
   }
 
   return (
-    <div className="dash-two">
-      <LinkedPlan
-        client={client}
-        plans={plans}
-        setPlans={setPlans}
-        workouts={workouts}
-        t={t}
-      />
+    <section className="card">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="dash-card-title" style={{ margin: 0 }}>{t.workouts}</h3>
+      </div>
+      <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribeDesc}</p>
+      {error && <p className="text-sm mb-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
 
-      <section className="card">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="dash-card-title" style={{ margin: 0 }}>{t.workouts}</h3>
-        </div>
-        <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribeDesc}</p>
-        {error && <p className="text-sm mb-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+      {workouts.length === 0 && (
+        <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoWorkouts}</p>
+      )}
 
-        {workouts.length === 0 && (
-          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoWorkouts}</p>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {workouts.map((w) => {
-            const mine = isPrescribed(w);
-            return (
-              <div key={w.id} className="dash-day">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{w.name}</div>
-                  <div className="text-xs" style={{ color: "var(--muted)" }}>
-                    {w.exercises?.length ?? 0} {t.exercises}
-                    {mine ? <> · {t.dashPrescribedByYou}</> : <> · {t.dashClientOwn}</>}
-                  </div>
+      <div className="flex flex-col gap-3">
+        {workouts.map((w) => {
+          const mine = isPrescribed(w);
+          return (
+            <div key={w.id} className="dash-day">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{w.name}</div>
+                <div className="text-xs" style={{ color: "var(--muted)" }}>
+                  {w.exercises?.length ?? 0} {t.exercises}
+                  {mine ? <> · {t.dashPrescribedByYou}</> : <> · {t.dashClientOwn}</>}
                 </div>
-                {mine ? (
-                  <>
-                    <button className="btn-icon" onClick={() => setEditing(w)} aria-label={t.edit} disabled={busy}>
-                      <Pencil size={15} style={{ color: "var(--muted)" }} />
-                    </button>
-                    <button className="btn-icon" onClick={() => setPendingDelete(w)} aria-label={t.delete} disabled={busy}>
-                      <Trash2 size={15} style={{ color: "var(--muted)" }} />
-                    </button>
-                  </>
-                ) : (
-                  <Lock size={15} style={{ color: "var(--muted)" }} aria-label={t.dashClientOwn} />
-                )}
               </div>
-            );
-          })}
-        </div>
+              {mine ? (
+                <>
+                  <button className="btn-icon" onClick={() => setEditing(w)} aria-label={t.edit} disabled={busy}>
+                    <Pencil size={15} style={{ color: "var(--muted)" }} />
+                  </button>
+                  <button className="btn-icon" onClick={() => setPendingDelete(w)} aria-label={t.delete} disabled={busy}>
+                    <Trash2 size={15} style={{ color: "var(--muted)" }} />
+                  </button>
+                </>
+              ) : (
+                <Lock size={15} style={{ color: "var(--muted)" }} aria-label={t.dashClientOwn} />
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-        <button
-          className="btn btn-ghost w-full py-3 mt-4"
-          style={{ borderStyle: "dashed" }}
-          onClick={() => setEditing("new")}
-          disabled={busy}
-        >
-          <Plus size={15} /> {t.dashPrescribeWorkout}
-        </button>
-      </section>
+      <button
+        className="btn btn-ghost w-full py-3 mt-4"
+        style={{ borderStyle: "dashed" }}
+        onClick={() => setEditing("new")}
+        disabled={busy}
+      >
+        <Plus size={15} /> {t.dashPrescribeWorkout}
+      </button>
 
       {editing && (
         <div style={{ position: "absolute", inset: 0, zIndex: 200, background: "var(--bg)" }}>
@@ -129,7 +121,7 @@ export default function LinkedClientGym({ client, data, lang, t, onChanged }) {
           onCancel={() => setPendingDelete(null)}
         />
       )}
-    </div>
+    </section>
   );
 }
 
@@ -137,7 +129,8 @@ export default function LinkedClientGym({ client, data, lang, t, onChanged }) {
 // ClientGym.jsx's own plan editor but synced via prescribeRow/unprescribeRow
 // instead of saveClient. A client-authored plan (no prescribedBy) is theirs
 // alone and never shown or touched here.
-function LinkedPlan({ client, plans, setPlans, workouts, t }) {
+export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
+  const [plans, setPlans] = useState(initialPlans);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [pendingRemoveDay, setPendingRemoveDay] = useState(null);

@@ -246,20 +246,23 @@ create policy sync_rows_select on public.sync_rows
   );
 
 -- Student: full write of their own rows, any scope.
--- Trainer: write ONLY scope = 'workouts', plus the narrow exception below for
--- measure types AND measurement values (a trainer taking/logging a client's
--- measurement in person), never `steps` or nutrition, and only for a client
--- who has shared that scope with them. WITH CHECK (not just USING) is what
--- actually blocks a trainer from writing nutrition/steps: it re-validates
--- the *new* row being written, not just which existing rows are visible.
+-- Trainer: write ONLY scope = 'workouts', plus the narrow exceptions below
+-- for measure types AND measurement values (a trainer taking/logging a
+-- client's measurement in person) and for nutrition GOALS (never the
+-- client's own logged food or water), and only for a client who has shared
+-- that scope with them. WITH CHECK (not just USING) is what actually blocks
+-- a trainer from writing the client's own logged data: it re-validates the
+-- *new* row being written, not just which existing rows are visible.
 --
--- The measures clause is deliberately store-scoped, not scope-scoped:
+-- Both exceptions are deliberately store-scoped, not scope-scoped:
 -- opening up `scope = 'measures'` outright would also let a trainer write
--- `steps`, which is the client's own logged data with no trainer-facing
--- equivalent. Restricting to `store in ('measureTypes', 'measurements')`
--- keeps the trainer able to prescribe *what* to measure and log a value for
--- it (both stamped `prescribedBy` client-side, same as a prescribed
--- workout) without ever touching step counts.
+-- `steps`, and opening up `scope = 'nutrition'` outright would let a
+-- trainer write `foodLog`/`foods`/`water` — all client-owned logged data
+-- with no trainer-facing equivalent. Restricting to
+-- `store in ('measureTypes', 'measurements')` / `store = 'nutritionGoals'`
+-- keeps the trainer able to prescribe *what* to measure and *what to aim
+-- for* (both stamped `prescribedBy` client-side, same as a prescribed
+-- workout) without ever touching a value the client themselves recorded.
 drop policy if exists sync_rows_insert on public.sync_rows;
 create policy sync_rows_insert on public.sync_rows
   for insert
@@ -267,13 +270,14 @@ create policy sync_rows_insert on public.sync_rows
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
     or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   );
 
 -- Same rule for UPDATE, on both clauses:
 --   USING   — a trainer can only reach an existing row that is already
---             scope = 'workouts' (or store in ('measureTypes', 'measurements'))
---             for a client that shared it (a nutrition/steps row is
---             invisible to UPDATE, never mind write).
+--             scope = 'workouts' (or one of the store-scoped exceptions
+--             above) for a client that shared it (the client's own logged
+--             data is invisible to UPDATE, never mind write).
 --   WITH CHECK — even for a row USING admitted, the trainer cannot flip its
 --             scope/store away from what's allowed on the way out.
 -- The sync_rows_store_scope_check table constraint (schema.sql) is a second,
@@ -286,11 +290,13 @@ create policy sync_rows_update on public.sync_rows
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
     or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   )
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
     or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   );
 
 -- DELETE: student only, own rows. The app itself never issues a hard

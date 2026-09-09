@@ -57,7 +57,7 @@ test('purgeableKeys drops tombstones now when unlinked, after grace when linked'
 
 test('scopes map to the right stores', () => {
   const nutrition = storesForScopes([SCOPES.nutrition])
-  assert.deepEqual(nutrition.sort(), [STORES.foodLog, STORES.foods, STORES.water].sort())
+  assert.deepEqual(nutrition.sort(), [STORES.foodLog, STORES.foods, STORES.water, STORES.nutritionGoals].sort())
   assert.ok(!nutrition.includes(STORES.sessions))
   assert.equal(keyFieldOf(STORES.water), 'date')
   assert.equal(keyFieldOf(STORES.sessions), 'id')
@@ -132,6 +132,23 @@ test('custom measure types sync like any other store', async () => {
 
   assert.deepEqual(backend._dump(STORES.measureTypes)[0].row, {
     id: 'm1', name: 'Gémeo esquerdo', group: 'legs', createdAt: 1,
+  })
+})
+
+test('nutrition goals sync like any other store', async () => {
+  await reset()
+  const backend = createMemoryBackend()
+
+  await db.saveNutritionGoals({ kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 })
+
+  const report = await syncStore(backend, STORES.nutritionGoals)
+  assert.equal(report.pushed, 1)
+
+  const [raw] = await db.rawAll(STORES.nutritionGoals)
+  assert.ok(!isDirty(raw), 'clean after push')
+
+  assert.deepEqual(backend._dump(STORES.nutritionGoals)[0].row, {
+    id: 'default', kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500,
   })
 })
 

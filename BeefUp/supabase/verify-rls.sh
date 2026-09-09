@@ -244,6 +244,30 @@ check "trainer can unprescribe (tombstone) a measure type" "$(echo $MT_UNPRESCRI
 MV_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measurements' and row_key='m9' returning row_key")
 check "trainer can unprescribe (tombstone) a measurement value" "$(echo $MV_UNPRESCRIBE | xargs)" "m9"
 
+# --- F9: trainer can prescribe nutrition goals, but never the client's own
+#         food log or water -------------------------------------------------
+echo "== F9: trainer prescribes nutrition goals on a linked client =="
+
+NG_NOSHARE=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','nutritionGoals','default','nutrition','{\"id\":\"default\",\"kcal\":2200}') returning row_key")
+case "$NG_NOSHARE" in *"violates row-level security"*) NG_NOSHARE=DENIED;; esac
+check "trainer blocked from nutritionGoals before client shares nutrition" "$(echo $NG_NOSHARE | xargs)" "DENIED"
+
+run_as $RUI "update public.trainer_links set scopes=array['workouts','measures','nutrition'] where trainer_id='$TRAINER' and client_id='$RUI'" >/dev/null
+
+NG_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','nutritionGoals','default','nutrition','{\"id\":\"default\",\"kcal\":2200}') returning row_key")
+check "trainer prescribes nutrition goals once nutrition is shared" "$(echo $NG_OK | xargs)" "default"
+
+FOODLOG_DENIED=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','foodLog','f1','nutrition','{\"id\":\"f1\",\"name\":\"Rice\"}') returning row_key")
+case "$FOODLOG_DENIED" in *"violates row-level security"*) FOODLOG_DENIED=DENIED;; esac
+check "trainer still cannot write the client's own food log" "$(echo $FOODLOG_DENIED | xargs)" "DENIED"
+
+WATER_DENIED=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','water','2026-01-01','nutrition','{\"date\":\"2026-01-01\",\"ml\":2000}') returning row_key")
+case "$WATER_DENIED" in *"violates row-level security"*) WATER_DENIED=DENIED;; esac
+check "trainer still cannot write the client's own water log" "$(echo $WATER_DENIED | xargs)" "DENIED"
+
+NG_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='nutritionGoals' and row_key='default' returning row_key")
+check "trainer can unprescribe (tombstone) nutrition goals" "$(echo $NG_UNPRESCRIBE | xargs)" "default"
+
 echo
 echo "passed: $pass   failed: $fail"
 pg_ctl -D "$PGDATA" -w stop >/dev/null 2>&1 || true

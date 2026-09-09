@@ -69,3 +69,27 @@ export function calcGoals(c, waterMl = 2500) {
   const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4))
   return { kcal, protein, carbs, fat, waterMl: parseInt(waterMl) || 2500 }
 }
+
+// Shared with any UI that renders a per-micronutrient bar/dot -- one place
+// so NutritionPage.jsx and the trainer's card never drift apart.
+export const MICRO_COLORS = {
+  fiber: 'var(--accent)',
+  sugar: 'var(--carbs)',
+  saturatedFat: 'var(--fat)',
+  transFat: 'var(--danger)',
+  sodium: 'var(--warn)',
+  potassium: 'var(--accent-2)',
+  calcium: 'var(--protein)',
+  iron: 'var(--muted)',
+}
+
+// Micronutrient goals are optional per key -- a blank field means "use the
+// default RDA", not "target zero". Only keys with a real number survive.
+export function pickMicronutrientGoals(source, keys) {
+  const out = {}
+  for (const key of keys) {
+    const n = parseFloat(source[key])
+    if (Number.isFinite(n)) out[key] = n
+  }
+  return out
+}

@@ -93,7 +93,7 @@ create table if not exists public.sync_rows (
   -- sync with SYNCED_STORES if a store is ever added or reassigned.
   constraint sync_rows_store_scope_check check (
     (store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts')
-    or (store in ('foodLog', 'foods', 'water') and scope = 'nutrition')
+    or (store in ('foodLog', 'foods', 'water', 'nutritionGoals') and scope = 'nutrition')
     or (store in ('measurements', 'steps', 'measureTypes') and scope = 'measures')
   )
 );
