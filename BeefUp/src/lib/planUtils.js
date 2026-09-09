@@ -44,6 +44,25 @@ export function nowISO() {
   return new Date().toISOString()
 }
 
+// dd/mm/aa, from either a date-only ISO ("2026-09-09") or a full instant
+// ("2026-09-09T01:08:51.677Z"). Pure string split -- avoids the timezone
+// drift that new Date(dateOnlyISO).getDate() has in negative-UTC offsets.
+export function formatDateShort(value) {
+  const [datePart] = String(value).split('T')
+  const [y, m, d] = datePart.split('-')
+  return `${d}/${m}/${y.slice(-2)}`
+}
+
+// dd/mm/aa HH:mm, for a full instant (has an actual time to show) -- hour
+// and minute come from the real Date object since they're timezone-correct
+// wall-clock time, unlike the date-only split above.
+export function formatDateTimeShort(iso) {
+  const d = new Date(iso)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${formatDateShort(iso)} ${hh}:${mi}`
+}
+
 function latestExerciseField(sessions, exerciseId, getField) {
   let latest = null
   for (const s of sessions) {

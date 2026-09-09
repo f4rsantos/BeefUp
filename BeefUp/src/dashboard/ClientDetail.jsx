@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, User, Utensils, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats } from "../lib/planUtils";
+import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort } from "../lib/planUtils";
 import { dailyNutritionTotals } from "../lib/nutritionStats";
 import { MEASURE_GROUPS, LEGACY_TYPE_MAP, getMeasureUnit, measureTypeLabel, UNIT_PRESETS } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
@@ -598,8 +598,8 @@ function LinkedSessions({ sessions, lang, t }) {
       {recent.map((s) => (
         <div key={s.id} className="card">
           <div className="flex items-center justify-between mb-2">
-            <span style={{ fontWeight: 700, color: "var(--text)" }}>{s.date}</span>
             <span className="text-sm" style={{ color: "var(--muted)" }}>{Math.round(sessionVolume(s))} kg · {sessionSets(s)} {t.sets.toLowerCase()}</span>
+            <span style={{ fontWeight: 700, color: "var(--text)" }}>{formatDateTimeShort(s.date)}</span>
           </div>
           <div className="flex flex-col gap-1">
             {(s.exercises || []).map((e, i) => (
@@ -620,10 +620,10 @@ function LinkedNutrition({ foodLog }) {
       {days.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
       {days.map(([date, totals]) => (
         <div key={date} className="card flex items-center justify-between">
-          <span style={{ fontWeight: 700, color: "var(--text)" }}>{date}</span>
           <span className="text-sm" style={{ color: "var(--muted)" }}>
             {Math.round(totals.kcal)} kcal · {Math.round(totals.protein)}P {Math.round(totals.carbs)}C {Math.round(totals.fat)}F
           </span>
+          <span style={{ fontWeight: 700, color: "var(--text)" }}>{formatDateShort(date)}</span>
         </div>
       ))}
     </div>
