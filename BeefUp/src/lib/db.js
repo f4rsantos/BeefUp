@@ -145,6 +145,8 @@ export const db = {
   saveCustomExercise: (exercise) => writeRow(STORES.customExercises, exercise),
   getAllCustomExercises: () => readAll(STORES.customExercises),
   removeCustomExercise: (id) => deleteRow(STORES.customExercises, id),
+
+  // Custom measure types helpers
   saveMeasureType: (measureType) => writeRow(STORES.measureTypes, measureType),
   getAllMeasureTypes: () => readAll(STORES.measureTypes),
   removeMeasureType: (id) => deleteRow(STORES.measureTypes, id),

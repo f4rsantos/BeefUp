@@ -12,5 +12,5 @@ export const STORES = {
   water: 'water',             // daily water { date, ml }
   clients: 'clients',
   customExercises: 'customExercises',
-  measureTypes: 'measureTypes'
+  measureTypes: 'measureTypes'  // user-defined body measurement types { id, name, group, createdAt }
 }

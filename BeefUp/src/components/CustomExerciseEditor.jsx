@@ -87,7 +87,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
+    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }} onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-col h-full">
         <div
           className="flex-1 overflow-y-auto pb-24 scrollbar-hide"

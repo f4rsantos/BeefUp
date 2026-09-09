@@ -150,6 +150,9 @@ function Overview({ client }) {
   );
 }
 
+// Same chart+history card client's own MeasuresPage.jsx uses, minus the
+// title — the trainer picks a type via chips instead. Value input mirrors
+// MeasuresPage.jsx's own so the trainer can log a measurement in person.
 function MeasureCard({ t, chartData, history, unit, onDelete, onSave, saveError }) {
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);

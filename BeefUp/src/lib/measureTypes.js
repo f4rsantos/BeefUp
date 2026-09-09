@@ -11,6 +11,7 @@ const MEASURE_UNITS = { weight: "kg", bodyFat: "%" };
 
 export const UNIT_PRESETS = ["cm", "kg", "%"];
 
+// customTypes carries its own `unit`, chosen when the measure was created.
 export function getMeasureUnit(type, customTypes = []) {
   if (MEASURE_UNITS[type]) return MEASURE_UNITS[type];
   const custom = customTypes.find((m) => m.id === type);

@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { todaysPlanEntry } from "../lib/planUtils";
+import { todaysPlanEntry, isPrescribed } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
 import { resolveExercise, normalizeWorkoutExercises, BODY_PART_ACCENT } from "../lib/exerciseTree";
 import { encodeWorkoutShare } from "../lib/workoutShare";
@@ -90,12 +90,18 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
     };
   }, [open]);
 
+  const locked = isPrescribed(workout);
+
   const menuItems = [
-    { Icon: Pencil, label: t.edit, onSelect: () => onEdit(workout) },
-    { Icon: FilePenLine, label: t.rename, onSelect: () => onRename(workout) },
+    ...(locked ? [] : [
+      { Icon: Pencil, label: t.edit, onSelect: () => onEdit(workout) },
+      { Icon: FilePenLine, label: t.rename, onSelect: () => onRename(workout) },
+    ]),
     { Icon: Copy, label: t.duplicate, onSelect: () => onDuplicate(workout) },
     { Icon: Share2, label: t.share, onSelect: () => onShare(workout) },
-    { Icon: Trash2, label: t.deleteWorkoutAction, onSelect: () => onDelete(workout), danger: true },
+    ...(locked ? [] : [
+      { Icon: Trash2, label: t.deleteWorkoutAction, onSelect: () => onDelete(workout), danger: true },
+    ]),
   ];
 
   return (

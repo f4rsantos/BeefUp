@@ -89,6 +89,9 @@ echo "== a trainer writes workouts, never nutrition =="
 W=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$ANA','workouts','w2','workouts','{\"id\":\"w2\"}') returning row_key")
 check "trainer prescribes a workout" "$(echo $W | xargs)" "w2"
 
+P=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$ANA','plans','p2','workouts','{\"id\":\"p2\",\"name\":\"PPL\",\"days\":[]}') returning row_key")
+check "trainer prescribes a plan (same scope='workouts' clause)" "$(echo $P | xargs)" "p2"
+
 N=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$ANA','foodLog','f2','nutrition','{\"id\":\"f2\"}') returning row_key")
 case "$N" in *"violates row-level security"*) N=DENIED;; esac
 check "trainer blocked from writing nutrition" "$(echo $N | xargs)" "DENIED"

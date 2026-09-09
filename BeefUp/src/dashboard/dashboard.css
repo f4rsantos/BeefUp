@@ -137,6 +137,7 @@
 .dash-measures, .dash-notes { max-width: 860px; }
 .dash-notes { max-width: 760px; }
 
+/* + Adicionar pill, distinct from a plain filter chip */
 .chip-add {
   background: transparent;
   color: var(--accent);

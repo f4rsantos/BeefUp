@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, Trash2, Dumbbell, Moon } from "lucide-react";
-import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
+import { ChevronLeft, Plus, Trash2, Dumbbell, Moon, Lock } from "lucide-react";
+import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay, isPrescribed } from "../lib/planUtils";
 import WorkoutEditor from "./WorkoutEditor";
 import ConfirmModal from "./ConfirmModal";
 
@@ -13,6 +13,7 @@ export default function PlanEditor({
   lang,
   t,
 }) {
+  const locked = isPrescribed(plan);
   const [name, setName] = useState(plan?.name ?? "");
   const [days, setDays] = useState(plan?.days ?? []);
   const [creatingWorkoutForDay, setCreatingWorkoutForDay] = useState(null);
@@ -52,20 +53,28 @@ export default function PlanEditor({
           <button className="btn-back" onClick={onBack} aria-label={t.back}>
             <ChevronLeft size={24} style={{ color: "var(--text)" }} />
           </button>
-          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+          <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
             {plan?.id ? t.editPlan : t.newPlan}
           </h1>
+          {locked && <Lock size={16} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />}
         </div>
+        {locked && (
+          <p className="text-xs" style={{ color: "var(--muted)", marginTop: -8 }}>{t.prescribedLocked}</p>
+        )}
         <div className="card">
           <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
             {t.planName}
           </label>
-          <input
-            className="field"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. PPL"
-          />
+          {locked ? (
+            <p className="text-sm" style={{ color: "var(--text)" }}>{name}</p>
+          ) : (
+            <input
+              className="field"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. PPL"
+            />
+          )}
         </div>
 
         <div className="card flex flex-col gap-2">
@@ -97,12 +106,16 @@ export default function PlanEditor({
                   background: isWorkout ? "var(--accent-soft)" : "var(--accent-2-soft)",
                   flexShrink: 0,
                 }}
-                onClick={() =>
-                  updateDay(i, {
-                    type: isWorkout ? "rest" : "workout",
-                    workoutId: !isWorkout ? (workouts[0]?.id ?? null) : null,
-                  })
+                onClick={
+                  locked
+                    ? undefined
+                    : () =>
+                        updateDay(i, {
+                          type: isWorkout ? "rest" : "workout",
+                          workoutId: !isWorkout ? (workouts[0]?.id ?? null) : null,
+                        })
                 }
+                disabled={locked}
                 aria-label={t.toggleDayType}
               >
                 {isWorkout
@@ -111,63 +124,75 @@ export default function PlanEditor({
               </button>
 
               {isWorkout ? (
-                <select
-                  className="field flex-1"
-                  value={day.workoutId ?? ""}
-                  onChange={(e) => {
-                    if (e.target.value === "__new__") setCreatingWorkoutForDay(i);
-                    else updateDay(i, { workoutId: e.target.value });
-                  }}
-                  style={{ fontSize: 12, padding: "7px 9px" }}
-                >
-                  {workouts.length === 0 && <option value="">{t.selectWorkout}</option>}
-                  {workouts.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
+                locked ? (
+                  <span className="text-sm flex-1" style={{ color: "var(--text)" }}>
+                    {workouts.find((w) => w.id === day.workoutId)?.name ?? t.selectWorkout}
+                  </span>
+                ) : (
+                  <select
+                    className="field flex-1"
+                    value={day.workoutId ?? ""}
+                    onChange={(e) => {
+                      if (e.target.value === "__new__") setCreatingWorkoutForDay(i);
+                      else updateDay(i, { workoutId: e.target.value });
+                    }}
+                    style={{ fontSize: 12, padding: "7px 9px" }}
+                  >
+                    {workouts.length === 0 && <option value="">{t.selectWorkout}</option>}
+                    {workouts.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                    <option value="__new__">
+                      {t.createNewWorkout}
                     </option>
-                  ))}
-                  <option value="__new__">
-                    {t.createNewWorkout}
-                  </option>
-                </select>
+                  </select>
+                )
               ) : (
                 <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>
                   {t.dayRest}
                 </span>
               )}
 
-              <button
-                className="btn-icon p-1"
-                onClick={() => setPendingRemoveDay(i)}
-                aria-label={t.delete}
-              >
-                <Trash2 size={14} style={{ color: "var(--muted)" }} />
-              </button>
+              {!locked && (
+                <button
+                  className="btn-icon p-1"
+                  onClick={() => setPendingRemoveDay(i)}
+                  aria-label={t.delete}
+                >
+                  <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                </button>
+              )}
             </div>
             );
           })}
 
-          <div className="flex gap-2 mt-1">
-            <button
-              className="btn btn-ghost flex-1 py-2.5 text-xs"
-              style={{ borderStyle: "dashed" }}
-              onClick={() => addDay("workout")}
-            >
-              <Plus size={13} /> {t.workoutDay}
-            </button>
-            <button
-              className="btn btn-ghost flex-1 py-2.5 text-xs"
-              style={{ borderStyle: "dashed" }}
-              onClick={() => addDay("rest")}
-            >
-              <Plus size={13} /> {t.dayRest}
-            </button>
-          </div>
+          {!locked && (
+            <div className="flex gap-2 mt-1">
+              <button
+                className="btn btn-ghost flex-1 py-2.5 text-xs"
+                style={{ borderStyle: "dashed" }}
+                onClick={() => addDay("workout")}
+              >
+                <Plus size={13} /> {t.workoutDay}
+              </button>
+              <button
+                className="btn btn-ghost flex-1 py-2.5 text-xs"
+                style={{ borderStyle: "dashed" }}
+                onClick={() => addDay("rest")}
+              >
+                <Plus size={13} /> {t.dayRest}
+              </button>
+            </div>
+          )}
         </div>
 
-        <button className="btn btn-primary w-full py-3.5" onClick={save}>
-          {t.save}
-        </button>
+        {!locked && (
+          <button className="btn btn-primary w-full py-3.5" onClick={save}>
+            {t.save}
+          </button>
+        )}
       </div>
 
       {creatingWorkoutForDay !== null && (
