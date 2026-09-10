@@ -19,6 +19,11 @@ function isoOf(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
+function weekdayOf(iso, lang) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(lang === "pt" ? "pt-PT" : undefined, { weekday: "short" });
+}
+
 const APPT_TYPES = [
   { id: "consulta", Icon: Stethoscope, label: (t) => t.dashApptConsulta },
   { id: "treino", Icon: Dumbbell, label: (t) => t.dashApptTreino },
@@ -277,6 +282,7 @@ export default function CalendarView({ students = [] }) {
   const [time, setTime] = useState("18:00");
   const [apptType, setApptType] = useState(APPT_TYPES[0].id);
   const [pendingRemove, setPendingRemove] = useState(null);
+  const [filterClient, setFilterClient] = useState("");
   // Phone only: a 45px cell has no room for name chips, so tapping a day
   // opens its list under the grid instead of going straight to the modal.
   const [openDay, setOpenDay] = useState(null);
@@ -291,6 +297,12 @@ export default function CalendarView({ students = [] }) {
   function prev() { if (month === 0) { setMonth(11); setYear(year - 1); } else setMonth(month - 1); }
   function nextM() { if (month === 11) { setMonth(0); setYear(year + 1); } else setMonth(month + 1); }
 
+  function goToMonthOf(iso) {
+    const [y, m] = iso.split("-").map(Number);
+    setYear(y);
+    setMonth(m - 1);
+  }
+
   function clientsOn(iso) {
     return clients.filter((c) => (c.schedule || []).some((e) => e.date === iso));
   }
@@ -301,6 +313,21 @@ export default function CalendarView({ students = [] }) {
       .flatMap((c) => (c.schedule || []).filter((e) => e.date === iso).map((e) => ({ client: c, entry: e })))
       .sort((a, b) => (a.entry.time || "").localeCompare(b.entry.time || ""));
   }
+  
+  const upcoming = useMemo(() => {
+    const from = todayISO();
+    const rows = clients
+      .filter((c) => !filterClient || c.id === filterClient)
+      .flatMap((c) => (c.schedule || []).filter((e) => e.date >= from).map((e) => ({ client: c, entry: e })))
+      .sort((a, b) => (a.entry.date + a.entry.time).localeCompare(b.entry.date + b.entry.time));
+    const groups = [];
+    for (const row of rows) {
+      let g = groups.find((x) => x.date === row.entry.date);
+      if (!g) { g = { date: row.entry.date, rows: [] }; groups.push(g); }
+      g.rows.push(row);
+    }
+    return groups;
+  }, [clients, filterClient]);
 
   const [pickClient, setPickClient] = useState("");
 
@@ -353,7 +380,7 @@ export default function CalendarView({ students = [] }) {
               key={i}
               type="button"
               className={`dash-cal-cell ${openDay === iso ? "open" : ""} ${isToday ? "today" : ""}`}
-              onClick={() => (isDesktop ? openAssign(iso) : setOpenDay(iso))}
+              onClick={() => setOpenDay(iso)}
             >
               <span className="dash-cal-daynum">{d}</span>
               {isDesktop
@@ -379,7 +406,7 @@ export default function CalendarView({ students = [] }) {
         })}
       </div>
 
-      {!isDesktop && openDay && (
+      {openDay && (
         <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
           <div className="dash-panel-head">
             <h3 className="dash-card-title">{formatDateShort(openDay)}</h3>
@@ -415,6 +442,56 @@ export default function CalendarView({ students = [] }) {
           >
             <Plus size={16} /> {t.dashAssign}
           </button>
+        </section>
+      )}
+
+      {!openDay && (
+        <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
+          <div className="dash-panel-head">
+            <h3 className="dash-card-title">{t.dashUpcoming}</h3>
+            <select
+              className="field"
+              style={{ width: "auto", maxWidth: 180 }}
+              value={filterClient}
+              onChange={(e) => setFilterClient(e.target.value)}
+              aria-label={t.dashClients}
+            >
+              <option value="">{t.dashFilterAll}</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          {upcoming.length === 0 ? (
+            <p className="dash-empty">{t.dashNoUpcoming}</p>
+          ) : (
+            <div className="flex flex-col" style={{ gap: "var(--d-4)" }}>
+              {upcoming.map((group) => (
+                <div key={group.date} className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    className="section-title text-left"
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                    onClick={() => goToMonthOf(group.date)}
+                  >
+                    {weekdayOf(group.date, lang)} {formatDateShort(group.date)}
+                  </button>
+                  {group.rows.map(({ client, entry }, k) => {
+                    const { Icon, label } = apptTypeMeta(entry.type);
+                    return (
+                      <div key={client.id + k} className="dash-day">
+                        <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
+                        <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
+                        <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
+                        <button className="btn-icon" onClick={() => setPendingRemove({ client, entry })} aria-label={t.delete}>
+                          <X size={15} style={{ color: "var(--muted)" }} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -458,25 +535,6 @@ export default function CalendarView({ students = [] }) {
               </div>
             )}
 
-            {/* On a phone the day panel below the grid already lists these. */}
-            {isDesktop && clients.some((c) => (c.schedule || []).some((e) => e.date === assignFor)) && (
-              <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
-                <div className="flex flex-col gap-2">
-                  {clients.flatMap((c) => (c.schedule || []).filter((e) => e.date === assignFor).map((e, k) => {
-                    const { Icon } = apptTypeMeta(e.type);
-                    return (
-                      <div key={c.id + k} className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-2" style={{ color: "var(--text)" }}>
-                          <Icon size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
-                          {e.time} · {c.name}
-                        </span>
-                        <button className="btn-icon" onClick={() => setPendingRemove({ client: c, entry: e })} aria-label={t.delete}><X size={14} style={{ color: "var(--muted)" }} /></button>
-                      </div>
-                    );
-                  }))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
