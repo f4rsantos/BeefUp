@@ -393,6 +393,8 @@
 }
 .dash-cal-cell:hover { border-color: var(--accent); }
 .dash-cal-cell.muted { opacity: 0.4; }
+.dash-cal-cell.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+.dash-cal-cell.today .dash-cal-daynum { color: var(--accent); font-weight: 800; }
 .dash-cal-daynum { font-size: var(--d-meta); color: var(--muted); font-variant-numeric: tabular-nums; }
 .dash-cal-chip {
   font-size: var(--d-label);

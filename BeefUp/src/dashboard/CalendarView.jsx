@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus, X, Clock, Keyboard, Stethoscope, Dumbbell, Ruler, Utensils, Repeat } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useIsDesktop } from "../lib/useIsDesktop";
-import { formatDateShort } from "../lib/planUtils";
+import { formatDateShort, todayISO } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
 
 function localizedDow(lang) {
@@ -17,6 +17,246 @@ function localizedDow(lang) {
 
 function isoOf(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+const APPT_TYPES = [
+  { id: "consulta", Icon: Stethoscope, label: (t) => t.dashApptConsulta },
+  { id: "treino", Icon: Dumbbell, label: (t) => t.dashApptTreino },
+  { id: "medidas", Icon: Ruler, label: (t) => t.dashMeasures },
+  { id: "nutricao", Icon: Utensils, label: (t) => t.dashNutrition },
+  { id: "rotina", Icon: Repeat, label: (t) => t.dashApptRotina },
+];
+
+function apptTypeMeta(id) {
+  return APPT_TYPES.find((x) => x.id === id) || APPT_TYPES[0];
+}
+
+const DIAL_SIZE = 240;
+const DIAL_CENTER = DIAL_SIZE / 2;
+const OUTER_R = 88;
+const INNER_R = 52;
+const RING_THRESHOLD = (OUTER_R + INNER_R) / 2;
+
+function polar(r, deg) {
+  const rad = (deg * Math.PI) / 180;
+  return { x: DIAL_CENTER + r * Math.sin(rad), y: DIAL_CENTER - r * Math.cos(rad) };
+}
+
+function pointerToPolar(clientX, clientY, rect) {
+  const dx = clientX - (rect.left + rect.width / 2);
+  const dy = clientY - (rect.top + rect.height / 2);
+  let deg = (Math.atan2(dx, -dy) * 180) / Math.PI;
+  if (deg < 0) deg += 360;
+  return { deg, dist: Math.hypot(dx, dy) };
+}
+
+function DialFace({ mode, hour, minute, onPick, onRelease }) {
+  const faceRef = useRef(null);
+
+  function valueAt(clientX, clientY) {
+    const { deg, dist } = pointerToPolar(clientX, clientY, faceRef.current.getBoundingClientRect());
+    const idx = Math.round(deg / 30) % 12;
+    if (mode === "hour") return dist > RING_THRESHOLD ? idx : idx + 12;
+    return idx * 5;
+  }
+
+  function onDown(e) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    onPick(valueAt(e.clientX, e.clientY));
+  }
+  function onMove(e) {
+    if (e.buttons !== 1 && e.pointerType === "mouse") return;
+    onPick(valueAt(e.clientX, e.clientY));
+  }
+
+  const selected = mode === "hour" ? hour : minute;
+  const selectedR = mode === "hour" ? (hour < 12 ? OUTER_R : INNER_R) : OUTER_R;
+  const selectedDeg = mode === "hour" ? (hour % 12) * 30 : (minute / 5) * 30;
+  const hand = polar(selectedR, selectedDeg);
+
+  return (
+    <div
+      ref={faceRef}
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={(e) => { onMove(e); onRelease(); }}
+      style={{
+        position: "relative", width: DIAL_SIZE, height: DIAL_SIZE, borderRadius: "50%",
+        background: "var(--surface2)", margin: "0 auto", touchAction: "none", userSelect: "none", cursor: "pointer",
+      }}
+    >
+      <span style={{ position: "absolute", left: DIAL_CENTER - 3, top: DIAL_CENTER - 3, width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} />
+      <svg width={DIAL_SIZE} height={DIAL_SIZE} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        <line x1={DIAL_CENTER} y1={DIAL_CENTER} x2={hand.x} y2={hand.y} stroke="var(--accent)" strokeWidth={2} />
+      </svg>
+      <span
+        style={{
+          position: "absolute", left: hand.x - 16, top: hand.y - 16, width: 32, height: 32, borderRadius: "50%",
+          background: "var(--accent)", pointerEvents: "none",
+        }}
+      />
+      {(mode === "hour" ? Array.from({ length: 12 }, (_, i) => i) : Array.from({ length: 12 }, (_, i) => i * 5)).map((n, i) => {
+        const p = polar(OUTER_R, i * 30);
+        const isSelected = selected === n;
+        return (
+          <span
+            key={`o${n}`}
+            className="tabular"
+            style={{
+              position: "absolute", left: p.x - 16, top: p.y - 16, width: 32, height: 32,
+              display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%",
+              fontSize: 14, fontWeight: 600, pointerEvents: "none",
+              color: isSelected ? "#fff" : "var(--text)",
+            }}
+          >
+            {mode === "hour" ? n : String(n).padStart(2, "0")}
+          </span>
+        );
+      })}
+      {mode === "hour" && Array.from({ length: 12 }, (_, i) => i + 12).map((n, i) => {
+        const p = polar(INNER_R, i * 30);
+        const isSelected = selected === n;
+        return (
+          <span
+            key={`i${n}`}
+            className="tabular"
+            style={{
+              position: "absolute", left: p.x - 14, top: p.y - 14, width: 28, height: 28,
+              display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%",
+              fontSize: 12, fontWeight: 600, pointerEvents: "none",
+              color: isSelected ? "#fff" : "var(--muted)",
+            }}
+          >
+            {n === 24 ? 0 : n}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function TimePicker({ value, onChange }) {
+  const { t } = useApp();
+  const [open, setOpen] = useState(false);
+  const [hour, setHour] = useState(0);
+  const [minute, setMinute] = useState(0);
+  const [mode, setMode] = useState("hour");
+  const [manual, setManual] = useState(false);
+
+  function launch() {
+    const [h, m] = value.split(":").map(Number);
+    setHour(h || 0);
+    setMinute(m || 0);
+    setMode("hour");
+    setManual(false);
+    setOpen(true);
+  }
+
+  function confirm() {
+    onChange(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+    setOpen(false);
+  }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        className="flex items-center justify-between"
+        style={{
+          width: "100%", background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: 12, color: "var(--text)", padding: "10px 12px", fontSize: 14, cursor: "pointer",
+        }}
+        onClick={launch}
+      >
+        <span className="tabular">{value}</span>
+        <Clock size={15} style={{ color: "var(--muted)" }} />
+      </button>
+
+      {open && (
+        <div className="modal-overlay" style={{ alignItems: "center", zIndex: 200 }} onClick={() => setOpen(false)}>
+          <div className="modal-center" style={{ maxWidth: 300, padding: 20 }} onClick={(e) => e.stopPropagation()}>
+            <p className="section-title mb-4">{t.dashSelectTimeTitle}</p>
+
+            <div className="flex items-center justify-center gap-2 mb-5">
+              {manual ? (
+                <input
+                  className="tabular text-center"
+                  inputMode="numeric"
+                  style={{
+                    width: 76, height: 60, borderRadius: 8, border: "none",
+                    fontSize: 32, fontWeight: 700, background: "var(--surface2)", color: "var(--text)",
+                  }}
+                  value={String(hour).padStart(2, "0")}
+                  onChange={(e) => setHour(Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)))}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="tabular"
+                  style={{
+                    width: 76, height: 60, borderRadius: 8, border: "none", cursor: "pointer",
+                    fontSize: 32, fontWeight: 700,
+                    background: mode === "hour" ? "var(--accent-soft)" : "var(--surface2)",
+                    color: mode === "hour" ? "var(--accent)" : "var(--text)",
+                  }}
+                  onClick={() => setMode("hour")}
+                >
+                  {String(hour).padStart(2, "0")}
+                </button>
+              )}
+              <span style={{ fontSize: 32, fontWeight: 700, color: "var(--text)" }}>:</span>
+              {manual ? (
+                <input
+                  className="tabular text-center"
+                  inputMode="numeric"
+                  style={{
+                    width: 76, height: 60, borderRadius: 8, border: "none",
+                    fontSize: 32, fontWeight: 700, background: "var(--surface2)", color: "var(--text)",
+                  }}
+                  value={String(minute).padStart(2, "0")}
+                  onChange={(e) => setMinute(Math.max(0, Math.min(59, parseInt(e.target.value, 10) || 0)))}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="tabular"
+                  style={{
+                    width: 76, height: 60, borderRadius: 8, border: "none", cursor: "pointer",
+                    fontSize: 32, fontWeight: 700,
+                    background: mode === "minute" ? "var(--accent-soft)" : "var(--surface2)",
+                    color: mode === "minute" ? "var(--accent)" : "var(--text)",
+                  }}
+                  onClick={() => setMode("minute")}
+                >
+                  {String(minute).padStart(2, "0")}
+                </button>
+              )}
+            </div>
+
+            {!manual && (
+              <DialFace
+                mode={mode}
+                hour={hour}
+                minute={minute}
+                onPick={(v) => (mode === "hour" ? setHour(v) : setMinute(v))}
+                onRelease={() => { if (mode === "hour") setMode("minute"); }}
+              />
+            )}
+
+            <div className="flex items-center justify-between" style={{ marginTop: 20 }}>
+              <button type="button" className="btn-icon" onClick={() => setManual((v) => !v)} aria-label={t.dashTimeKeyboardToggle}>
+                {manual ? <Clock size={18} style={{ color: "var(--muted)" }} /> : <Keyboard size={18} style={{ color: "var(--muted)" }} />}
+              </button>
+              <div className="flex gap-2">
+                <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>{t.cancel}</button>
+                <button type="button" className="btn btn-primary" onClick={confirm}>{t.dashTimeOk}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // `students` are the linked students (id + name); their appointments live in
@@ -35,6 +275,7 @@ export default function CalendarView({ students = [] }) {
   const [month, setMonth] = useState(today.getMonth());
   const [assignFor, setAssignFor] = useState(null);
   const [time, setTime] = useState("18:00");
+  const [apptType, setApptType] = useState(APPT_TYPES[0].id);
   const [pendingRemove, setPendingRemove] = useState(null);
   // Phone only: a 45px cell has no room for name chips, so tapping a day
   // opens its list under the grid instead of going straight to the modal.
@@ -73,7 +314,7 @@ export default function CalendarView({ students = [] }) {
     const c = clients.find((x) => x.id === pickClient);
     if (!c) return;
     const sched = c.schedule.filter((e) => !(e.date === assignFor && e.time === time));
-    await saveSchedule(c.id, [...sched, { date: assignFor, time }]);
+    await saveSchedule(c.id, [...sched, { date: assignFor, time, type: apptType }]);
     setAssignFor(null);
   }
 
@@ -84,6 +325,7 @@ export default function CalendarView({ students = [] }) {
   function openAssign(iso) {
     setAssignFor(iso);
     setPickClient(clients[0]?.id || "");
+    setApptType(APPT_TYPES[0].id);
   }
 
   const label = first.toLocaleString(lang === "pt" ? "pt-PT" : undefined, { month: "long", year: "numeric" });
@@ -105,19 +347,26 @@ export default function CalendarView({ students = [] }) {
           const iso = isoOf(year, month, d);
           const assigned = clientsOn(iso);
           const dayEntries = entriesOn(iso);
+          const isToday = iso === todayISO();
           return (
             <button
               key={i}
               type="button"
-              className={`dash-cal-cell ${openDay === iso ? "open" : ""}`}
+              className={`dash-cal-cell ${openDay === iso ? "open" : ""} ${isToday ? "today" : ""}`}
               onClick={() => (isDesktop ? openAssign(iso) : setOpenDay(iso))}
             >
               <span className="dash-cal-daynum">{d}</span>
               {isDesktop
                 ? assigned.flatMap((c) =>
-                    (c.schedule || []).filter((e) => e.date === iso).map((e, k) => (
-                      <span key={c.id + k} className="dash-cal-chip">{e.time ? `${e.time} ` : ""}{c.name}</span>
-                    )),
+                    (c.schedule || []).filter((e) => e.date === iso).map((e, k) => {
+                      const { Icon } = apptTypeMeta(e.type);
+                      return (
+                        <span key={c.id + k} className="dash-cal-chip flex items-center gap-1">
+                          <Icon size={10} style={{ flexShrink: 0 }} />
+                          {e.time ? `${e.time} ` : ""}{c.name}
+                        </span>
+                      );
+                    }),
                   )
                 : dayEntries.length > 0 && (
                     <span className="dash-cal-dots">
@@ -143,15 +392,19 @@ export default function CalendarView({ students = [] }) {
             <p className="dash-empty">{t.dashNoAppointment}</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {entriesOn(openDay).map(({ client, entry }, k) => (
-                <div key={client.id + k} className="dash-day">
-                  <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
-                  <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
-                  <button className="btn-icon" onClick={() => setPendingRemove({ client, entry })} aria-label={t.delete}>
-                    <X size={15} style={{ color: "var(--muted)" }} />
-                  </button>
-                </div>
-              ))}
+              {entriesOn(openDay).map(({ client, entry }, k) => {
+                const { Icon, label } = apptTypeMeta(entry.type);
+                return (
+                  <div key={client.id + k} className="dash-day">
+                    <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
+                    <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
+                    <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
+                    <button className="btn-icon" onClick={() => setPendingRemove({ client, entry })} aria-label={t.delete}>
+                      <X size={15} style={{ color: "var(--muted)" }} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -181,8 +434,25 @@ export default function CalendarView({ students = [] }) {
                   </select>
                 </div>
                 <div>
+                  <label className="section-title">{t.dashApptType}</label>
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    {APPT_TYPES.map(({ id, Icon, label }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`chip flex items-center gap-1 ${apptType === id ? "active" : ""}`}
+                        onClick={() => setApptType(id)}
+                      >
+                        <Icon size={13} /> {label(t)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label className="section-title">{t.dashTime}</label>
-                  <input className="field mt-2" type="time" step="300" value={time} onChange={(e) => setTime(e.target.value)} />
+                  <div className="mt-2">
+                    <TimePicker value={time} onChange={setTime} />
+                  </div>
                 </div>
                 <button className="btn btn-primary w-full py-3 mt-1" onClick={addAppointment}>{t.dashAssign}</button>
               </div>
@@ -192,12 +462,18 @@ export default function CalendarView({ students = [] }) {
             {isDesktop && clients.some((c) => (c.schedule || []).some((e) => e.date === assignFor)) && (
               <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
                 <div className="flex flex-col gap-2">
-                  {clients.flatMap((c) => (c.schedule || []).filter((e) => e.date === assignFor).map((e, k) => (
-                    <div key={c.id + k} className="flex items-center justify-between text-sm">
-                      <span style={{ color: "var(--text)" }}>{e.time} · {c.name}</span>
-                      <button className="btn-icon" onClick={() => setPendingRemove({ client: c, entry: e })} aria-label={t.delete}><X size={14} style={{ color: "var(--muted)" }} /></button>
-                    </div>
-                  )))}
+                  {clients.flatMap((c) => (c.schedule || []).filter((e) => e.date === assignFor).map((e, k) => {
+                    const { Icon } = apptTypeMeta(e.type);
+                    return (
+                      <div key={c.id + k} className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2" style={{ color: "var(--text)" }}>
+                          <Icon size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
+                          {e.time} · {c.name}
+                        </span>
+                        <button className="btn-icon" onClick={() => setPendingRemove({ client: c, entry: e })} aria-label={t.delete}><X size={14} style={{ color: "var(--muted)" }} /></button>
+                      </div>
+                    );
+                  }))}
                 </div>
               </div>
             )}
