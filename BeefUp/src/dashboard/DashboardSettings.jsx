@@ -15,7 +15,7 @@ export default function DashboardSettings() {
 
   return (
     <div className="dash-cal">
-      <div style={{ maxWidth: 640 }}>
+      <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <h2 className="dash-card-title" style={{ marginBottom: "var(--d-5)" }}>{t.settingsTitle}</h2>
 
         <section className="dash-panel">
