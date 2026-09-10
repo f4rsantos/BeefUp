@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, RefreshCw, Trash2, Check } from "lucide-react";
+import { Copy, Plus, Trash2, Check } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import ConfirmModal from "../components/ConfirmModal";
 import { listInvites, createInvite, revokeInvite } from "../lib/trainerData";
@@ -87,12 +87,12 @@ export default function InviteCodes() {
   }
 
   return (
-    <div className="card mb-5" style={{ maxWidth: 720 }}>
+    <div className="dash-panel mb-5" style={{ maxWidth: 720 }}>
       <h3 className="dash-card-title">{t.dashInvites}</h3>
       <p className="text-sm mb-4" style={{ color: "var(--muted)", lineHeight: 1.6 }}>{t.dashInvitesDesc}</p>
 
       <button className="btn btn-primary flex items-center justify-center gap-2 px-6 py-3 mb-5" disabled={busy} onClick={generate}>
-        <RefreshCw size={16} /> {t.dashNewInvite}
+        <Plus size={16} /> {t.dashNewInvite}
       </button>
 
       {loading ? (
@@ -102,7 +102,7 @@ export default function InviteCodes() {
       ) : (
         <div className="flex flex-col gap-3">
           {invites.map((inv) => (
-            <div key={inv.code} className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div key={inv.code} className="dash-panel" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               {/* The link is what the client needs; a bare code cannot reach this project. */}
               <div
                 style={{
@@ -140,7 +140,7 @@ export default function InviteCodes() {
         </div>
       )}
 
-      {error && <p className="text-sm mt-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+      {error && <p className="text-sm mt-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
       {pendingRevoke && (
         <ConfirmModal

@@ -72,7 +72,7 @@ export default function SyncView() {
   if (editingConfig) {
     return (
       <div className="dash-sync">
-        <div className="card mb-5" style={{ maxWidth: 640 }}>
+        <div className="dash-panel mb-5" style={{ maxWidth: 640 }}>
           <TrainerSetup
             onCancel={() => setEditingConfig(false)}
             onDone={() => { setEditingConfig(false); refreshSession(); }}
@@ -85,7 +85,7 @@ export default function SyncView() {
   if (!configured) {
     return (
       <div className="dash-sync">
-        <div className="card mb-5" style={{ maxWidth: 640 }}>
+        <div className="dash-panel mb-5" style={{ maxWidth: 640 }}>
           <TrainerSetup />
         </div>
       </div>
@@ -99,9 +99,9 @@ export default function SyncView() {
   if (!session) {
     return (
       <div className="dash-sync">
-        <div className="card mb-5" style={{ maxWidth: 420 }}>
+        <div className="dash-panel mb-5" style={{ maxWidth: 420 }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="dash-card-title" style={{ marginBottom: 0 }}>{mode === "signIn" ? t.dashSignIn : t.dashSignUp}</h3>
+            <h3 className="dash-card-title">{mode === "signIn" ? t.dashSignIn : t.dashSignUp}</h3>
             <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => setEditingConfig(true)}>
               <Pencil size={12} /> {host}
             </button>
@@ -135,7 +135,7 @@ export default function SyncView() {
               {mode === "signIn" ? t.dashNeedAccount : t.dashHaveAccount}
             </button>
           </div>
-          {error && <p className="text-sm mt-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+          {error && <p className="text-sm mt-3" style={{ color: "var(--danger)" }}>{error}</p>}
         </div>
       </div>
     );
@@ -143,10 +143,10 @@ export default function SyncView() {
 
   return (
     <div className="dash-sync" style={{ justifyContent: "flex-start", paddingTop: 24 }}>
-      <div className="card mb-5" style={{ maxWidth: 720 }}>
+      <div className="dash-panel mb-5" style={{ maxWidth: 720 }}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="dash-card-title" style={{ marginBottom: 4 }}>
+            <h3 className="dash-card-title">
               {session.user?.user_metadata?.display_name || session.user?.email}
             </h3>
             <p className="flex items-center gap-2 text-sm" style={{ color: "var(--accent)" }}>
@@ -162,7 +162,7 @@ export default function SyncView() {
             </button>
           </div>
         </div>
-        {error && <p className="text-sm mt-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+        {error && <p className="text-sm mt-3" style={{ color: "var(--danger)" }}>{error}</p>}
       </div>
 
       <InviteCodes />

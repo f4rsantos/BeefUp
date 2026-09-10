@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Lock, Dumbbell, Moon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Pencil, Trash2, Dumbbell, Moon } from "lucide-react";
 import ConfirmModal from "../components/ConfirmModal";
 import WorkoutEditor from "../components/WorkoutEditor";
+import { Empty, AuthorBadge } from "./parts";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { isPrescribed, uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import { STORES } from "../lib/stores";
@@ -22,11 +23,11 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
     try {
       const saved = await prescribeRow(client.linkedUserId, STORES.workouts, workout);
       setWorkouts((prev) => {
-        const without = prev.filter((w) => w.id !== saved.id);
-        return [...without, saved];
+        const next = [...prev.filter((w) => w.id !== saved.id), saved];
+        onChanged?.(next);
+        return next;
       });
       setEditing(null);
-      onChanged?.();
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -39,9 +40,12 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
     setError("");
     try {
       await unprescribeRow(client.linkedUserId, STORES.workouts, workout.id);
-      setWorkouts((prev) => prev.filter((w) => w.id !== workout.id));
+      setWorkouts((prev) => {
+        const next = prev.filter((w) => w.id !== workout.id);
+        onChanged?.(next);
+        return next;
+      });
       setPendingDelete(null);
-      onChanged?.();
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -50,30 +54,28 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
   }
 
   return (
-    <section className="card">
+    <section className="dash-panel">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="dash-card-title" style={{ margin: 0 }}>{t.workouts}</h3>
+        <h3 className="dash-card-title">{t.workouts}</h3>
       </div>
       <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribeDesc}</p>
-      {error && <p className="text-sm mb-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+      {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
-      {workouts.length === 0 && (
-        <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoWorkouts}</p>
-      )}
+      {workouts.length === 0 && <Empty>{t.dashNoWorkouts}</Empty>}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {workouts.map((w) => {
           const mine = isPrescribed(w);
           return (
-            <div key={w.id} className="dash-day">
+            <div key={w.id} className={`dash-day ${mine ? "is-mine" : ""}`}>
               <div className="flex-1 min-w-0">
-                <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{w.name}</div>
-                <div className="text-xs" style={{ color: "var(--muted)" }}>
-                  {w.exercises?.length ?? 0} {t.exercises}
-                  {mine ? <> · {t.dashPrescribedByYou}</> : <> · {t.dashClientOwn}</>}
+                <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 700 }}>{w.name}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs" style={{ color: "var(--muted)" }}>{w.exercises?.length ?? 0} {t.exercises}</span>
+                  <AuthorBadge mine={mine} t={t} />
                 </div>
               </div>
-              {mine ? (
+              {mine && (
                 <>
                   <button className="btn-icon" onClick={() => setEditing(w)} aria-label={t.edit} disabled={busy}>
                     <Pencil size={15} style={{ color: "var(--muted)" }} />
@@ -82,8 +84,6 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
                     <Trash2 size={15} style={{ color: "var(--muted)" }} />
                   </button>
                 </>
-              ) : (
-                <Lock size={15} style={{ color: "var(--muted)" }} aria-label={t.dashClientOwn} />
               )}
             </div>
           );
@@ -151,6 +151,23 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
     }
   }
 
+  // The name field used to upsert on every keystroke, and each round trip
+  // flipped `busy`, disabling the controls around it mid-typing. Keep the
+  // typed value local and write once the trainer pauses.
+  const [nameDraft, setNameDraft] = useState(null);
+  const nameTimer = useRef(null);
+
+  function editName(value) {
+    setNameDraft(value);
+    clearTimeout(nameTimer.current);
+    nameTimer.current = setTimeout(() => {
+      persist({ ...plan, name: value });
+      setNameDraft(null);
+    }, 600);
+  }
+
+  useEffect(() => () => clearTimeout(nameTimer.current), []);
+
   function createPlan() {
     persist({ id: uid(), name: "", startDate: todayISO(), days: [] });
   }
@@ -182,9 +199,9 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
   }
 
   return (
-    <section className="card">
+    <section className="dash-panel">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="dash-card-title" style={{ margin: 0 }}>{t.editPlan}</h3>
+        <h3 className="dash-card-title">{t.editPlan}</h3>
         {plan && (
           <button className="btn-icon" onClick={() => setPendingUnprescribe(true)} aria-label={t.delete} disabled={busy}>
             <Trash2 size={15} style={{ color: "var(--muted)" }} />
@@ -192,7 +209,7 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
         )}
       </div>
       <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribePlanDesc}</p>
-      {error && <p className="text-sm mb-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+      {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
       {!plan ? (
         <>
@@ -206,10 +223,9 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
           <label className="section-title">{t.planName}</label>
           <input
             className="field mt-2 mb-5"
-            value={plan.name}
-            onChange={(e) => persist({ ...plan, name: e.target.value })}
+            value={nameDraft ?? plan.name}
+            onChange={(e) => editName(e.target.value)}
             placeholder="PPL"
-            disabled={busy}
           />
 
           <div className="flex flex-col gap-3">

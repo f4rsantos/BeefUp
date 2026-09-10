@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { formatDateShort } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
 
 function localizedDow(lang) {
@@ -17,9 +18,16 @@ function isoOf(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
-export default function CalendarView() {
-  const { t, lang, clients, saveClient } = useApp();
+// `students` are the linked students (id + name); their appointments live in
+// the local `clients` store, which holds the trainer's own annotations keyed
+// by student id. Merged here so the calendar reads one list.
+export default function CalendarView({ students = [] }) {
+  const { t, lang, clients: annotations, saveClient } = useApp();
   const dow = useMemo(() => localizedDow(lang), [lang]);
+  const clients = useMemo(
+    () => students.map((s) => ({ ...s, schedule: annotations.find((a) => a.id === s.id)?.schedule || [] })),
+    [students, annotations],
+  );
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -43,16 +51,22 @@ export default function CalendarView() {
 
   const [pickClient, setPickClient] = useState("");
 
+  // Writes only the annotation record, never the student's own synced data.
+  async function saveSchedule(id, schedule) {
+    const existing = annotations.find((a) => a.id === id) || { id };
+    await saveClient({ ...existing, schedule });
+  }
+
   async function addAppointment() {
     const c = clients.find((x) => x.id === pickClient);
     if (!c) return;
-    const sched = (c.schedule || []).filter((e) => !(e.date === assignFor && e.time === time));
-    await saveClient({ ...c, schedule: [...sched, { date: assignFor, time }] });
+    const sched = c.schedule.filter((e) => !(e.date === assignFor && e.time === time));
+    await saveSchedule(c.id, [...sched, { date: assignFor, time }]);
     setAssignFor(null);
   }
 
   async function removeAppointment(client, entry) {
-    await saveClient({ ...client, schedule: (client.schedule || []).filter((e) => !(e.date === entry.date && e.time === entry.time)) });
+    await saveSchedule(client.id, client.schedule.filter((e) => !(e.date === entry.date && e.time === entry.time)));
   }
 
   function openAssign(iso) {
@@ -60,7 +74,7 @@ export default function CalendarView() {
     setPickClient(clients[0]?.id || "");
   }
 
-  const label = first.toLocaleString(undefined, { month: "long", year: "numeric" });
+  const label = first.toLocaleString(lang === "pt" ? "pt-PT" : undefined, { month: "long", year: "numeric" });
 
   return (
     <div className="dash-cal">
@@ -79,14 +93,14 @@ export default function CalendarView() {
           const iso = isoOf(year, month, d);
           const assigned = clientsOn(iso);
           return (
-            <div key={i} className="dash-cal-cell" onClick={() => openAssign(iso)}>
+            <button key={i} type="button" className="dash-cal-cell" onClick={() => openAssign(iso)}>
               <span className="dash-cal-daynum">{d}</span>
               {assigned.flatMap((c) =>
                 (c.schedule || []).filter((e) => e.date === iso).map((e, k) => (
                   <span key={c.id + k} className="dash-cal-chip">{e.time ? `${e.time} ` : ""}{c.name}</span>
                 )),
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -94,7 +108,7 @@ export default function CalendarView() {
       {assignFor && (
         <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setAssignFor(null)}>
           <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-            <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", marginBottom: 20 }}>{assignFor}</h3>
+            <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", marginBottom: 20 }}>{formatDateShort(assignFor)}</h3>
 
             {clients.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoClients}</p>

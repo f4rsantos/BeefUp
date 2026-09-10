@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Apple, Database, Dumbbell, Monitor, Moon, RefreshCw, Sparkles, Sun, UserCheck, Volume2 } from "lucide-react";
+import { Apple, Database, Dumbbell, RefreshCw, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { buildDemoPreset } from "../lib/demoData";
-import { PRESET_ACCENTS } from "../lib/colorTheme";
+import { accentHexOf } from "../lib/colorTheme";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getLink, setScopes as applyScopes, unlink } from "../lib/sync/link";
 import { useSync } from "../lib/sync/useSync";
 import AccentColorModal from "../components/AccentColorModal";
+import { ThemeButtons, FontScaleButtons, LanguageButtons } from "../components/PreferenceControls";
 import BackupSection from "../components/BackupSection";
 import ConfirmModal from "../components/ConfirmModal";
 import PageHeader from "../components/PageHeader";
@@ -16,24 +17,10 @@ const SCOPE_IDS = ["workouts", "nutrition", "measures"];
 
 const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
 
-function selectableButtonStyle(selected) {
-  return {
-    background: selected ? "var(--grad-accent)" : "transparent",
-    color: selected ? "#fff" : "var(--muted)",
-    border: selected ? "none" : "1px solid var(--border)",
-    borderRadius: 12,
-  };
-}
-
 export default function SettingsPage() {
   const {
     t,
     lang,
-    setLang,
-    theme,
-    setTheme,
-    fontScale,
-    setFontScale,
     soundEnabled,
     setSoundEnabled,
     accentColor,
@@ -113,22 +100,7 @@ export default function SettingsPage() {
     setSectionPrefs(next);
   }
 
-  const currentAccentHex = accentColor === "custom"
-    ? customAccentHex
-    : PRESET_ACCENTS.find((p) => p.id === accentColor)?.hex ?? PRESET_ACCENTS[0].hex;
-
-  const themeOptions = [
-    { id: "light", Icon: Sun, label: t.themeLight },
-    { id: "dark", Icon: Moon, label: t.themeDark },
-    { id: "system", Icon: Monitor, label: t.themeSystem },
-  ];
-
-  const fontScaleOptions = [
-    { id: "small", size: 14, label: t.fontSizeSmall },
-    { id: "medium", size: 17, label: t.fontSizeMedium },
-    { id: "large", size: 20, label: t.fontSizeLarge },
-    { id: "extraLarge", size: 23, label: t.fontSizeExtraLarge },
-  ];
+  const currentAccentHex = accentHexOf(accentColor, customAccentHex);
 
   async function loadDemoPreset() {
     setLoadingDemo(true);
@@ -161,17 +133,7 @@ export default function SettingsPage() {
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>{t.theme}</p>
           <div className="card flex gap-2 p-2">
-            {themeOptions.map(({ id, Icon, label }) => (
-              <button
-                key={id}
-                onClick={() => setTheme(id)}
-                className="btn flex-1 flex-col gap-1 py-3 text-xs"
-                style={selectableButtonStyle(theme === id)}
-              >
-                <Icon size={16} />
-                {label}
-              </button>
-            ))}
+            <ThemeButtons />
           </div>
         </section>
 
@@ -200,17 +162,7 @@ export default function SettingsPage() {
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>{t.fontSize}</p>
           <div className="card flex gap-2 p-2">
-            {fontScaleOptions.map(({ id, size, label }) => (
-              <button
-                key={id}
-                onClick={() => setFontScale(id)}
-                className="btn flex-1 flex-col gap-1 py-3 text-xs"
-                style={selectableButtonStyle(fontScale === id)}
-              >
-                <span style={{ fontSize: size, fontWeight: 800, lineHeight: 1 }}>A</span>
-                {label}
-              </button>
-            ))}
+            <FontScaleButtons />
           </div>
         </section>
 
@@ -238,19 +190,7 @@ export default function SettingsPage() {
         <section>
           <p className="section-title" style={{ marginBottom: 6 }}>{t.language}</p>
           <div className="card flex gap-2 p-2">
-            {[
-              { id: "pt", label: t.langPt },
-              { id: "en", label: t.langEn },
-            ].map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setLang(id)}
-                className="btn flex-1 py-3 text-sm"
-                style={selectableButtonStyle(lang === id)}
-              >
-                {label}
-              </button>
-            ))}
+            <LanguageButtons />
           </div>
         </section>
 

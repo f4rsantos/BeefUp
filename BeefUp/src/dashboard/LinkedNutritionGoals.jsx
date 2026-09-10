@@ -57,9 +57,9 @@ export default function LinkedNutritionGoals({ client, goals: initialGoals, t })
   }
 
   return (
-    <section className="card">
+    <section className="dash-panel">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="dash-card-title" style={{ margin: 0 }}>{t.nutritionGoals}</h3>
+        <h3 className="dash-card-title">{t.nutritionGoals}</h3>
         {goals && !editing && (
           <div className="flex items-center gap-2">
             <button className="btn-icon" onClick={() => setEditing(true)} aria-label={t.edit} disabled={busy}>
@@ -72,7 +72,7 @@ export default function LinkedNutritionGoals({ client, goals: initialGoals, t })
         )}
       </div>
       <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribeGoalsDesc}</p>
-      {error && <p className="text-sm mb-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+      {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
       {!goals && !editing && (
         <>

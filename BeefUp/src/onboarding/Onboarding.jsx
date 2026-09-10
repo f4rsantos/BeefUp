@@ -147,7 +147,7 @@ export default function Onboarding() {
             onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
           />
           {accountError && (
-            <p className="text-sm" style={{ color: "var(--accent-2, orange)" }}>{accountError}</p>
+            <p className="text-sm" style={{ color: "var(--danger)" }}>{accountError}</p>
           )}
           <button
             className="btn btn-ghost text-sm"

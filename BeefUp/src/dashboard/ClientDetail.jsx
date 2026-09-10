@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, User, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, Lock, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort } from "../lib/planUtils";
+import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort, isPrescribed } from "../lib/planUtils";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { macroGoalShares, MICRO_COLORS } from "../lib/nutritionCalc";
 import { MICRONUTRIENTS } from "../lib/foodProvider";
@@ -10,149 +10,20 @@ import { MEASURE_GROUPS, LEGACY_TYPE_MAP, getMeasureUnit, measureTypeLabel, UNIT
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import { resolvedExerciseName } from "../lib/exerciseTree";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
-import { getClientData, unlinkClient, prescribeRow } from "../lib/trainerData";
+import { getClientData, unlinkClient, prescribeRow, unprescribeRow } from "../lib/trainerData";
+import { isDashDemo, demoClientData } from "./demoFixture";
 import { STORES } from "../lib/stores";
-import ClientGym from "./ClientGym";
 import { LinkedPlan, LinkedWorkoutsList } from "./LinkedClientGym";
 import LinkedNutritionGoals from "./LinkedNutritionGoals";
 import ConfirmModal from "../components/ConfirmModal";
+import { Empty, Skeleton } from "./parts";
 import NumberField from "../components/NumberField";
 import MacroRing from "../components/MacroRing";
 
 const MAX_MEASURE_VALUE = 1000;
 
-// Same current type set solo users' Measures page uses — client.measures can
-// still carry pre-migration type names (e.g. "arms"), which have no
-// matching `measureType_*` string and used to render as literal "undefined".
+// Same current type set solo users' Measures page uses.
 const MEASURE_TYPES = MEASURE_GROUPS.flatMap((g) => g.types);
-
-export default function ClientDetail({ client, onDeleted }) {
-  if (client.linkedUserId) return <LinkedClientDetail client={client} onUnlinked={onDeleted} />;
-  return <ManualClientDetail client={client} onDeleted={onDeleted} />;
-}
-
-function ManualClientDetail({ client, onDeleted }) {
-  const { t, saveClient, deleteClient } = useApp();
-  const [section, setSection] = useState("overview");
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-  const sections = [
-    { id: "overview", Icon: LayoutDashboard, label: t.dashOverview },
-    { id: "gym", Icon: Dumbbell, label: t.dashGym },
-    { id: "measures", Icon: Ruler, label: t.dashMeasures },
-    { id: "notes", Icon: StickyNote, label: t.dashNotes },
-  ];
-
-  async function remove() {
-    await deleteClient(client.id);
-    onDeleted?.();
-  }
-
-  return (
-    <div className="dash-detail-wrap">
-      <div className="dash-detail-head">
-        <div>
-          <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>{client.name}</h2>
-          <p className="flex items-center gap-2 text-sm" style={{ color: "var(--muted)" }}>
-            <User size={13} /> {t.dashManual}
-          </p>
-          {client.info && <p className="text-sm" style={{ color: "var(--muted)" }}>{client.info}</p>}
-        </div>
-        <button className="btn btn-ghost btn-icon" onClick={() => setConfirmingDelete(true)} title={t.dashDelete} aria-label={t.dashDelete}>
-          <Trash2 size={16} />
-        </button>
-      </div>
-
-      {confirmingDelete && (
-        <ConfirmModal
-          title={t.deleteClientTitle.replace("{name}", client.name)}
-          message={t.deleteClientConfirm}
-          cancelLabel={t.cancel}
-          confirmLabel={t.delete}
-          onCancel={() => setConfirmingDelete(false)}
-          onConfirm={remove}
-        />
-      )}
-
-      <div className="dash-detail-body">
-        <nav className="dash-subnav">
-          {sections.map(({ id, Icon, label }) => (
-            <button key={id} className={`dash-subnav-item ${section === id ? "active" : ""}`} onClick={() => setSection(id)}>
-              <Icon size={16} /> <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="dash-section">
-          {section === "overview" && <Overview client={client} />}
-          {section === "gym" && <ClientGym client={client} />}
-          {section === "measures" && <Measures client={client} saveClient={saveClient} t={t} />}
-          {section === "notes" && <Notes client={client} saveClient={saveClient} t={t} />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function latestOf(measures, type) {
-  const list = (measures || []).filter((m) => m.type === type).sort((a, b) => b.date.localeCompare(a.date));
-  return list[0] || null;
-}
-
-function Overview({ client }) {
-  const { t } = useApp();
-  const upcoming = (client.schedule || []).slice().sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).filter((e) => e.date >= todayISO());
-  const weight = latestOf(client.measures, "weight");
-  const lastNote = (client.notes || [])[(client.notes || []).length - 1];
-  const next = upcoming[0];
-  const weightChart = measurementsForType(client.measures || [], "weight");
-
-  return (
-    <div className="dash-grid">
-      <div className="card">
-        <p className="section-title mb-3">{t.dashMeasures}</p>
-        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
-          {weight ? `${weight.value}` : "—"}
-          <span className="text-sm" style={{ color: "var(--muted)" }}> kg</span>
-        </div>
-        {weightChart.length > 1 && (
-          <div style={{ width: "100%", height: 90, marginTop: 8 }}>
-            <ResponsiveContainer>
-              <LineChart data={weightChart}><Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2} dot={false} /></LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-      <div className="card">
-        <p className="section-title mb-3">{t.dashGym}</p>
-        <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{client.plan?.name || t.dashUnassigned}</div>
-        <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{client.plan?.days?.length || 0} {t.days} · {(client.workouts || []).length} {t.workouts.toLowerCase()}</p>
-      </div>
-      <div className="card">
-        <p className="section-title mb-3">{t.dashCalendar}</p>
-        {next ? (
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{next.date}</div>
-            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{next.time || "—"}</p>
-          </div>
-        ) : (
-          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashUnassigned}</p>
-        )}
-      </div>
-      <div className="card">
-        <p className="section-title mb-3">{t.dashNotes}</p>
-        {lastNote ? (
-          <div>
-            <p className="text-sm" style={{ color: "var(--text)", whiteSpace: "pre-wrap" }}>{lastNote.text}</p>
-            <span className="text-xs" style={{ color: "var(--muted)" }}>{lastNote.date}</span>
-          </div>
-        ) : (
-          <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Same chart+history card client's own MeasuresPage.jsx uses, minus the
 // title — the trainer picks a type via chips instead. Value input mirrors
@@ -181,7 +52,7 @@ function MeasureCard({ t, chartData, history, unit, onDelete, onSave, saveError 
   }
 
   return (
-    <div className="card flex flex-col gap-3">
+    <div className="dash-panel flex flex-col gap-3">
       {onSave && (
         <div className="flex gap-3 items-center">
           <div className="flex-1" style={{ position: "relative" }}>
@@ -234,95 +105,18 @@ function MeasureCard({ t, chartData, history, unit, onDelete, onSave, saveError 
             <div key={m.id} className="flex items-center justify-between text-sm" style={{ padding: "8px 0" }}>
               <span style={{ color: "var(--muted)" }}>{m.dateLabel}</span>
               <div className="flex items-center gap-3">
-                <span style={{ color: "var(--text)" }}>{m.value} {unit}</span>
-                {onDelete && (
+                <span className="tabular" style={{ color: "var(--text)" }}>{m.value} {unit}</span>
+                {onDelete && isPrescribed(m) ? (
                   <button onClick={() => onDelete(m.id)} aria-label={t.delete} title={t.delete} style={{ color: "var(--muted)", display: "flex" }}>
                     <X size={16} />
                   </button>
-                )}
+                ) : onDelete ? (
+                  <Lock size={13} style={{ color: "var(--muted)" }} aria-label={t.dashClientOwn} />
+                ) : null}
               </div>
             </div>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-function Measures({ client, saveClient, t }) {
-  const [mType, setMType] = useState("weight");
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [addingType, setAddingType] = useState(false);
-
-  // Mirrors the migration AppContext.jsx already runs for the solo user's
-  // own `measurements` (LEGACY_TYPE_MAP) — client.measures never went
-  // through that pass since it lives on the client record, not the
-  // top-level measurements store.
-  const measures = useMemo(
-    () => (client.measures || []).map((m) => (LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m)),
-    [client.measures],
-  );
-
-  const customTypes = client.measureTypes || [];
-
-  useEffect(() => {
-    const raw = client.measures || [];
-    const changed = measures.some((m, i) => m.type !== raw[i]?.type);
-    if (changed) saveClient({ ...client, measures });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [measures]);
-
-  async function removeMeasure(id) {
-    await saveClient({ ...client, measures: measures.filter((m) => m.id !== id) });
-  }
-
-  async function addMeasure(value) {
-    const entry = { id: uid(), date: todayISO(), type: mType, value };
-    await saveClient({ ...client, measures: [...measures, entry] });
-  }
-
-  async function addType(name, unit) {
-    const type = { id: uid(), name, unit };
-    await saveClient({ ...client, measureTypes: [...customTypes, type] });
-    setMType(type.id);
-  }
-
-  const chart = measurementsForType(measures, mType);
-  const history = useMemo(() => [...chart].reverse(), [chart]);
-  const unit = getMeasureUnit(mType, customTypes);
-
-  return (
-    <div className="dash-measures">
-      <div className="flex gap-2" style={{ flexWrap: "wrap", marginBottom: 28 }}>
-        {MEASURE_TYPES.map((m) => (
-          <button key={m} className={`chip ${mType === m ? "active" : ""}`} onClick={() => setMType(m)}>{measureTypeLabel(m, customTypes, t)}</button>
-        ))}
-        {customTypes.map((m) => (
-          <button key={m.id} className={`chip ${mType === m.id ? "active" : ""}`} onClick={() => setMType(m.id)}>{measureTypeLabel(m.id, customTypes, t)}</button>
-        ))}
-        <button className="chip chip-add" onClick={() => setAddingType(true)} aria-label={t.measureAddTypeAria}>{t.measureAddTypePill}</button>
-      </div>
-
-      <MeasureCard t={t} chartData={chart} history={history} unit={unit} onDelete={(id) => setPendingDelete(id)} onSave={addMeasure} />
-
-      {addingType && (
-        <AddMeasureTypeModal
-          t={t}
-          existingNames={[...MEASURE_TYPES.map((m) => t[`measureType_${m}`]), ...customTypes.map((m) => m.name)]}
-          onCancel={() => setAddingType(false)}
-          onAdd={(name, unit) => { addType(name, unit); setAddingType(false); }}
-        />
-      )}
-
-      {pendingDelete && (
-        <ConfirmModal
-          title={t.deleteMeasureTitle}
-          message={t.cannotUndo}
-          cancelLabel={t.cancel}
-          confirmLabel={t.delete}
-          onCancel={() => setPendingDelete(null)}
-          onConfirm={() => { removeMeasure(pendingDelete); setPendingDelete(null); }}
-        />
       )}
     </div>
   );
@@ -380,7 +174,7 @@ function AddMeasureTypeModal({ t, existingNames, onCancel, onAdd }) {
             onChange={(e) => { setCustomUnit(e.target.value); setError(""); }}
           />
         )}
-        {error && <p className="text-sm" style={{ color: "var(--accent-2, orange)", marginBottom: 6 }}>{error}</p>}
+        {error && <p className="text-sm" style={{ color: "var(--danger)", marginBottom: 6 }}>{error}</p>}
         <div className="flex gap-3 mt-3">
           <button className="btn btn-ghost flex-1" onClick={onCancel}>{t.cancel}</button>
           <button className="btn btn-primary flex-1" onClick={submit}>{t.add}</button>
@@ -406,7 +200,7 @@ function Notes({ client, saveClient, t }) {
 
   return (
     <div className="dash-notes">
-      <div className="card mb-5">
+      <div className="dash-panel mb-5">
         <textarea
           className="field"
           style={{ minHeight: 120, resize: "vertical", lineHeight: 1.5 }}
@@ -418,7 +212,7 @@ function Notes({ client, saveClient, t }) {
       </div>
       <div className="flex flex-col gap-4">
         {(client.notes || []).slice().reverse().map((n) => (
-          <div key={n.id} className="card flex items-start justify-between gap-4">
+          <div key={n.id} className="dash-panel flex items-start justify-between gap-4">
             <div style={{ flex: 1 }}>
               <span style={{ color: "var(--muted)", fontSize: 12 }}>{n.date}</span>
               <p className="text-sm mt-1" style={{ color: "var(--text)", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{n.text}</p>
@@ -445,14 +239,14 @@ function Notes({ client, saveClient, t }) {
   );
 }
 
-function LinkedClientDetail({ client, onUnlinked }) {
-  const { t, lang } = useApp();
-  const configured = useSupabaseConfigured();
+export default function ClientDetail({ client, onUnlinked }) {
+  const { t, lang, clients, saveClient } = useApp();
+  const configured = useSupabaseConfigured() || isDashDemo();
   const [section, setSection] = useState("overview");
   const [gymSub, setGymSub] = useState("plan");
   const [nutritionSub, setNutritionSub] = useState("goals");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(configured);
+  const [data, setData] = useState(() => (isDashDemo() ? demoClientData(client.linkedUserId) : null));
+  const [loading, setLoading] = useState(configured && !isDashDemo());
   const [error, setError] = useState("");
   const [confirmingUnlink, setConfirmingUnlink] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
@@ -462,8 +256,13 @@ function LinkedClientDetail({ client, onUnlinked }) {
   const hasNutrition = scopes.includes("nutrition");
   const hasMeasures = scopes.includes("measures");
 
+  // The trainer's own private annotations about this student, kept in the
+  // local `clients` store keyed by the student's user id. Never synced —
+  // these are the trainer's notes, not the student's data.
+  const annotations = clients.find((c) => c.id === client.linkedUserId) || { id: client.linkedUserId };
+
   useEffect(() => {
-    if (!configured) return;
+    if (isDashDemo() || !configured) return;
     let cancelled = false;
     function run() {
       setLoading(true);
@@ -491,39 +290,43 @@ function LinkedClientDetail({ client, onUnlinked }) {
     }
   }
 
-  const sections = [
-    { id: "overview", Icon: LayoutDashboard, label: t.dashOverview },
-    ...(hasWorkouts
-      ? [{
-          id: "gym", Icon: Dumbbell, label: t.dashGym,
-          children: [
-            { id: "plan", label: t.dashPlanTab },
-            { id: "workouts", label: t.workouts },
-            { id: "sessions", label: t.dashSessions },
-          ],
-          sub: gymSub, setSub: setGymSub,
-        }]
-      : []),
-    ...(hasNutrition
-      ? [{
-          id: "nutrition", Icon: Utensils, label: t.dashNutrition,
-          children: [
-            { id: "goals", label: t.nutritionGoals },
-            { id: "daily", label: t.dashDailyData },
-          ],
-          sub: nutritionSub, setSub: setNutritionSub,
-        }]
-      : []),
-    ...(hasMeasures ? [{ id: "measures", Icon: Ruler, label: t.dashMeasures }] : []),
+  // Every area is always listed. One the student hasn't shared stays visible
+  // but says so — a section that silently vanishes leaves the trainer
+  // wondering whether the feature exists at all.
+  const areas = [
+    { id: "overview", Icon: LayoutDashboard, label: t.dashOverview, shared: true },
+    {
+      id: "gym", Icon: Dumbbell, label: t.dashGym, shared: hasWorkouts,
+      views: [
+        { id: "plan", label: t.dashPlanTab },
+        { id: "workouts", label: t.workouts },
+        { id: "sessions", label: t.dashSessions },
+      ],
+      view: gymSub, setView: setGymSub,
+    },
+    {
+      id: "nutrition", Icon: Utensils, label: t.dashNutrition, shared: hasNutrition,
+      views: [
+        { id: "goals", label: t.nutritionGoals },
+        { id: "daily", label: t.dashDailyData },
+      ],
+      view: nutritionSub, setView: setNutritionSub,
+    },
+    { id: "measures", Icon: Ruler, label: t.dashMeasures, shared: hasMeasures },
+    { id: "notes", Icon: StickyNote, label: t.dashNotes, shared: true },
   ];
+  const area = areas.find((a) => a.id === section) || areas[0];
+  const sharedScopes = areas.filter((a) => a.shared && a.views).map((a) => a.label.toLowerCase());
 
   return (
     <div className="dash-detail-wrap">
       <div className="dash-detail-head">
-        <div>
-          <h2 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>{client.name}</h2>
-          <p className="flex items-center gap-2 text-sm" style={{ color: "var(--accent)" }}>
-            <LinkIcon size={13} /> {t.dashLinked}
+        <div style={{ minWidth: 0 }}>
+          <h2 className="dash-client-name">{client.name}</h2>
+          <p className="dash-client-meta">
+            <LinkIcon size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+            <span style={{ color: "var(--accent)" }}>{t.dashLinked}</span>
+            {sharedScopes.length > 0 && <span> · {sharedScopes.join(", ")}</span>}
           </p>
         </div>
         {configured && (
@@ -550,46 +353,67 @@ function LinkedClientDetail({ client, onUnlinked }) {
         </div>
       ) : loading ? (
         <div className="dash-section">
-          <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>
+          <Skeleton rows={4} />
         </div>
       ) : error ? (
         <div className="dash-section">
-          <p className="text-sm" style={{ color: "var(--accent-2, orange)" }}>{error}</p>
+          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
         </div>
       ) : (
-        <div className="dash-detail-body">
-          <nav className="dash-subnav">
-            {sections.map((s) => (
-              <div key={s.id}>
-                <button className={`dash-subnav-item ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>
-                  <s.Icon size={16} /> <span className="flex-1">{s.label}</span>
-                  {s.children && (
-                    <ChevronDown size={14} style={{ transform: section === s.id ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-                  )}
-                </button>
-                {s.children && section === s.id && (
-                  <div className="flex flex-col" style={{ gap: 2, marginLeft: 22, marginTop: 2, marginBottom: 4 }}>
-                    {s.children.map((c) => (
-                      <button
-                        key={c.id}
-                        className={`dash-subnav-item ${s.sub === c.id ? "active" : ""}`}
-                        style={{ padding: "8px 14px", fontSize: 13, fontWeight: 500 }}
-                        onClick={() => s.setSub(c.id)}
-                      >
-                        <span>{c.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+        <>
+          <nav className="dash-areas">
+            {areas.map((a) => (
+              <button
+                key={a.id}
+                className={`dash-area ${section === a.id ? "active" : ""}`}
+                onClick={() => setSection(a.id)}
+              >
+                <a.Icon size={15} />
+                <span>{a.label}</span>
+                {!a.shared && <Lock size={12} style={{ opacity: 0.7 }} />}
+              </button>
             ))}
           </nav>
+
           <div className="dash-section">
-            {section === "overview" && <LinkedOverview data={data} hasWorkouts={hasWorkouts} hasMeasures={hasMeasures} t={t} />}
+            {area.shared && area.views && (
+              <div className="pill-toggle dash-views">
+                {area.views.map((v) => (
+                  <button
+                    key={v.id}
+                    className={`pill-option ${area.view === v.id ? "active" : ""}`}
+                    onClick={() => area.setView(v.id)}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!area.shared && <ScopeNotShared label={area.label} t={t} />}
+
+            {section === "overview" && (
+              <LinkedOverview
+                data={data}
+                annotations={annotations}
+                hasWorkouts={hasWorkouts}
+                hasNutrition={hasNutrition}
+                hasMeasures={hasMeasures}
+                t={t}
+              />
+            )}
             {section === "gym" && hasWorkouts && (
               <>
                 {gymSub === "plan" && <LinkedPlan client={client} plans={data.plans || []} workouts={data.workouts || []} t={t} />}
-                {gymSub === "workouts" && <LinkedWorkoutsList client={client} workouts={data.workouts || []} lang={lang} t={t} />}
+                {gymSub === "workouts" && (
+                  <LinkedWorkoutsList
+                    client={client}
+                    workouts={data.workouts || []}
+                    lang={lang}
+                    t={t}
+                    onChanged={(next) => setData((d) => ({ ...d, workouts: next }))}
+                  />
+                )}
                 {gymSub === "sessions" && <LinkedSessions sessions={data.sessions || []} lang={lang} t={t} />}
               </>
             )}
@@ -602,41 +426,140 @@ function LinkedClientDetail({ client, onUnlinked }) {
             {section === "measures" && hasMeasures && (
               <LinkedMeasures client={client} measurements={data.measurements || []} customTypes={data.measureTypes || []} t={t} />
             )}
+            {section === "notes" && <Notes client={annotations} saveClient={saveClient} t={t} />}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 }
 
-function LinkedOverview({ data, hasWorkouts, hasMeasures, t }) {
+function ScopeNotShared({ label, t }) {
+  return (
+    <section className="dash-panel">
+      <h3 className="dash-card-title">{label}</h3>
+      <p className="dash-panel-desc" style={{ marginBottom: 0 }}>{t.dashScopeNotShared}</p>
+    </section>
+  );
+}
+
+function OverviewCard({ label, children }) {
+  return (
+    <div className="dash-panel">
+      <p className="section-title mb-3">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function LinkedOverview({ data, annotations, hasWorkouts, hasNutrition, hasMeasures, t }) {
   const sessions = data.sessions || [];
   const measurements = data.measurements || [];
   const stats = hasWorkouts ? computeOverallStats(sessions) : null;
-  const weight = hasMeasures ? measurementsForType(measurements, "weight").slice(-1)[0] : null;
-
-  if (!hasWorkouts && !hasMeasures) {
-    return <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNothingShared}</p>;
-  }
+  const lastSession = hasWorkouts
+    ? sessions.slice().sort((a, b) => b.date.localeCompare(a.date))[0]
+    : null;
+  const weightChart = hasMeasures ? measurementsForType(measurements, "weight") : [];
+  const weight = weightChart.slice(-1)[0];
+  const plan = (data.plans || []).find((p) => isPrescribed(p)) || null;
+  const goals = data.nutritionGoals?.[0] || null;
+  const nextAppointment = (annotations?.schedule || [])
+    .slice()
+    .filter((e) => e.date >= todayISO())
+    .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")))[0];
+  const lastNote = (annotations?.notes || []).slice(-1)[0];
 
   return (
     <div className="dash-grid">
-      {hasWorkouts && (
-        <div className="card">
-          <p className="section-title mb-3">{t.dashSessions}</p>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>{stats.totalSessions}</div>
-          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{stats.totalSets} {t.sets.toLowerCase()}</p>
-        </div>
-      )}
-      {hasMeasures && (
-        <div className="card">
-          <p className="section-title mb-3">{t.dashMeasures}</p>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
-            {weight ? weight.value : "—"}
-            <span className="text-sm" style={{ color: "var(--muted)" }}> kg</span>
-          </div>
-        </div>
-      )}
+      <OverviewCard label={t.dashSessions}>
+        {hasWorkouts ? (
+          <>
+            <div className="dash-stat">{stats.totalSessions}</div>
+            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+              {stats.totalSets} {t.sets.toLowerCase()}
+              {lastSession && <> · {t.dashLastSession} {formatDateShort(lastSession.date)}</>}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashScopeNotShared}</p>
+        )}
+      </OverviewCard>
+
+      <OverviewCard label={t.dashMeasures}>
+        {hasMeasures ? (
+          <>
+            <div className="dash-stat">
+              {weight ? weight.value : "—"}
+              <span className="text-sm" style={{ color: "var(--muted)", fontWeight: 500 }}> kg</span>
+            </div>
+            {weightChart.length > 1 && (
+              <div style={{ width: "100%", height: 70, marginTop: 8 }}>
+                <ResponsiveContainer>
+                  <LineChart data={weightChart}>
+                    <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashScopeNotShared}</p>
+        )}
+      </OverviewCard>
+
+      <OverviewCard label={t.dashGym}>
+        {hasWorkouts ? (
+          <>
+            <div className="dash-panel-strong">{plan ? plan.name || t.editPlan : t.dashNoPlan}</div>
+            {plan && (
+              <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+                {plan.days?.length || 0} {t.days} · {(data.workouts || []).length} {t.workouts.toLowerCase()}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashScopeNotShared}</p>
+        )}
+      </OverviewCard>
+
+      <OverviewCard label={t.dashNutrition}>
+        {hasNutrition ? (
+          goals ? (
+            <>
+              <div className="dash-panel-strong tabular">{goals.kcal} {t.kcal}</div>
+              <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+                {goals.protein}g / {goals.carbs}g / {goals.fat}g
+              </p>
+            </>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoGoals}</p>
+          )
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashScopeNotShared}</p>
+        )}
+      </OverviewCard>
+
+      <OverviewCard label={t.dashCalendar}>
+        {nextAppointment ? (
+          <>
+            <div className="dash-panel-strong">{formatDateShort(nextAppointment.date)}</div>
+            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{nextAppointment.time || "—"}</p>
+          </>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoAppointment}</p>
+        )}
+      </OverviewCard>
+
+      <OverviewCard label={t.dashNotes}>
+        {lastNote ? (
+          <>
+            <p className="text-sm" style={{ color: "var(--text)", whiteSpace: "pre-wrap" }}>{lastNote.text}</p>
+            <span className="text-xs" style={{ color: "var(--muted)" }}>{formatDateShort(lastNote.date)}</span>
+          </>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoNotes}</p>
+        )}
+      </OverviewCard>
     </div>
   );
 }
@@ -645,9 +568,9 @@ function LinkedSessions({ sessions, lang, t }) {
   const recent = sessions.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
   return (
     <div className="flex flex-col gap-3">
-      {recent.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
+      {recent.length === 0 && <Empty>{t.dashNoSessions}</Empty>}
       {recent.map((s) => (
-        <div key={s.id} className="card">
+        <div key={s.id} className="dash-panel">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm" style={{ color: "var(--muted)" }}>{Math.round(sessionVolume(s))} kg · {sessionSets(s)} {t.sets.toLowerCase()}</span>
             <span style={{ fontWeight: 700, color: "var(--text)" }}>{formatDateTimeShort(s.date)}</span>
@@ -675,8 +598,8 @@ function LinkedNutrition({ foodLog, goals, t }) {
 
   if (days.length === 0) {
     return (
-      <section className="card">
-        <h3 className="dash-card-title" style={{ marginBottom: 12 }}>{t.dashNutrition}</h3>
+      <section className="dash-panel">
+        <h3 className="dash-card-title">{t.dashNutrition}</h3>
         <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoNutritionData}</p>
       </section>
     );
@@ -710,8 +633,8 @@ function LinkedNutrition({ foodLog, goals, t }) {
   }
 
   return (
-    <section className="card">
-      <h3 className="dash-card-title" style={{ marginBottom: 16 }}>{t.dashNutrition}</h3>
+    <section className="dash-panel">
+      <h3 className="dash-card-title">{t.dashNutrition}</h3>
 
       <div className="flex items-center justify-between mb-5">
         <button className="btn-icon" onClick={() => setIndex((i) => Math.min(days.length - 1, i + 1))} disabled={index >= days.length - 1} aria-label={t.dashPrevDay}>
@@ -724,9 +647,13 @@ function LinkedNutrition({ foodLog, goals, t }) {
       </div>
 
       <div className="flex items-center justify-center">
-        <MacroRing value={totals.kcal} max={totals.kcal || 1} shares={shares} size={140}>
-          <span className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>{Math.round(totals.kcal)}</span>
-          <span className="text-xs" style={{ color: "var(--muted)" }}>{t.kcal}</span>
+        {/* The denominator is the goal, so the ring actually shows adherence.
+            It used to be totals.kcal, which pinned it at 100% every day. */}
+        <MacroRing value={totals.kcal} max={goals?.kcal || totals.kcal || 1} shares={shares} size={140}>
+          <span className="dash-stat" style={{ fontSize: 26 }}>{Math.round(totals.kcal)}</span>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>
+            {goals?.kcal ? `/ ${goals.kcal} ${t.kcal}` : t.kcal}
+          </span>
         </MacroRing>
       </div>
 
@@ -779,7 +706,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
       <p className="section-title" style={{ fontSize: 13, marginTop: 20, marginBottom: 10 }}>{t.meals}</p>
 
       <div className="flex flex-col" style={{ gap: 16 }}>
-        {mealGroups.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>}
+        {mealGroups.length === 0 && <Empty>{t.dashNoMeals}</Empty>}
         {mealGroups.map((group) => (
           <div key={group.meal} className="flex flex-col" style={{ gap: 6 }}>
             <p className="section-title" style={{ fontSize: 12, margin: 0 }}>{mealLabel(group.meal, t)}</p>
@@ -804,6 +731,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
   const [customTypes, setCustomTypes] = useState(initialCustomTypes);
   const [measurements, setMeasurements] = useState(initialMeasurements);
   const [addingType, setAddingType] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState(null);
@@ -842,9 +770,21 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
     }
   }
 
+  // Only what this trainer logged can be removed — a value the student
+  // recorded themselves is theirs, and the tombstone would sync back to them.
+  async function removeMeasurement(id) {
+    setSaveError(null);
+    try {
+      await unprescribeRow(client.linkedUserId, STORES.measurements, id);
+      setMeasurements((prev) => prev.filter((m) => m.id !== id));
+    } catch (e) {
+      setSaveError(String(e?.message || e));
+    }
+  }
+
   return (
     <div className="dash-measures">
-      {error && <p className="text-sm mb-3" style={{ color: "var(--accent-2, orange)" }}>{error}</p>}
+      {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
       <div className="flex gap-2" style={{ flexWrap: "wrap", marginBottom: 28 }}>
         {MEASURE_TYPES.map((m) => (
           <button key={m} className={`chip ${mType === m ? "active" : ""}`} onClick={() => setMType(m)}>{measureTypeLabel(m, customTypes, t)}</button>
@@ -855,7 +795,15 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
         <button className="chip chip-add" onClick={() => setAddingType(true)} aria-label={t.measureAddTypeAria} disabled={busy}>{t.measureAddTypePill}</button>
       </div>
 
-      <MeasureCard t={t} chartData={chart} history={history} unit={unit} onSave={addMeasurement} saveError={saveError} />
+      <MeasureCard
+        t={t}
+        chartData={chart}
+        history={history}
+        unit={unit}
+        onSave={addMeasurement}
+        onDelete={(id) => setPendingDelete(id)}
+        saveError={saveError}
+      />
 
       {addingType && (
         <AddMeasureTypeModal
@@ -863,6 +811,17 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
           existingNames={[...MEASURE_TYPES.map((m) => t[`measureType_${m}`]), ...customTypes.map((m) => m.name)]}
           onCancel={() => setAddingType(false)}
           onAdd={addType}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmModal
+          title={t.deleteMeasureTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => { removeMeasurement(pendingDelete); setPendingDelete(null); }}
         />
       )}
     </div>

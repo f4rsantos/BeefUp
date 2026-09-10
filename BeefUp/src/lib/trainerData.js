@@ -89,8 +89,17 @@ export async function getClientRows(clientId, store) {
 }
 
 // Every store a client's scopes cover, keyed by store name.
+// The dashboard renders these and nothing else; fetching the rest of the
+// scope (steps, water, foods, customExercises) was paid-for network the
+// trainer never sees.
+const DASHBOARD_STORES = [
+  STORES.plans, STORES.workouts, STORES.sessions,
+  STORES.foodLog, STORES.nutritionGoals,
+  STORES.measurements, STORES.measureTypes,
+]
+
 export async function getClientData(clientId, scopes) {
-  const stores = storesForScopes(scopes)
+  const stores = storesForScopes(scopes).filter((s) => DASHBOARD_STORES.includes(s))
   const pairs = await Promise.all(stores.map(async (store) => [store, await getClientRows(clientId, store)]))
   return Object.fromEntries(pairs)
 }
