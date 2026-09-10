@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Plus, X, Lock } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { ChevronLeft, Plus, X, Lock, Check } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, measurementsForType, isPrescribed } from "../lib/planUtils";
+import { uid, todayISO, measurementsForType, measureGoalProgress, isPrescribed } from "../lib/planUtils";
 import { MEASURE_GROUPS, allMeasureGroups, measureGroupLabel, measureTypeLabel, getMeasureUnit } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ConfirmModal from "../components/ConfirmModal";
@@ -11,7 +11,7 @@ import NumberField from "../components/NumberField";
 
 const MAX_VALUE = 1000;
 
-function MeasureTypeCard({ t, type, customTypes, measurements, onSave, onDelete }) {
+function MeasureTypeCard({ t, type, customTypes, measurements, goal, onSave, onDelete }) {
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -21,6 +21,9 @@ function MeasureTypeCard({ t, type, customTypes, measurements, onSave, onDelete 
     [measurements, type],
   );
   const history = useMemo(() => [...chartData].reverse(), [chartData]);
+  // Trainer-only: the coach sets this, so it's read-only here — a lock, not
+  // a field, same convention as a prescribed history row below.
+  const progress = goal ? measureGoalProgress(measurements, type, goal.target) : null;
 
   async function handleSave() {
     const n = parseFloat(val);
@@ -45,6 +48,31 @@ function MeasureTypeCard({ t, type, customTypes, measurements, onSave, onDelete 
   return (
     <div className="card flex flex-col gap-3">
       <p className="section-title" style={{ margin: 0 }}>{measureTypeLabel(type, customTypes, t)}</p>
+
+      {goal && (
+        <div className="flex flex-col" style={{ gap: 5 }}>
+          <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+            <span className="flex items-center gap-1" style={{ color: "var(--muted)" }}>
+              <Lock size={11} /> {t.goal}
+            </span>
+            {!progress.hasData ? (
+              <span style={{ color: "var(--muted)" }}>{progress.target} {unit}</span>
+            ) : progress.reached ? (
+              <span className="flex items-center gap-1 font-semibold" style={{ color: "var(--success)" }}>
+                <Check size={12} /> {t.dashMeasureGoalReached}
+              </span>
+            ) : (
+              <span className="tabular" style={{ color: "var(--text)" }}>{progress.current} / {progress.target} {unit}</span>
+            )}
+          </div>
+          {progress.hasData && !progress.reached && (
+            <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 999, width: `${progress.percent}%`, background: "var(--accent)" }} />
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-3 items-center">
         <div className="flex-1" style={{ position: "relative" }}>
           <NumberField
@@ -85,6 +113,14 @@ function MeasureTypeCard({ t, type, customTypes, measurements, onSave, onDelete 
               <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
               <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
               <Tooltip {...CHART_TOOLTIP_STYLE} />
+              {goal && (
+                <ReferenceLine
+                  y={goal.target}
+                  stroke="var(--muted)"
+                  strokeDasharray="4 4"
+                  label={{ value: t.goal, position: "insideTopRight", fill: "var(--muted)", fontSize: 10 }}
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey="value"
@@ -144,7 +180,7 @@ function MeasureTypeCard({ t, type, customTypes, measurements, onSave, onDelete 
 }
 
 export default function MeasuresPage({ onBack }) {
-  const { t, measurements, measureTypes, addMeasurement, deleteMeasurement } = useApp();
+  const { t, measurements, measureTypes, measureGoals, addMeasurement, deleteMeasurement } = useApp();
   const [activeGroup, setActiveGroup] = useState("general");
   const [showAddType, setShowAddType] = useState(false);
 
@@ -192,6 +228,7 @@ export default function MeasuresPage({ onBack }) {
             type={m}
             customTypes={measureTypes}
             measurements={measurements}
+            goal={measureGoals.find((g) => g.id === m) || null}
             onSave={handleSave}
             onDelete={deleteMeasurement}
           />

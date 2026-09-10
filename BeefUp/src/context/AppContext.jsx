@@ -84,6 +84,7 @@ export function AppProvider({ children }) {
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
   const [nutritionGoals, setNutritionGoalsState] = useState(PREF_DEFAULTS.nutritionGoals)
   const [prescribedGoals, setPrescribedGoals] = useState(null)
+  const [measureGoals, setMeasureGoals] = useState([])
   const [mealTypes, setMealTypesState] = useState(DEFAULT_MEAL_TYPES)
 
   const t = strings[lang] || strings.pt
@@ -209,7 +210,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow] = await Promise.all([
+      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow, measureGoalsRows] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -224,6 +225,7 @@ export function AppProvider({ children }) {
         db.getAllCustomExercises(),
         db.getAllMeasureTypes(),
         db.getNutritionGoalsRow(),
+        db.getAllMeasureGoals(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -245,6 +247,7 @@ export function AppProvider({ children }) {
       setMeasureTypes(measureTy)
       measureTypesRef.current = measureTy
       setPrescribedGoals(prescribedGoalsRow)
+      setMeasureGoals(measureGoalsRows)
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
@@ -464,6 +467,7 @@ export function AppProvider({ children }) {
     customFoods, saveCustomFood, deleteCustomFood,
     customExercises, saveCustomExercise, deleteCustomExercise,
     measureTypes, saveMeasureType, deleteMeasureType,
+    measureGoals,
     favouriteFoods, toggleFavouriteFood,
     recentFoodIds, addRecentFood,
     waterMap, setWaterToday,

@@ -13,5 +13,6 @@ export const STORES = {
   clients: 'clients',
   customExercises: 'customExercises',
   measureTypes: 'measureTypes',  // user-defined body measurement types { id, name, group, createdAt }
+  measureGoals: 'measureGoals',  // trainer-definable per-type targets { id: <measure type>, target }
   nutritionGoals: 'nutritionGoals' // trainer-definable targets { id: 'default', kcal, protein, carbs, fat, waterMl }
 }

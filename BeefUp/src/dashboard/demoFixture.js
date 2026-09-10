@@ -42,8 +42,19 @@ const ANA = {
     { id: 'm1', date: daysAgo(28), type: 'weight', value: 64.5 },
     { id: 'm2', date: daysAgo(14), type: 'weight', value: 63.8 },
     { id: 'm3', date: daysAgo(3), type: 'weight', value: 63.1 },
+    { id: 'm4', date: daysAgo(28), type: 'biceps', value: 30 },
+    { id: 'm5', date: daysAgo(3), type: 'biceps', value: 35 },
+    { id: 'm6', date: daysAgo(28), type: 'chest', value: 95 },
+    { id: 'm7', date: daysAgo(3), type: 'chest', value: 105 },
   ],
   measureTypes: [{ id: 'mt1', name: 'Gémeo esquerdo', unit: 'cm', prescribedBy: TRAINER }],
+  
+  measureGoals: [
+    { id: 'weight', target: 60, prescribedBy: TRAINER },
+    { id: 'biceps', target: 35, prescribedBy: TRAINER },
+    { id: 'chest', target: 100, prescribedBy: TRAINER },
+    { id: 'waist', target: 80, prescribedBy: TRAINER },
+  ],
   nutritionGoals: [{ id: 'default', kcal: 2000, protein: 140, carbs: 200, fat: 65, waterMl: 2500, fiber: 35, prescribedBy: TRAINER }],
   foodLog: [
     { id: 'f1', date: daysAgo(0), meal: 'breakfast', name: 'Aveia com banana', qty: '80 g', kcal: 310, protein: 11, carbs: 55, fat: 6, fiber: 8 },
@@ -53,7 +64,7 @@ const ANA = {
   ],
 }
 
-const EMPTY = { plans: [], workouts: [], sessions: [], measurements: [], measureTypes: [], nutritionGoals: [], foodLog: [] }
+const EMPTY = { plans: [], workouts: [], sessions: [], measurements: [], measureTypes: [], measureGoals: [], nutritionGoals: [], foodLog: [] }
 
 export function demoClientData(clientId) {
   if (clientId === 'demo-ana') return ANA

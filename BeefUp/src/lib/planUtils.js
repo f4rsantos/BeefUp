@@ -299,6 +299,21 @@ export function measurementsForType(measurements, type) {
     .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value, prescribedBy: m.prescribedBy }))
 }
 
+// No stored "direction" (gain/lose) — it's derived from where the target
+// sits relative to the first-ever logged value for that type.
+export function measureGoalProgress(measurements, type, target) {
+  const chart = measurementsForType(measurements, type)
+  if (chart.length === 0) return { hasData: false, target }
+  const baseline = chart[0].value
+  const current = chart[chart.length - 1].value
+  const span = target - baseline
+  const reached = current === target
+  const percent = span === 0
+    ? (reached ? 100 : 0)
+    : Math.max(0, Math.min(100, Math.round(Math.abs(current - baseline) / Math.abs(span) * 100)))
+  return { hasData: true, baseline, current, target, percent, reached }
+}
+
 export const epley = (weight, reps) => (parseFloat(weight) || 0) * (1 + (parseInt(reps) || 0) / 30)
 
 // Best estimated 1RM per exercise across the given sessions, warmup sets

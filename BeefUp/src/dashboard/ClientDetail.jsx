@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, Plus, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, Lock, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Trash2, Plus, Pencil, Check, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, Lock, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/AppContext";
-import { uid, todayISO, measurementsForType, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort, isPrescribed } from "../lib/planUtils";
+import { uid, todayISO, measurementsForType, measureGoalProgress, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort, isPrescribed } from "../lib/planUtils";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { macroGoalShares, MICRO_COLORS } from "../lib/nutritionCalc";
 import { MICRONUTRIENTS } from "../lib/foodProvider";
@@ -29,7 +29,7 @@ const MEASURE_TYPES = MEASURE_GROUPS.flatMap((g) => g.types);
 // Same chart+history card client's own MeasuresPage.jsx uses, minus the
 // title — the trainer picks a type via chips instead. Value input mirrors
 // MeasuresPage.jsx's own so the trainer can log a measurement in person.
-function MeasureCard({ t, chartData, history, unit, onDelete, onSave, saveError }) {
+function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, saveError }) {
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -94,6 +94,14 @@ function MeasureCard({ t, chartData, history, unit, onDelete, onSave, saveError 
               <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
               <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
               <Tooltip {...CHART_TOOLTIP_STYLE} />
+              {goal && (
+                <ReferenceLine
+                  y={goal.target}
+                  stroke="var(--muted)"
+                  strokeDasharray="4 4"
+                  label={{ value: t.goal, position: "insideTopRight", fill: "var(--muted)", fontSize: 10 }}
+                />
+              )}
               <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: "var(--accent)" }} />
             </LineChart>
           </ResponsiveContainer>
@@ -247,6 +255,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
   const [section, setSection] = useState("overview");
   const [gymSub, setGymSub] = useState("plan");
   const [nutritionSub, setNutritionSub] = useState("goals");
+  const [measuresSub, setMeasuresSub] = useState("log");
   const [data, setData] = useState(() => (isDashDemo() ? demoClientData(client.linkedUserId) : null));
   const [loading, setLoading] = useState(configured && !isDashDemo());
   const [error, setError] = useState("");
@@ -314,7 +323,14 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
       ],
       view: nutritionSub, setView: setNutritionSub,
     },
-    { id: "measures", Icon: Ruler, label: t.dashMeasures, shared: hasMeasures },
+    {
+      id: "measures", Icon: Ruler, label: t.dashMeasures, shared: hasMeasures,
+      views: [
+        { id: "log", label: t.dashMeasuresLogTab },
+        { id: "goals", label: t.dashMeasuresGoalsTab },
+      ],
+      view: measuresSub, setView: setMeasuresSub,
+    },
     { id: "notes", Icon: StickyNote, label: t.dashNotes, shared: true },
   ];
   const area = areas.find((a) => a.id === section) || areas[0];
@@ -433,7 +449,21 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
               </>
             )}
             {section === "measures" && hasMeasures && (
-              <LinkedMeasures client={client} measurements={data.measurements || []} customTypes={data.measureTypes || []} t={t} />
+              <>
+                {measuresSub === "log" && (
+                  <LinkedMeasures client={client} measurements={data.measurements || []} customTypes={data.measureTypes || []} goals={data.measureGoals || []} t={t} />
+                )}
+                {measuresSub === "goals" && (
+                  <LinkedMeasureGoals
+                    client={client}
+                    measurements={data.measurements || []}
+                    customTypes={data.measureTypes || []}
+                    goals={data.measureGoals || []}
+                    onChanged={(next) => setData((d) => ({ ...d, measureGoals: next }))}
+                    t={t}
+                  />
+                )}
+              </>
             )}
             {section === "notes" && <Notes client={annotations} saveClient={saveClient} t={t} />}
           </div>
@@ -468,8 +498,20 @@ function LinkedOverview({ data, annotations, hasWorkouts, hasNutrition, hasMeasu
   const lastSession = hasWorkouts
     ? sessions.slice().sort((a, b) => b.date.localeCompare(a.date))[0]
     : null;
-  const weightChart = hasMeasures ? measurementsForType(measurements, "weight") : [];
-  const weight = weightChart.slice(-1)[0];
+  // Remap legacy type ids before computing progress — a goal on "waist"
+  // (once "belly") would otherwise miss its own history.
+  const migratedMeasurements = hasMeasures
+    ? measurements.map((m) => (LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m))
+    : [];
+  const customMeasureTypes = data.measureTypes || [];
+  const goalRows = hasMeasures
+    ? (data.measureGoals || []).map((g) => ({
+        type: g.id,
+        label: measureTypeLabel(g.id, customMeasureTypes, t),
+        unit: getMeasureUnit(g.id, customMeasureTypes),
+        progress: measureGoalProgress(migratedMeasurements, g.id, g.target),
+      }))
+    : [];
   const plan = (data.plans || []).find((p) => isPrescribed(p)) || null;
   const goals = data.nutritionGoals?.[0] || null;
   const nextAppointment = (annotations?.schedule || [])
@@ -495,24 +537,51 @@ function LinkedOverview({ data, annotations, hasWorkouts, hasNutrition, hasMeasu
       </OverviewCard>
 
       <OverviewCard label={t.dashMeasures}>
-        {hasMeasures ? (
-          <>
-            <div className="dash-stat">
-              {weight ? weight.value : "—"}
-              <span className="text-sm" style={{ color: "var(--muted)", fontWeight: 500 }}> kg</span>
-            </div>
-            {weightChart.length > 1 && (
-              <div style={{ width: "100%", height: 70, marginTop: 8 }}>
-                <ResponsiveContainer>
-                  <LineChart data={weightChart}>
-                    <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </>
-        ) : (
+        {!hasMeasures ? (
           <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashScopeNotShared}</p>
+        ) : goalRows.length === 0 ? (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoMeasureGoals}</p>
+        ) : (
+          <div className="flex flex-col" style={{ gap: 12 }}>
+            {goalRows.slice(0, 3).map((g) => (
+              <div key={g.type} className="flex flex-col" style={{ gap: 5 }}>
+                <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+                  <span className="font-semibold" style={{ color: "var(--text)" }}>{g.label}</span>
+                  {!g.progress.hasData ? (
+                    <span style={{ color: "var(--muted)" }}>{g.progress.target} {g.unit}</span>
+                  ) : g.progress.reached ? (
+                    <span className="flex items-center gap-1" style={{ color: "var(--success)", fontWeight: 700 }}>
+                      <Check size={13} /> {t.dashMeasureGoalReached}
+                    </span>
+                  ) : (
+                    <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
+                      {g.progress.current} / {g.progress.target} {g.unit}
+                    </span>
+                  )}
+                </div>
+                {!g.progress.hasData ? (
+                  <p className="text-xs" style={{ color: "var(--muted)", margin: 0 }}>{t.dashMeasureGoalNoData}</p>
+                ) : (
+                  <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        width: `${g.progress.percent}%`,
+                        background: g.progress.reached ? "var(--success)" : "var(--accent)",
+                        transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+            {goalRows.length > 3 && (
+              <p className="text-xs" style={{ color: "var(--muted)", margin: 0 }}>
+                {t.dashMeasureGoalsMore.replace("{n}", goalRows.length - 3)}
+              </p>
+            )}
+          </div>
         )}
       </OverviewCard>
 
@@ -735,7 +804,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
   );
 }
 
-function LinkedMeasures({ client, measurements: initialMeasurements, customTypes: initialCustomTypes, t }) {
+function LinkedMeasures({ client, measurements: initialMeasurements, customTypes: initialCustomTypes, goals, t }) {
   const [mType, setMType] = useState("weight");
   const [customTypes, setCustomTypes] = useState(initialCustomTypes);
   const [measurements, setMeasurements] = useState(initialMeasurements);
@@ -752,6 +821,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
   const chart = measurementsForType(measures, mType);
   const history = useMemo(() => [...chart].reverse(), [chart]);
   const unit = getMeasureUnit(mType, customTypes);
+  const goal = goals.find((g) => g.id === mType) || null;
 
   async function addType(name, unit) {
     setBusy(true);
@@ -809,6 +879,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
         chartData={chart}
         history={history}
         unit={unit}
+        goal={goal}
         onSave={addMeasurement}
         onDelete={(id) => setPendingDelete(id)}
         saveError={saveError}
@@ -834,5 +905,146 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
         />
       )}
     </div>
+  );
+}
+
+function LinkedMeasureGoals({ client, measurements, customTypes, goals: initialGoals, onChanged, t }) {
+  const [goals, setGoals] = useState(initialGoals);
+  const [editingType, setEditingType] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [pendingRemove, setPendingRemove] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const migrated = useMemo(
+    () => measurements.map((m) => (LEGACY_TYPE_MAP[m.type] ? { ...m, type: LEGACY_TYPE_MAP[m.type] } : m)),
+    [measurements],
+  );
+  const rows = [
+    ...MEASURE_TYPES.map((type) => ({ type, label: measureTypeLabel(type, customTypes, t), unit: getMeasureUnit(type, customTypes) })),
+    ...customTypes.map((c) => ({ type: c.id, label: measureTypeLabel(c.id, customTypes, t), unit: getMeasureUnit(c.id, customTypes) })),
+  ];
+
+  function goalFor(type) {
+    return goals.find((g) => g.id === type) || null;
+  }
+
+  function startEdit(type, current) {
+    setEditingType(type);
+    setDraft(current != null ? String(current) : "");
+    setError("");
+  }
+
+  async function save(type) {
+    const n = parseFloat(draft);
+    if (!Number.isFinite(n) || n <= 0 || n > MAX_MEASURE_VALUE) {
+      setError(t.measureInvalidValue);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const saved = await prescribeRow(client.linkedUserId, STORES.measureGoals, { id: type, target: n });
+      setGoals((prev) => {
+        const next = [...prev.filter((g) => g.id !== type), saved];
+        onChanged?.(next);
+        return next;
+      });
+      setEditingType(null);
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(type) {
+    setBusy(true);
+    setError("");
+    try {
+      await unprescribeRow(client.linkedUserId, STORES.measureGoals, type);
+      setGoals((prev) => {
+        const next = prev.filter((g) => g.id !== type);
+        onChanged?.(next);
+        return next;
+      });
+      setPendingRemove(null);
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="dash-panel">
+      <h3 className="dash-card-title mb-1">{t.dashMeasuresGoalsTab}</h3>
+      <p className="dash-panel-desc">{t.dashMeasureGoalsDesc}</p>
+      {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
+
+      <div className="flex flex-col gap-2">
+        {rows.map(({ type, label, unit }) => {
+          const goal = goalFor(type);
+          const editing = editingType === type;
+          return (
+            <div key={type} className="dash-day">
+              <span className="flex-1 min-w-0 truncate" style={{ color: "var(--text)", fontWeight: 600 }}>{label}</span>
+              {editing ? (
+                <div className="flex items-center gap-2">
+                  <NumberField
+                    className="field"
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={t.dashMeasureGoalPlaceholder}
+                    style={{ width: 90 }}
+                  />
+                  <span className="text-xs" style={{ color: "var(--muted)" }}>{unit}</span>
+                  <button className="btn-icon" onClick={() => save(type)} disabled={busy} aria-label={t.save}>
+                    <Check size={15} style={{ color: "var(--accent)" }} />
+                  </button>
+                  <button className="btn-icon" onClick={() => setEditingType(null)} aria-label={t.cancel} disabled={busy}>
+                    <X size={15} style={{ color: "var(--muted)" }} />
+                  </button>
+                </div>
+              ) : goal ? (
+                <div className="flex items-center gap-3">
+                  {(() => {
+                    const p = measureGoalProgress(migrated, type, goal.target);
+                    if (!p.hasData) return <span className="tabular" style={{ color: "var(--text)" }}>{p.target} {unit}</span>;
+                    if (p.reached) return (
+                      <span className="flex items-center gap-1" style={{ color: "var(--success)", fontWeight: 700 }}>
+                        <Check size={13} /> {t.dashMeasureGoalReached}
+                      </span>
+                    );
+                    return <span className="tabular" style={{ color: "var(--text)" }}>{p.current} / {p.target} {unit}</span>;
+                  })()}
+                  <button className="btn-icon" onClick={() => startEdit(type, goal.target)} aria-label={t.edit}>
+                    <Pencil size={14} style={{ color: "var(--muted)" }} />
+                  </button>
+                  <button className="btn-icon" onClick={() => setPendingRemove(type)} aria-label={t.delete}>
+                    <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                  </button>
+                </div>
+              ) : (
+                <button className="chip chip-add" onClick={() => startEdit(type, null)} disabled={busy}>
+                  {t.dashMeasureGoalDefine}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {pendingRemove && (
+        <ConfirmModal
+          title={t.deleteMeasureGoalTitle}
+          message={t.cannotUndo}
+          cancelLabel={t.cancel}
+          confirmLabel={t.delete}
+          onCancel={() => setPendingRemove(null)}
+          onConfirm={() => remove(pendingRemove)}
+        />
+      )}
+    </section>
   );
 }

@@ -268,6 +268,20 @@ check "trainer still cannot write the client's own water log" "$(echo $WATER_DEN
 NG_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='nutritionGoals' and row_key='default' returning row_key")
 check "trainer can unprescribe (tombstone) nutrition goals" "$(echo $NG_UNPRESCRIBE | xargs)" "default"
 
+# --- F10: trainer can prescribe a measure goal (target per type), same
+#          'measures' scope RUI already shared in F8 ------------------------
+echo "== F10: trainer prescribes a measure goal on a linked client =="
+
+MG_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureGoals','weight','measures','{\"id\":\"weight\",\"target\":65}') returning row_key")
+check "trainer prescribes a measure goal once measures is shared" "$(echo $MG_OK | xargs)" "weight"
+
+MG_DENIED=$(run_as $ANA "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureGoals','waist','measures','{\"id\":\"waist\",\"target\":80}') returning row_key")
+case "$MG_DENIED" in *"violates row-level security"*) MG_DENIED=DENIED;; esac
+check "a non-trainer cannot prescribe a measure goal" "$(echo $MG_DENIED | xargs)" "DENIED"
+
+MG_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measureGoals' and row_key='weight' returning row_key")
+check "trainer can unprescribe (tombstone) a measure goal" "$(echo $MG_UNPRESCRIBE | xargs)" "weight"
+
 echo
 echo "passed: $pass   failed: $fail"
 pg_ctl -D "$PGDATA" -w stop >/dev/null 2>&1 || true

@@ -105,7 +105,7 @@ create table if not exists public.sync_rows (
   constraint sync_rows_store_scope_check check (
     (store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts')
     or (store in ('foodLog', 'foods', 'water', 'nutritionGoals') and scope = 'nutrition')
-    or (store in ('measurements', 'steps', 'measureTypes') and scope = 'measures')
+    or (store in ('measurements', 'steps', 'measureTypes', 'measureGoals') and scope = 'measures')
   )
 );
 
@@ -626,7 +626,7 @@ create policy sync_rows_select on public.sync_rows
 -- `steps`, and opening up `scope = 'nutrition'` outright would let a
 -- trainer write `foodLog`/`foods`/`water` — all client-owned logged data
 -- with no trainer-facing equivalent. Restricting to
--- `store in ('measureTypes', 'measurements')` / `store = 'nutritionGoals'`
+-- `store in ('measureTypes', 'measurements', 'measureGoals')` / `store = 'nutritionGoals'`
 -- keeps the trainer able to prescribe *what* to measure and *what to aim
 -- for* (both stamped `prescribedBy` client-side, same as a prescribed
 -- workout) without ever touching a value the client themselves recorded.
@@ -636,7 +636,7 @@ create policy sync_rows_insert on public.sync_rows
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
-    or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
     or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   );
 
@@ -656,13 +656,13 @@ create policy sync_rows_update on public.sync_rows
   using (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
-    or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
     or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   )
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
-    or (store in ('measureTypes', 'measurements') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
     or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   );
 

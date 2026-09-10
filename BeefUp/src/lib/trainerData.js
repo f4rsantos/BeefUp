@@ -17,7 +17,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 // Trainer defines what to measure and the nutrition targets to hit, and may
 // log a value in person too — never steps, food log, or water, which stay
 // the client's own logged data.
-const PRESCRIBABLE = [STORES.plans, STORES.workouts, STORES.measureTypes, STORES.measurements, STORES.nutritionGoals]
+const PRESCRIBABLE = [STORES.plans, STORES.workouts, STORES.measureTypes, STORES.measurements, STORES.measureGoals, STORES.nutritionGoals]
 
 export function isPrescribable(store) {
   return PRESCRIBABLE.includes(store)
@@ -95,7 +95,7 @@ export async function getClientRows(clientId, store) {
 const DASHBOARD_STORES = [
   STORES.plans, STORES.workouts, STORES.sessions,
   STORES.foodLog, STORES.nutritionGoals,
-  STORES.measurements, STORES.measureTypes,
+  STORES.measurements, STORES.measureTypes, STORES.measureGoals,
 ]
 
 export async function getClientData(clientId, scopes) {
