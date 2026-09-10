@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useIsDesktop } from "../lib/useIsDesktop";
 import { formatDateShort } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -23,6 +24,7 @@ function isoOf(y, m, d) {
 // by student id. Merged here so the calendar reads one list.
 export default function CalendarView({ students = [] }) {
   const { t, lang, clients: annotations, saveClient } = useApp();
+  const isDesktop = useIsDesktop();
   const dow = useMemo(() => localizedDow(lang), [lang]);
   const clients = useMemo(
     () => students.map((s) => ({ ...s, schedule: annotations.find((a) => a.id === s.id)?.schedule || [] })),
@@ -34,6 +36,9 @@ export default function CalendarView({ students = [] }) {
   const [assignFor, setAssignFor] = useState(null);
   const [time, setTime] = useState("18:00");
   const [pendingRemove, setPendingRemove] = useState(null);
+  // Phone only: a 45px cell has no room for name chips, so tapping a day
+  // opens its list under the grid instead of going straight to the modal.
+  const [openDay, setOpenDay] = useState(null);
 
   const first = new Date(year, month, 1);
   const startPad = (first.getDay() + 6) % 7;
@@ -47,6 +52,13 @@ export default function CalendarView({ students = [] }) {
 
   function clientsOn(iso) {
     return clients.filter((c) => (c.schedule || []).some((e) => e.date === iso));
+  }
+
+  // One flat, time-ordered list for a day, so a cell and the day panel agree.
+  function entriesOn(iso) {
+    return clients
+      .flatMap((c) => (c.schedule || []).filter((e) => e.date === iso).map((e) => ({ client: c, entry: e })))
+      .sort((a, b) => (a.entry.time || "").localeCompare(b.entry.time || ""));
   }
 
   const [pickClient, setPickClient] = useState("");
@@ -92,18 +104,66 @@ export default function CalendarView({ students = [] }) {
           if (d === null) return <div key={i} className="dash-cal-cell muted" />;
           const iso = isoOf(year, month, d);
           const assigned = clientsOn(iso);
+          const dayEntries = entriesOn(iso);
           return (
-            <button key={i} type="button" className="dash-cal-cell" onClick={() => openAssign(iso)}>
+            <button
+              key={i}
+              type="button"
+              className={`dash-cal-cell ${openDay === iso ? "open" : ""}`}
+              onClick={() => (isDesktop ? openAssign(iso) : setOpenDay(iso))}
+            >
               <span className="dash-cal-daynum">{d}</span>
-              {assigned.flatMap((c) =>
-                (c.schedule || []).filter((e) => e.date === iso).map((e, k) => (
-                  <span key={c.id + k} className="dash-cal-chip">{e.time ? `${e.time} ` : ""}{c.name}</span>
-                )),
-              )}
+              {isDesktop
+                ? assigned.flatMap((c) =>
+                    (c.schedule || []).filter((e) => e.date === iso).map((e, k) => (
+                      <span key={c.id + k} className="dash-cal-chip">{e.time ? `${e.time} ` : ""}{c.name}</span>
+                    )),
+                  )
+                : dayEntries.length > 0 && (
+                    <span className="dash-cal-dots">
+                      {dayEntries.slice(0, 3).map((_, k) => <span key={k} className="dash-cal-dot" />)}
+                      {dayEntries.length > 3 && <span className="dash-cal-more">+{dayEntries.length - 3}</span>}
+                    </span>
+                  )}
             </button>
           );
         })}
       </div>
+
+      {!isDesktop && openDay && (
+        <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
+          <div className="dash-panel-head">
+            <h3 className="dash-card-title">{formatDateShort(openDay)}</h3>
+            <button className="btn-icon" onClick={() => setOpenDay(null)} aria-label={t.close}>
+              <X size={16} style={{ color: "var(--muted)" }} />
+            </button>
+          </div>
+
+          {entriesOn(openDay).length === 0 ? (
+            <p className="dash-empty">{t.dashNoAppointment}</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {entriesOn(openDay).map(({ client, entry }, k) => (
+                <div key={client.id + k} className="dash-day">
+                  <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
+                  <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
+                  <button className="btn-icon" onClick={() => setPendingRemove({ client, entry })} aria-label={t.delete}>
+                    <X size={15} style={{ color: "var(--muted)" }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            className="btn btn-primary w-full flex items-center justify-center gap-2"
+            style={{ marginTop: "var(--d-3)" }}
+            onClick={() => openAssign(openDay)}
+          >
+            <Plus size={16} /> {t.dashAssign}
+          </button>
+        </section>
+      )}
 
       {assignFor && (
         <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setAssignFor(null)}>
@@ -128,7 +188,8 @@ export default function CalendarView({ students = [] }) {
               </div>
             )}
 
-            {clients.some((c) => (c.schedule || []).some((e) => e.date === assignFor)) && (
+            {/* On a phone the day panel below the grid already lists these. */}
+            {isDesktop && clients.some((c) => (c.schedule || []).some((e) => e.date === assignFor)) && (
               <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
                 <div className="flex flex-col gap-2">
                   {clients.flatMap((c) => (c.schedule || []).filter((e) => e.date === assignFor).map((e, k) => (

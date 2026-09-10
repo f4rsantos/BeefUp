@@ -7,7 +7,6 @@ import { getMeasureUnit } from "../lib/measureTypes";
 import { buildDemoPreset } from "../lib/demoData";
 import NumberField from "../components/NumberField";
 import { signIn, signUp, setProfileRole, isTrainerTakenError } from "../lib/auth";
-import { useIsDesktop } from "../lib/useIsDesktop";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import TrainerSetup from "./TrainerSetup";
 import "./onboarding.css";
@@ -30,10 +29,7 @@ export default function Onboarding() {
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountError, setAccountError] = useState("");
 
-  const isDesktop = useIsDesktop();
   const supabaseConfigured = useSupabaseConfigured();
-  // A trainer without config yet still needs to get in — that's how they get it.
-  const helperBlockedReason = !isDesktop ? t.obDesktopOnly : null;
 
   function startMode(m) {
     setMode(m);
@@ -61,19 +57,10 @@ export default function Onboarding() {
             <span className="ob-mode-title">{t.obStart}</span>
             <span className="ob-mode-desc">{t.obStartDesc}</span>
           </button>
-          <button
-            className={`ob-mode ob-mode--coach ${helperBlockedReason ? "ob-mode--disabled" : ""}`}
-            disabled={!!helperBlockedReason}
-            aria-disabled={!!helperBlockedReason}
-            tabIndex={helperBlockedReason ? -1 : 0}
-            onClick={() => !helperBlockedReason && startMode("helper")}
-          >
+          <button className="ob-mode ob-mode--coach" onClick={() => startMode("helper")}>
             <TrendingUp size={24} />
-            <span className="ob-mode-title">
-              {t.obHelping}
-              {helperBlockedReason && <span className="ob-focus-badge">{t.unavailable}</span>}
-            </span>
-            <span className="ob-mode-desc">{helperBlockedReason || t.obHelpingDesc}</span>
+            <span className="ob-mode-title">{t.obHelping}</span>
+            <span className="ob-mode-desc">{t.obHelpingDesc}</span>
           </button>
         </div>
       </div>

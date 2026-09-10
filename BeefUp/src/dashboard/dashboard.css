@@ -411,3 +411,104 @@
   color: var(--muted);
   text-align: center;
 }
+
+/* ── phone ──────────────────────────────────────────────────────────────
+ *
+ * Everything below lives inside this one query, and 899px is the same line
+ * useIsDesktop draws — CSS and JS must never disagree about which mode they
+ * are in. Above it, the console is byte-for-byte what it was.
+ *
+ * The shape changes in three ways: navigation drops to a bottom bar the
+ * thumb reaches, the roster and the client sheet stop being two panes and
+ * become two screens, and the calendar trades name chips for dots. */
+@media (max-width: 899px) {
+  .dash-root { grid-template-rows: auto 1fr auto; }
+
+  .dash-header { padding: var(--d-3) var(--d-4); gap: var(--d-2); }
+
+  /* Same shape as the student app's .bottom-nav, minus its centre FAB. */
+  .dash-nav {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin: 10px 12px 12px;
+    padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+  }
+  .dash-nav-tab {
+    flex: 1;
+    min-width: 0;
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: var(--d-label);
+    font-weight: var(--d-w-em);
+    cursor: pointer;
+    transition: color 0.15s, transform 0.12s;
+  }
+  .dash-nav-tab.active { color: var(--accent); }
+  .dash-nav-tab.active svg { stroke-width: 2.6px; }
+  .dash-nav-tab:active { transform: scale(0.9); }
+
+  .dash-clients { grid-template-columns: 1fr; }
+  .dash-list { border-right: none; padding: var(--d-3); }
+  .dash-list-item { padding: var(--d-3) var(--d-4); }
+
+  .dash-detail-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--d-2);
+    padding: var(--d-3) var(--d-4);
+  }
+  .dash-client-name { font-size: 22px; }
+  .dash-detail-head .btn { align-self: flex-start; }
+
+  .dash-areas { gap: var(--d-3); padding: 0 var(--d-4); }
+  .dash-section, .dash-cal { padding: var(--d-4); }
+  .dash-panel { padding: var(--d-4); }
+  .dash-views { max-width: none; }
+
+  .dash-cal-grid { gap: var(--d-1); }
+  .dash-cal-cell {
+    min-height: 0;
+    aspect-ratio: 1;
+    align-items: center;
+    padding: var(--d-1);
+    gap: 3px;
+  }
+  .dash-cal-cell.open { border-color: var(--accent); }
+  .dash-cal-dots { display: flex; align-items: center; gap: 3px; }
+  .dash-cal-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--d-r-pill);
+    background: var(--accent);
+  }
+  .dash-cal-more { font-size: 9px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Below 16px, iOS Safari zooms the page when a field takes focus — and the
+   * console is position:fixed, so the user lands off-centre with no way back. */
+  .dash-root input.field,
+  .dash-root select.field,
+  .dash-root textarea.field { font-size: 16px; }
+
+  .dash-root .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dash-root .chip { padding: 8px 14px; font-size: var(--d-sm); }
+  .dash-icon-tab { width: 40px; height: 40px; }
+}

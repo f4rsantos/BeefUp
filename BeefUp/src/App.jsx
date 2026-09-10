@@ -9,7 +9,6 @@ import PlanSettings from "./pages/PlanSettings";
 import WorkoutSettings from "./pages/WorkoutSettings";
 import NutritionPage from "./pages/NutritionPage";
 import Onboarding from "./onboarding/Onboarding";
-import { useIsDesktop } from "./lib/useIsDesktop";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
 import PwaPrompts from "./components/PwaPrompts";
@@ -64,7 +63,6 @@ function AppInner() {
   });
   const [showTrainerLinkModal, setShowTrainerLinkModal] = useState(false);
   const { activeWorkout, setActiveWorkout, plans, activePlanId, workouts, onboarded, sectionPrefs, appMode, t, saveWorkout } = useApp();
-  const isDesktop = useIsDesktop();
   // App-wide: Settings used to be the only caller, so data only reached the
   // trainer while that tab happened to be open.
   useSync();
@@ -97,17 +95,10 @@ function AppInner() {
   if (!onboarded) return <Onboarding />;
 
   if (appMode === "helper") {
-    if (isDesktop) {
-      return (
-        <Suspense fallback={<PageFallback />}>
-          <HelperDashboard />
-        </Suspense>
-      );
-    }
     return (
-      <div style={{ height: "100%", display: "grid", placeItems: "center", padding: 32, textAlign: "center", background: "var(--bg)" }}>
-        <p style={{ color: "var(--muted)", maxWidth: 320 }}>{t.obDesktopOnly}</p>
-      </div>
+      <Suspense fallback={<PageFallback />}>
+        <HelperDashboard />
+      </Suspense>
     );
   }
 

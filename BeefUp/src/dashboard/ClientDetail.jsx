@@ -10,6 +10,7 @@ import { MEASURE_GROUPS, LEGACY_TYPE_MAP, getMeasureUnit, measureTypeLabel, UNIT
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import { resolvedExerciseName } from "../lib/exerciseTree";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
+import { useIsDesktop } from "../lib/useIsDesktop";
 import { getClientData, unlinkClient, prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { isDashDemo, demoClientData } from "./demoFixture";
 import { STORES } from "../lib/stores";
@@ -239,9 +240,10 @@ function Notes({ client, saveClient, t }) {
   );
 }
 
-export default function ClientDetail({ client, onUnlinked }) {
+export default function ClientDetail({ client, onUnlinked, onBack }) {
   const { t, lang, clients, saveClient } = useApp();
   const configured = useSupabaseConfigured() || isDashDemo();
+  const isDesktop = useIsDesktop();
   const [section, setSection] = useState("overview");
   const [gymSub, setGymSub] = useState("plan");
   const [nutritionSub, setNutritionSub] = useState("goals");
@@ -321,6 +323,11 @@ export default function ClientDetail({ client, onUnlinked }) {
   return (
     <div className="dash-detail-wrap">
       <div className="dash-detail-head">
+        {onBack && (
+          <button className="btn-back flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }} onClick={onBack}>
+            <ChevronLeft size={18} /> {t.back}
+          </button>
+        )}
         <div style={{ minWidth: 0 }}>
           <h2 className="dash-client-name">{client.name}</h2>
           <p className="dash-client-meta">
@@ -368,7 +375,9 @@ export default function ClientDetail({ client, onUnlinked }) {
                 className={`dash-area ${section === a.id ? "active" : ""}`}
                 onClick={() => setSection(a.id)}
               >
-                <a.Icon size={15} />
+                {/* The icon is decoration here; dropping it on a phone is what
+                    lets all five labels fit without a scrolling strip. */}
+                {isDesktop && <a.Icon size={15} />}
                 <span>{a.label}</span>
                 {!a.shared && <Lock size={12} style={{ opacity: 0.7 }} />}
               </button>

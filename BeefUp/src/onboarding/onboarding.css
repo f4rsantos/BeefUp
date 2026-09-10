@@ -54,15 +54,6 @@
 .ob-mode-desc { font-size: 14px; color: var(--muted); }
 .ob-mode--start .ob-mode-title { font-size: 32px; }
 
-.ob-mode--disabled {
-  opacity: 0.45;
-  filter: grayscale(1);
-  cursor: not-allowed;
-  pointer-events: none;
-}
-.ob-mode--disabled:hover { transform: none; border-color: var(--border); }
-.ob-mode--disabled .ob-mode-title { display: flex; align-items: center; gap: 8px; }
-
 @media (min-width: 700px) {
   .ob-modes {
     grid-template-columns: 2fr 1fr;
@@ -138,15 +129,6 @@
 .ob-focus-card.active { border-color: var(--accent); }
 .ob-focus-label { font-weight: 700; color: var(--text); }
 .ob-focus-desc { font-size: 13px; color: var(--muted); }
-.ob-focus-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--warn);
-  background: var(--surface2);
-  padding: 2px 7px;
-  border-radius: 999px;
-}
-
 .ob-pref-btn--lang { font-size: 12px; font-weight: 700; width: 34px; }
 
 .ob-field-unit-wrap { position: relative; }
