@@ -2,7 +2,7 @@
 // exercise the engine without a network. Mirrors what Supabase will do:
 // the server, not the client, stamps every row's updated_at.
 
-export function createMemoryBackend({ startAt = 1000 } = {}) {
+export function createMemoryBackend({ startAt = 1000, identity = { projectRef: 'test-project', userId: 'test-user' } } = {}) {
   const tables = new Map()
   let clock = startAt
 
@@ -17,6 +17,10 @@ export function createMemoryBackend({ startAt = 1000 } = {}) {
   }
 
   return {
+    async identity() {
+      return identity
+    },
+
     async push(store, items) {
       const table = tableFor(store)
       const acked = []

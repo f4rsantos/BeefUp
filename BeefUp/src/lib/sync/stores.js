@@ -19,6 +19,9 @@ export const SYNCED_STORES = {
   [STORES.water]: { key: 'date', scope: SCOPES.nutrition },
   [STORES.measurements]: { key: 'id', scope: SCOPES.measures },
   [STORES.steps]: { key: 'date', scope: SCOPES.measures },
+  [STORES.measureTypes]: { key: 'id', scope: SCOPES.measures },
+  [STORES.measureGoals]: { key: 'id', scope: SCOPES.measures },
+  [STORES.nutritionGoals]: { key: 'id', scope: SCOPES.nutrition },
 }
 
 export function isSynced(store) {

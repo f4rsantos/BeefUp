@@ -3,7 +3,7 @@ import { syncAll } from './engine.js'
 import { createSupabaseBackend } from './backends/supabase.js'
 import { getLink } from './link.js'
 import { getPref, setPref } from '../prefs.js'
-import { isConfigured } from '../supabaseClient.js'
+import { loadSupabaseConfig, getConfigEpoch } from '../supabaseConfig.js'
 
 // The in-flight guard below is per hook instance, so two mounted callers
 // would each start a run and race each other's cursor writes. Share the
@@ -12,12 +12,16 @@ import { isConfigured } from '../supabaseClient.js'
 // riding along on whatever the first caller happened to pass in.
 const enginePasses = new Map()
 
-function scopesKey(scopes) {
-  return JSON.stringify([...scopes].sort())
+const SYNC_INTERVAL_MS = 5 * 60 * 1000
+
+// Epoch in the key too: a pass in flight when the project switches must not
+// be reused by (or block) a pass meant for the new project.
+function scopesKey(scopes, epoch) {
+  return JSON.stringify([epoch, [...scopes].sort()])
 }
 
 function runEngineOnce(backend, scopes) {
-  const key = scopesKey(scopes)
+  const key = scopesKey(scopes, getConfigEpoch())
   let pass = enginePasses.get(key)
   if (!pass) {
     pass = syncAll(backend, { scopes }).finally(() => {
@@ -66,16 +70,11 @@ export function useSync() {
     // the synchronous body of the effect that called run().
     await Promise.resolve()
     try {
-      if (!isConfigured()) {
+      if (!(await loadSupabaseConfig())) {
         if (mounted.current) setStatus('off')
         return
       }
-      // Reconciled against the server, not just the local cache: a trainer
-      // revoking access must stop this device from syncing on its very next
-      // run, not whenever the user happens to open Settings next. getLink()
-      // already draws the offline-vs-revoked distinction — a network error
-      // keeps believing the cache (so a dropped wifi never looks like a
-      // revoke), only an authoritative "no accepted link" clears it.
+      // Revoke takes effect immediately via server check, not cache.
       const link = await getLink()
       if (!link || link.status !== 'accepted') {
         if (mounted.current) setStatus('off')
@@ -118,6 +117,20 @@ export function useSync() {
   useEffect(() => {
     window.addEventListener('online', run)
     return () => window.removeEventListener('online', run)
+  }, [run])
+
+  // Mount and 'online' alone leave a session open for hours never syncing
+  // again — a workout finished after boot would never reach the trainer.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') run()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    const timer = setInterval(run, SYNC_INTERVAL_MS)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(timer)
+    }
   }, [run])
 
   return { status, lastSyncAt, syncNow: run, error }

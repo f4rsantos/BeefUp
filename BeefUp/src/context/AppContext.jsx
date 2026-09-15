@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { db, STORES } from '../lib/db'
 import { todayISO } from '../lib/planUtils'
 import { getAllPrefs, migrateLegacyPrefs, setPref, PREF_DEFAULTS } from '../lib/prefs'
+import { loadSupabaseConfig } from '../lib/supabaseConfig'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
@@ -78,8 +79,12 @@ export function AppProvider({ children }) {
   const [customFoods, setCustomFoods] = useState([])
   const [customExercises, setCustomExercises] = useState([])
   const customExercisesRef = useRef([])
+  const [measureTypes, setMeasureTypes] = useState([])
+  const measureTypesRef = useRef([])
   const [waterMap, setWaterMap] = useState({}) // { date: ml }
   const [nutritionGoals, setNutritionGoalsState] = useState(PREF_DEFAULTS.nutritionGoals)
+  const [prescribedGoals, setPrescribedGoals] = useState(null)
+  const [measureGoals, setMeasureGoals] = useState([])
   const [mealTypes, setMealTypesState] = useState(DEFAULT_MEAL_TYPES)
 
   const t = strings[lang] || strings.pt
@@ -168,7 +173,8 @@ export function AppProvider({ children }) {
 
       let prefs
       try {
-        prefs = await getAllPrefs()
+        const results = await Promise.all([getAllPrefs(), loadSupabaseConfig()])
+        prefs = results[0]
       } catch (err) {
         // Falling through with defaults keeps the app usable when IndexedDB is
         // unavailable (private mode, blocked storage) instead of hanging on the
@@ -204,7 +210,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx] = await Promise.all([
+      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow, measureGoalsRows] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -217,6 +223,9 @@ export function AppProvider({ children }) {
         db.getAllWater(),
         db.getAllClients(),
         db.getAllCustomExercises(),
+        db.getAllMeasureTypes(),
+        db.getNutritionGoalsRow(),
+        db.getAllMeasureGoals(),
       ])
       setPlans(p)
       setWorkouts(w)
@@ -235,6 +244,10 @@ export function AppProvider({ children }) {
       setCustomExercises(customEx)
       customExercisesRef.current = customEx
       registerCustomExercises(customEx)
+      setMeasureTypes(measureTy)
+      measureTypesRef.current = measureTy
+      setPrescribedGoals(prescribedGoalsRow)
+      setMeasureGoals(measureGoalsRows)
       const wmap = {}
       water.forEach(e => { wmap[e.date] = e.ml })
       setWaterMap(wmap)
@@ -361,6 +374,20 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  const saveMeasureType = useCallback(async (entry) => {
+    await db.saveMeasureType(entry)
+    const next = upsertById(measureTypesRef.current, entry)
+    measureTypesRef.current = next
+    setMeasureTypes(next)
+  }, [])
+
+  const deleteMeasureType = useCallback(async (id) => {
+    await db.removeMeasureType(id)
+    const next = removeById(measureTypesRef.current, id)
+    measureTypesRef.current = next
+    setMeasureTypes(next)
+  }, [])
+
   const setWaterToday = useCallback(async (date, ml) => {
     await db.setWater(date, ml)
     setWaterMap(prev => ({ ...prev, [date]: ml }))
@@ -370,6 +397,10 @@ export function AppProvider({ children }) {
     setNutritionGoalsState(goals)
     setPref('nutritionGoals', goals)
   }, [])
+
+  // A trainer-prescribed goal always wins over the local pref, but never
+  // erases it -- removing the prescription falls straight back to it.
+  const effectiveNutritionGoals = prescribedGoals || nutritionGoals
 
   const saveClient = useCallback(async (client) => {
     await db.saveClient(client)
@@ -435,10 +466,13 @@ export function AppProvider({ children }) {
     foodLog, addFoodLog, deleteFoodLog,
     customFoods, saveCustomFood, deleteCustomFood,
     customExercises, saveCustomExercise, deleteCustomExercise,
+    measureTypes, saveMeasureType, deleteMeasureType,
+    measureGoals,
     favouriteFoods, toggleFavouriteFood,
     recentFoodIds, addRecentFood,
     waterMap, setWaterToday,
     nutritionGoals, setNutritionGoals,
+    prescribedGoals, effectiveNutritionGoals,
     clients, saveClient, deleteClient,
   }
 

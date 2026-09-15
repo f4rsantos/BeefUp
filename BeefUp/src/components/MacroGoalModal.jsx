@@ -1,13 +1,18 @@
 import { useState } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Lock, ChevronDown } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { ACTIVITY, OBJECTIVE, calcGoals, activityFromSessions, latestWeight } from "../lib/nutritionCalc";
+import { ACTIVITY, OBJECTIVE, calcGoals, activityFromSessions, latestWeight, pickMicronutrientGoals } from "../lib/nutritionCalc";
+import { MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
+import { isPrescribed } from "../lib/planUtils";
 import NumberField from "./NumberField";
 
 export default function MacroGoalModal({ onClose }) {
-  const { t, nutritionGoals, setNutritionGoals, sessions, measurements } = useApp();
+  const { t, nutritionGoals, setNutritionGoals, prescribedGoals, sessions, measurements } = useApp();
+  const locked = isPrescribed(prescribedGoals);
   const [tab, setTab] = useState("manual"); // 'manual' | 'calculator'
-  const [g, setG] = useState(nutritionGoals);
+  const [g, setG] = useState(locked ? prescribedGoals : nutritionGoals);
+  const [showMicros, setShowMicros] = useState(false);
+  const definedMicros = MICRONUTRIENTS.filter((m) => g[m.key] != null);
 
   // Seeded from what the app already knows about you: weight from Measures, activity from the sessions you actually logged this week.
   const [calc, setCalc] = useState(() => ({
@@ -26,13 +31,15 @@ export default function MacroGoalModal({ onClose }) {
       carbs: parseInt(next.carbs) || 0,
       fat: parseInt(next.fat) || 0,
       waterMl: parseInt(next.waterMl) || 2500,
+      ...pickMicronutrientGoals(next, MICRONUTRIENT_KEYS),
     });
     onClose();
   }
 
   function applyCalculated() {
-    saveGoals(
-      calcGoals(
+    saveGoals({
+      ...pickMicronutrientGoals(g, MICRONUTRIENT_KEYS),
+      ...calcGoals(
         {
           ...calc,
           age: +calc.age || 28,
@@ -41,7 +48,7 @@ export default function MacroGoalModal({ onClose }) {
         },
         g.waterMl,
       ),
-    );
+    });
   }
 
   const macroKcal =
@@ -52,7 +59,7 @@ export default function MacroGoalModal({ onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-center fade-in" style={{ padding: 26 }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-2">
           <span className="font-semibold" style={{ color: "var(--text)", fontSize: 19 }}>
             {t.nutritionGoals}
           </span>
@@ -61,6 +68,31 @@ export default function MacroGoalModal({ onClose }) {
           </button>
         </div>
 
+        {locked && (
+          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--muted)", marginBottom: 22 }}>
+            <Lock size={13} /> {t.prescribedLocked}
+          </p>
+        )}
+
+        {locked ? (
+          <div className="flex flex-col gap-4">
+            <ReadOnlyField label={`${t.calories} (${t.kcal})`} value={g.kcal} />
+            <div className="grid grid-cols-3 gap-3">
+              <ReadOnlyField label={`${t.protein} (g)`} value={g.protein} />
+              <ReadOnlyField label={`${t.carbs} (g)`} value={g.carbs} />
+              <ReadOnlyField label={`${t.fat} (g)`} value={g.fat} />
+            </div>
+            <ReadOnlyField label={`${t.water} (ml)`} value={g.waterMl} />
+            {definedMicros.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                {definedMicros.map(({ key, unit }) => (
+                  <ReadOnlyField key={key} label={`${t[key]} (${unit})`} value={g[key]} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
         <div className="pill-toggle" style={{ marginBottom: 26 }}>
           <button
             className={`pill-option ${tab === "manual" ? "active" : ""}`}
@@ -92,7 +124,25 @@ export default function MacroGoalModal({ onClose }) {
               {t.macrosFromGoal.replace("{kcal}", macroKcal)}
             </p>
             <Field label={`${t.water} (ml)`} value={g.waterMl} onChange={(v) => setG({ ...g, waterMl: v })} />
-            <button className="btn btn-primary w-full mt-3 py-3.5" style={{ fontSize: 15 }} onClick={() => saveGoals(g)}>
+
+            <button
+              className="flex items-center justify-center gap-1 w-full"
+              style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600 }}
+              onClick={() => setShowMicros((v) => !v)}
+            >
+              {t.moreDetails}
+              <ChevronDown size={15} style={{ transform: showMicros ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+            </button>
+
+            {showMicros && (
+              <div className="grid grid-cols-2 gap-4 fade-in">
+                {MICRONUTRIENTS.map(({ key, unit }) => (
+                  <Field key={key} label={`${t[key]} (${unit})`} value={g[key] ?? ""} onChange={(v) => setG({ ...g, [key]: v })} />
+                ))}
+              </div>
+            )}
+
+            <button className="btn btn-primary w-full mt-1 py-3.5" style={{ fontSize: 15 }} onClick={() => saveGoals(g)}>
               {t.save}
             </button>
           </div>
@@ -166,7 +216,20 @@ export default function MacroGoalModal({ onClose }) {
             </button>
           </div>
         )}
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value }) {
+  return (
+    <div>
+      <label className="section-title" style={{ fontSize: 13 }}>{label}</label>
+      <p className="field mt-2" style={{ fontSize: 16, padding: "13px 14px", color: "var(--text)", margin: 0 }}>
+        {value}
+      </p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { resolveExercise } from './exerciseTree'
+import { resolveExercise } from './exerciseTree.js'
 
 // Maps an exercise muscle tag to body-area ids on the HumanBody SVG (front/back).
 // Keys are body_part / target values from the exercises dataset schema.

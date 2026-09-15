@@ -1,5 +1,5 @@
-import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree'
-import { localizedName } from './localizedName'
+import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree.js'
+import { localizedName } from './localizedName.js'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
 export function todaysPlanEntry(plan) {
@@ -42,6 +42,25 @@ export function daysBetween(startISO, endISO = todayISO()) {
 
 export function nowISO() {
   return new Date().toISOString()
+}
+
+// dd/mm/aa, from either a date-only ISO ("2026-09-09") or a full instant
+// ("2026-09-09T01:08:51.677Z"). Pure string split -- avoids the timezone
+// drift that new Date(dateOnlyISO).getDate() has in negative-UTC offsets.
+export function formatDateShort(value) {
+  const [datePart] = String(value).split('T')
+  const [y, m, d] = datePart.split('-')
+  return `${d}/${m}/${y.slice(-2)}`
+}
+
+// dd/mm/aa HH:mm, for a full instant (has an actual time to show) -- hour
+// and minute come from the real Date object since they're timezone-correct
+// wall-clock time, unlike the date-only split above.
+export function formatDateTimeShort(iso) {
+  const d = new Date(iso)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${formatDateShort(iso)} ${hh}:${mi}`
 }
 
 function latestExerciseField(sessions, exerciseId, getField) {
@@ -164,6 +183,7 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)
 }
 
+// Prescribed rows are read-only — trainer is authority.
 export function isPrescribed(item) {
   return !!item?.prescribedBy
 }
@@ -276,7 +296,22 @@ export function measurementsForType(measurements, type) {
   return measurements
     .filter((m) => m.type === type)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value }))
+    .map((m) => ({ id: m.id, dateLabel: m.date.slice(5), value: m.value, prescribedBy: m.prescribedBy }))
+}
+
+// No stored "direction" (gain/lose) — it's derived from where the target
+// sits relative to the first-ever logged value for that type.
+export function measureGoalProgress(measurements, type, target) {
+  const chart = measurementsForType(measurements, type)
+  if (chart.length === 0) return { hasData: false, target }
+  const baseline = chart[0].value
+  const current = chart[chart.length - 1].value
+  const span = target - baseline
+  const reached = current === target
+  const percent = span === 0
+    ? (reached ? 100 : 0)
+    : Math.max(0, Math.min(100, Math.round(Math.abs(current - baseline) / Math.abs(span) * 100)))
+  return { hasData: true, baseline, current, target, percent, reached }
 }
 
 export const epley = (weight, reps) => (parseFloat(weight) || 0) * (1 + (parseInt(reps) || 0) / 30)

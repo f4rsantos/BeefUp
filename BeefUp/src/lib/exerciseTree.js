@@ -1,7 +1,7 @@
-import exercisesBase from '../data/exercisesBase.json'
-import exercisesBulk from '../data/exercisesBulk.json'
-import exerciseEquipment from '../data/exerciseEquipment.json'
-import { localizedName } from './localizedName'
+import exercisesBase from '../data/exercisesBase.json' with { type: 'json' }
+import exercisesBulk from '../data/exercisesBulk.json' with { type: 'json' }
+import exerciseEquipment from '../data/exerciseEquipment.json' with { type: 'json' }
+import { localizedName } from './localizedName.js'
 
 const ALL_BASE = [...exercisesBase, ...exercisesBulk]
 const BASE_BY_ID = Object.fromEntries(ALL_BASE.map((b) => [b.id, b]))

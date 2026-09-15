@@ -93,8 +93,8 @@ create table if not exists public.sync_rows (
   -- sync with SYNCED_STORES if a store is ever added or reassigned.
   constraint sync_rows_store_scope_check check (
     (store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts')
-    or (store in ('foodLog', 'foods', 'water') and scope = 'nutrition')
-    or (store in ('measurements', 'steps') and scope = 'measures')
+    or (store in ('foodLog', 'foods', 'water', 'nutritionGoals') and scope = 'nutrition')
+    or (store in ('measurements', 'steps', 'measureTypes', 'measureGoals') and scope = 'measures')
   )
 );
 
@@ -167,3 +167,14 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_auth_user();
+
+-- The trigger only fires on new signups — anyone who signed up before this
+-- trigger existed on the project has an auth.users row with no matching
+-- profiles row, and later fails a foreign key check (e.g. trainer_invites)
+-- with no obvious link back to "your profile is missing". Safe to re-run:
+-- the left join only inserts rows that are actually absent.
+insert into public.profiles (id, display_name)
+select u.id, coalesce(u.raw_user_meta_data ->> 'display_name', split_part(u.email, '@', 1))
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null;

@@ -1,5 +1,5 @@
-import { buildExerciseRef, resolveExercise } from './exerciseTree'
-import { todayISO } from './planUtils'
+import { buildExerciseRef, resolveExercise } from './exerciseTree.js'
+import { todayISO } from './planUtils.js'
 
 function ref(baseId, equipmentId, variantId) {
   return resolveExercise(buildExerciseRef(baseId, equipmentId, variantId))?.id

@@ -31,11 +31,12 @@ STUB
 
 psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
 
-# Grants PostgREST normally issues for the authenticated role.
-psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<'GRANTS'
-grant select, insert, update, delete on all tables in schema public to authenticated;
-grant execute on all functions in schema public to authenticated;
-GRANTS
+# No blanket grant here on purpose: setup.sql above must already grant
+# everything `authenticated` needs on its own — Supabase does not always set
+# up default table privileges for a hand-run `create table` (this bit a real
+# project: "permission denied for table trainer_invites" despite correct
+# RLS policies, traced to setup.sql never granting the base table privilege).
+# Adding a fallback grant here would let that regression back in unnoticed.
 
 # Two students and one trainer. Ana shares workouts only; Rui shares nothing.
 psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<'SEED'
@@ -87,6 +88,9 @@ check "trainer sees nothing of Rui, who never linked" \
 echo "== a trainer writes workouts, never nutrition =="
 W=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$ANA','workouts','w2','workouts','{\"id\":\"w2\"}') returning row_key")
 check "trainer prescribes a workout" "$(echo $W | xargs)" "w2"
+
+P=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$ANA','plans','p2','workouts','{\"id\":\"p2\",\"name\":\"PPL\",\"days\":[]}') returning row_key")
+check "trainer prescribes a plan (same scope='workouts' clause)" "$(echo $P | xargs)" "p2"
 
 N=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$ANA','foodLog','f2','nutrition','{\"id\":\"f2\"}') returning row_key")
 case "$N" in *"violates row-level security"*) N=DENIED;; esac
@@ -167,6 +171,116 @@ echo "== F5: new_invite_code() no longer exists =="
 F5=$(run_as $ANA "select new_invite_code()")
 case "$F5" in *"does not exist"*) F5=GONE;; esac
 check "new_invite_code() has been removed" "$(echo $F5 | xargs)" "GONE"
+
+# --- F6 regression: a profile missing for an existing auth user (e.g. a
+# signup that predates the on_auth_user_created trigger) breaks any FK to
+# profiles, and re-pasting setup.sql is the documented fix -----------------
+echo "== F6: profiles backfill heals a pre-trigger signup =="
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "delete from public.profiles where id='$TRAINER'" >/dev/null
+F6_BEFORE=$(psql -U postgres -d postgres -Atc "insert into public.trainer_invites(code, trainer_id) values ('F6TESTPT','$TRAINER')" 2>&1 || true)
+case "$F6_BEFORE" in *"trainer_invites_trainer_id_fkey"*) F6_BEFORE=FK_VIOLATION;; esac
+check "missing profile blocks trainer_invites insert (sanity check)" "$(echo $F6_BEFORE | xargs)" "FK_VIOLATION"
+
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "insert into public.trainer_invites(code, trainer_id) values ('F6TESTPT','$TRAINER')" >/dev/null
+check "re-running setup.sql backfills the missing profile" \
+  "$(psql -U postgres -d postgres -Atc "select count(*) from public.trainer_invites where code='F6TESTPT' and trainer_id='$TRAINER'" | xargs)" "1"
+
+# --- F7: only one trainer per project ---------------------------------
+# None of the seeded profiles has had `role` touched yet -- all three are
+# still the schema default 'solo', which makes $TRAINER a clean "first
+# user" and $RUI a clean "second user who tries and fails".
+echo "== F7: só pode haver um treinador no projeto =="
+
+T7=$(run_as $TRAINER "update public.profiles set role='trainer' where id='$TRAINER' returning role")
+check "the first user can become trainer" "$(echo $T7 | xargs)" "trainer"
+
+T7B=$(run_as $RUI "update public.profiles set role='trainer' where id='$RUI' returning role")
+case "$T7B" in *"this project already has a trainer"*) T7B=DENIED;; esac
+check "a second user cannot also become trainer" "$(echo $T7B | xargs)" "DENIED"
+check "the second user's role is still solo" \
+  "$(run_as $RUI "select role from public.profiles where id='$RUI'" | xargs)" "solo"
+
+T7C=$(run_as $TRAINER "update public.profiles set display_name='Trainer Renamed' where id='$TRAINER' returning role")
+check "trainer can re-save their profile without changing role" "$(echo $T7C | xargs)" "trainer"
+
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<SEED3
+insert into public.trainer_invites(code, trainer_id) values ('F7TESTCD', '$TRAINER');
+SEED3
+run_as $RUI "select redeem_invite('F7TESTCD', array['workouts'])" >/dev/null
+check "the blocked user can still redeem an invite as a student" \
+  "$(run_as $RUI "select status from public.trainer_links where trainer_id='$TRAINER' and client_id='$RUI'" | xargs)" "accepted"
+check "the blocked user can still share a scope" \
+  "$(run_as $RUI "select scopes from public.trainer_links where trainer_id='$TRAINER' and client_id='$RUI'" | xargs)" "{workouts}"
+
+A7=$(run_as $ANA "insert into public.trainer_invites(code, trainer_id) values ('ANATEST2','$ANA') returning code")
+case "$A7" in *"violates row-level security"*) A7=DENIED;; esac
+check "a non-trainer cannot insert trainer_invites" "$(echo $A7 | xargs)" "DENIED"
+
+# --- F8: trainer can prescribe measure types AND log a measurement value,
+#         but never steps -------------------------------------------------
+# RUI already has an accepted link with scopes={workouts} from F7 above.
+echo "== F8: trainer prescribes measure types and values on a linked client =="
+
+MT_NOSHARE=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureTypes','mt1','measures','{\"id\":\"mt1\",\"name\":\"Calf\"}') returning row_key")
+case "$MT_NOSHARE" in *"violates row-level security"*) MT_NOSHARE=DENIED;; esac
+check "trainer blocked from measureTypes before client shares measures" "$(echo $MT_NOSHARE | xargs)" "DENIED"
+
+run_as $RUI "update public.trainer_links set scopes=array['workouts','measures'] where trainer_id='$TRAINER' and client_id='$RUI'" >/dev/null
+
+MT_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureTypes','mt1','measures','{\"id\":\"mt1\",\"name\":\"Calf\"}') returning row_key")
+check "trainer prescribes a measure type once measures is shared" "$(echo $MT_OK | xargs)" "mt1"
+
+MV_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measurements','m9','measures','{\"id\":\"m9\",\"value\":80}') returning row_key")
+check "trainer logs a measurement value once measures is shared" "$(echo $MV_OK | xargs)" "m9"
+
+STEPS_DENIED=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','steps','s1','measures','{\"id\":\"s1\",\"count\":8000}') returning row_key")
+case "$STEPS_DENIED" in *"violates row-level security"*) STEPS_DENIED=DENIED;; esac
+check "trainer still cannot write the client's own step count" "$(echo $STEPS_DENIED | xargs)" "DENIED"
+
+MT_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measureTypes' and row_key='mt1' returning row_key")
+check "trainer can unprescribe (tombstone) a measure type" "$(echo $MT_UNPRESCRIBE | xargs)" "mt1"
+
+MV_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measurements' and row_key='m9' returning row_key")
+check "trainer can unprescribe (tombstone) a measurement value" "$(echo $MV_UNPRESCRIBE | xargs)" "m9"
+
+# --- F9: trainer can prescribe nutrition goals, but never the client's own
+#         food log or water -------------------------------------------------
+echo "== F9: trainer prescribes nutrition goals on a linked client =="
+
+NG_NOSHARE=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','nutritionGoals','default','nutrition','{\"id\":\"default\",\"kcal\":2200}') returning row_key")
+case "$NG_NOSHARE" in *"violates row-level security"*) NG_NOSHARE=DENIED;; esac
+check "trainer blocked from nutritionGoals before client shares nutrition" "$(echo $NG_NOSHARE | xargs)" "DENIED"
+
+run_as $RUI "update public.trainer_links set scopes=array['workouts','measures','nutrition'] where trainer_id='$TRAINER' and client_id='$RUI'" >/dev/null
+
+NG_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','nutritionGoals','default','nutrition','{\"id\":\"default\",\"kcal\":2200}') returning row_key")
+check "trainer prescribes nutrition goals once nutrition is shared" "$(echo $NG_OK | xargs)" "default"
+
+FOODLOG_DENIED=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','foodLog','f1','nutrition','{\"id\":\"f1\",\"name\":\"Rice\"}') returning row_key")
+case "$FOODLOG_DENIED" in *"violates row-level security"*) FOODLOG_DENIED=DENIED;; esac
+check "trainer still cannot write the client's own food log" "$(echo $FOODLOG_DENIED | xargs)" "DENIED"
+
+WATER_DENIED=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','water','2026-01-01','nutrition','{\"date\":\"2026-01-01\",\"ml\":2000}') returning row_key")
+case "$WATER_DENIED" in *"violates row-level security"*) WATER_DENIED=DENIED;; esac
+check "trainer still cannot write the client's own water log" "$(echo $WATER_DENIED | xargs)" "DENIED"
+
+NG_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='nutritionGoals' and row_key='default' returning row_key")
+check "trainer can unprescribe (tombstone) nutrition goals" "$(echo $NG_UNPRESCRIBE | xargs)" "default"
+
+# --- F10: trainer can prescribe a measure goal (target per type), same
+#          'measures' scope RUI already shared in F8 ------------------------
+echo "== F10: trainer prescribes a measure goal on a linked client =="
+
+MG_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureGoals','weight','measures','{\"id\":\"weight\",\"target\":65}') returning row_key")
+check "trainer prescribes a measure goal once measures is shared" "$(echo $MG_OK | xargs)" "weight"
+
+MG_DENIED=$(run_as $ANA "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','measureGoals','waist','measures','{\"id\":\"waist\",\"target\":80}') returning row_key")
+case "$MG_DENIED" in *"violates row-level security"*) MG_DENIED=DENIED;; esac
+check "a non-trainer cannot prescribe a measure goal" "$(echo $MG_DENIED | xargs)" "DENIED"
+
+MG_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measureGoals' and row_key='weight' returning row_key")
+check "trainer can unprescribe (tombstone) a measure goal" "$(echo $MG_UNPRESCRIBE | xargs)" "weight"
 
 echo
 echo "passed: $pass   failed: $fail"

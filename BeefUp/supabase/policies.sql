@@ -12,6 +12,22 @@
 -- service_role (used only by trusted server-side code, never the client
 -- bundle) bypasses RLS by Supabase default and needs no policy here.
 
+-- RLS narrows access, it does not grant it: without the table-level GRANTs
+-- below, PostgREST fails every request with "permission denied for table
+-- ...", before a single policy is even evaluated. A hand-run `create table`
+-- does not always inherit Supabase's usual anon/authenticated defaults (that
+-- depends on ALTER DEFAULT PRIVILEGES having been set for the role that ran
+-- this script) — so this is granted explicitly instead of assumed. Each
+-- grant lists exactly the operations a policy exists for below; nothing here
+-- widens access beyond what the policies already carve out. INSERT is
+-- absent for profiles/trainer_links because those rows are only ever created
+-- by SECURITY DEFINER functions (schema.sql's trigger, functions.sql's
+-- redeem_invite()), which run as the table owner and need no grant.
+grant select, update on public.profiles to authenticated;
+grant select, update on public.trainer_links to authenticated;
+grant select, insert, update on public.trainer_invites to authenticated;
+grant select, insert, update, delete on public.sync_rows to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- profiles
 -- ---------------------------------------------------------------------------
@@ -61,6 +77,36 @@ create policy profiles_update_own on public.profiles
   for update
   using (id = auth.uid())
   with check (id = auth.uid());
+
+-- One trainer per project: the anon key ships inside every invite a trainer
+-- hands out, so once a project has a trainer, letting a second profile also
+-- become one would let a student the first trainer invited turn around and
+-- recruit their own clients into that same project. WITH CHECK above only
+-- proves identity, not which columns changed, so that alone can't stop a
+-- role flip -- this trigger is the belt to trainer_invites_insert's braces
+-- below. SECURITY DEFINER (unlike trainer_links_guard below, which only
+-- ever looks at NEW/OLD) is required because profiles_select_own limits a
+-- plain SELECT to the caller's own row -- an invoker-rights check here would
+-- never see an existing trainer other than itself.
+create or replace function public.profiles_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if new.role = 'trainer' and old.role is distinct from 'trainer'
+     and exists (select 1 from public.profiles where role = 'trainer' and id <> new.id) then
+    raise exception 'profiles: this project already has a trainer';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_before_update on public.profiles;
+create trigger profiles_before_update
+  before update on public.profiles
+  for each row execute function public.profiles_guard();
 
 -- ---------------------------------------------------------------------------
 -- trainer_links
@@ -162,7 +208,15 @@ create policy trainer_invites_select on public.trainer_invites
 drop policy if exists trainer_invites_insert on public.trainer_invites;
 create policy trainer_invites_insert on public.trainer_invites
   for insert
-  with check (trainer_id = auth.uid());
+  with check (
+    trainer_id = auth.uid()
+    -- Second door on the same hole profiles_guard closes above: even before
+    -- any self-promotion attempt, a plain 'solo' profile must not be able to
+    -- create invites at all.
+    and exists (
+      select 1 from public.profiles p where p.id = auth.uid() and p.role = 'trainer'
+    )
+  );
 
 -- WITH CHECK trainer_id = auth.uid() also blocks reassigning an invite to a
 -- different trainer: the new row must still belong to the caller.
@@ -192,25 +246,40 @@ create policy sync_rows_select on public.sync_rows
   );
 
 -- Student: full write of their own rows, any scope.
--- Trainer: write ONLY scope = 'workouts', and only for a client who has
--- shared that scope with them. WITH CHECK (not just USING) is what actually
--- blocks a trainer from writing nutrition/measures: it re-validates the
+-- Trainer: write ONLY scope = 'workouts', plus the narrow exceptions below
+-- for measure types AND measurement values (a trainer taking/logging a
+-- client's measurement in person) and for nutrition GOALS (never the
+-- client's own logged food or water), and only for a client who has shared
+-- that scope with them. WITH CHECK (not just USING) is what actually blocks
+-- a trainer from writing the client's own logged data: it re-validates the
 -- *new* row being written, not just which existing rows are visible.
+--
+-- Both exceptions are deliberately store-scoped, not scope-scoped:
+-- opening up `scope = 'measures'` outright would also let a trainer write
+-- `steps`, and opening up `scope = 'nutrition'` outright would let a
+-- trainer write `foodLog`/`foods`/`water` — all client-owned logged data
+-- with no trainer-facing equivalent. Restricting to
+-- `store in ('measureTypes', 'measurements', 'measureGoals')` / `store = 'nutritionGoals'`
+-- keeps the trainer able to prescribe *what* to measure and *what to aim
+-- for* (both stamped `prescribedBy` client-side, same as a prescribed
+-- workout) without ever touching a value the client themselves recorded.
 drop policy if exists sync_rows_insert on public.sync_rows;
 create policy sync_rows_insert on public.sync_rows
   for insert
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
+    or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   );
 
 -- Same rule for UPDATE, on both clauses:
 --   USING   — a trainer can only reach an existing row that is already
---             scope = 'workouts' for a client that shared it (a nutrition
---             or measures row is invisible to UPDATE, never mind write).
+--             scope = 'workouts' (or one of the store-scoped exceptions
+--             above) for a client that shared it (the client's own logged
+--             data is invisible to UPDATE, never mind write).
 --   WITH CHECK — even for a row USING admitted, the trainer cannot flip its
---             scope away from 'workouts' on the way out, and cannot write
---             a row whose resulting scope isn't 'workouts'.
+--             scope/store away from what's allowed on the way out.
 -- The sync_rows_store_scope_check table constraint (schema.sql) is a second,
 -- independent backstop: it makes "store = foodLog but scope = workouts" an
 -- invalid row regardless of what any policy allows.
@@ -220,10 +289,14 @@ create policy sync_rows_update on public.sync_rows
   using (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
+    or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   )
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
+    or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
+    or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
   );
 
 -- DELETE: student only, own rows. The app itself never issues a hard

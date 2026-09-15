@@ -1,4 +1,4 @@
-import { searchProducts, fetchProduct } from './openFoodFacts'
+import { searchProducts, fetchProduct } from './openFoodFacts.js'
 
 export const MICRONUTRIENTS = [
   { key: 'fiber', unit: 'g', rda: 30, off: 'fiber_100g', factor: 1 },

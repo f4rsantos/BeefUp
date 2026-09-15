@@ -1,5 +1,5 @@
-import { uid, todayISO } from './planUtils'
-import { listBaseExercises, listEquipmentUsed, buildExerciseRef } from './exerciseTree'
+import { uid, todayISO } from './planUtils.js'
+import { listBaseExercises, listEquipmentUsed, buildExerciseRef } from './exerciseTree.js'
 
 // Reading CSV has two modes: 
 // - 'beefup' trusts our own two extra columns and restores sessions exactly as they were. 

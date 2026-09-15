@@ -1,3 +1,4 @@
+import { STORES } from '../stores.js'
 import { db } from '../db.js'
 import { SCOPES, cursorKey, keyFieldOf, storesForScopes } from './stores.js'
 import { stampSynced, stampFromRemote, isDeleted, stripMeta } from './meta.js'
@@ -10,8 +11,41 @@ import { mergeStore, pendingPush, purgeableKeys } from './merge.js'
 //     items: [{ key, row, deleted }]
 //     push needs no serverNow of its own: acks are only used to stamp rows
 //     synced, the cursor advances from pull's serverNow alone (see below).
+//   identity()           -> { projectRef, userId }, checked against sync:owner below
 
 export { cursorKey }
+
+// Lives here (not stores.js) because it needs db.rawDelete, and stores.js
+// must stay importable from db.js without pulling the engine back in.
+export async function clearAllCursors() {
+  const stores = storesForScopes(Object.values(SCOPES))
+  for (const store of stores) await db.rawDelete(STORES.settings, cursorKey(store))
+}
+
+// Local-only guard: a device's rows belong to one Supabase project/user at a
+// time. Without this, a stale cursor or a missed reset could push one
+// trainer's data straight into another's project, silently.
+const OWNER_KEY = 'sync:owner'
+
+async function assertOwnerMatches(identity) {
+  const owner = await db.getSetting(OWNER_KEY, null)
+  if (!owner) return
+  if (owner.projectRef !== identity.projectRef || owner.userId !== identity.userId) {
+    throw new Error(
+      `sync: refusing to sync — local data belongs to ${owner.projectRef}/${owner.userId}, ` +
+      `backend identity is ${identity.projectRef}/${identity.userId}. Call switchSupabaseProject() first.`
+    )
+  }
+}
+
+async function recordOwnerOnce(identity) {
+  const owner = await db.getSetting(OWNER_KEY, null)
+  if (!owner) await db.setSetting(OWNER_KEY, identity)
+}
+
+export async function clearSyncOwner() {
+  await db.setSetting(OWNER_KEY, null)
+}
 
 async function readCursor(store) {
   return db.getSetting(cursorKey(store), 0)
@@ -37,11 +71,7 @@ function toLocalRow(item, keyField) {
 export async function syncStore(backend, store) {
   const keyField = keyFieldOf(store)
 
-  // Pull before push: a remote change (including a deletion) must land on
-  // this device before a dirty local row gets a chance to push over it. The
-  // other order lets an unrelated local edit resurrect a row the trainer
-  // just deleted, by upserting deleted_at back to null before the tombstone
-  // is ever seen.
+  // Pull before push — trainer deletion must win over concurrent local edit.
   const since = await readCursor(store)
   const pullRes = await backend.pull(store, since)
   const remote = (pullRes.items || []).map((item) => ({ row: toLocalRow(item, keyField), serverAt: item.serverAt }))
@@ -63,15 +93,7 @@ export async function syncStore(backend, store) {
     }
   }
 
-  // The cursor advances to this round's PULL time only, never to a push
-  // ack's later timestamp, even though that means an immediate next sync
-  // may re-pull a row this round just pushed (harmless: it is not dirty
-  // any more, so it merges back to identical data). The alternative is
-  // unsafe: another device can commit a row between the moment pull reads
-  // the clock and the moment our push lands. If the cursor jumped forward
-  // to cover our own push, that row's updated_at would sit behind the new
-  // cursor and never be pulled again — silent, permanent data loss. Losing
-  // nothing is worth re-fetching one row once.
+  // Cursor from pull-time only: prevents losing rows committed during our push.
   await writeCursor(store, pullRes.serverNow)
   return { pushed, pulled: writes.length, kept }
 }
@@ -86,11 +108,17 @@ export async function purgeStore(store, { linked, now = Date.now() } = {}) {
 
 export async function syncAll(backend, { scopes = [] } = {}) {
   const stores = storesForScopes(scopes)
+  const identity = await backend.identity()
+  await assertOwnerMatches(identity)
+
   const report = {}
   for (const store of stores) {
     report[store] = await syncStore(backend, store)
     await purgeStore(store, { linked: true })
   }
+
+  // Only after a clean pass — a thrown error must not stamp a new owner.
+  await recordOwnerOnce(identity)
   return report
 }
 

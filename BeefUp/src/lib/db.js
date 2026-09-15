@@ -3,7 +3,7 @@ import { isSynced, keyFieldOf, cursorKey } from './sync/stores.js'
 import { stampLocal, stampDeleted, stripMeta, isDeleted } from './sync/meta.js'
 
 const DB_NAME = 'beefup'
-const DB_VERSION = 5
+const DB_VERSION = 8
 
 export { STORES }
 
@@ -29,6 +29,9 @@ function openDB() {
       ensureStore(db, STORES.water, { keyPath: 'date' })
       ensureStore(db, STORES.clients, { keyPath: 'id' })
       ensureStore(db, STORES.customExercises, { keyPath: 'id' })
+      ensureStore(db, STORES.measureTypes, { keyPath: 'id' })
+      ensureStore(db, STORES.measureGoals, { keyPath: 'id' })
+      ensureStore(db, STORES.nutritionGoals, { keyPath: 'id' })
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)
@@ -50,6 +53,8 @@ async function tx(storeName, mode, fn) {
     }
   })
 }
+
+// Synced stores stamp writes/deletes, hide metadata from reads.
 
 function writeRow(store, value) {
   return tx(store, 'readwrite', s => s.put(isSynced(store) ? stampLocal(value) : value))
@@ -86,8 +91,7 @@ export const db = {
   // Generic delete
   remove: (store, key) => deleteRow(store, key),
 
-  // When restoring a backup replaces the current data. 
-  // A synced store also drops its sync cursor
+  // Restore wipes cursor too — next sync starts from scratch.
   clear: async (store) => {
     await tx(store, 'readwrite', s => s.clear())
     if (isSynced(store)) await tx(STORES.settings, 'readwrite', s => s.delete(cursorKey(store)))
@@ -143,6 +147,18 @@ export const db = {
   saveCustomExercise: (exercise) => writeRow(STORES.customExercises, exercise),
   getAllCustomExercises: () => readAll(STORES.customExercises),
   removeCustomExercise: (id) => deleteRow(STORES.customExercises, id),
+
+  // Custom measure types helpers
+  saveMeasureType: (measureType) => writeRow(STORES.measureTypes, measureType),
+  getAllMeasureTypes: () => readAll(STORES.measureTypes),
+  removeMeasureType: (id) => deleteRow(STORES.measureTypes, id),
+  getAllMeasureGoals: () => readAll(STORES.measureGoals),
+
+  // Nutrition goals: a single row keyed 'default', trainer-prescribable.
+  saveNutritionGoals: (goals) => writeRow(STORES.nutritionGoals, { id: 'default', ...goals }),
+  getNutritionGoalsRow: () => readOne(STORES.nutritionGoals, 'default').then(row => row ?? null),
+  removeNutritionGoals: () => deleteRow(STORES.nutritionGoals, 'default'),
+
   rawAll: (store) => tx(store, 'readonly', s => s.getAll()),
   rawPut: (store, value) => tx(store, 'readwrite', s => s.put(value)),
   rawDelete: (store, key) => tx(store, 'readwrite', s => s.delete(key)),

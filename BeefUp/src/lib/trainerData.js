@@ -1,17 +1,23 @@
-import { getSupabase, isConfigured } from './supabaseClient.js'
+import { getSupabase } from './supabaseClient.js'
+import { loadSupabaseConfig } from './supabaseConfig.js'
 import { STORES } from './stores.js'
 import { scopeOf, storesForScopes } from './sync/stores.js'
 
 // Trainer-side access to sync_rows/trainer_links/trainer_invites through the
 // shared Supabase client. Reads cover whatever the client shared; writes are
-// confined to prescribing plans and workouts. Nutrition and measures are
-// read-only here, and the database refuses a write to them regardless.
+// confined to prescribing plans, workouts, measure types/values, and
+// nutrition goals — never the client's own logged food, water, or step
+// counts. The database refuses anything else regardless.
 
+// Single source of truth for invite-code shape: the SQL generator is gone,
+// so this alphabet is the only place it's defined. Don't change it or the
+// length, clients read codes aloud.
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
-// A trainer prescribes plans and workouts, nothing else. Sessions and custom
-// exercises share the 'workouts' scope but belong to the client.
-const PRESCRIBABLE = [STORES.plans, STORES.workouts]
+// Trainer defines what to measure and the nutrition targets to hit, and may
+// log a value in person too — never steps, food log, or water, which stay
+// the client's own logged data.
+const PRESCRIBABLE = [STORES.plans, STORES.workouts, STORES.measureTypes, STORES.measurements, STORES.measureGoals, STORES.nutritionGoals]
 
 export function isPrescribable(store) {
   return PRESCRIBABLE.includes(store)
@@ -27,7 +33,6 @@ function randomCode(len = 8) {
 // Resolves the signed-in trainer's id on the same client instance used for
 // every query below. Returns null when unconfigured or signed out.
 async function trainerClient() {
-  if (!isConfigured()) return null
   const supabase = await getSupabase()
   if (!supabase) return null
   const { data } = await supabase.auth.getSession()
@@ -69,7 +74,7 @@ export async function listTrainerLinks() {
 // One store's rows for a client, shaped exactly like db.js's getAll() —
 // so planUtils/nutritionStats work on them unchanged.
 export async function getClientRows(clientId, store) {
-  if (!isConfigured()) return []
+  if (!(await loadSupabaseConfig())) return []
   const supabase = await getSupabase()
   if (!supabase) return []
 
@@ -84,8 +89,17 @@ export async function getClientRows(clientId, store) {
 }
 
 // Every store a client's scopes cover, keyed by store name.
+// The dashboard renders these and nothing else; fetching the rest of the
+// scope (steps, water, foods, customExercises) was paid-for network the
+// trainer never sees.
+const DASHBOARD_STORES = [
+  STORES.plans, STORES.workouts, STORES.sessions,
+  STORES.foodLog, STORES.nutritionGoals,
+  STORES.measurements, STORES.measureTypes, STORES.measureGoals,
+]
+
 export async function getClientData(clientId, scopes) {
-  const stores = storesForScopes(scopes)
+  const stores = storesForScopes(scopes).filter((s) => DASHBOARD_STORES.includes(s))
   const pairs = await Promise.all(stores.map(async (store) => [store, await getClientRows(clientId, store)]))
   return Object.fromEntries(pairs)
 }
@@ -179,6 +193,8 @@ export async function createInvite() {
   throw new Error('could not generate a unique code')
 }
 
+// Scoped to trainerId, not left to RLS alone, so a stale/foreign code fails
+// loudly (see the .length check) instead of silently no-op'ing.
 export async function revokeInvite(code) {
   const ctx = await trainerClient()
   if (!ctx) throw new Error('not signed in')

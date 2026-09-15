@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown } from "lucide-react";
+import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown, Lock } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { todayISO, uid } from "../lib/planUtils";
+import { todayISO, uid, isPrescribed } from "../lib/planUtils";
 import { getLS, removeLS } from "../lib/crypto";
-import { macroGoalShares } from "../lib/nutritionCalc";
+import { macroGoalShares, MICRO_COLORS } from "../lib/nutritionCalc";
 import { MICRONUTRIENTS } from "../lib/foodProvider";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { getMealIcon, MEAL_ICON_KEYS } from "../lib/mealIcons";
@@ -15,19 +15,8 @@ import MacroGoalModal from "../components/MacroGoalModal";
 
 const GLASS_ML = 250;
 
-const MICRO_COLORS = {
-  fiber: "var(--accent)",
-  sugar: "var(--carbs)",
-  saturatedFat: "var(--fat)",
-  transFat: "var(--danger)",
-  sodium: "var(--warn)",
-  potassium: "var(--accent-2)",
-  calcium: "var(--protein)",
-  iron: "var(--muted)",
-};
-
 export default function NutritionPage() {
-  const { t, foodLog, deleteFoodLog, nutritionGoals, waterMap, setWaterToday, mealTypes, setMealTypes } = useApp();
+  const { t, foodLog, deleteFoodLog, effectiveNutritionGoals: nutritionGoals, prescribedGoals, waterMap, setWaterToday, mealTypes, setMealTypes } = useApp();
   const today = todayISO();
   const [foodDraft] = useState(() => getLS("foodEntryDraft", null));
   const [addMeal, setAddMeal] = useState(() => foodDraft?.meal ?? null);
@@ -66,7 +55,7 @@ export default function NutritionPage() {
     key: m.key,
     label: t[m.key],
     val: Math.round(totals[m.key] ?? 0),
-    goal: m.rda,
+    goal: nutritionGoals[m.key] ?? m.rda,
     unit: m.unit,
     color: MICRO_COLORS[m.key] ?? "var(--muted)",
   }));
@@ -94,8 +83,8 @@ export default function NutritionPage() {
         <PageHeader
           title={t.nutrition}
           action={
-            <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={t.editGoals}>
-              <Pencil size={16} />
+            <button className="btn btn-ghost p-2.5" onClick={() => setShowGoals(true)} aria-label={isPrescribed(prescribedGoals) ? t.prescribedLocked : t.editGoals}>
+              {isPrescribed(prescribedGoals) ? <Lock size={16} /> : <Pencil size={16} />}
             </button>
           }
         />

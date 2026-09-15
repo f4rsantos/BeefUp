@@ -125,3 +125,10 @@ export const PRESET_ACCENTS = [
   { id: 'red', hex: '#dc2626', label: 'colorRed' },
   { id: 'orange', hex: '#c2410c', label: 'colorOrange' },
 ]
+
+// Which hex the accent picker is currently showing: a preset's own colour, or
+// the user's custom wheel pick.
+export function accentHexOf(accentColor, customAccentHex) {
+  if (accentColor === 'custom') return customAccentHex
+  return PRESET_ACCENTS.find((p) => p.id === accentColor)?.hex ?? PRESET_ACCENTS[0].hex
+}

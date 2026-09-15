@@ -8,6 +8,8 @@ import { isDeleted, isDirty, stripMeta } from './meta.js'
 import { resolveRow, mergeStore, pendingPush, purgeableKeys, TOMBSTONE_GRACE_MS } from './merge.js'
 import { syncStore, syncAll, purgeStore, cursorKey } from './engine.js'
 import { createMemoryBackend } from './backends/memory.js'
+import { unlink } from './link.js'
+import { switchSupabaseProject } from './project.js'
 
 async function reset() {
   for (const store of Object.values(STORES)) await db.clear(store)
@@ -55,7 +57,7 @@ test('purgeableKeys drops tombstones now when unlinked, after grace when linked'
 
 test('scopes map to the right stores', () => {
   const nutrition = storesForScopes([SCOPES.nutrition])
-  assert.deepEqual(nutrition.sort(), [STORES.foodLog, STORES.foods, STORES.water].sort())
+  assert.deepEqual(nutrition.sort(), [STORES.foodLog, STORES.foods, STORES.water, STORES.nutritionGoals].sort())
   assert.ok(!nutrition.includes(STORES.sessions))
   assert.equal(keyFieldOf(STORES.water), 'date')
   assert.equal(keyFieldOf(STORES.sessions), 'id')
@@ -114,6 +116,40 @@ test('offline writes push once online and stop being dirty', async () => {
   assert.deepEqual(backend._dump(STORES.sessions).map((r) => r.key).sort(), ['s1', 's2'])
   // Server payload must not carry local bookkeeping.
   assert.deepEqual(backend._dump(STORES.sessions)[0].row, { id: 's1', date: '2026-01-01', duration: 60 })
+})
+
+test('custom measure types sync like any other store', async () => {
+  await reset()
+  const backend = createMemoryBackend()
+
+  await db.saveMeasureType({ id: 'm1', name: 'Gémeo esquerdo', group: 'legs', createdAt: 1 })
+
+  const report = await syncStore(backend, STORES.measureTypes)
+  assert.equal(report.pushed, 1)
+
+  const [raw] = await db.rawAll(STORES.measureTypes)
+  assert.ok(!isDirty(raw), 'clean after push')
+
+  assert.deepEqual(backend._dump(STORES.measureTypes)[0].row, {
+    id: 'm1', name: 'Gémeo esquerdo', group: 'legs', createdAt: 1,
+  })
+})
+
+test('nutrition goals sync like any other store', async () => {
+  await reset()
+  const backend = createMemoryBackend()
+
+  await db.saveNutritionGoals({ kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 })
+
+  const report = await syncStore(backend, STORES.nutritionGoals)
+  assert.equal(report.pushed, 1)
+
+  const [raw] = await db.rawAll(STORES.nutritionGoals)
+  assert.ok(!isDirty(raw), 'clean after push')
+
+  assert.deepEqual(backend._dump(STORES.nutritionGoals)[0].row, {
+    id: 'default', kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500,
+  })
 })
 
 test('rows written by another device arrive on pull', async () => {
@@ -368,4 +404,92 @@ test('clearing a synced store resets its cursor, an unsynced one has none', asyn
 test('stripMeta leaves plain rows untouched', () => {
   assert.deepEqual(stripMeta({ id: 'a', n: 1, _dirty: true, _updatedAt: 5 }), { id: 'a', n: 1 })
   assert.deepEqual(stripMeta({ id: 'a' }), { id: 'a' })
+})
+
+test('unlink clears sync cursors, not just link state', async () => {
+  await reset()
+  const backend = createMemoryBackend()
+
+  await db.addSession({ id: 's1', date: '2026-01-01' })
+  await syncStore(backend, STORES.sessions)
+  assert.ok(await db.getSetting(cursorKey(STORES.sessions), 0) > 0, 'cursor advanced')
+
+  await unlink()
+
+  assert.equal(await db.getSetting(cursorKey(STORES.sessions), 0), 0, 'cursor must not survive an unlink')
+})
+
+test('syncAll refuses to push when the backend identity does not match the recorded owner', async () => {
+  await reset()
+  const backendA = createMemoryBackend({ identity: { projectRef: 'proj-a', userId: 'user-a' } })
+
+  await db.addSession({ id: 's1', date: '2026-01-01' })
+  await syncAll(backendA, { scopes: [SCOPES.workouts] })
+  assert.deepEqual(await db.getSetting('sync:owner', null), { projectRef: 'proj-a', userId: 'user-a' })
+
+  // Same identity again: the guard lets it through.
+  await db.addSession({ id: 's2', date: '2026-01-02' })
+  await syncAll(backendA, { scopes: [SCOPES.workouts] })
+
+  // A different backend identity, with the owner still pointing at A, must
+  // be refused -- this is what makes a cross-project push impossible even
+  // if some future code path forgets to reset first.
+  const backendB = createMemoryBackend({ identity: { projectRef: 'proj-b', userId: 'user-b' } })
+  await assert.rejects(() => syncAll(backendB, { scopes: [SCOPES.workouts] }), /refusing to sync/)
+})
+
+test('switching Supabase projects drops the cursor, so project B is not blind to rows it already had', async () => {
+  await reset()
+  const backendA = createMemoryBackend({ identity: { projectRef: 'switch-a1', userId: 'user-a1' } })
+
+  await db.addSession({ id: 's1', date: '2026-01-01' })
+  await syncAll(backendA, { scopes: [SCOPES.workouts] })
+  assert.ok(await db.getSetting(cursorKey(STORES.sessions), 0) > 0, 'cursor advanced against A')
+
+  await switchSupabaseProject({ url: 'https://switch-b1.supabase.co', anonKey: 'sb_publishable_test0000000000000001' })
+
+  // A stale cursor here would mean project B's own pre-existing rows older
+  // than A's "now" are never pulled again -- the silent data-loss bug (b).
+  assert.equal(await db.getSetting(cursorKey(STORES.sessions), 0), 0, 'cursor must not carry over to project B')
+})
+
+test('switching Supabase projects drops prescribed rows and re-baselines the rest as dirty', async () => {
+  await reset()
+  const backendA = createMemoryBackend({ identity: { projectRef: 'switch-a2', userId: 'user-a2' } })
+
+  await db.addSession({ id: 'own', date: '2026-01-01' })
+  await db.put(STORES.plans, { id: 'plan-1', name: 'Trainer plan', prescribedBy: 'trainer-a' })
+  await syncAll(backendA, { scopes: [SCOPES.workouts] })
+
+  const result = await switchSupabaseProject({ url: 'https://switch-b2.supabase.co', anonKey: 'sb_publishable_test0000000000000002' })
+
+  assert.equal(result.removedPrescribed, 1)
+  assert.deepEqual(await db.rawAll(STORES.plans), [], "the old trainer's prescribed plan is gone")
+
+  const [session] = await db.rawAll(STORES.sessions)
+  assert.ok(isDirty(session), 'own data re-baselines as dirty so it re-uploads to the new project')
+  assert.equal(session._serverAt, undefined, 'no stale server timestamp carried over from the old project')
+
+  assert.equal(await db.getSetting('sync:owner', null), null, 'owner guard is cleared for the new project')
+})
+
+test('an invalid new config is rejected before anything local is destroyed', async () => {
+  await reset()
+  const backendA = createMemoryBackend({ identity: { projectRef: 'switch-a3', userId: 'user-a3' } })
+
+  await db.addSession({ id: 'own', date: '2026-01-01' })
+  await db.put(STORES.plans, { id: 'plan-1', name: 'Trainer plan', prescribedBy: 'trainer-a' })
+  await syncAll(backendA, { scopes: [SCOPES.workouts] })
+  const cursorBefore = await db.getSetting(cursorKey(STORES.sessions), 0)
+
+  await assert.rejects(
+    () => switchSupabaseProject({ url: 'https://evil.example.com', anonKey: 'sb_publishable_x' }),
+    /bad-host/,
+  )
+
+  // Everything must survive a rejected switch: losing the old trainer's plans
+  // on the way to throwing would be worse than the bad config itself.
+  assert.equal((await db.rawAll(STORES.plans)).length, 1, 'prescribed rows untouched')
+  assert.equal(await db.getSetting(cursorKey(STORES.sessions), 0), cursorBefore, 'cursor untouched')
+  assert.ok(await db.getSetting('sync:owner', null), 'owner guard untouched')
 })

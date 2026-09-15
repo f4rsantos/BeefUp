@@ -1,6 +1,6 @@
 // `foodLog` is already in context, so these functions only use in-memory data — no DB.
 
-import { MICRONUTRIENT_KEYS } from './foodProvider'
+import { MICRONUTRIENT_KEYS } from './foodProvider.js'
 
 const MACRO_KEYS = ['kcal', 'protein', 'carbs', 'fat']
 const TOTAL_KEYS = [...MACRO_KEYS, ...MICRONUTRIENT_KEYS]
