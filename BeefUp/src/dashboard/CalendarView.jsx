@@ -4,6 +4,8 @@ import { useApp } from "../context/AppContext";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { formatDateShort, todayISO } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
+import { prescribeRow, unprescribeRow } from "../lib/trainerData";
+import { STORES } from "../lib/stores";
 
 function localizedDow(lang) {
   const locale = lang === "pt" ? "pt-PT" : undefined;
@@ -341,11 +343,26 @@ export default function CalendarView({ students = [] }) {
     const c = clients.find((x) => x.id === pickClient);
     if (!c) return;
     const sched = c.schedule.filter((e) => !(e.date === assignFor && e.time === time));
-    await saveSchedule(c.id, [...sched, { date: assignFor, time, type: apptType }]);
+    const newEntry = { id: crypto.randomUUID(), date: assignFor, time, type: apptType };
+    
+    try {
+      await prescribeRow(c.id, STORES.appointments, newEntry);
+    } catch (e) {
+      console.warn("Failed to sync appointment to client:", e);
+    }
+    
+    await saveSchedule(c.id, [...sched, newEntry]);
     setAssignFor(null);
   }
 
   async function removeAppointment(client, entry) {
+    try {
+      if (entry.id) {
+        await unprescribeRow(client.id, STORES.appointments, entry.id);
+      }
+    } catch (e) {
+      console.warn("Failed to unprescribe appointment:", e);
+    }
     await saveSchedule(client.id, client.schedule.filter((e) => !(e.date === entry.date && e.time === entry.time)));
   }
 

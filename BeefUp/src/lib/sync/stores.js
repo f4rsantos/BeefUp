@@ -5,6 +5,7 @@ export const SCOPES = {
   workouts: 'workouts',
   nutrition: 'nutrition',
   measures: 'measures',
+  calendar: 'calendar',
 }
 
 // Only these stores leave the device. `settings` holds local prefs and
@@ -22,6 +23,7 @@ export const SYNCED_STORES = {
   [STORES.measureTypes]: { key: 'id', scope: SCOPES.measures },
   [STORES.measureGoals]: { key: 'id', scope: SCOPES.measures },
   [STORES.nutritionGoals]: { key: 'id', scope: SCOPES.nutrition },
+  [STORES.appointments]: { key: 'id', scope: SCOPES.calendar },
 }
 
 export function isSynced(store) {

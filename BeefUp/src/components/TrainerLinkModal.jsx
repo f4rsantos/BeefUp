@@ -7,7 +7,7 @@ import { getPref, setPref } from "../lib/prefs";
 import { setSupabaseConfig, testConnection } from "../lib/supabaseConfig";
 
 const STEPS = ["scopes", "connect", "account", "confirm", "done"];
-const SCOPE_IDS = ["workouts", "nutrition", "measures"];
+const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
 
 // testConnection()'s reason codes; setSupabaseConfig's validate() throws these too.
 const CONNECT_REASON_KEYS = {

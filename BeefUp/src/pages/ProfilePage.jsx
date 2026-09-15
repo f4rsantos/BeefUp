@@ -12,7 +12,9 @@ import {
   StepsBlock,
   StreakCalendarBlock,
   WorkoutSummaryBlock,
+  NextAppointmentsBlock,
 } from "./profile/StatBlocks";
+import { todayISO } from "../lib/planUtils";
 
 function formatTotalTime(totalSeconds, t) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -32,7 +34,11 @@ function buildSummaryTiles(overall, t) {
 }
 
 export default function ProfilePage({ onOpenMeasures }) {
-  const { t, statsLayout, setStatsLayout } = useApp();
+  const { t, statsLayout, setStatsLayout, appointments = [] } = useApp();
+  
+  const upcomingAppointments = appointments
+    .filter(a => a.date >= todayISO())
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
   const [showSteps, setShowSteps] = useState(false);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
@@ -125,6 +131,10 @@ export default function ProfilePage({ onOpenMeasures }) {
           <Ruler size={15} />
           {t.measures}
         </button>
+
+        {upcomingAppointments.length > 0 && (
+          <NextAppointmentsBlock appointments={upcomingAppointments} />
+        )}
 
         <div className="hero">
           <div className="flex items-center justify-between" style={{ position: "relative" }}>

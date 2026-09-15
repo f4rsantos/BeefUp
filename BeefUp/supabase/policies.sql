@@ -271,6 +271,7 @@ create policy sync_rows_insert on public.sync_rows
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
     or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
     or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
+    or (store = 'appointments' and scope = 'calendar' and public.has_scope(user_id, 'calendar'))
   );
 
 -- Same rule for UPDATE, on both clauses:
@@ -291,12 +292,14 @@ create policy sync_rows_update on public.sync_rows
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
     or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
     or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
+    or (store = 'appointments' and scope = 'calendar' and public.has_scope(user_id, 'calendar'))
   )
   with check (
     user_id = auth.uid()
     or (scope = 'workouts' and public.has_scope(user_id, 'workouts'))
     or (store in ('measureTypes', 'measurements', 'measureGoals') and scope = 'measures' and public.has_scope(user_id, 'measures'))
     or (store = 'nutritionGoals' and scope = 'nutrition' and public.has_scope(user_id, 'nutrition'))
+    or (store = 'appointments' and scope = 'calendar' and public.has_scope(user_id, 'calendar'))
   );
 
 -- DELETE: student only, own rows. The app itself never issues a hard

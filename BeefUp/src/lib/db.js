@@ -3,7 +3,7 @@ import { isSynced, keyFieldOf, cursorKey } from './sync/stores.js'
 import { stampLocal, stampDeleted, stripMeta, isDeleted } from './sync/meta.js'
 
 const DB_NAME = 'beefup'
-const DB_VERSION = 8
+const DB_VERSION = 9
 
 export { STORES }
 
@@ -32,6 +32,7 @@ function openDB() {
       ensureStore(db, STORES.measureTypes, { keyPath: 'id' })
       ensureStore(db, STORES.measureGoals, { keyPath: 'id' })
       ensureStore(db, STORES.nutritionGoals, { keyPath: 'id' })
+      ensureStore(db, STORES.appointments, { keyPath: 'id' })
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)

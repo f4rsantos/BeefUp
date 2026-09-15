@@ -13,7 +13,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import PageHeader from "../components/PageHeader";
 import TrainerLinkModal from "../components/TrainerLinkModal";
 
-const SCOPE_IDS = ["workouts", "nutrition", "measures"];
+const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
 
 const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
 

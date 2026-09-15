@@ -73,6 +73,7 @@ export function AppProvider({ children }) {
   const [recentFoodIds, setRecentFoodIds] = useState(PREF_DEFAULTS.recentFoods)
   const [activeWorkout, setActiveWorkoutState] = useState(null)
   const [clients, setClients] = useState([])
+  const [appointments, setAppointments] = useState([])
 
   // Nutrition
   const [foodLog, setFoodLog] = useState([])
@@ -210,7 +211,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
-      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow, measureGoalsRows] = await Promise.all([
+      const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow, measureGoalsRows, appts] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
         db.getAllSessions(),
@@ -226,12 +227,14 @@ export function AppProvider({ children }) {
         db.getAllMeasureTypes(),
         db.getNutritionGoalsRow(),
         db.getAllMeasureGoals(),
+        db.getAll(STORES.appointments),
       ])
       setPlans(p)
       setWorkouts(w)
       setSessions(s)
       setActivePlanId(apid)
       setActiveWorkoutState(activeWo)
+      setAppointments(appts)
       const map = {}
       allSteps.forEach(e => { map[e.date] = e.count })
       setStepsMap(map)
@@ -474,6 +477,7 @@ export function AppProvider({ children }) {
     nutritionGoals, setNutritionGoals,
     prescribedGoals, effectiveNutritionGoals,
     clients, saveClient, deleteClient,
+    appointments, setAppointments,
   }
 
   // Holding render until prefs land avoids a flash of the wrong language and a

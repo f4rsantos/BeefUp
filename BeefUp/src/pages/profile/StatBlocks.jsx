@@ -1,4 +1,4 @@
-import {ChevronDown, Flame, Footprints, Plus,} from 'lucide-react'
+import {ChevronDown, Flame, Footprints, Plus, CalendarDays} from 'lucide-react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useApp } from '../../context/AppContext'
 import { BODY_PART_ACCENT } from '../../lib/exerciseTree'
@@ -289,6 +289,43 @@ export function PersonalRecordsBlock({ records, expanded, onToggle }) {
             </div>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+export function NextAppointmentsBlock({ appointments }) {
+  const { t, lang } = useApp()
+  return (
+    <div className="card">
+      <p className="section-title mb-3">{t.clientNextAppointment}</p>
+      {appointments.length === 0 ? (
+        <EmptyNote>{t.clientNoUpcomingAppointments}</EmptyNote>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {appointments.map((appt, idx) => {
+            const dateParts = appt.date.split('-');
+            const d = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            const dateStr = d.toLocaleDateString(lang === 'pt' ? 'pt-PT' : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+            const typeKey = 'dashAppt' + appt.type.charAt(0).toUpperCase() + appt.type.slice(1);
+            return (
+              <div key={appt.id || idx} className="flex items-center justify-between text-sm" style={{ padding: '8px 12px', background: 'var(--surface2)', borderRadius: 8 }}>
+                <div className="flex items-center gap-3">
+                  <div style={{ background: 'var(--accent-soft)', padding: 8, borderRadius: 8, display: 'flex' }}>
+                    <CalendarDays size={16} style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <div>
+                    <p style={{ color: 'var(--text)', fontWeight: 600 }}>{dateStr}</p>
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>{t[typeKey] || appt.type}</p>
+                  </div>
+                </div>
+                <span className="tabular font-bold" style={{ color: 'var(--text)', fontSize: 16 }}>
+                  {appt.time}
+                </span>
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )
