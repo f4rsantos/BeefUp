@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, X, Clock, Keyboard, Stethoscope, Dumbbell, Ruler, Utensils, Repeat } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useIsDesktop } from "../lib/useIsDesktop";
-import { formatDateShort, todayISO } from "../lib/planUtils";
+import { formatDateShort, todayISO, isFutureAppt } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { STORES } from "../lib/stores";
@@ -306,13 +306,13 @@ export default function CalendarView({ students = [] }) {
   }
 
   function clientsOn(iso) {
-    return clients.filter((c) => (c.schedule || []).some((e) => e.date === iso));
+    return clients.filter((c) => (c.schedule || []).some((e) => e.date === iso && isFutureAppt(e.date, e.time)));
   }
 
   // One flat, time-ordered list for a day, so a cell and the day panel agree.
   function entriesOn(iso) {
     return clients
-      .flatMap((c) => (c.schedule || []).filter((e) => e.date === iso).map((e) => ({ client: c, entry: e })))
+      .flatMap((c) => (c.schedule || []).filter((e) => e.date === iso && isFutureAppt(e.date, e.time)).map((e) => ({ client: c, entry: e })))
       .sort((a, b) => (a.entry.time || "").localeCompare(b.entry.time || ""));
   }
   
@@ -320,7 +320,7 @@ export default function CalendarView({ students = [] }) {
     const from = todayISO();
     const rows = clients
       .filter((c) => !filterClient || c.id === filterClient)
-      .flatMap((c) => (c.schedule || []).filter((e) => e.date >= from).map((e) => ({ client: c, entry: e })))
+      .flatMap((c) => (c.schedule || []).filter((e) => isFutureAppt(e.date, e.time)).map((e) => ({ client: c, entry: e })))
       .sort((a, b) => (a.entry.date + a.entry.time).localeCompare(b.entry.date + b.entry.time));
     const groups = [];
     for (const row of rows) {
@@ -548,7 +548,7 @@ export default function CalendarView({ students = [] }) {
                     <TimePicker value={time} onChange={setTime} />
                   </div>
                 </div>
-                <button className="btn btn-primary w-full py-3 mt-1" onClick={addAppointment}>{t.dashAssign}</button>
+                <button className="btn btn-primary w-full py-3 mt-1" onClick={addAppointment} disabled={!isFutureAppt(assignFor, time)}>{t.dashAssign}</button>
               </div>
             )}
 

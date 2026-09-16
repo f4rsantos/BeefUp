@@ -31,6 +31,13 @@ export function todayISO() {
   return toLocalISO(new Date())
 }
 
+export function isFutureAppt(dateStr, timeStr) {
+  if (!dateStr || !timeStr) return false;
+  // Use local time parsing to check if it's in the future
+  const d = new Date(`${dateStr}T${timeStr}:00`);
+  return d > new Date();
+}
+
 // Inclusive day count between an ISO start date and today (or an explicit end date) — e.g. start === end counts as 1 day, not 0.
 export function daysBetween(startISO, endISO = todayISO()) {
   const start = new Date(startISO)

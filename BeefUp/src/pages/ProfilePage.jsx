@@ -14,7 +14,7 @@ import {
   WorkoutSummaryBlock,
   NextAppointmentsBlock,
 } from "./profile/StatBlocks";
-import { todayISO } from "../lib/planUtils";
+import { todayISO, isFutureAppt } from "../lib/planUtils";
 
 function formatTotalTime(totalSeconds, t) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -37,7 +37,7 @@ export default function ProfilePage({ onOpenMeasures }) {
   const { t, statsLayout, setStatsLayout, appointments = [] } = useApp();
   
   const upcomingAppointments = appointments
-    .filter(a => a.date >= todayISO())
+    .filter(a => isFutureAppt(a.date, a.time))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
   const [showSteps, setShowSteps] = useState(false);
