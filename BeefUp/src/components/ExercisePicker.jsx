@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import {
   listBaseExercises,
@@ -31,7 +31,9 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [activeEquipmentId, setActiveEquipmentId] = useState(null);
   const [activeBarType, setActiveBarType] = useState("");
   const [selectedVariantIds, setSelectedVariantIds] = useState([]);
-  const [queue, setQueue] = useState(() => new Map()); // baseId -> ref
+  const [queue, setQueue] = useState([]); // Array of { instanceId, baseId, equipmentId, variantId, barType, ref }
+  const [isEditingInstanceId, setIsEditingInstanceId] = useState(null);
+  const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
 
   const bodyParts = useMemo(() => listBodyParts(), []);
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
@@ -48,16 +50,22 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   );
 
   function addToQueue(baseId, equipmentId, variantId, barType = "") {
+    const ref = buildExerciseRef(baseId, equipmentId, variantId);
     setQueue((prev) => {
-      const next = new Map(prev);
-      next.set(baseId, { ref: buildExerciseRef(baseId, equipmentId, variantId), barType });
-      return next;
+      if (isEditingInstanceId) {
+        return prev.map(item => item.instanceId === isEditingInstanceId 
+          ? { ...item, baseId, equipmentId, variantId, barType, ref } 
+          : item);
+      }
+      return [...prev, { instanceId: crypto.randomUUID(), baseId, equipmentId, variantId, barType, ref }];
     });
+    setIsBottomSheetExpanded(true);
     setStep("list");
     setActiveBase(null);
     setActiveEquipmentId(null);
     setActiveBarType("");
     setSelectedVariantIds([]);
+    setIsEditingInstanceId(null);
   }
 
   function proceedAfterEquipment(baseId, equipmentId) {
@@ -76,16 +84,8 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     addToQueue(baseId, equipmentId, "");
   }
 
-  function toggleRow(base) {
-    if (queue.has(base.id)) {
-      setQueue((prev) => {
-        const next = new Map(prev);
-        next.delete(base.id);
-        return next;
-      });
-      return;
-    }
-
+  function handleAddClick(base) {
+    setIsEditingInstanceId(null);
     const equipmentOptions = getEquipmentOptions(base.id);
     setActiveBase(base);
     if (equipmentOptions.length > 1) {
@@ -95,9 +95,37 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     proceedAfterEquipment(base.id, equipmentOptions[0]?.id ?? "");
   }
 
+  function handleEditQueueItem(item) {
+    const base = listBaseExercises().find(ex => ex.id === item.baseId);
+    if (!base) return;
+    setActiveBase(base);
+    setActiveEquipmentId(item.equipmentId);
+    setActiveBarType(item.barType);
+    setSelectedVariantIds(item.variantId ? item.variantId.split("+") : []);
+    setIsEditingInstanceId(item.instanceId);
+    
+    const equipOpts = getEquipmentOptions(item.baseId);
+    if (equipOpts.length > 1) {
+      setStep("equipment");
+    } else {
+      const variantOpts = getVariantOptions(item.baseId, item.equipmentId);
+      if (variantOpts.length > 0) {
+        setStep("variant");
+      }
+    }
+  }
+
+  function handleRemoveQueueItem(instanceId) {
+    setQueue((prev) => {
+      const next = prev.filter(item => item.instanceId !== instanceId);
+      if (next.length === 0) setIsBottomSheetExpanded(false);
+      return next;
+    });
+  }
+
   function handleCustomCreated(exercise) {
     setStep("list");
-    toggleRow(exercise);
+    handleAddClick(exercise);
   }
 
   function pickEquipment(equipmentId) {
@@ -142,6 +170,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     setActiveBase(null);
     setActiveEquipmentId(null);
     setActiveBarType("");
+    setIsEditingInstanceId(null);
   }
 
   const equipmentOptions = activeBase ? getEquipmentOptions(activeBase.id) : [];
@@ -155,8 +184,13 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }} onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-col h-full">
         <div
-          className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
-          style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+          className="flex-1 overflow-y-auto scrollbar-hide"
+          style={{ 
+            paddingTop: "var(--page-py-top)", 
+            paddingLeft: "var(--page-px)", 
+            paddingRight: "var(--page-px)",
+            paddingBottom: queue.length > 0 ? (isBottomSheetExpanded ? "45vh" : 140) : 24
+          }}
         >
           <div className="flex items-center gap-1" style={{ marginBottom: 16 }}>
             <button className="btn-back" onClick={onClose} aria-label={t.back}>
@@ -227,15 +261,15 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
               ) : viewMode === "card" ? (
                 <div className="grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
                   {sortedExercises.map((ex) => {
-                    const selected = queue.has(ex.id);
+                    const count = queue.filter(q => q.baseId === ex.id).length;
                     return (
                       <button
                         key={ex.id}
-                        onClick={() => toggleRow(ex)}
+                        onClick={() => handleAddClick(ex)}
                         className="flex flex-col"
                         style={{
                           background: "var(--surface)",
-                          border: selected ? "1px solid var(--accent)" : "1px solid var(--border)",
+                          border: count > 0 ? "1px solid var(--accent)" : "1px solid var(--border)",
                           borderRadius: 14,
                           overflow: "hidden",
                           textAlign: "left",
@@ -264,10 +298,12 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                           </p>
                         </div>
                         <div style={{ position: "absolute", top: 6, right: 6 }}>
-                          {selected ? (
-                            <CheckCircle2 size={20} style={{ color: "var(--accent)" }} />
+                          {count > 0 ? (
+                            <div className="flex items-center justify-center" style={{ width: 20, height: 20, borderRadius: 999, background: "var(--accent)", color: "var(--bg)", fontSize: 11, fontWeight: 800 }}>
+                              {count}
+                            </div>
                           ) : (
-                            <Circle size={20} style={{ color: "var(--border)" }} />
+                            <Plus size={20} style={{ color: "var(--border)" }} />
                           )}
                         </div>
                       </button>
@@ -292,12 +328,12 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                     </div>
                     <div className="flex flex-col">
                       {items.map((ex) => {
-                        const selected = queue.has(ex.id);
+                        const count = queue.filter(q => q.baseId === ex.id).length;
                         return (
                           <button
                             key={ex.id}
                             className="flex items-center gap-3"
-                            onClick={() => toggleRow(ex)}
+                            onClick={() => handleAddClick(ex)}
                             style={{
                               padding: "10px 4px",
                               borderBottom: "1px solid var(--border)",
@@ -316,10 +352,12 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                                 {getBodyPartLabel(ex.bodyPart, lang)}
                               </p>
                             </div>
-                            {selected ? (
-                              <CheckCircle2 size={20} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                            {count > 0 ? (
+                              <div className="flex items-center justify-center flex-shrink-0" style={{ width: 22, height: 22, borderRadius: 999, background: "var(--accent)", color: "var(--bg)", fontSize: 12, fontWeight: 800 }}>
+                                {count}
+                              </div>
                             ) : (
-                              <Circle size={20} style={{ color: "var(--border)", flexShrink: 0 }} />
+                              <Plus size={20} style={{ color: "var(--border)", flexShrink: 0 }} />
                             )}
                           </button>
                         );
@@ -397,6 +435,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                 </div>
                 <button
                   className="btn btn-primary w-full mt-4"
+                  style={{ marginTop: 16 }}
                   disabled={selectedVariantIds.length === 0}
                   onClick={confirmVariants}
                 >
@@ -408,41 +447,99 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
         </div>
       )}
 
-      {queue.size > 0 && (
-        <button
-          className="btn btn-primary flex items-center justify-center"
-          onClick={() => onConfirm([...queue.values()])}
-          aria-label={t.confirm}
+      {queue.length > 0 && (
+        <div
           style={{
             position: "absolute",
-            bottom: 24,
-            right: 20,
-            width: 56,
-            height: 56,
-            borderRadius: 999,
-            boxShadow: "var(--shadow-md, 0 4px 16px rgba(0,0,0,0.25))",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: "var(--surface)",
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            boxShadow: "0 -4px 16px rgba(0,0,0,0.1)",
+            display: "flex",
+            flexDirection: "column",
+            zIndex: 10,
+            paddingBottom: "max(24px, env(safe-area-inset-bottom))",
           }}
         >
-          <Check size={22} />
-          <span
-            className="flex items-center justify-center"
-            style={{
-              position: "absolute",
-              top: -4,
-              right: -4,
-              width: 20,
-              height: 20,
-              borderRadius: 999,
-              background: "var(--bg)",
-              color: "var(--accent)",
-              fontSize: 11,
-              fontWeight: 800,
-              border: "1px solid var(--border)",
-            }}
-          >
-            {queue.size}
-          </span>
-        </button>
+          <div className="flex flex-col w-full">
+            <button
+              className="flex items-center justify-between"
+              style={{ padding: "16px 20px" }}
+              onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base" style={{ color: "var(--text)" }}>
+                  {t.addedExercises}
+                </span>
+                <span
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 999,
+                    background: "var(--accent)",
+                    color: "var(--bg)",
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {queue.length}
+                </span>
+              </div>
+              {isBottomSheetExpanded ? <ChevronDown size={20} style={{ color: "var(--text)" }} /> : <ChevronUp size={20} style={{ color: "var(--text)" }} />}
+            </button>
+            
+            {isBottomSheetExpanded && (
+              <div className="flex flex-col overflow-y-auto" style={{ maxHeight: "40vh" }}>
+                {queue.map((item) => {
+                  const base = listBaseExercises().find(ex => ex.id === item.baseId);
+                  const equipmentLabel = item.equipmentId && item.equipmentId !== "bodyweight" ? getEquipmentLabel(item.equipmentId, lang) : "";
+                  const variantLabel = item.variantId ? item.variantId.split("+").map(v => localizedName(getVariantOptions(item.baseId, item.equipmentId).find(opt => opt.id === v), lang)).join(" + ") : "";
+                  
+                  let subtitle = [];
+                  if (equipmentLabel) subtitle.push(equipmentLabel);
+                  if (item.barType) subtitle.push(localizedName(BAR_TYPES.find(b => b.id === item.barType), lang));
+                  if (variantLabel) subtitle.push(variantLabel);
+                  
+                  return (
+                    <div key={item.instanceId} className="flex items-center justify-between" style={{ padding: "12px 20px", borderTop: "1px solid var(--border)" }}>
+                      <div className="flex flex-col flex-1" style={{ minWidth: 0, paddingRight: 12 }}>
+                        <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                          {base ? localizedName(base, lang) : ""}
+                        </span>
+                        {subtitle.length > 0 && (
+                          <span className="text-xs truncate" style={{ color: "var(--muted)", marginTop: 2 }}>
+                            {subtitle.join(" • ")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button className="btn btn-ghost p-2" onClick={() => handleEditQueueItem(item)} aria-label={t.edit}>
+                          <Pencil size={18} style={{ color: "var(--text)" }} />
+                        </button>
+                        <button className="btn btn-ghost p-2" onClick={() => handleRemoveQueueItem(item.instanceId)} aria-label={t.delete}>
+                          <Trash2 size={18} style={{ color: "var(--error)" }} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            <div style={{ padding: "12px 20px 0 20px" }}>
+              <button
+                className="btn btn-primary w-full py-3"
+                onClick={() => onConfirm(queue.map(q => q.ref))}
+              >
+                {t.confirm}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showFilters && (
