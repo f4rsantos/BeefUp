@@ -533,7 +533,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
             <div style={{ padding: "12px 20px 0 20px" }}>
               <button
                 className="btn btn-primary w-full py-3"
-                onClick={() => onConfirm(queue.map(q => q.ref))}
+                onClick={() => onConfirm(queue.map(q => ({ ref: q.ref, barType: q.barType })))}
               >
                 {t.confirm}
               </button>
