@@ -100,7 +100,7 @@ export default function SyncView() {
     return (
       <div className="dash-sync">
         <div className="dash-panel mb-5" style={{ maxWidth: 420 }}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <h3 className="dash-card-title">{mode === "signIn" ? t.dashSignIn : t.dashSignUp}</h3>
             <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => setEditingConfig(true)}>
               <Pencil size={12} /> {host}
@@ -144,19 +144,21 @@ export default function SyncView() {
   return (
     <div className="dash-sync" style={{ justifyContent: "flex-start", paddingTop: 24 }}>
       <div className="dash-panel mb-5" style={{ maxWidth: 720 }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="dash-card-title">
+        <div className="flex flex-wrap justify-between gap-4">
+          <div style={{ minWidth: 0, flex: "1 1 200px" }}>
+            <h3 className="dash-card-title" style={{ overflowWrap: "anywhere" }}>
               {session.user?.user_metadata?.display_name || session.user?.email}
             </h3>
-            <p className="flex items-center gap-2 text-sm" style={{ color: "var(--accent)" }}>
-              <Cloud size={15} /> {t.dashConnected}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
+              <p className="flex items-center gap-2 text-sm" style={{ color: "var(--accent)", margin: 0 }}>
+                <Cloud size={15} style={{ flexShrink: 0 }} /> {t.dashConnected}
+              </p>
+              <button className="btn btn-ghost text-xs flex items-center gap-1" style={{ padding: "4px 8px" }} onClick={() => setEditingConfig(true)}>
+                <Pencil size={12} /> {host}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => setEditingConfig(true)}>
-              <Pencil size={12} /> {host}
-            </button>
+          <div className="flex items-start">
             <button className="btn btn-ghost flex items-center gap-2" disabled={busy} onClick={doSignOut}>
               <LogOut size={15} /> {t.dashSignOut}
             </button>

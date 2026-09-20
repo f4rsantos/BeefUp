@@ -115,7 +115,7 @@ export default function InviteCodes() {
                 {buildInviteLink(inv.code) || t.dashInviteLinkUnavailable}
               </div>
 
-              <div className="flex items-center" style={{ gap: 10 }}>
+              <div className="flex flex-wrap items-center" style={{ gap: 10 }}>
                 <button
                   className="btn btn-primary flex items-center gap-2"
                   style={{ padding: "8px 14px" }}
