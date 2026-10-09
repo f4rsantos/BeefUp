@@ -57,15 +57,13 @@ After applying, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the
 app's environment. With them absent the app runs fully local, as it does
 today — nothing here is required for that path to keep working.
 
-### Authentication URL Configuration
+### Authentication Configuration
 
-For email verification and auth redirects to function correctly:
+For instant sign-ups and zero email sending requirements:
 
-1. In Supabase Dashboard, go to **Authentication** -> **URL Configuration**.
-2. Set **Site URL** to your app's deployed production domain (e.g. `https://your-domain.com/` or `https://f4rsantos.github.io/BeefUp/`).
-3. Under **Redirect URLs** (Allow list), add:
-   - Your production URL: `https://your-domain.com/**`
-   - Your local development URL: `http://localhost:5173/**`
+1. In Supabase Dashboard, go to **Authentication** -> **Providers** -> **Email**.
+2. **Turn OFF** **"Confirm email"**. *(This allows instant sign-ups with zero email friction or SMTP limits).*
+3. (Optional) Under **Authentication** -> **URL Configuration**, set **Site URL** to `https://f4rsantos.github.io/BeefUp/` and add allowed origins to **Redirect URLs**.
 
 ## Sanity check before trusting any of this
 
