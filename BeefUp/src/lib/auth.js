@@ -13,10 +13,14 @@ export async function getSession() {
 export async function signUp(email, password, displayName) {
   const supabase = await getSupabase()
   if (!supabase) return null
+  const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { display_name: displayName } },
+    options: {
+      data: { display_name: displayName },
+      emailRedirectTo: redirectTo,
+    },
   })
   if (error) throw error
   return data.session
