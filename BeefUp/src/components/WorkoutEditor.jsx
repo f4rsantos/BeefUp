@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
-import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises, isCardioExercise } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
 import NumberField from "./NumberField";
+import TimeField from "./TimeField";
 import ConfirmModal from "./ConfirmModal";
 import { localizedName } from "../lib/localizedName"
 
@@ -13,6 +14,8 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   const [note, setNote] = useState(item.note ?? "");
   const [weight, setWeight] = useState(item.weight ?? "");
   const [reps, setReps] = useState(item.reps ?? "");
+  const [time, setTime] = useState(item.time ?? "");
+  const cardio = isCardioExercise(item.ref);
 
   return (
     <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
@@ -30,16 +33,18 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
             />
           </div>
           <div className="flex gap-3">
+            {!cardio && (
+              <div className="flex-1">
+                <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.weight}</label>
+                <NumberField
+                  className="field w-full"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+              </div>
+            )}
             <div className="flex-1">
-              <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.weight}</label>
-              <NumberField
-                className="field w-full"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.reps}</label>
+              <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{cardio ? t.unitMeters : t.reps}</label>
               <NumberField
                 className="field w-full"
                 allowDecimal={false}
@@ -47,6 +52,16 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
                 onChange={(e) => setReps(e.target.value)}
               />
             </div>
+            {cardio && (
+              <div className="flex-1">
+                <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.cardioTime} (mm:ss)</label>
+                <TimeField
+                  className="field w-full"
+                  value={time}
+                  onChange={setTime}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -56,7 +71,7 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
           </button>
           <button
             className="btn btn-primary flex-1 py-3 text-sm"
-            onClick={() => onSave({ note, weight, reps })}
+            onClick={() => onSave(cardio ? { note, reps, time } : { note, weight, reps })}
           >
             {t.save}
           </button>

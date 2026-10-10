@@ -5,6 +5,7 @@ import HumanBody from '../components/HumanBody'
 import { bodyAreasForSessions } from '../lib/muscles'
 import { sessionVolume, sessionSets } from '../lib/planUtils'
 import { localizedName } from '../lib/localizedName'
+import { formatSet } from '../lib/setFormat'
 
 function formatDate(iso) {
   const d = new Date(iso)
@@ -296,7 +297,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                       {localizedName(ex, lang)}
                     </p>
                     <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>
-                      {ex.sets?.map(set => `${set.weight || '–'}kg × ${set.reps || '–'}`).join('    ·    ')}
+                      {ex.sets?.map(set => formatSet(set, ex.exerciseId)).join('    ·    ')}
                     </p>
                   </div>
                 ))}

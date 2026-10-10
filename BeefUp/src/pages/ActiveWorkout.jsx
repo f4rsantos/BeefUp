@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
-import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise } from "../lib/exerciseTree";
+import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise, isCardioExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
 import { getLS, setLS, removeLS } from "../lib/crypto";
 import WorkoutTopBar from "../components/WorkoutTopBar";
@@ -45,6 +45,15 @@ function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null
     barType: barType || workoutItem?.barType || "",
     sets: Array.from({ length: ex.defaultSets }, (_, i) => {
       const last = lastSets[Math.min(i, lastSets.length - 1)];
+      if (isCardioExercise(ex.id)) {
+        // Cardio keeps metres in reps, minutes in time.
+        return {
+          id: uid(),
+          reps: last ? last.reps ?? "" : workoutItem?.reps || "",
+          time: last ? last.time ?? "" : workoutItem?.time || "",
+          done: false,
+        };
+      }
       const fallbackWeight = workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : "");
       const fallbackReps = workoutItem?.reps || String(ex.defaultReps);
       return {
@@ -267,18 +276,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       prev.map((e, i) => {
         if (i !== exIdx) return e;
         const last = e.sets[e.sets.length - 1];
-        return {
-          ...e,
-          sets: [
-            ...e.sets,
-            {
-              id: uid(),
-              weight: last?.weight ?? "",
-              reps: last?.reps ?? "10",
-              done: false,
-            },
-          ],
-        };
+        const next = isCardioExercise(e.exerciseId)
+          ? { id: uid(), reps: last?.reps ?? "", time: last?.time ?? "", done: false }
+          : { id: uid(), weight: last?.weight ?? "", reps: last?.reps ?? "10", done: false };
+        return { ...e, sets: [...e.sets, next] };
       }),
     );
   }, []);
@@ -328,7 +329,9 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           barType: e.barType ?? "",
           sets: e.sets
             .filter((s) => s.done)
-            .map((s) => ({ weight: s.weight, reps: s.reps, type: s.type })),
+            .map((s) => (isCardioExercise(e.exerciseId)
+              ? { reps: s.reps, time: s.time, type: s.type }
+              : { weight: s.weight, reps: s.reps, type: s.type })),
         }))
         .filter((e) => e.sets.length > 0),
     };
@@ -372,6 +375,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       const item = { ref: e.exerciseId };
       if (orig?.weight) item.weight = orig.weight;
       if (orig?.reps) item.reps = orig.reps;
+      if (orig?.time) item.time = orig.time;
       const note = e.note?.trim() || orig?.note;
       if (note) item.note = note;
       const barType = e.barType || orig?.barType;

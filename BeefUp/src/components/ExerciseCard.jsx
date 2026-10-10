@@ -1,8 +1,10 @@
 import NumberField from "./NumberField";
+import TimeField from "./TimeField";
 import { useState, useRef, useCallback, useEffect, memo } from "react";
 import { Trash2, Plus, Check, MoreHorizontal, StickyNote } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
-import { repUnitFor, getBarTypeLabel } from "../lib/exerciseTree"
+import { repUnitFor, isCardioExercise, getBarTypeLabel } from "../lib/exerciseTree"
+import { formatSet } from "../lib/setFormat"
 import { useEscapeKey } from "../lib/useEscapeKey";
 
 const SWIPE_THRESHOLD = 90;
@@ -137,11 +139,6 @@ function DoneToggle({ done, onClick, t, large }) {
   );
 }
 
-function formatSet(set, repUnit) {
-  const weight = set.weight ? `${set.weight} kg × ` : "";
-  return `${weight}${set.reps || "–"}${repUnit === "reps" ? "" : ` ${repUnit}`}`;
-}
-
 // Swipe left to delete, shared by every row shape.
 function Swipeable({ onDelete, children }) {
   const [dx, setDx] = useState(0);
@@ -185,7 +182,7 @@ function Swipeable({ onDelete, children }) {
 const SET_GRID = "44px minmax(0,1fr) minmax(0,1fr) 44px";
 
 // Every set is editable; the next one to do is slightly larger.
-function SetRow({ exIdx, setIdx, set, isNext, previous, repUnit, onOpenType, onUpdateSet, onToggle, t }) {
+function SetRow({ exIdx, setIdx, set, isNext, previous, exerciseRef, repUnit, cardio, onOpenType, onUpdateSet, onToggle, t }) {
   const fieldStyle = {
     padding: "6px 8px",
     fontSize: isNext ? 17 : 15,
@@ -205,30 +202,42 @@ function SetRow({ exIdx, setIdx, set, isNext, previous, repUnit, onOpenType, onU
     >
       <div className="grid items-center" style={{ gridTemplateColumns: SET_GRID, gap: 6 }}>
         <SetBadge set={set} setIdx={setIdx} t={t} onOpenType={onOpenType} />
-        <NumberField
-          className="field text-center tabular-nums"
-          value={set.weight}
-          onChange={(e) => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
-          placeholder="kg"
-          aria-label="kg"
-          disabled={set.done}
-          style={fieldStyle}
-        />
+        {!cardio && (
+          <NumberField
+            className="field text-center tabular-nums"
+            value={set.weight}
+            onChange={(e) => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
+            placeholder="kg"
+            aria-label="kg"
+            disabled={set.done}
+            style={fieldStyle}
+          />
+        )}
         <NumberField
           className="field text-center tabular-nums"
           allowDecimal={false}
           value={set.reps}
           onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", e.target.value)}
-          placeholder="–"
+          placeholder={cardio ? "m" : "–"}
           aria-label={repUnit}
           disabled={set.done}
           style={fieldStyle}
         />
+        {cardio && (
+          <TimeField
+            className="field text-center tabular-nums"
+            value={set.time}
+            onChange={(value) => onUpdateSet(exIdx, setIdx, "time", value)}
+            aria-label={t.cardioTime}
+            disabled={set.done}
+            style={fieldStyle}
+          />
+        )}
         <DoneToggle done={set.done} onClick={onToggle} t={t} large={isNext} />
       </div>
       {isNext && previous && (
         <p className="text-xs tabular-nums" style={{ color: "var(--muted)", margin: "4px 0 2px 50px" }}>
-          {t.lastTime}: {formatSet(previous, repUnit)}
+          {t.lastTime}: {formatSet(previous, exerciseRef)}
         </p>
       )}
     </div>
@@ -257,6 +266,7 @@ function ExerciseCard({
   const exLabel = localizedName(exercise, lang);
   const barTypeLabel = exercise.barType ? getBarTypeLabel(exercise.barType, lang) : null;
   const repUnit = repUnitFor(exercise.exerciseId);
+  const cardio = isCardioExercise(exercise.exerciseId);
   const sets = exercise.sets;
   const doneCount = sets.filter((s) => s.done).length;
   const allDone = doneCount === sets.length && sets.length > 0;
@@ -331,8 +341,8 @@ function ExerciseCard({
         aria-hidden="true"
       >
         <span className="text-center">#</span>
-        <span className="text-center">kg</span>
-        <span className="text-center">{repUnit}</span>
+        <span className="text-center">{cardio ? repUnit : "kg"}</span>
+        <span className="text-center">{cardio ? "mm:ss" : repUnit}</span>
         <span />
       </div>
 
@@ -345,7 +355,9 @@ function ExerciseCard({
               set={set}
               isNext={setIdx === nextIdx}
               previous={previousSets?.[setIdx]}
+              exerciseRef={exercise.exerciseId}
               repUnit={repUnit}
+              cardio={cardio}
               t={t}
               onOpenType={(e) => openMenu(e, "type", setIdx)}
               onUpdateSet={onUpdateSet}

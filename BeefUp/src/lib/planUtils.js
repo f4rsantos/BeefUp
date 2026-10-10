@@ -1,4 +1,4 @@
-import { resolveExercise, getBodyPartLabel, listBodyParts } from './exerciseTree.js'
+import { resolveExercise, getBodyPartLabel, listBodyParts, countsAsReps } from './exerciseTree.js'
 import { localizedName } from './localizedName.js'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
@@ -209,9 +209,10 @@ export function removePlanDay(days, index) {
 
 // Warmup sets are excluded here and in every other stat helper below, so the
 // same session never reports two different volumes depending on the screen.
+// Metres live in reps, so distance exercises skip rep stats.
 export function sessionVolume(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) =>
+    !countsAsReps(ex.exerciseId) ? acc : acc + (ex.sets?.reduce((a, s) =>
       s.type === 'warmup' ? a : a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
@@ -221,7 +222,7 @@ export function sessionSets(session) {
 
 function sessionReps(session) {
   return session.exercises?.reduce((acc, ex) =>
-    acc + (ex.sets?.reduce((a, s) =>
+    !countsAsReps(ex.exerciseId) ? acc : acc + (ex.sets?.reduce((a, s) =>
       s.type === 'warmup' ? a : a + (parseInt(s.reps) || 0), 0) ?? 0), 0) ?? 0
 }
 
@@ -331,6 +332,7 @@ export function bestE1rmByExercise(sessions) {
   const best = {}
   sessions.forEach((s) => {
     s.exercises?.forEach((e) => {
+      if (!countsAsReps(e.exerciseId)) return
       e.sets?.forEach((set) => {
         if (set.type === 'warmup') return
         const rm = epley(set.weight, set.reps)
@@ -345,6 +347,7 @@ export function computePersonalRecords(sessions, lang) {
   const best = {}
   sessions.forEach((s) => {
     s.exercises?.forEach((e) => {
+      if (!countsAsReps(e.exerciseId)) return
       e.sets?.forEach((set) => {
         if (set.type === 'warmup') return
         const e1rm = epley(set.weight, set.reps)

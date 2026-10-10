@@ -10,14 +10,13 @@ import {
   getVariantOptions,
   getBodyPartLabel,
   getMuscleLabel,
-  listBodyParts,
-  listEquipmentUsed,
   getEquipmentLabel,
   buildExerciseRef,
   BAR_TYPES,
 } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName";
 import CustomExerciseEditor from "./CustomExerciseEditor";
+import ExerciseFilterModal from "./ExerciseFilterModal";
 
 export default function AddExercisesPicker({ onConfirm, onClose }) {
   const { t, lang } = useApp();
@@ -37,10 +36,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   useEscapeKey(onClose);
   useEscapeKey(() => cancelCustomize(), !!activeBase);
-  useEscapeKey(() => setShowFilters(false), showFilters);
 
-  const bodyParts = useMemo(() => listBodyParts(), []);
-  const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   const sortedExercises = useMemo(
@@ -547,82 +543,15 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
       )}
 
       {showFilters && (
-        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
-          <div className="modal-center" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
-                {t.filters}
-              </span>
-              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)} aria-label={t.cancel}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex flex-col" style={{ gap: 6, marginBottom: 16 }}>
-              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
-                {t.filterBodyPart}
-              </span>
-              <div className="flex flex-wrap" style={{ gap: 6 }}>
-                <button
-                  className={`chip ${bodyPart === null ? "active" : ""}`}
-                  onClick={() => setBodyPart(null)}
-                >
-                  {t.allTags}
-                </button>
-                {bodyParts.map((bp) => (
-                  <button
-                    key={bp}
-                    className={`chip ${bodyPart === bp ? "active" : ""}`}
-                    onClick={() => setBodyPart(bodyPart === bp ? null : bp)}
-                  >
-                    {getBodyPartLabel(bp, lang)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col" style={{ gap: 6, marginBottom: 20 }}>
-              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
-                {t.filterEquipment}
-              </span>
-              <div className="flex flex-wrap" style={{ gap: 6 }}>
-                <button
-                  className={`chip ${equipment === null ? "active" : ""}`}
-                  onClick={() => setEquipment(null)}
-                >
-                  {t.allTags}
-                </button>
-                {equipmentList.map((eq) => (
-                  <button
-                    key={eq.id}
-                    className={`chip ${equipment === eq.id ? "active" : ""}`}
-                    onClick={() => setEquipment(equipment === eq.id ? null : eq.id)}
-                  >
-                    {getEquipmentLabel(eq.id, lang)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                className="btn btn-ghost flex-1 py-3 text-sm"
-                onClick={() => {
-                  setBodyPart(null);
-                  setEquipment(null);
-                }}
-              >
-                {t.clearFilters}
-              </button>
-              <button
-                className="btn btn-primary flex-1 py-3 text-sm"
-                onClick={() => setShowFilters(false)}
-              >
-                {t.applyFilters}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ExerciseFilterModal
+          bodyPart={bodyPart}
+          setBodyPart={setBodyPart}
+          equipment={equipment}
+          setEquipment={setEquipment}
+          onClose={() => setShowFilters(false)}
+          lang={lang}
+          t={t}
+        />
       )}
     </div>
   );
