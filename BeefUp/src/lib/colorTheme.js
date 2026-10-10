@@ -53,30 +53,58 @@ export function rgbToHsv({ r, g, b }) {
   return { h, s: max === 0 ? 0 : d / max, v: max }
 }
 
-// Same formulas used to generate the 8 static presets in index.css: a light
-// tint for the "soft" badge background, a slightly lighter gradient start,
-// and a darker 3-stop hero gradient — all mixed from the one accent color.
+const SURFACE2_LIGHT = { r: 238, g: 240, b: 243 }
+const SURFACE2_DARK = { r: 26, g: 32, b: 42 }
+// WCAG AA 4.5, plus rounding headroom.
+const MIN_CONTRAST = 4.6
+
+function luminance({ r, g, b }) {
+  const lin = (c) => {
+    const v = Math.max(0, Math.min(255, Math.round(c))) / 255
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+export function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+// Nudges rgb toward `toward` until readable on `against`.
+function shiftUntilReadable(rgb, toward, against) {
+  let out = rgb
+  for (let t = 0.02; contrast(out, against) < MIN_CONTRAST && t <= 1; t += 0.02) {
+    out = mix(rgb, toward, t)
+  }
+  return out
+}
+
+// Dark mode: text needs a lighter shade, buttons darker.
 function deriveTokens(rgb, mode) {
-  const soft = mode === 'light' ? mix(rgb, WHITE, 0.88) : mix(rgb, BG_DARK, 0.75)
-  const gradFrom = mix(rgb, WHITE, 0.12)
-  const heroFrom = mix(rgb, BLACK, 0.45)
-  const heroTo = mix(rgb, BLACK, 0.30)
+  const darkSoft = mix(rgb, BG_DARK, 0.75)
+  // Text must read on the lightest surface it sits on.
+  const darkGround = luminance(darkSoft) > luminance(SURFACE2_DARK) ? darkSoft : SURFACE2_DARK
+  const text = mode === 'light'
+    ? shiftUntilReadable(rgb, BLACK, SURFACE2_LIGHT)
+    : shiftUntilReadable(rgb, WHITE, darkGround)
+  const button = mode === 'light' ? text : shiftUntilReadable(rgb, BLACK, WHITE)
+  const soft = mode === 'light' ? mix(text, WHITE, 0.92) : darkSoft
+  const gradTo = mix(button, BLACK, 0.12)
+  const heroFrom = mix(button, BLACK, 0.45)
+  const heroTo = mix(button, BLACK, 0.30)
   const alpha = mode === 'light' ? 0.45 : 0.5
   const blur = mode === 'light' ? 28 : 30
-  const accentHex = rgbToHex(rgb)
   return {
-    accent: accentHex,
+    accent: rgbToHex(text),
     soft: rgbToHex(soft),
-    gradAccent: `linear-gradient(135deg, ${rgbToHex(gradFrom)} 0%, ${accentHex} 100%)`,
-    gradHero: `linear-gradient(140deg, ${rgbToHex(heroFrom)} 0%, ${accentHex} 45%, ${rgbToHex(heroTo)} 100%)`,
+    gradAccent: `linear-gradient(135deg, ${rgbToHex(button)} 0%, ${rgbToHex(gradTo)} 100%)`,
+    gradHero: `linear-gradient(140deg, ${rgbToHex(heroFrom)} 0%, ${rgbToHex(button)} 45%, ${rgbToHex(heroTo)} 100%)`,
     glow: `0 8px ${blur}px -6px rgba(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)}, ${alpha})`,
   }
 }
 
-// The 8 curated presets were each hand-picked (light shade + a separately
-// chosen, contrast-checked dark shade) — a custom pick from the wheel only
-// gives us one hex, so the dark variant is auto-derived by brightening it a
-// touch, which won't always hit the same contrast bar as the curated set.
+// index.css presets are this function's output.
 export function deriveAccentTokens(hex) {
   const rgb = hexToRgb(hex)
   return {
@@ -118,12 +146,12 @@ export function applyCustomAccent(hex) {
 // index.css blocks (source of truth for those stays the CSS file; this list
 // is just what the UI needs to render and select them).
 export const PRESET_ACCENTS = [
-  { id: 'green', hex: '#109a14', label: 'colorGreen' },
-  { id: 'blue', hex: '#2563eb', label: 'colorBlue' },
+  { id: 'green', hex: '#0d7b10', label: 'colorGreen' },
+  { id: 'blue', hex: '#2461e6', label: 'colorBlue' },
   { id: 'purple', hex: '#9333ea', label: 'colorPurple' },
-  { id: 'pink', hex: '#db2777', label: 'colorPink' },
-  { id: 'red', hex: '#dc2626', label: 'colorRed' },
-  { id: 'orange', hex: '#c2410c', label: 'colorOrange' },
+  { id: 'pink', hex: '#c9246d', label: 'colorPink' },
+  { id: 'red', hex: '#cf2424', label: 'colorRed' },
+  { id: 'orange', hex: '#be400c', label: 'colorOrange' },
 ]
 
 // Which hex the accent picker is currently showing: a preset's own colour, or
