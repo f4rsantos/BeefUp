@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { Search, Plus, ChevronLeft, ChevronDown, X, Star, Trash2, Camera } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { foodProvider, scaleFood, MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { RateLimitError } from "../lib/openFoodFacts";
 import { loadLocalFoods, searchLocalFoods, isCatalogLoaded, foldText } from "../lib/localFoods";
@@ -29,6 +30,7 @@ function matchesFood(food, query) {
 }
 
 export default function FoodSearchModal({ meal, onClose, initialDraft }) {
+  useEscapeKey(onClose);
   const { t, lang, mealTypes, addFoodLog, customFoods, saveCustomFood, deleteCustomFood, favouriteFoods, toggleFavouriteFood, recentFoodIds, addRecentFood } = useApp();
   const [pendingDelete, setPendingDelete] = useState(null); // custom food awaiting delete confirmation
   const [scanning, setScanning] = useState(false);
@@ -269,7 +271,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div className="modal-center" style={{ maxWidth: 440, padding: 26 }} onClick={(e) => e.stopPropagation()}>
 
         {/* ── Portion view ── */}

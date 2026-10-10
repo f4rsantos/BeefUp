@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { X } from "lucide-react";
 import { PRESET_ACCENTS, hexToRgb, rgbToHex, hsvToRgb, rgbToHsv } from "../lib/colorTheme";
 
@@ -37,6 +38,7 @@ function drawWheel(canvas, value) {
 }
 
 export default function AccentColorModal({ value, onSelectPreset, onPickCustom, onClose, t }) {
+  useEscapeKey(onClose);
   const canvasRef = useRef(null);
   const initialHsv = rgbToHsv(hexToRgb(value));
   const [brightness, setBrightness] = useState(initialHsv.v);
@@ -80,7 +82,7 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
   }
 
   return (
-    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
       <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <span className="font-semibold text-base" style={{ color: "var(--text)" }}>

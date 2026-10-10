@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { X, ScanLine } from "lucide-react";
 import { loadBarcodeDetector } from "../lib/barcodeDetector";
 import { foodProvider } from "../lib/foodProvider";
@@ -8,6 +9,7 @@ const SCAN_INTERVAL_MS = 300;
 const FORMATS = ["ean_13", "ean_8", "upc_a", "upc_e"];
 
 export default function BarcodeScannerModal({ lang, t, onFound, onClose }) {
+  useEscapeKey(onClose);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const detectorRef = useRef(null);
@@ -91,7 +93,7 @@ export default function BarcodeScannerModal({ lang, t, onFound, onClose }) {
   }, [lang]);
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 60 }}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ zIndex: 60 }}>
       <div className="flex flex-col" style={{ position: "absolute", inset: 0, background: "#000" }}>
         <video
           ref={videoRef}

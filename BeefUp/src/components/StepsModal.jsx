@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useEscapeKey } from '../lib/useEscapeKey'
 import { X } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../context/useApp'
 import { todayISO } from '../lib/planUtils'
 import NumberField from './NumberField'
 
 export default function StepsModal({ onClose }) {
+  useEscapeKey(onClose)
   const { t, stepsMap, saveSteps } = useApp()
   const today = todayISO()
   const [val, setVal] = useState(stepsMap[today] ?? '')
@@ -18,7 +20,7 @@ export default function StepsModal({ onClose }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div className="modal-center fade-in" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <span className="font-semibold text-base" style={{ color: 'var(--text)' }}>{t.stepsToday}</span>

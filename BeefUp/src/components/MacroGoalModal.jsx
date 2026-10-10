@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { X, Sparkles, Lock, ChevronDown } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { ACTIVITY, OBJECTIVE, calcGoals, activityFromSessions, latestWeight, pickMicronutrientGoals } from "../lib/nutritionCalc";
 import { MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { isPrescribed } from "../lib/planUtils";
 import NumberField from "./NumberField";
 
 export default function MacroGoalModal({ onClose }) {
+  useEscapeKey(onClose);
   const { t, nutritionGoals, setNutritionGoals, prescribedGoals, sessions, measurements } = useApp();
   const locked = isPrescribed(prescribedGoals);
   const [tab, setTab] = useState("manual"); // 'manual' | 'calculator'
@@ -57,7 +59,7 @@ export default function MacroGoalModal({ onClose }) {
   const macrosOff = kcalTarget > 0 && Math.abs(macroKcal - kcalTarget) > kcalTarget * 0.05;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div className="modal-center fade-in" style={{ padding: 26 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
           <span className="font-semibold" style={{ color: "var(--text)", fontSize: 19 }}>

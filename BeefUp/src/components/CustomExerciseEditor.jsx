@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { ChevronLeft, PersonStanding, X } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { uid } from "../lib/planUtils";
 import {
   listBodyParts,
@@ -28,6 +29,8 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
   const [bodyView, setBodyView] = useState("front");
   const [showBodyModal, setShowBodyModal] = useState(false);
+  useEscapeKey(onClose);
+  useEscapeKey(() => setShowBodyModal(false), showBodyModal);
 
   const bodyParts = listBodyParts();
   const musclesForBodyPart = bodyPart ? listMusclesForBodyPart(bodyPart) : [];
@@ -250,7 +253,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
       </div>
 
       {showBodyModal && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowBodyModal(false)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowBodyModal(false)}>
           <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-semibold text-base" style={{ color: "var(--text)" }}>

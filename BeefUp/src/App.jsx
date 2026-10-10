@@ -1,4 +1,5 @@
-import { AppProvider, useApp } from "./context/AppContext";
+import { AppProvider } from "./context/AppContext";
+import { useApp } from "./context/useApp";
 import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
 import HistoryPage from "./pages/HistoryPage";
@@ -19,6 +20,7 @@ import { decodeWorkoutShare } from "./lib/workoutShare";
 import { decodeTrainerInvite } from "./lib/trainerInvite";
 import { useSync } from "./lib/sync/useSync";
 import { getPref, setPref } from "./lib/prefs";
+import { useModalFocus } from "./lib/useModalFocus";
 import { useState, useEffect, lazy, Suspense } from "react";
 import ProfileSkeleton from "./pages/ProfileSkeleton";
 
@@ -271,7 +273,7 @@ function AppInner() {
       {incomingShare && (
         <ConfirmModal
           title={t.importWorkoutTitle}
-          message={`${incomingShare.name} — ${incomingShare.exercises.length} ${t.exercises}`}
+          message={`${incomingShare.name}: ${incomingShare.exercises.length} ${t.exercises}`}
           cancelLabel={t.cancel}
           confirmLabel={t.importWorkout}
           onCancel={() => setIncomingShare(null)}
@@ -332,6 +334,7 @@ function AppInner() {
 }
 
 export default function App() {
+  useModalFocus();
   return (
     <AppProvider>
       <AppInner />
