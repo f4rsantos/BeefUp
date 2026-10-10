@@ -22,9 +22,12 @@ export function useModalFocus() {
     function onRemoved(overlay) {
       const opener = openers.get(overlay)
       openers.delete(overlay)
-      if (opener && opener.isConnected && !topOverlay()?.contains(opener)) opener.focus({ preventScroll: true })
-      else topOverlay()?.focus({ preventScroll: true })
+      const top = topOverlay()
+      if (opener && opener.isConnected && (!top || top.contains(opener))) opener.focus({ preventScroll: true })
+      else top?.focus({ preventScroll: true })
     }
+
+    document.querySelectorAll('.modal-overlay').forEach(onAdded)
 
     const observer = new MutationObserver((records) => {
       for (const r of records) {
