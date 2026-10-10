@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { LogIn, LogOut, Cloud, Pencil } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
+import { friendlyError } from "../lib/friendlyError";
 import { getSession, signIn, signUp, signOut, onAuthChange, setProfileRole, isTrainerTakenError } from "../lib/auth";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getConfigSync } from "../lib/supabaseConfig";
@@ -53,7 +54,7 @@ export default function SyncView() {
       setSession(s);
       setPassword("");
     } catch (e) {
-      setError(isTrainerTakenError(e) ? t.trainerSetupTrainerTaken : String(e?.message || e));
+      setError(isTrainerTakenError(e) ? t.trainerSetupTrainerTaken : friendlyError(e, t));
     }
     setBusy(false);
   }
@@ -64,7 +65,7 @@ export default function SyncView() {
       await signOut();
       setSession(null);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     }
     setBusy(false);
   }

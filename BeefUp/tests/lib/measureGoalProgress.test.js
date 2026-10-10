@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { measureGoalProgress } from './planUtils.js'
+import { measureGoalProgress } from '../../src/lib/planUtils.js'
 
 function m(date, value, type = 'weight') {
   return { id: date, date, type, value }

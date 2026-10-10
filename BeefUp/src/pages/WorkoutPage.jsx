@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { todaysPlanEntry, isPrescribed } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
 import { resolveExercise, normalizeWorkoutExercises, BODY_PART_ACCENT } from "../lib/exerciseTree";
@@ -108,7 +108,8 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
     <>
       <button
         ref={btnRef}
-        aria-label="options"
+        className="tap"
+        aria-label={t.workoutOptions}
         onClick={toggleMenu}
         style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent)", flexShrink: 0 }}
       >
@@ -232,16 +233,8 @@ export default function WorkoutPage({
   };
 
   function renderTodayHero() {
-    if (!activePlan) {
-      return (
-        <div className="card" style={{ marginBottom: SPACE.md }}>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noPlan}</p>
-          <button className="btn btn-ghost mt-3 w-full py-2.5 text-sm" onClick={onManageWorkouts}>
-            {t.choosePlan}
-          </button>
-        </div>
-      );
-    }
+    // "Plano Atual" below already covers the no-plan state.
+    if (!activePlan) return null;
 
     if (todayEntry?.type === "rest") {
       return (
@@ -301,7 +294,7 @@ export default function WorkoutPage({
           </h1>
           <div className="flex items-center" style={{ gap: 8 }}>
             <button
-              aria-label="history"
+              aria-label={t.history}
               title={t.history}
               onClick={onViewHistory}
               className="btn btn-ghost p-2"
@@ -309,7 +302,7 @@ export default function WorkoutPage({
               <History size={16} />
             </button>
             <button
-              aria-label="exercises"
+              aria-label={t.exercisesTitle}
               title={t.exercisesTitle}
               onClick={onViewExercises}
               className="btn btn-ghost p-2"
@@ -369,7 +362,7 @@ export default function WorkoutPage({
             {t.currentPlan}
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
-            <button aria-label="more" onClick={onManagePlans} style={ICON_BUTTON_STYLE}>
+            <button className="tap" aria-label={t.managePlans} onClick={onManagePlans} style={ICON_BUTTON_STYLE}>
               <MoreHorizontal size={18} />
             </button>
           </div>
@@ -402,10 +395,10 @@ export default function WorkoutPage({
           {t.myWorkouts} ({workouts.length})
           </p>
           <div className="flex items-center" style={{ gap: 12 }}>
-            <button aria-label="create workout" onClick={onCreateWorkout} style={ICON_BUTTON_STYLE}>
+            <button className="tap" aria-label={t.newWorkout} onClick={onCreateWorkout} style={ICON_BUTTON_STYLE}>
               <Plus size={18} />
             </button>
-            <button aria-label="more" onClick={onManageWorkouts} style={ICON_BUTTON_STYLE}>
+            <button className="tap" aria-label={t.manageWorkouts} onClick={onManageWorkouts} style={ICON_BUTTON_STYLE}>
               <MoreHorizontal size={18} />
             </button>
           </div>

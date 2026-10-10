@@ -1,3 +1,5 @@
+import { useEscapeKey } from "../lib/useEscapeKey";
+
 export default function ConfirmModal({
   title,
   message,
@@ -7,8 +9,9 @@ export default function ConfirmModal({
   confirmLabel = "Confirm",
   confirmDisabled = false,
 }) {
+  useEscapeKey(onCancel);
   return (
-    <div className="modal-overlay">
+    <div role="dialog" aria-modal="true" className="modal-overlay">
       <div
         className="modal-center fade-in"
         onClick={(e) => e.stopPropagation()}

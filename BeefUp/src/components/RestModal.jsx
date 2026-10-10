@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { X } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import ProgressRing from "./ProgressRing";
 
 const DRAG_STEP_PX = 18; // px of vertical drag per one step of that column
@@ -94,6 +95,7 @@ function formatClock(totalSeconds) {
 }
 
 export default function RestModal({ restState, setRestState, onClose }) {
+  useEscapeKey(onClose);
   const { t } = useApp();
   const initialDuration = restState?.duration ?? 60;
   const [mm, setMm] = useState(Math.floor(initialDuration / 60));
@@ -123,7 +125,7 @@ export default function RestModal({ restState, setRestState, onClose }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div
         className="modal-center fade-in"
         style={{ maxWidth: 420 }}

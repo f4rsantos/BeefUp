@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Plus, Minus, Pencil, Droplet, Trash2, Check, X, ChevronDown, Lock } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { todayISO, uid, isPrescribed } from "../lib/planUtils";
 import { getLS, removeLS } from "../lib/crypto";
 import { macroGoalShares, MICRO_COLORS } from "../lib/nutritionCalc";
@@ -121,7 +121,7 @@ export default function NutritionPage() {
           </div>
 
           <button
-            className="flex items-center justify-center w-full"
+            className="tap flex items-center justify-center w-full"
             style={{ color: "var(--muted)", background: "none", border: "none" }}
             onClick={() => setShowMicros((v) => !v)}
             aria-expanded={showMicros}
@@ -222,11 +222,11 @@ export default function NutritionPage() {
                 <div
                   key={meal.id}
                   className="flex items-center gap-2 w-full"
-                  style={{ padding: "10px 14px", borderRadius: 14, background: "var(--surface2)" }}
+                  style={{ padding: "0 8px 0 14px", borderRadius: 14, background: "var(--surface2)", minHeight: 44 }}
                 >
                   <Icon size={15} style={{ color: "var(--muted)", flexShrink: 0 }} />
                   <button
-                    className="text-sm flex-1"
+                    className="tap text-sm flex-1"
                     style={{ color: "var(--muted)", textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}
                     onClick={() => (editingMeals ? null : setAddMeal(meal.id))}
                   >

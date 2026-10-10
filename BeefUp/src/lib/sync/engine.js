@@ -32,7 +32,7 @@ async function assertOwnerMatches(identity) {
   if (!owner) return
   if (owner.projectRef !== identity.projectRef || owner.userId !== identity.userId) {
     throw new Error(
-      `sync: refusing to sync — local data belongs to ${owner.projectRef}/${owner.userId}, ` +
+      `sync: refusing to sync, local data belongs to ${owner.projectRef}/${owner.userId}, ` +
       `backend identity is ${identity.projectRef}/${identity.userId}. Call switchSupabaseProject() first.`
     )
   }

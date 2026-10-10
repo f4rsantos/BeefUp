@@ -1,7 +1,7 @@
 import { todayISO } from '../../lib/planUtils'
 import {ChevronDown, Flame, Footprints, Plus, CalendarDays} from 'lucide-react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { useApp } from '../../context/AppContext'
+import { useApp } from '../../context/useApp'
 import { BODY_PART_ACCENT } from '../../lib/exerciseTree'
 import { CHART_TOOLTIP_STYLE } from '../../lib/chartTheme'
 import StatTile from '../../components/StatTile'
@@ -84,7 +84,7 @@ export function StepsBlock({ todaySteps, weekSteps, maxWeekSteps, onOpen }) {
         <div>
           <p className="text-xs" style={{ color: 'var(--muted)' }}>{t.stepsToday}</p>
           <p className="text-2xl font-bold" style={{ color: 'var(--text)', lineHeight: 1.05 }}>
-            {todaySteps !== null ? todaySteps.toLocaleString() : '—'}
+            {todaySteps !== null ? todaySteps.toLocaleString() : '–'}
           </p>
         </div>
       </div>
@@ -241,7 +241,7 @@ export function PersonalRecordsBlock({ records, expanded, onToggle }) {
   return (
     <div className="card">
       <button
-        className="flex items-center justify-between w-full"
+        className="tap flex items-center justify-between w-full"
         onClick={onToggle}
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
@@ -309,7 +309,8 @@ export function NextAppointmentsBlock({ appointments }) {
             const dateParts = appt.date.split('-');
             const d = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
             const dateStr = d.toLocaleDateString(lang === 'pt' ? 'pt-PT' : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-            const typeKey = 'dashAppt' + appt.type.charAt(0).toUpperCase() + appt.type.slice(1);
+            const type = appt.type || 'consulta'
+            const typeKey = 'dashAppt' + type.charAt(0).toUpperCase() + type.slice(1)
             return (
               <div key={appt.id || idx} className="flex items-center justify-between text-sm" style={{ padding: '8px 12px', background: isToday ? 'var(--accent-soft)' : 'var(--surface2)', borderRadius: 8, border: isToday ? '1px solid var(--accent)' : '1px solid transparent' }}>
                 <div className="flex items-center gap-3">
@@ -317,8 +318,8 @@ export function NextAppointmentsBlock({ appointments }) {
                     <CalendarDays size={16} style={{ color: isToday ? '#fff' : 'var(--accent)' }} />
                   </div>
                   <div>
-                    <p style={{ color: isToday ? 'var(--accent)' : 'var(--text)', fontWeight: 600 }}>{isToday ? (lang === 'pt' ? 'Hoje' : 'Today') : dateStr}</p>
-                    <p className="text-xs" style={{ color: isToday ? 'var(--accent)' : 'var(--muted)', opacity: isToday ? 0.8 : 1 }}>{t[typeKey] || appt.type}</p>
+                    <p style={{ color: isToday ? 'var(--accent)' : 'var(--text)', fontWeight: 600 }}>{isToday ? t.dashToday : dateStr}</p>
+                    <p className="text-xs" style={{ color: isToday ? 'var(--accent)' : 'var(--muted)', opacity: isToday ? 0.8 : 1 }}>{t[typeKey] || type}</p>
                   </div>
                 </div>
                 <span className="tabular font-bold" style={{ color: isToday ? 'var(--accent)' : 'var(--text)', fontSize: 16 }}>

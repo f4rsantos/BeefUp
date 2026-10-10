@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { AlertTriangle, Check, Database, Download, Upload, X } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { buildWorkoutCsv, downloadFile, parseWorkoutCsv, workoutCsvFilename } from "../lib/csvData";
 import { backupFilename, buildBackup, parseBackup, restoreBackup } from "../lib/backup";
 import ConfirmModal from "./ConfirmModal";
@@ -33,8 +34,9 @@ function DataRow({ Icon, label, desc, action, primary, busy, onClick }) {
 // Export and import both ask "which kind?" with the same layout
 function ChoiceModal({ title, question, options, onClose }) {
   const { t } = useApp();
+  useEscapeKey(onClose);
   return (
-    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold text-base" style={{ color: "var(--text)" }}>{title}</span>

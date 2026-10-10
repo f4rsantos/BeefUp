@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../context/useApp'
 
 // sintetizado via Web Audio (sem ficheiros)
 export function useAudioCues() {

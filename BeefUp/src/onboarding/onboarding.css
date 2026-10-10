@@ -83,7 +83,7 @@
   color: var(--muted);
   cursor: pointer;
 }
-.ob-pref-btn.active { background: var(--accent); color: #fff; }
+.ob-pref-btn.active { background: var(--grad-accent); color: #fff; }
 
 .ob-title { font-size: 26px; font-weight: 900; color: var(--text); }
 .ob-sub { font-size: 14px; color: var(--muted); margin-top: -8px; }

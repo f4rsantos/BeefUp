@@ -7,7 +7,7 @@ export function isDashDemo() {
 }
 
 export const DEMO_STUDENTS = [
-  { id: 'demo-ana', linkedUserId: 'demo-ana', name: 'Ana Silva', scopes: ['workouts', 'nutrition', 'measures'] },
+  { id: 'demo-ana', linkedUserId: 'demo-ana', name: 'Ana Silva', scopes: ['workouts', 'nutrition', 'measures', 'calendar'] },
   { id: 'demo-rui', linkedUserId: 'demo-rui', name: 'Rui Costa', scopes: ['workouts'] },
   { id: 'demo-marta', linkedUserId: 'demo-marta', name: 'Marta Dias', scopes: ['nutrition', 'measures'] },
 ]

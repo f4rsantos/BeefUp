@@ -269,6 +269,17 @@ export function repUnitFor(ref) {
   return findBase(baseId)?.repUnit || 'reps'
 }
 
+// Cardio logs distance + time and has no weight.
+export function isCardioExercise(ref) {
+  const { baseId } = parseExerciseRef(ref)
+  return findBase(baseId)?.kind === 'cardio'
+}
+
+// Only rep-counted sets feed volume, rep totals and 1RM.
+export function countsAsReps(ref) {
+  return repUnitFor(ref) === 'reps'
+}
+
 export function normalizeWorkoutExercises(list) {
   return (list || []).map((item) => (typeof item === 'string' ? { ref: item } : item))
 }

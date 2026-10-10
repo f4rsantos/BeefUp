@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { X, Lock } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { uid, isPrescribed } from "../lib/planUtils";
 import { allMeasureGroups, measureGroupLabel, measureTypeLabel, UNIT_PRESETS } from "../lib/measureTypes";
 import ConfirmModal from "./ConfirmModal";
@@ -9,6 +10,7 @@ const NEW_GROUP = "__new__";
 const OTHER_UNIT = "__other__";
 
 export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
+  useEscapeKey(onClose);
   const { t, measureTypes, saveMeasureType, deleteMeasureType } = useApp();
   const groups = allMeasureGroups(measureTypes);
   const [groupKey, setGroupKey] = useState(initialGroupKey ?? groups[0]?.key ?? "general");
@@ -67,7 +69,7 @@ export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div className="modal-center fade-in" style={{ padding: 26 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <span className="font-semibold" style={{ color: "var(--text)", fontSize: 19 }}>

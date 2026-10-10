@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {CalendarDays, Clock, Dumbbell, Eye, EyeOff, Flame, GripVertical, Layers,Repeat, Ruler, SlidersHorizontal, Weight,} from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import StepsModal from "../components/StepsModal";
 import { DEFAULT_CHART_DAYS, useProfileStats } from "./profile/useProfileStats";
 import { useBlockReorder } from "./profile/useBlockReorder";
@@ -14,7 +14,7 @@ import {
   WorkoutSummaryBlock,
   NextAppointmentsBlock,
 } from "./profile/StatBlocks";
-import { todayISO, isFutureAppt } from "../lib/planUtils";
+import { isFutureAppt } from "../lib/planUtils";
 
 function formatTotalTime(totalSeconds, t) {
   const hours = Math.floor(totalSeconds / 3600);

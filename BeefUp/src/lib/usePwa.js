@@ -30,7 +30,7 @@ export default function usePwa() {
   const [showIosHint, setShowIosHint] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);
-  const [updateSW, setUpdateSW] = useState(null);
+  const updateSW = useRef(null);
   // `beforeinstallprompt` fires synchronously and cannot await a read, so the
   // dismissal timestamp is kept in a ref that the async load fills in.
   const dismissedAt = useRef(0);
@@ -76,7 +76,7 @@ export default function usePwa() {
       onNeedRefresh: () => setNeedRefresh(true),
       onOfflineReady: () => setOfflineReady(true),
     });
-    setUpdateSW(() => update);
+    updateSW.current = update;
   }, []);
 
   async function install() {
@@ -100,7 +100,7 @@ export default function usePwa() {
 
   function applyUpdate() {
     setNeedRefresh(false);
-    if (updateSW) updateSW(true);
+    if (updateSW.current) updateSW.current(true);
   }
 
   return {

@@ -26,6 +26,7 @@ dist-ssr
 
 .claude
 .codex
+anti-slop
 
 /graphify-out
 CLAUDE.md

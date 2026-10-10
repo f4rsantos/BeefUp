@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Copy, Check, ExternalLink } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { validateConfig, testConnection, setSupabaseConfig } from "../lib/supabaseConfig";
 import { resetSupabase } from "../lib/supabaseClient";
 

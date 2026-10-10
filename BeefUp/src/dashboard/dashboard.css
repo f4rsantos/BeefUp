@@ -256,6 +256,8 @@
   overflow: hidden;
 }
 .dash-panel + .dash-panel { margin-top: var(--d-4); }
+/* Grid gap spaces panels; margin would shift them. */
+.dash-grid > .dash-panel { margin-top: 0; }
 .dash-panel-head {
   display: flex;
   align-items: center;
@@ -399,10 +401,23 @@
 .dash-cal-chip {
   font-size: var(--d-label);
   background: var(--surface2);
-  border-radius: 6px;
+  border-radius: var(--d-r-inset);
   padding: 2px 6px;
   color: var(--text);
 }
+.dash-upcoming-day {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--d-1);
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.14s;
+}
+.dash-root .dash-upcoming-day:hover { color: var(--accent); }
+
 .dash-cal-head {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -414,16 +429,26 @@
   text-align: center;
 }
 
+/* ── tablet / small laptop ──────────────────────────────────────────────
+ * Two panes fit from 720px, with a tighter frame. */
+@media (min-width: 720px) and (max-width: 1023px) {
+  .dash-header { padding: var(--d-3) var(--d-5); }
+  .dash-clients { grid-template-columns: 220px 1fr; }
+  .dash-detail-head { padding: var(--d-4) var(--d-5) var(--d-3); }
+  .dash-areas { gap: var(--d-4); padding: 0 var(--d-5); }
+  .dash-section, .dash-cal { padding: var(--d-4) var(--d-5); }
+}
+
 /* ── phone ──────────────────────────────────────────────────────────────
  *
- * Everything below lives inside this one query, and 899px is the same line
+ * Everything below lives inside this one query, and 719px is the same line
  * useIsDesktop draws — CSS and JS must never disagree about which mode they
- * are in. Above it, the console is byte-for-byte what it was.
+ * are in.
  *
  * The shape changes in three ways: navigation drops to a bottom bar the
  * thumb reaches, the roster and the client sheet stop being two panes and
  * become two screens, and the calendar trades name chips for dots. */
-@media (max-width: 899px) {
+@media (max-width: 719px) {
   .dash-root { grid-template-rows: auto 1fr auto; }
 
   .dash-header { padding: var(--d-3) var(--d-4); gap: var(--d-2); }
@@ -480,7 +505,8 @@
   .dash-panel { padding: var(--d-4); }
   .dash-views { max-width: none; }
 
-  .dash-cal-grid { gap: var(--d-1); }
+  /* 2px gaps keep 44px day cells at 360px. */
+  .dash-cal-grid, .dash-cal-head { gap: 2px; }
   .dash-cal-cell {
     min-height: 0;
     aspect-ratio: 1;
@@ -511,6 +537,16 @@
     align-items: center;
     justify-content: center;
   }
-  .dash-root .chip { padding: 8px 14px; font-size: var(--d-sm); }
+  .dash-root .chip { padding: 8px 14px; font-size: var(--d-sm); min-height: 44px; }
+
+  /* Thumb-sized targets: 44px minimum. */
+  .dash-root .btn,
+  .dash-root .btn-back,
+  .dash-root .pill-option,
+  .dash-search,
+  .dash-upcoming-day { min-height: 44px; }
+  .dash-area { min-width: 44px; justify-content: center; }
+  .dash-search { padding-block: 0; }
+  .dash-search input { align-self: stretch; }
   .dash-icon-tab { width: 40px; height: 40px; }
 }

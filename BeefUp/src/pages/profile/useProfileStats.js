@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useApp } from '../../context/AppContext'
+import { useApp } from '../../context/useApp'
 import {aggregateSessionsByDay, computeBestStreak, computeMuscleFatigue, computeMuscleGroupDistribution, computeOverallStats, computePersonalRecords, computeStreak, daysBetween, getMonthActivity, sessionDay, todayISO, toLocalISO,} from '../../lib/planUtils'
 
 function dayOffsetISO(daysBack) {

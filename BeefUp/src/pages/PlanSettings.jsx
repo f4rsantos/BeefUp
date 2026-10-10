@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Plus, Pencil, Trash2, Lock } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import PlanEditor from "../components/PlanEditor";
 import ConfirmModal from "../components/ConfirmModal";
 import { isPrescribed } from "../lib/planUtils";

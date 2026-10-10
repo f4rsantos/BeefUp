@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
-import { useApp } from "../context/AppContext";
-import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
+import { ChevronLeft, Search, SlidersHorizontal, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
+import { useApp } from "../context/useApp";
+import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
-import BodyPartFilter from "../components/BodyPartFilter";
+import ExerciseFilterModal from "../components/ExerciseFilterModal";
 import CustomExerciseEditor from "../components/CustomExerciseEditor";
 import { localizedName } from "../lib/localizedName"
 
@@ -13,13 +13,10 @@ export default function ExercisesPage({ onBack }) {
   const [bodyPart, setBodyPart] = useState(null);
   const [equipment, setEquipment] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [filterTab, setFilterTab] = useState("body");
-  const [bodyView, setBodyView] = useState("front");
   const [selectedId, setSelectedId] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
   const [creatingCustom, setCreatingCustom] = useState(false);
 
-  const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   const sortedExercises = useMemo(
@@ -261,88 +258,15 @@ export default function ExercisesPage({ onBack }) {
       </div>
 
       {showFilters && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
-          <div
-            className="modal-center"
-            style={{ maxWidth: filterTab === "body" ? 420 : 380 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
-                {t.filters}
-              </span>
-              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)} aria-label={t.cancel}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="pill-toggle" style={{ marginBottom: 16 }}>
-              <button
-                className={`pill-option ${filterTab === "body" ? "active" : ""}`}
-                onClick={() => setFilterTab("body")}
-              >
-                {t.filterBodyPart}
-              </button>
-              <button
-                className={`pill-option ${filterTab === "equipment" ? "active" : ""}`}
-                onClick={() => setFilterTab("equipment")}
-              >
-                {t.filterEquipment}
-              </button>
-            </div>
-
-            {filterTab === "body" ? (
-              <div style={{ marginBottom: 20 }}>
-                <BodyPartFilter
-                  bodyPart={bodyPart}
-                  setBodyPart={setBodyPart}
-                  bodyView={bodyView}
-                  setBodyView={setBodyView}
-                  lang={lang}
-                  t={t}
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col" style={{ gap: 6, marginBottom: 20 }}>
-                <div className="flex flex-wrap" style={{ gap: 6 }}>
-                  <button
-                    className={`chip ${equipment === null ? "active" : ""}`}
-                    onClick={() => setEquipment(null)}
-                  >
-                    {t.allTags}
-                  </button>
-                  {equipmentList.map((eq) => (
-                    <button
-                      key={eq.id}
-                      className={`chip ${equipment === eq.id ? "active" : ""}`}
-                      onClick={() => setEquipment(equipment === eq.id ? null : eq.id)}
-                    >
-                      {getEquipmentLabel(eq.id, lang)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                className="btn btn-ghost flex-1 py-3 text-sm"
-                onClick={() => {
-                  setBodyPart(null);
-                  setEquipment(null);
-                }}
-              >
-                {t.clearFilters}
-              </button>
-              <button
-                className="btn btn-primary flex-1 py-3 text-sm"
-                onClick={() => setShowFilters(false)}
-              >
-                {t.applyFilters}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ExerciseFilterModal
+          bodyPart={bodyPart}
+          setBodyPart={setBodyPart}
+          equipment={equipment}
+          setEquipment={setEquipment}
+          onClose={() => setShowFilters(false)}
+          lang={lang}
+          t={t}
+        />
       )}
     </div>
   );

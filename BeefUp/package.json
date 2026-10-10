@@ -9,7 +9,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --test \"tests/**/*.test.js\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

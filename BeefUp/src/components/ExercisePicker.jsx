@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useEscapeKey } from "../lib/useEscapeKey";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { useApp } from "../context/useApp";
 import {
   listBaseExercises,
   filterAndSortExercises,
@@ -9,14 +10,13 @@ import {
   getVariantOptions,
   getBodyPartLabel,
   getMuscleLabel,
-  listBodyParts,
-  listEquipmentUsed,
   getEquipmentLabel,
   buildExerciseRef,
   BAR_TYPES,
 } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName";
 import CustomExerciseEditor from "./CustomExerciseEditor";
+import ExerciseFilterModal from "./ExerciseFilterModal";
 
 export default function AddExercisesPicker({ onConfirm, onClose }) {
   const { t, lang } = useApp();
@@ -34,9 +34,9 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [queue, setQueue] = useState([]); // Array of { instanceId, baseId, equipmentId, variantId, barType, ref }
   const [isEditingInstanceId, setIsEditingInstanceId] = useState(null);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
+  useEscapeKey(onClose);
+  useEscapeKey(() => cancelCustomize(), !!activeBase);
 
-  const bodyParts = useMemo(() => listBodyParts(), []);
-  const equipmentList = useMemo(() => listEquipmentUsed(), []);
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   const sortedExercises = useMemo(
@@ -383,7 +383,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
       </div>
 
       {activeBase && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={cancelCustomize}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={cancelCustomize}>
           <div className="modal-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
               {(step === "bartype" || step === "variant") &&
@@ -521,7 +521,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                           <Pencil size={18} style={{ color: "var(--text)" }} />
                         </button>
                         <button className="btn btn-ghost p-2" onClick={() => handleRemoveQueueItem(item.instanceId)} aria-label={t.delete}>
-                          <Trash2 size={18} style={{ color: "var(--error)" }} />
+                          <Trash2 size={18} style={{ color: "var(--danger)" }} />
                         </button>
                       </div>
                     </div>
@@ -543,82 +543,15 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
       )}
 
       {showFilters && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
-          <div className="modal-center" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
-                {t.filters}
-              </span>
-              <button className="btn btn-ghost p-2" onClick={() => setShowFilters(false)} aria-label={t.cancel}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex flex-col" style={{ gap: 6, marginBottom: 16 }}>
-              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
-                {t.filterBodyPart}
-              </span>
-              <div className="flex flex-wrap" style={{ gap: 6 }}>
-                <button
-                  className={`chip ${bodyPart === null ? "active" : ""}`}
-                  onClick={() => setBodyPart(null)}
-                >
-                  {t.allTags}
-                </button>
-                {bodyParts.map((bp) => (
-                  <button
-                    key={bp}
-                    className={`chip ${bodyPart === bp ? "active" : ""}`}
-                    onClick={() => setBodyPart(bodyPart === bp ? null : bp)}
-                  >
-                    {getBodyPartLabel(bp, lang)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col" style={{ gap: 6, marginBottom: 20 }}>
-              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
-                {t.filterEquipment}
-              </span>
-              <div className="flex flex-wrap" style={{ gap: 6 }}>
-                <button
-                  className={`chip ${equipment === null ? "active" : ""}`}
-                  onClick={() => setEquipment(null)}
-                >
-                  {t.allTags}
-                </button>
-                {equipmentList.map((eq) => (
-                  <button
-                    key={eq.id}
-                    className={`chip ${equipment === eq.id ? "active" : ""}`}
-                    onClick={() => setEquipment(equipment === eq.id ? null : eq.id)}
-                  >
-                    {getEquipmentLabel(eq.id, lang)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                className="btn btn-ghost flex-1 py-3 text-sm"
-                onClick={() => {
-                  setBodyPart(null);
-                  setEquipment(null);
-                }}
-              >
-                {t.clearFilters}
-              </button>
-              <button
-                className="btn btn-primary flex-1 py-3 text-sm"
-                onClick={() => setShowFilters(false)}
-              >
-                {t.applyFilters}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ExerciseFilterModal
+          bodyPart={bodyPart}
+          setBodyPart={setBodyPart}
+          equipment={equipment}
+          setEquipment={setEquipment}
+          onClose={() => setShowFilters(false)}
+          lang={lang}
+          t={t}
+        />
       )}
     </div>
   );

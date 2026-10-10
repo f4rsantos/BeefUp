@@ -1,5 +1,6 @@
 import { uid, todayISO } from './planUtils.js'
 import { listBaseExercises, listEquipmentUsed, buildExerciseRef } from './exerciseTree.js'
+import { normalizeTime } from './timeFormat.js'
 
 // Reading CSV has two modes: 
 // - 'beefup' trusts our own two extra columns and restores sessions exactly as they were. 
@@ -89,6 +90,7 @@ const COLUMN_ROLES = [
   ['date', ['date', 'data', 'workoutdate', 'datetime', 'starttime', 'start', 'timestamp', 'dataehora']],
   ['reps', ['reps', 'rep', 'repetitions', 'repeticoes', 'count']],
   ['weight', ['weight', 'peso', 'kg', 'lb', 'lbs', 'load', 'carga']],
+  ['time', ['time']],
   ['setOrder', ['setorder', 'set', 'setnumber', 'setindex', 'setno', 'serie', 'ordem']],
   ['workoutNotes', ['workoutnotes', 'sessionnotes', 'notasdotreino']],
   ['workoutName', ['workoutname', 'routine', 'rotina', 'treino', 'session', 'sessionname', 'workouttitle']],
@@ -331,6 +333,8 @@ export function parseWorkoutCsv(text, mode = 'generic') {
     const setOrder = normalizeText(cell(row, 'setOrder'))
     const weightRaw = cell(row, 'weight')
     const reps = cell(row, 'reps')
+    // Only our own export has a minutes column.
+    const time = restoring ? normalizeTime(cell(row, 'time')) : ''
 
     if (NOTE_MARKERS.has(setOrder)) {
       const note = cell(row, 'notes')
@@ -338,7 +342,7 @@ export function parseWorkoutCsv(text, mode = 'generic') {
       continue
     }
 
-    const hasValues = weightRaw !== '' || reps !== ''
+    const hasValues = weightRaw !== '' || reps !== '' || time !== ''
     if (!hasValues && (setOrder === '' || isNaN(Number(setOrder)))) continue
 
     const weight = inPounds && weightRaw !== ''
@@ -348,6 +352,7 @@ export function parseWorkoutCsv(text, mode = 'generic') {
     exercise.sets.push({
       weight,
       reps,
+      ...(time ? { time } : {}),
       type: isNaN(Number(setOrder)) ? SET_TYPE_MARKERS[setOrder] ?? 'normal' : 'normal',
     })
     setCount++
@@ -376,7 +381,7 @@ export function parseWorkoutCsv(text, mode = 'generic') {
 
 const CSV_HEADER = [
   'Workout #', 'Date', 'Workout Name', 'Duration (sec)', 'Exercise Name',
-  'Set Order', 'Weight (kg)', 'Reps', 'Set Type', 'Notes', 'Workout Notes',
+  'Set Order', 'Weight (kg)', 'Reps', 'Time (mm:ss)', 'Set Type', 'Notes', 'Workout Notes',
   BEEFUP_SESSION_COLUMN, BEEFUP_REF_COLUMN,
 ]
 
@@ -405,6 +410,7 @@ export function buildWorkoutCsv(sessions, lang) {
           TYPE_TO_MARKER[set.type] ?? setIndex + 1,
           set.weight,
           set.reps,
+          set.time,
           set.type || 'normal',
           exercise.note,
           session.notes,

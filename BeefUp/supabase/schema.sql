@@ -85,18 +85,21 @@ create table if not exists public.sync_rows (
   scope      text not null,
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
-  primary key (user_id, store, row_key),
-  -- Defense in depth: hardcodes the store -> scope mapping from
-  -- src/lib/sync/stores.js (SYNCED_STORES) at the database level, so RLS's
-  -- "trainer may write scope = 'workouts'" check can't be defeated by a
-  -- caller lying about `scope` for a nutrition/measures store. Keep this in
-  -- sync with SYNCED_STORES if a store is ever added or reassigned.
-  constraint sync_rows_store_scope_check check (
-    (store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts')
-    or (store in ('foodLog', 'foods', 'water', 'nutritionGoals') and scope = 'nutrition')
-    or (store in ('measurements', 'steps', 'measureTypes', 'measureGoals') and scope = 'measures')
-    or (store = 'appointments' and scope = 'calendar')
-  )
+  primary key (user_id, store, row_key)
+);
+
+-- Defense in depth: hardcodes the store -> scope mapping from
+-- src/lib/sync/stores.js (SYNCED_STORES) at the database level, so RLS's
+-- "trainer may write scope = 'workouts'" check can't be defeated by a
+-- caller lying about `scope` for a nutrition/measures store. Keep this in
+-- sync with SYNCED_STORES if a store is ever added or reassigned.
+-- Outside create table: re-running must replace an older list.
+alter table public.sync_rows drop constraint if exists sync_rows_store_scope_check;
+alter table public.sync_rows add constraint sync_rows_store_scope_check check (
+  (store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts')
+  or (store in ('foodLog', 'foods', 'water', 'nutritionGoals') and scope = 'nutrition')
+  or (store in ('measurements', 'steps', 'measureTypes', 'measureGoals') and scope = 'measures')
+  or (store = 'appointments' and scope = 'calendar')
 );
 
 comment on table public.sync_rows is

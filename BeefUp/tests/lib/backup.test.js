@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { db, STORES } from './db.js'
-import { setPref, getPref } from './prefs.js'
-import { buildBackup, parseBackup, restoreBackup } from './backup.js'
+import { db, STORES } from '../../src/lib/db.js'
+import { setPref, getPref } from '../../src/lib/prefs.js'
+import { buildBackup, parseBackup, restoreBackup } from '../../src/lib/backup.js'
 
 async function reset() {
   for (const store of Object.values(STORES)) await db.clear(store)

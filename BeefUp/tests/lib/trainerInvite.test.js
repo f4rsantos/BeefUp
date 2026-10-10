@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { encodeTrainerInvite, decodeTrainerInvite } from './trainerInvite.js'
+import { encodeTrainerInvite, decodeTrainerInvite } from '../../src/lib/trainerInvite.js'
 
 const SAMPLE = { url: 'https://abcxyzproj.supabase.co', anonKey: 'anon.key.value', code: 'ABCD2345' }
 

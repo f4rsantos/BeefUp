@@ -2,14 +2,14 @@ import 'fake-indexeddb/auto'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { db, STORES } from '../db.js'
-import { SCOPES, storesForScopes, keyFieldOf } from './stores.js'
-import { isDeleted, isDirty, stripMeta } from './meta.js'
-import { resolveRow, mergeStore, pendingPush, purgeableKeys, TOMBSTONE_GRACE_MS } from './merge.js'
-import { syncStore, syncAll, purgeStore, cursorKey } from './engine.js'
-import { createMemoryBackend } from './backends/memory.js'
-import { unlink } from './link.js'
-import { switchSupabaseProject } from './project.js'
+import { db, STORES } from '../../../src/lib/db.js'
+import { SCOPES, storesForScopes, keyFieldOf } from '../../../src/lib/sync/stores.js'
+import { isDeleted, isDirty, stripMeta } from '../../../src/lib/sync/meta.js'
+import { resolveRow, mergeStore, pendingPush, purgeableKeys, TOMBSTONE_GRACE_MS } from '../../../src/lib/sync/merge.js'
+import { syncStore, syncAll, purgeStore, cursorKey } from '../../../src/lib/sync/engine.js'
+import { createMemoryBackend } from '../../../src/lib/sync/backends/memory.js'
+import { unlink } from '../../../src/lib/sync/link.js'
+import { switchSupabaseProject } from '../../../src/lib/sync/project.js'
 
 async function reset() {
   for (const store of Object.values(STORES)) await db.clear(store)

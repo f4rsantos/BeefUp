@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { ChevronLeft, PersonStanding, X } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { uid } from "../lib/planUtils";
 import {
   listBodyParts,
@@ -28,6 +29,8 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
   const [bodyView, setBodyView] = useState("front");
   const [showBodyModal, setShowBodyModal] = useState(false);
+  useEscapeKey(onClose);
+  useEscapeKey(() => setShowBodyModal(false), showBodyModal);
 
   const bodyParts = listBodyParts();
   const musclesForBodyPart = bodyPart ? listMusclesForBodyPart(bodyPart) : [];
@@ -75,9 +78,10 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
       instructionsPt: [],
       equipment: equipmentIds,
       variants: [],
-      repUnit,
-      defaultSets: parseInt(defaultSets) || 3,
-      defaultReps: parseInt(defaultReps) || 10,
+      repUnit: repUnit === "cardio" ? "m" : "reps",
+      ...(repUnit === "cardio" ? { kind: "cardio" } : {}),
+      defaultSets: repUnit === "cardio" ? 1 : parseInt(defaultSets) || 3,
+      defaultReps: repUnit === "cardio" ? 0 : parseInt(defaultReps) || 10,
       defaultWeight: 0,
       custom: true,
     };
@@ -197,14 +201,15 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
                 {t.unitReps}
               </button>
               <button
-                className={`pill-option ${repUnit === "m" ? "active" : ""}`}
-                onClick={() => setRepUnit("m")}
+                className={`pill-option ${repUnit === "cardio" ? "active" : ""}`}
+                onClick={() => setRepUnit("cardio")}
               >
-                {t.unitMeters}
+                {t.unitCardio}
               </button>
             </div>
           </div>
 
+          {repUnit !== "cardio" && (
           <div className="grid grid-cols-2 gap-4" style={{ marginBottom: 20 }}>
             <div>
               <label className="section-title" style={{ fontSize: 13 }}>{t.defaultSetsLabel}</label>
@@ -227,6 +232,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
               />
             </div>
           </div>
+          )}
 
           <div style={{ marginBottom: 24 }}>
             <label className="section-title" style={{ fontSize: 13 }}>{t.exerciseDescriptionLabel}</label>
@@ -250,7 +256,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
       </div>
 
       {showBodyModal && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowBodyModal(false)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowBodyModal(false)}>
           <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-semibold text-base" style={{ color: "var(--text)" }}>

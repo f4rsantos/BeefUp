@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { AppContext } from './useApp'
 import { db, STORES } from '../lib/db'
 import { todayISO } from '../lib/planUtils'
 import { getAllPrefs, migrateLegacyPrefs, setPref, PREF_DEFAULTS } from '../lib/prefs'
@@ -9,7 +10,6 @@ import { applyCustomAccent } from '../lib/colorTheme'
 import { registerCustomExercises } from '../lib/exerciseTree'
 import strings from '../strings'
 
-const AppContext = createContext(null)
 
 function upsertById(list, item) {
   const idx = list.findIndex((x) => x.id === item.id)
@@ -52,6 +52,7 @@ export function AppProvider({ children }) {
   const [theme, setThemeState] = useState(PREF_DEFAULTS.theme)
   const [fontScale, setFontScaleState] = useState(PREF_DEFAULTS.fontScale)
   const [soundEnabled, setSoundEnabledState] = useState(PREF_DEFAULTS.soundEnabled)
+  const [keepAwake, setKeepAwakeState] = useState(PREF_DEFAULTS.keepAwake)
   const [accentColor, setAccentColorState] = useState(PREF_DEFAULTS.accentColor)
   const [customAccentHex, setCustomAccentHexState] = useState(PREF_DEFAULTS.customAccentHex)
   const [lang, setLangState] = useState(PREF_DEFAULTS.lang)
@@ -110,6 +111,11 @@ export function AppProvider({ children }) {
   const setSoundEnabled = useCallback((v) => {
     setSoundEnabledState(v)
     setPref('soundEnabled', v)
+  }, [])
+
+  const setKeepAwake = useCallback((v) => {
+    setKeepAwakeState(v)
+    setPref('keepAwake', v)
   }, [])
 
   useEffect(() => {
@@ -188,6 +194,7 @@ export function AppProvider({ children }) {
       setThemeState(prefs.theme)
       setFontScaleState(prefs.fontScale)
       setSoundEnabledState(prefs.soundEnabled)
+      setKeepAwakeState(prefs.keepAwake)
       setAccentColorState(prefs.accentColor)
       setCustomAccentHexState(prefs.customAccentHex)
       setLangState(prefs.lang)
@@ -452,6 +459,7 @@ export function AppProvider({ children }) {
     theme, setTheme,
     fontScale, setFontScale,
     soundEnabled, setSoundEnabled,
+    keepAwake, setKeepAwake,
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     lang, setLang,
     t,
@@ -485,10 +493,4 @@ export function AppProvider({ children }) {
   if (!hydrated) return null
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
-}
-
-export function useApp() {
-  const ctx = useContext(AppContext)
-  if (!ctx) throw new Error('useApp must be used within AppProvider')
-  return ctx
 }
