@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, listEquipmentUsed, getEquipmentLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import BodyPartFilter from "../components/BodyPartFilter";
@@ -13,6 +14,7 @@ export default function ExercisesPage({ onBack }) {
   const [bodyPart, setBodyPart] = useState(null);
   const [equipment, setEquipment] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  useEscapeKey(() => setShowFilters(false), showFilters);
   const [filterTab, setFilterTab] = useState("body");
   const [bodyView, setBodyView] = useState("front");
   const [selectedId, setSelectedId] = useState(null);
@@ -261,7 +263,7 @@ export default function ExercisesPage({ onBack }) {
       </div>
 
       {showFilters && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
           <div
             className="modal-center"
             style={{ maxWidth: filterTab === "body" ? 420 : 380 }}

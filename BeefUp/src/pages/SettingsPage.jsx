@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Apple, Database, Dumbbell, RefreshCw, Sparkles, UserCheck, Volume2 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { buildDemoPreset } from "../lib/demoData";
 import { accentHexOf } from "../lib/colorTheme";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";

@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Trash2, ChevronLeft } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../context/useApp'
 import HumanBody from '../components/HumanBody'
 import { bodyAreasForSessions } from '../lib/muscles'
 import { sessionVolume, sessionSets } from '../lib/planUtils'
@@ -296,7 +296,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                       {localizedName(ex, lang)}
                     </p>
                     <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>
-                      {ex.sets?.map(set => `${set.weight || '—'}kg × ${set.reps || '—'}`).join('    ·    ')}
+                      {ex.sets?.map(set => `${set.weight || '–'}kg × ${set.reps || '–'}`).join('    ·    ')}
                     </p>
                   </div>
                 ))}

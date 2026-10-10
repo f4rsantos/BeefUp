@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, Image as ImageIcon, Trash2 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName"
 import ConfirmModal from "../components/ConfirmModal";
@@ -21,11 +21,11 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
     { label: t.primaryMuscle, value: getMuscleLabel(exercise.target, lang) },
     {
       label: t.secondaryMusclesLabel,
-      value: (exercise.secondaryMuscles || []).map((m) => getMuscleLabel(m, lang)).join(", ") || "—",
+      value: (exercise.secondaryMuscles || []).map((m) => getMuscleLabel(m, lang)).join(", ") || "–",
     },
     {
       label: t.filterEquipment,
-      value: equipmentOptions.map((eq) => (localizedName(eq, lang))).join(", ") || "—",
+      value: equipmentOptions.map((eq) => (localizedName(eq, lang))).join(", ") || "–",
     },
   ];
 
