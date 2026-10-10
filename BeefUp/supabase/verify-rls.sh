@@ -282,6 +282,46 @@ check "a non-trainer cannot prescribe a measure goal" "$(echo $MG_DENIED | xargs
 MG_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='measureGoals' and row_key='weight' returning row_key")
 check "trainer can unprescribe (tombstone) a measure goal" "$(echo $MG_UNPRESCRIBE | xargs)" "weight"
 
+# --- F11: appointments ride their own 'calendar' scope ----------------------
+echo "== F11: trainer books an appointment only once calendar is shared =="
+
+AP_NOSHARE=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a1','calendar','{\"id\":\"a1\",\"date\":\"2026-10-01\",\"time\":\"18:00\"}') returning row_key")
+case "$AP_NOSHARE" in *"violates row-level security"*) AP_NOSHARE=DENIED;; esac
+check "trainer blocked from appointments before client shares calendar" "$(echo $AP_NOSHARE | xargs)" "DENIED"
+
+run_as $RUI "update public.trainer_links set scopes=array['workouts','measures','nutrition','calendar'] where trainer_id='$TRAINER' and client_id='$RUI'" >/dev/null
+
+AP_OK=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a1','calendar','{\"id\":\"a1\",\"date\":\"2026-10-01\",\"time\":\"18:00\"}') returning row_key")
+check "trainer books an appointment once calendar is shared" "$(echo $AP_OK | xargs)" "a1"
+
+check "the student sees the booked appointment" \
+  "$(run_as $RUI "select count(*) from public.sync_rows where store='appointments' and deleted_at is null" | xargs)" "1"
+
+AP_WRONGSCOPE=$(psql -U postgres -d postgres -Atc "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a2','workouts','{}')" 2>&1 || true)
+case "$AP_WRONGSCOPE" in *"sync_rows_store_scope_check"*) AP_WRONGSCOPE=REJECTED;; esac
+check "check constraint rejects appointments under another scope" "$(echo $AP_WRONGSCOPE | xargs)" "REJECTED"
+
+AP_UNPRESCRIBE=$(run_as $TRAINER "update public.sync_rows set deleted_at=now() where user_id='$RUI' and store='appointments' and row_key='a1' returning row_key")
+check "trainer can cancel (tombstone) an appointment" "$(echo $AP_UNPRESCRIBE | xargs)" "a1"
+
+# --- F12: re-running setup.sql upgrades an outdated store->scope list -------
+# `create table if not exists` never touches an existing table's constraint;
+# this proves setup.sql replaces it anyway.
+echo "== F12: re-running setup.sql replaces an older store->scope constraint =="
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<'OLD'
+alter table public.sync_rows drop constraint sync_rows_store_scope_check;
+alter table public.sync_rows add constraint sync_rows_store_scope_check check (
+  store in ('plans', 'workouts', 'sessions', 'customExercises') and scope = 'workouts'
+) not valid;
+OLD
+F12_BEFORE=$(psql -U postgres -d postgres -Atc "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a3','calendar','{}')" 2>&1 || true)
+case "$F12_BEFORE" in *"sync_rows_store_scope_check"*) F12_BEFORE=REJECTED;; esac
+check "an outdated constraint rejects appointments (sanity check)" "$(echo $F12_BEFORE | xargs)" "REJECTED"
+
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
+F12_AFTER=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a3','calendar','{}') returning row_key")
+check "after re-running setup.sql, appointments are accepted" "$(echo $F12_AFTER | xargs)" "a3"
+
 echo
 echo "passed: $pass   failed: $fail"
 pg_ctl -D "$PGDATA" -w stop >/dev/null 2>&1 || true
