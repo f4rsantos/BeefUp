@@ -413,8 +413,8 @@ h1, h2, .display {
 .btn-danger  { background: var(--danger); color: var(--bg); }
 .btn-back    { background: transparent; border: none; padding: 8px; margin-left: -8px; }
 
-/* Touch screens get 44px targets; mouse keeps density. */
-@media (pointer: coarse) {
+/* Any touch screen gets 44px targets, hybrid laptops included; mouse-only keeps density. */
+@media (any-pointer: coarse) {
   .btn, .btn-icon, .btn-back, .pill-option, .chip, .tap,
   input.field, select.field { min-height: 44px; }
   .btn, .btn-icon, .btn-back, .tap { min-width: 44px; }
