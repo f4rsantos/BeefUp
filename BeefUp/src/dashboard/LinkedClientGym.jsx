@@ -4,6 +4,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import WorkoutEditor from "../components/WorkoutEditor";
 import { Empty, AuthorBadge } from "./parts";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
+import { friendlyError } from "../lib/friendlyError";
 import { isPrescribed, uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import { STORES } from "../lib/stores";
 
@@ -29,7 +30,7 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
       });
       setEditing(null);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -47,7 +48,7 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
       });
       setPendingDelete(null);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -145,7 +146,7 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
       const saved = await prescribeRow(client.linkedUserId, STORES.plans, next);
       setPlans((prev) => [...prev.filter((p) => p.id !== saved.id), saved]);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -192,7 +193,7 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
       setPlans((prev) => prev.filter((p) => p.id !== plan.id));
       setPendingUnprescribe(false);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }

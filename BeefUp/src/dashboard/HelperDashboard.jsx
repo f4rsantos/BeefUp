@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, Link as LinkIcon, Search, Settings, Users, Calendar, ArrowLeftRight, ChevronRight } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { Plus, Search, Settings, Users, Calendar, ArrowLeftRight, ChevronRight } from "lucide-react";
+import { useApp } from "../context/useApp";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { listTrainerLinks } from "../lib/trainerData";
@@ -9,6 +9,7 @@ import CalendarView from "./CalendarView";
 import ClientDetail from "./ClientDetail";
 import DashboardSettings from "./DashboardSettings";
 import SyncView from "./SyncView";
+import { Skeleton } from "./parts";
 import "./dashboard.css";
 
 export default function HelperDashboard() {
@@ -19,18 +20,42 @@ export default function HelperDashboard() {
   const [clients, setClients] = useState(() => (isDashDemo() ? DEMO_STUDENTS : []));
   const configured = useSupabaseConfigured();
   const isDesktop = useIsDesktop();
+  const [status, setStatus] = useState("loading");
+  const [reloadKey, setReloadKey] = useState(0);
+  const remote = configured && !isDashDemo();
+  const loading = remote && status === "loading";
+  const failed = remote && status === "error";
 
   useEffect(() => {
-    if (isDashDemo() || !configured) return;
+    if (!remote) return;
     let cancelled = false;
     listTrainerLinks()
       .then((links) => {
         if (cancelled) return;
         setClients(links.map((l) => ({ id: l.clientId, linkedUserId: l.clientId, name: l.name, scopes: l.scopes })));
+        setStatus("ready");
       })
-      .catch(() => {});
+      .catch((e) => {
+        if (cancelled) return;
+        console.warn("Failed to load students:", e);
+        setStatus("error");
+      });
     return () => { cancelled = true; };
-  }, [configured]);
+  }, [remote, reloadKey, tab]);
+
+  // Sharing can change while the dashboard stays open.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setReloadKey((k) => k + 1);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
+  function retry() {
+    setStatus("loading");
+    setReloadKey((k) => k + 1);
+  }
 
   const selected = clients.find((c) => c.id === selectedId) || null;
   const shown = query.trim()
@@ -82,14 +107,7 @@ export default function HelperDashboard() {
             </button>
           </>
         ) : (
-          <>
-            <span className="dash-brand">{current.label}</span>
-            <div style={{ flex: 1 }} />
-            <span
-              className={`dash-dot ${configured ? "on" : ""}`}
-              title={configured ? t.dashConnected : t.dashAccount}
-            />
-          </>
+          <span className="dash-brand">{current.label}</span>
         )}
       </header>
 
@@ -104,7 +122,7 @@ export default function HelperDashboard() {
           <div className="dash-clients">
             {(isDesktop || !selected) && (
             <aside className="dash-list">
-              <div className="dash-search">
+              <label className="dash-search">
                 <Search size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
                 <input
                   value={query}
@@ -112,11 +130,18 @@ export default function HelperDashboard() {
                   placeholder={t.dashSearchClients}
                   aria-label={t.dashSearchClients}
                 />
-              </div>
+              </label>
               <button className="btn btn-primary flex items-center justify-center gap-2 mb-2" onClick={() => setTab("sync")}>
                 <Plus size={16} /> {t.dashInviteClient}
               </button>
-              {clients.length === 0 && (
+              {loading && <Skeleton rows={3} />}
+              {failed && (
+                <div className="text-center mt-4">
+                  <p className="text-sm" style={{ color: "var(--danger)" }}>{t.dashClientsLoadFailed}</p>
+                  <button className="btn btn-ghost mt-2" onClick={retry}>{t.retry}</button>
+                </div>
+              )}
+              {!loading && !failed && clients.length === 0 && (
                 <p className="text-sm text-center mt-4" style={{ color: "var(--muted)" }}>{t.dashNoClients}</p>
               )}
               {clients.length > 0 && shown.length === 0 && (
@@ -129,7 +154,6 @@ export default function HelperDashboard() {
                   onClick={() => setSelectedId(c.id)}
                 >
                   <div className="flex items-center gap-2">
-                    <LinkIcon size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
                     <div style={{ fontWeight: "var(--d-w-em)", color: "var(--text)" }}>{c.name}</div>
                     {!isDesktop && (
                       <ChevronRight size={16} style={{ color: "var(--muted)", flexShrink: 0, marginLeft: "auto" }} />

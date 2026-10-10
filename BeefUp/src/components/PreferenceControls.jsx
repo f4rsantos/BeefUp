@@ -1,5 +1,5 @@
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 
 // Theme, accent, text size and language are the same choices wherever they
 // are offered — the phone app's settings page and the trainer dashboard.
@@ -12,6 +12,9 @@ function selectableButtonStyle(selected) {
     color: selected ? "#fff" : "var(--muted)",
     border: selected ? "none" : "1px solid var(--border)",
     borderRadius: 12,
+    // Lets four options share a 360px row.
+    minWidth: 0,
+    paddingInline: 6,
   };
 }
 

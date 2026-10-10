@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import AccentColorModal from "../components/AccentColorModal";
 import { ThemeButtons, FontScaleButtons, LanguageButtons } from "../components/PreferenceControls";
 import { accentHexOf } from "../lib/colorTheme";
+import { useIsDesktop } from "../lib/useIsDesktop";
 
 // The appearance preferences a trainer can actually use. Sound (there are no
 // timers here), section visibility (there is no bottom nav), linking to a
@@ -12,11 +13,13 @@ export default function DashboardSettings() {
   const { t, accentColor, setAccentColor, customAccentHex, setCustomAccentColor } = useApp();
   const [showColorPicker, setShowColorPicker] = useState(false);
   const accentHex = accentHexOf(accentColor, customAccentHex);
+  // Phone header already shows this title.
+  const isDesktop = useIsDesktop();
 
   return (
     <div className="dash-cal">
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <h2 className="dash-card-title" style={{ marginBottom: "var(--d-5)" }}>{t.settingsTitle}</h2>
+        {isDesktop && <h2 className="dash-card-title" style={{ marginBottom: "var(--d-5)" }}>{t.settingsTitle}</h2>}
 
         <section className="dash-panel">
           <p className="section-title mb-3">{t.theme}</p>
@@ -26,7 +29,7 @@ export default function DashboardSettings() {
         <section className="dash-panel">
           <button
             className="flex items-center justify-between w-full"
-            style={{ background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+            style={{ background: "none", border: "none", textAlign: "left", cursor: "pointer", minHeight: 44 }}
             onClick={() => setShowColorPicker(true)}
           >
             <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.accentColor}</span>

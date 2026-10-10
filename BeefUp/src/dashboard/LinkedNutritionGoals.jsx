@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, ChevronDown } from "lucide-react";
 import ConfirmModal from "../components/ConfirmModal";
 import NumberField from "../components/NumberField";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
+import { friendlyError } from "../lib/friendlyError";
 import { STORES } from "../lib/stores";
 import { MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { pickMicronutrientGoals } from "../lib/nutritionCalc";
@@ -36,7 +37,7 @@ export default function LinkedNutritionGoals({ client, goals: initialGoals, t })
       setGoals(saved);
       setEditing(false);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -50,7 +51,7 @@ export default function LinkedNutritionGoals({ client, goals: initialGoals, t })
       setGoals(null);
       setPendingUnprescribe(false);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -125,7 +126,7 @@ function GoalsForm({ initial, onSave, onCancel, busy, t }) {
 
       <button
         className="flex items-center justify-center gap-1 w-full"
-        style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600 }}
+        style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, minHeight: 44 }}
         onClick={() => setShowMicros((v) => !v)}
       >
         {t.moreDetails}

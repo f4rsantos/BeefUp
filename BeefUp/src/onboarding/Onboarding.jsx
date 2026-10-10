@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dumbbell, Apple, Sparkles, TrendingUp, ChevronRight, ChevronLeft, Sun, Moon, Monitor, Check, X } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { uid, todayISO } from "../lib/planUtils";
 import { ACTIVITY, OBJECTIVE, calcGoals } from "../lib/nutritionCalc";
 import { getMeasureUnit } from "../lib/measureTypes";

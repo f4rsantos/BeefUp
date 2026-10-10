@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Copy, Plus, Trash2, Check } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
+import { friendlyError } from "../lib/friendlyError";
 import ConfirmModal from "../components/ConfirmModal";
+import { Skeleton } from "./parts";
 import { listInvites, createInvite, revokeInvite } from "../lib/trainerData";
 import { encodeTrainerInvite } from "../lib/trainerInvite";
 import { getConfigSync } from "../lib/supabaseConfig";
@@ -33,7 +35,7 @@ export default function InviteCodes() {
     try {
       setInvites(await listInvites());
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     }
     setLoading(false);
   }
@@ -42,10 +44,10 @@ export default function InviteCodes() {
     let cancelled = false;
     listInvites()
       .then((list) => { if (!cancelled) setInvites(list); })
-      .catch((e) => { if (!cancelled) setError(String(e?.message || e)); })
+      .catch((e) => { if (!cancelled) setError(friendlyError(e, t)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   async function generate() {
     setError(""); setBusy(true);
@@ -53,7 +55,7 @@ export default function InviteCodes() {
       await createInvite();
       await load();
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     }
     setBusy(false);
   }
@@ -81,7 +83,7 @@ export default function InviteCodes() {
       await revokeInvite(code);
       await load();
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     }
     setBusy(false);
   }
@@ -96,7 +98,7 @@ export default function InviteCodes() {
       </button>
 
       {loading ? (
-        <p className="text-sm" style={{ color: "var(--muted)" }}>—</p>
+        <Skeleton rows={2} />
       ) : invites.length === 0 ? (
         <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoInvites}</p>
       ) : (

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { Trash2, Plus, Pencil, Check, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, Lock, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
+import { friendlyError } from "../lib/friendlyError";
 import { uid, todayISO, measurementsForType, measureGoalProgress, sessionVolume, sessionSets, computeOverallStats, formatDateShort, formatDateTimeShort, isPrescribed } from "../lib/planUtils";
 import { dailyNutritionTotals, EMPTY_DAY } from "../lib/nutritionStats";
 import { macroGoalShares, MICRO_COLORS } from "../lib/nutritionCalc";
@@ -134,6 +136,7 @@ function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, save
 const OTHER_UNIT = "__other__";
 
 function AddMeasureTypeModal({ t, existingNames, onCancel, onAdd }) {
+  useEscapeKey(onCancel);
   const [name, setName] = useState("");
   const [unit, setUnit] = useState(UNIT_PRESETS[0]);
   const [customUnit, setCustomUnit] = useState("");
@@ -151,7 +154,7 @@ function AddMeasureTypeModal({ t, existingNames, onCancel, onAdd }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onCancel}>
       <div className="modal-center fade-in" onClick={(e) => e.stopPropagation()}>
         <p className="font-semibold mb-3" style={{ color: "var(--text)" }}>{t.measureAddType}</p>
         <label className="text-sm" style={{ color: "var(--muted)" }}>{t.measureTypeNameLabel}</label>
@@ -279,7 +282,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
       setLoading(true);
       getClientData(client.linkedUserId, scopes)
         .then((d) => { if (!cancelled) setData(d); })
-        .catch((e) => { if (!cancelled) setError(String(e?.message || e)); })
+        .catch((e) => { if (!cancelled) setError(friendlyError(e, t)); })
         .finally(() => { if (!cancelled) setLoading(false); });
     }
     run();
@@ -294,7 +297,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
       setConfirmingUnlink(false);
       onUnlinked?.();
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
       setConfirmingUnlink(false);
     } finally {
       setUnlinking(false);
@@ -621,7 +624,7 @@ function LinkedOverview({ data, annotations, hasWorkouts, hasNutrition, hasMeasu
         {nextAppointment ? (
           <>
             <div className="dash-panel-strong">{formatDateShort(nextAppointment.date)}</div>
-            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{nextAppointment.time || "—"}</p>
+            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{nextAppointment.time || "–"}</p>
           </>
         ) : (
           <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoAppointment}</p>
@@ -749,7 +752,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
 
       <button
         className="flex items-center justify-center gap-1 w-full"
-        style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, background: "none", border: "none", marginTop: 18 }}
+        style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, background: "none", border: "none", marginTop: 6, minHeight: 44 }}
         onClick={() => setShowMicros((v) => !v)}
         aria-expanded={showMicros}
       >
@@ -832,7 +835,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
       setMType(saved.id);
       setAddingType(false);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -845,7 +848,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
       const saved = await prescribeRow(client.linkedUserId, STORES.measurements, entry);
       setMeasurements((prev) => [...prev, saved]);
     } catch (e) {
-      setSaveError(String(e?.message || e));
+      setSaveError(friendlyError(e, t));
     }
   }
 
@@ -857,7 +860,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
       await unprescribeRow(client.linkedUserId, STORES.measurements, id);
       setMeasurements((prev) => prev.filter((m) => m.id !== id));
     } catch (e) {
-      setSaveError(String(e?.message || e));
+      setSaveError(friendlyError(e, t));
     }
   }
 
@@ -951,7 +954,7 @@ function LinkedMeasureGoals({ client, measurements, customTypes, goals: initialG
       });
       setEditingType(null);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }
@@ -969,7 +972,7 @@ function LinkedMeasureGoals({ client, measurements, customTypes, goals: initialG
       });
       setPendingRemove(null);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setBusy(false);
     }

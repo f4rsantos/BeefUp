@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { X, Check } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
+import { friendlyError } from "../lib/friendlyError";
 import { signIn, signUp } from "../lib/auth";
 import { redeemInvite, setScopes as applyScopes } from "../lib/sync/link";
 import { getPref, setPref } from "../lib/prefs";
@@ -17,6 +19,7 @@ const CONNECT_REASON_KEYS = {
 const INVALID_LINK_CODES = new Set(["bad-url", "not-https", "bad-host", "bad-key"]);
 
 export default function TrainerLinkModal({ onClose, onLinked }) {
+  useEscapeKey(onClose);
   const { t } = useApp();
   // undefined while loading, null once confirmed there is none.
   const [pendingInvite, setPendingInvite] = useState(undefined);
@@ -86,7 +89,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
       else await signIn(email, password);
       setStep("confirm");
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setSubmitting(false);
     }
@@ -112,14 +115,14 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
       await setPref("pendingTrainerInvite", null);
       setStep("done");
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(friendlyError(e, t));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div className="modal-center fade-in" style={{ padding: 24 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold" style={{ color: "var(--text)", fontSize: 18 }}>

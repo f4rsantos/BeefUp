@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X, Clock, Keyboard, Stethoscope, Dumbbell, Ruler, Utensils, Repeat } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { ChevronLeft, ChevronRight, Plus, X, Clock, Keyboard, Stethoscope, Dumbbell, Ruler, Utensils, Repeat, RotateCw } from "lucide-react";
+import { useApp } from "../context/useApp";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { formatDateShort, todayISO, isFutureAppt } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
@@ -29,13 +30,59 @@ function weekdayOf(iso, lang) {
 const APPT_TYPES = [
   { id: "consulta", Icon: Stethoscope, label: (t) => t.dashApptConsulta },
   { id: "treino", Icon: Dumbbell, label: (t) => t.dashApptTreino },
-  { id: "medidas", Icon: Ruler, label: (t) => t.dashMeasures },
-  { id: "nutricao", Icon: Utensils, label: (t) => t.dashNutrition },
+  { id: "medidas", Icon: Ruler, label: (t) => t.dashApptMedidas },
+  { id: "nutricao", Icon: Utensils, label: (t) => t.dashApptNutricao },
   { id: "rotina", Icon: Repeat, label: (t) => t.dashApptRotina },
 ];
 
 function apptTypeMeta(id) {
   return APPT_TYPES.find((x) => x.id === id) || APPT_TYPES[0];
+}
+
+function sharesCalendar(client) {
+  return (client.scopes || []).includes("calendar");
+}
+
+function ApptRow({ client, entry, onRemove, onResend }) {
+  const { t } = useApp();
+  const { Icon, label } = apptTypeMeta(entry.type);
+  const [sending, setSending] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const canResend = entry.unsynced && sharesCalendar(client);
+
+  async function resend() {
+    setSending(true);
+    setFailed(false);
+    try {
+      await onResend();
+    } catch (e) {
+      console.warn("Failed to resend appointment:", e);
+      setFailed(true);
+    }
+    setSending(false);
+  }
+
+  const status = !sharesCalendar(client) ? t.dashApptCalendarNotShared : failed ? t.dashApptSendFailed : t.dashApptNotSent;
+  return (
+    <div className="dash-day">
+      <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
+      <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
+      <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
+      {entry.unsynced && (
+        <span style={{ fontSize: "var(--d-label)", fontWeight: "var(--d-w-em)", color: "var(--danger)", flexShrink: 0 }}>
+          {status}
+        </span>
+      )}
+      {canResend && (
+        <button className="btn-icon" onClick={resend} disabled={sending} aria-label={t.dashApptResend} title={t.dashApptResend}>
+          <RotateCw size={15} style={{ color: "var(--accent)" }} />
+        </button>
+      )}
+      <button className="btn-icon" onClick={onRemove} aria-label={t.delete}>
+        <X size={15} style={{ color: "var(--muted)" }} />
+      </button>
+    </div>
+  );
 }
 
 const DIAL_SIZE = 240;
@@ -99,7 +146,7 @@ function DialFace({ mode, hour, minute, onPick, onRelease }) {
       <span
         style={{
           position: "absolute", left: hand.x - 16, top: hand.y - 16, width: 32, height: 32, borderRadius: "50%",
-          background: "var(--accent)", pointerEvents: "none",
+          background: "var(--grad-accent)", pointerEvents: "none",
         }}
       />
       {(mode === "hour" ? Array.from({ length: 12 }, (_, i) => i) : Array.from({ length: 12 }, (_, i) => i * 5)).map((n, i) => {
@@ -145,6 +192,7 @@ function DialFace({ mode, hour, minute, onPick, onRelease }) {
 function TimePicker({ value, onChange }) {
   const { t } = useApp();
   const [open, setOpen] = useState(false);
+  useEscapeKey(() => setOpen(false), open);
   const [hour, setHour] = useState(0);
   const [minute, setMinute] = useState(0);
   const [mode, setMode] = useState("hour");
@@ -171,7 +219,7 @@ function TimePicker({ value, onChange }) {
         className="flex items-center justify-between"
         style={{
           width: "100%", background: "var(--surface)", border: "1px solid var(--border)",
-          borderRadius: 12, color: "var(--text)", padding: "10px 12px", fontSize: 14, cursor: "pointer",
+          borderRadius: 12, color: "var(--text)", padding: "10px 12px", fontSize: 14, cursor: "pointer", minHeight: 44,
         }}
         onClick={launch}
       >
@@ -180,7 +228,7 @@ function TimePicker({ value, onChange }) {
       </button>
 
       {open && (
-        <div className="modal-overlay" style={{ alignItems: "center", zIndex: 200 }} onClick={() => setOpen(false)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center", zIndex: 200 }} onClick={() => setOpen(false)}>
           <div className="modal-center" style={{ maxWidth: 300, padding: 20 }} onClick={(e) => e.stopPropagation()}>
             <p className="section-title mb-4">{t.dashSelectTimeTitle}</p>
 
@@ -281,6 +329,7 @@ export default function CalendarView({ students = [] }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [assignFor, setAssignFor] = useState(null);
+  useEscapeKey(() => setAssignFor(null), !!assignFor);
   const [time, setTime] = useState("18:00");
   const [apptType, setApptType] = useState(APPT_TYPES[0].id);
   const [pendingRemove, setPendingRemove] = useState(null);
@@ -305,10 +354,6 @@ export default function CalendarView({ students = [] }) {
     setMonth(m - 1);
   }
 
-  function clientsOn(iso) {
-    return clients.filter((c) => (c.schedule || []).some((e) => e.date === iso && isFutureAppt(e.date, e.time)));
-  }
-
   // One flat, time-ordered list for a day, so a cell and the day panel agree.
   function entriesOn(iso) {
     return clients
@@ -317,7 +362,6 @@ export default function CalendarView({ students = [] }) {
   }
   
   const upcoming = useMemo(() => {
-    const from = todayISO();
     const rows = clients
       .filter((c) => !filterClient || c.id === filterClient)
       .flatMap((c) => (c.schedule || []).filter((e) => isFutureAppt(e.date, e.time)).map((e) => ({ client: c, entry: e })))
@@ -332,6 +376,7 @@ export default function CalendarView({ students = [] }) {
   }, [clients, filterClient]);
 
   const [pickClient, setPickClient] = useState("");
+  const picked = clients.find((c) => c.id === pickClient);
 
   // Writes only the annotation record, never the student's own synced data.
   async function saveSchedule(id, schedule) {
@@ -339,31 +384,49 @@ export default function CalendarView({ students = [] }) {
     await saveClient({ ...existing, schedule });
   }
 
-  async function addAppointment() {
-    const c = clients.find((x) => x.id === pickClient);
-    if (!c) return;
-    const sched = c.schedule.filter((e) => !(e.date === assignFor && e.time === time));
-    const newEntry = { id: crypto.randomUUID(), date: assignFor, time, type: apptType };
-    
+  async function unsync(clientId, entry) {
+    if (!entry.id || entry.unsynced) return;
     try {
-      await prescribeRow(c.id, STORES.appointments, newEntry);
-    } catch (e) {
-      console.warn("Failed to sync appointment to client:", e);
-    }
-    
-    await saveSchedule(c.id, [...sched, newEntry]);
-    setAssignFor(null);
-  }
-
-  async function removeAppointment(client, entry) {
-    try {
-      if (entry.id) {
-        await unprescribeRow(client.id, STORES.appointments, entry.id);
-      }
+      await unprescribeRow(clientId, STORES.appointments, entry.id);
     } catch (e) {
       console.warn("Failed to unprescribe appointment:", e);
     }
-    await saveSchedule(client.id, client.schedule.filter((e) => !(e.date === entry.date && e.time === entry.time)));
+  }
+
+  async function addAppointment() {
+    const c = clients.find((x) => x.id === pickClient);
+    if (!c) return;
+    const sameSlot = (e) => e.date === assignFor && e.time === time;
+    for (const old of c.schedule.filter(sameSlot)) await unsync(c.id, old);
+
+    const newEntry = { id: crypto.randomUUID(), date: assignFor, time, type: apptType };
+    let unsynced = !sharesCalendar(c);
+    if (!unsynced) {
+      try {
+        await prescribeRow(c.id, STORES.appointments, newEntry);
+      } catch (e) {
+        console.warn("Failed to sync appointment to client:", e);
+        unsynced = true;
+      }
+    }
+
+    const saved = unsynced ? { ...newEntry, unsynced: true } : newEntry;
+    await saveSchedule(c.id, [...c.schedule.filter((e) => !sameSlot(e)), saved]);
+    setAssignFor(null);
+  }
+
+  async function resendAppointment(client, entry) {
+    const row = { id: entry.id, date: entry.date, time: entry.time, type: entry.type };
+    await prescribeRow(client.id, STORES.appointments, row);
+    await saveSchedule(client.id, client.schedule.map((e) => (e.id === entry.id ? row : e)));
+  }
+
+  async function removeAppointment(client, entry) {
+    await unsync(client.id, entry);
+    const same = entry.id
+      ? (e) => e.id === entry.id
+      : (e) => !e.id && e.date === entry.date && e.time === entry.time;
+    await saveSchedule(client.id, client.schedule.filter((e) => !same(e)));
   }
 
   function openAssign(iso) {
@@ -378,7 +441,7 @@ export default function CalendarView({ students = [] }) {
     <div className="dash-cal">
       <div className="flex items-center gap-3 mb-4">
         <button className="btn-icon" onClick={prev} aria-label={t.previousMonth}><ChevronLeft size={18} /></button>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", minWidth: 160 }}>{label}</h2>
+        <h2 style={{ fontSize: "var(--d-title)", fontWeight: "var(--d-w-num)", color: "var(--text)", minWidth: 160 }}>{label}</h2>
         <button className="btn-icon" onClick={nextM} aria-label={t.nextMonth}><ChevronRight size={18} /></button>
       </div>
 
@@ -389,7 +452,6 @@ export default function CalendarView({ students = [] }) {
         {cells.map((d, i) => {
           if (d === null) return <div key={i} className="dash-cal-cell muted" />;
           const iso = isoOf(year, month, d);
-          const assigned = clientsOn(iso);
           const dayEntries = entriesOn(iso);
           const isToday = iso === todayISO();
           return (
@@ -401,17 +463,15 @@ export default function CalendarView({ students = [] }) {
             >
               <span className="dash-cal-daynum">{d}</span>
               {isDesktop
-                ? assigned.flatMap((c) =>
-                    (c.schedule || []).filter((e) => e.date === iso).map((e, k) => {
-                      const { Icon } = apptTypeMeta(e.type);
-                      return (
-                        <span key={c.id + k} className="dash-cal-chip flex items-center gap-1">
-                          <Icon size={10} style={{ flexShrink: 0 }} />
-                          {e.time ? `${e.time} ` : ""}{c.name}
-                        </span>
-                      );
-                    }),
-                  )
+                ? dayEntries.map(({ client, entry }, k) => {
+                    const { Icon } = apptTypeMeta(entry.type);
+                    return (
+                      <span key={client.id + k} className="dash-cal-chip flex items-center gap-1">
+                        <Icon size={10} style={{ flexShrink: 0 }} />
+                        {entry.time ? `${entry.time} ` : ""}{client.name}
+                      </span>
+                    );
+                  })
                 : dayEntries.length > 0 && (
                     <span className="dash-cal-dots">
                       {dayEntries.slice(0, 3).map((_, k) => <span key={k} className="dash-cal-dot" />)}
@@ -436,19 +496,15 @@ export default function CalendarView({ students = [] }) {
             <p className="dash-empty">{t.dashNoAppointment}</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {entriesOn(openDay).map(({ client, entry }, k) => {
-                const { Icon, label } = apptTypeMeta(entry.type);
-                return (
-                  <div key={client.id + k} className="dash-day">
-                    <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
-                    <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
-                    <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
-                    <button className="btn-icon" onClick={() => setPendingRemove({ client, entry })} aria-label={t.delete}>
-                      <X size={15} style={{ color: "var(--muted)" }} />
-                    </button>
-                  </div>
-                );
-              })}
+              {entriesOn(openDay).map(({ client, entry }, k) => (
+                <ApptRow
+                  key={entry.id || client.id + k}
+                  client={client}
+                  entry={entry}
+                  onRemove={() => setPendingRemove({ client, entry })}
+                  onResend={() => resendAppointment(client, entry)}
+                />
+              ))}
             </div>
           )}
 
@@ -479,32 +535,32 @@ export default function CalendarView({ students = [] }) {
           </div>
 
           {upcoming.length === 0 ? (
-            <p className="dash-empty">{t.dashNoUpcoming}</p>
+            <p className="dash-empty">
+              {filterClient
+                ? t.dashNoUpcomingFor.replace("{name}", clients.find((c) => c.id === filterClient)?.name || "")
+                : t.dashNoUpcoming}
+            </p>
           ) : (
             <div className="flex flex-col" style={{ gap: "var(--d-4)" }}>
               {upcoming.map((group) => (
                 <div key={group.date} className="flex flex-col gap-2">
                   <button
                     type="button"
-                    className="section-title text-left"
-                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                    className="section-title dash-upcoming-day"
                     onClick={() => goToMonthOf(group.date)}
                   >
                     {weekdayOf(group.date, lang)} {formatDateShort(group.date)}
+                    <ChevronRight size={13} />
                   </button>
-                  {group.rows.map(({ client, entry }, k) => {
-                    const { Icon, label } = apptTypeMeta(entry.type);
-                    return (
-                      <div key={client.id + k} className="dash-day">
-                        <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
-                        <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
-                        <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
-                        <button className="btn-icon" onClick={() => setPendingRemove({ client, entry })} aria-label={t.delete}>
-                          <X size={15} style={{ color: "var(--muted)" }} />
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {group.rows.map(({ client, entry }, k) => (
+                    <ApptRow
+                      key={entry.id || client.id + k}
+                      client={client}
+                      entry={entry}
+                      onRemove={() => setPendingRemove({ client, entry })}
+                      onResend={() => resendAppointment(client, entry)}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
@@ -513,9 +569,9 @@ export default function CalendarView({ students = [] }) {
       )}
 
       {assignFor && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setAssignFor(null)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setAssignFor(null)}>
           <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-            <h3 className="display" style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", marginBottom: 20 }}>{formatDateShort(assignFor)}</h3>
+            <h3 className="display" style={{ fontSize: "var(--d-title)", fontWeight: "var(--d-w-num)", color: "var(--text)", marginBottom: 20 }}>{formatDateShort(assignFor)}</h3>
 
             {clients.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoClients}</p>
@@ -526,6 +582,11 @@ export default function CalendarView({ students = [] }) {
                   <select className="field mt-2" value={pickClient} onChange={(e) => setPickClient(e.target.value)}>
                     {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
+                  {picked && !sharesCalendar(picked) && (
+                    <p className="dash-empty" style={{ marginTop: "var(--d-2)" }}>
+                      {t.dashApptNoCalendar.replace("{name}", picked.name)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="section-title">{t.dashApptType}</label>
@@ -548,7 +609,12 @@ export default function CalendarView({ students = [] }) {
                     <TimePicker value={time} onChange={setTime} />
                   </div>
                 </div>
-                <button className="btn btn-primary w-full py-3 mt-1" onClick={addAppointment} disabled={!isFutureAppt(assignFor, time)}>{t.dashAssign}</button>
+                <div>
+                  <button className="btn btn-primary w-full py-3 mt-1" onClick={addAppointment} disabled={!isFutureAppt(assignFor, time)}>{t.dashAssign}</button>
+                  {!isFutureAppt(assignFor, time) && (
+                    <p className="dash-empty text-center" style={{ marginTop: "var(--d-2)" }}>{t.dashPastTime}</p>
+                  )}
+                </div>
               </div>
             )}
 
