@@ -1,10 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { STORES } from '../../stores.js'
-import { SCOPES } from '../stores.js'
-import { createMemoryBackend } from './memory.js'
-import { rowToItem, itemToRow, chunkForPush, createSupabaseBackend } from './supabase.js'
+import { STORES } from '../../../../src/lib/stores.js'
+import { SCOPES } from '../../../../src/lib/sync/stores.js'
+import { createMemoryBackend } from '../../../../src/lib/sync/backends/memory.js'
+import { rowToItem, itemToRow, chunkForPush, createSupabaseBackend } from '../../../../src/lib/sync/backends/supabase.js'
 
 test('rowToItem maps a live row and converts updated_at to epoch ms', () => {
   const row = {

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { friendlyError } from './friendlyError.js'
-import strings from '../strings.js'
+import { friendlyError } from '../../src/lib/friendlyError.js'
+import strings from '../../src/strings.js'
 
 const t = strings.pt
 console.warn = () => {}

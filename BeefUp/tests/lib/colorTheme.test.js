@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { deriveAccentTokens, hexToRgb, contrast } from './colorTheme.js'
+import { deriveAccentTokens, hexToRgb, contrast } from '../../src/lib/colorTheme.js'
 
 const WHITE = hexToRgb('#ffffff')
 const LIGHT_SURFACE2 = hexToRgb('#eef0f3')
