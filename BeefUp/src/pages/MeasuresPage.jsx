@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, Plus, X, Lock, Check } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { uid, todayISO, measurementsForType, measureGoalProgress, isPrescribed } from "../lib/planUtils";
 import { MEASURE_GROUPS, allMeasureGroups, measureGroupLabel, measureTypeLabel, getMeasureUnit } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
