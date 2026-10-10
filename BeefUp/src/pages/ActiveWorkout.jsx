@@ -4,6 +4,7 @@ import { useApp } from "../context/useApp";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise, isCardioExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
+import { useWakeLock } from "../hooks/useWakeLock";
 import { getLS, setLS, removeLS } from "../lib/crypto";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
@@ -67,7 +68,7 @@ function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null
 }
 
 export default function ActiveWorkout({ onEnd, onMinimize }) {
-  const { t, lang, activeWorkout, workouts, addSession, sessions, saveWorkout } = useApp();
+  const { t, lang, activeWorkout, workouts, addSession, sessions, saveWorkout, keepAwake } = useApp();
   const sourceWorkout =
     workouts.find((w) => w.id === activeWorkout?.workoutId) ?? null;
   const restAfterSet = sourceWorkout?.restAfterSet ?? 120;
@@ -137,6 +138,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     if (base) setViewingExercise({ base, activeVariantId: variantId });
   }, []);
   const { unlock: unlockAudio, play: playAudioCue } = useAudioCues();
+  useWakeLock(keepAwake && !!activeWorkout);
   const restAnnouncedRef = useRef(null);
   const setTimerAnnouncedKeyRef = useRef(null);
 

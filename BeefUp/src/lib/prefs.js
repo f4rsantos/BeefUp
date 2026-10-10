@@ -6,6 +6,7 @@ export const PREF_DEFAULTS = {
   theme: 'system',
   fontScale: 'medium',
   soundEnabled: true,
+  keepAwake: true,
   accentColor: 'green',
   customAccentHex: '#109a14',
   lang: 'pt',

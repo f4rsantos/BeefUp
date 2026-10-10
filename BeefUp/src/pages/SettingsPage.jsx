@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Apple, Database, Dumbbell, RefreshCw, Sparkles, UserCheck, Volume2 } from "lucide-react";
+import { Apple, Database, Dumbbell, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { buildDemoPreset } from "../lib/demoData";
 import { accentHexOf } from "../lib/colorTheme";
@@ -23,6 +23,8 @@ export default function SettingsPage() {
     lang,
     soundEnabled,
     setSoundEnabled,
+    keepAwake,
+    setKeepAwake,
     accentColor,
     setAccentColor,
     customAccentHex,
@@ -184,6 +186,26 @@ export default function SettingsPage() {
               onClick={() => setSoundEnabled(!soundEnabled)}
             />
           </div>
+          {"wakeLock" in navigator && (
+            <>
+              <div className="card flex items-center justify-between gap-3" style={{ marginTop: 8 }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div style={SETTINGS_ICON_WRAPPER_STYLE}>
+                    <Smartphone size={16} style={{ color: "var(--text)" }} />
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.keepAwakeToggle}</p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={keepAwake}
+                  aria-label={t.keepAwakeToggle}
+                  className={`switch ${keepAwake ? "on" : ""}`}
+                  onClick={() => setKeepAwake(!keepAwake)}
+                />
+              </div>
+              <p className="text-xs" style={{ color: "var(--muted)", marginTop: 6 }}>{t.keepAwakeDesc}</p>
+            </>
+          )}
         </section>
 
         {/* Language */}
