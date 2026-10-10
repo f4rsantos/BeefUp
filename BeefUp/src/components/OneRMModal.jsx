@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useEscapeKey } from '../lib/useEscapeKey'
 import { X } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../context/useApp'
 import NumberField from './NumberField'
 import { epley } from '../lib/planUtils'
 
 export default function OneRMModal({ onClose }) {
+  useEscapeKey(onClose)
   const { t } = useApp()
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
@@ -18,7 +20,7 @@ export default function OneRMModal({ onClose }) {
   })()
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div className="modal-center fade-in" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <span className="font-semibold text-base" style={{ color: 'var(--text)' }}>{t.oneRM}</span>

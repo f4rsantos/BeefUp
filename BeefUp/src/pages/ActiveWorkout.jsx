@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
@@ -10,6 +10,7 @@ import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
 import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
+import RestBar from "../components/RestBar";
 import EndWorkoutModal from "../components/EndWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 import ExerciseDetailPage from "./ExerciseDetailPage";
@@ -77,6 +78,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   useEffect(() => {
     exercisesRef.current = exercises;
   }, [exercises]);
+
+  // JSON, not a joined string: exercise ids already contain "|".
+  // Top to bottom: the first exercise with a set still to do.
+  const currentExIdx = exercises.findIndex((e) => e.sets.some((s) => !s.done));
+
+  const exerciseIdsKey = JSON.stringify(exercises.map((e) => e.exerciseId));
+  const previousSetsById = useMemo(
+    () => Object.fromEntries(JSON.parse(exerciseIdsKey).map((id) => [id, lastCompletedSets(sessions, id)])),
+    [sessions, exerciseIdsKey],
+  );
 
   const [restState, setRestState] = useState(() => {
     const draft = getLS("activeWorkoutDraft", null);
@@ -242,6 +253,15 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   const dismissSetTimer = useCallback(() => setSetTimer(null), []);
 
+  const adjustSetTimer = useCallback((delta) => {
+    setSetTimer((prev) => {
+      if (!prev) return prev;
+      const remaining = prev.remaining + delta;
+      if (remaining <= 0) return null;
+      return { ...prev, endsAt: prev.endsAt + delta * 1000, remaining, total: Math.max(prev.total + delta, remaining) };
+    });
+  }, []);
+
   const addSet = useCallback((exIdx) => {
     setExercises((prev) =>
       prev.map((e, i) => {
@@ -398,6 +418,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             exIdx={exIdx}
             lang={lang}
             t={t}
+            previousSets={previousSetsById[ex.exerciseId]}
+            isCurrent={exIdx === currentExIdx}
             onUpdateSet={updateSet}
             onToggleSet={toggleSet}
             onAddSet={addSet}
@@ -406,8 +428,6 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onSetType={setSetType}
             note={ex.note}
             onUpdateNote={updateNote}
-            setTimer={setTimer?.exIdx === exIdx ? setTimer : null}
-            onSkipSetTimer={dismissSetTimer}
             onOpenInfo={openExerciseInfo}
           />
         ))}
@@ -420,6 +440,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           <Plus size={16} /> {t.addExercise}
         </button>
       </div>
+
+      {setTimer && (
+        <RestBar
+          remaining={setTimer.remaining}
+          total={setTimer.total}
+          onAdjust={adjustSetTimer}
+          onSkip={dismissSetTimer}
+          t={t}
+        />
+      )}
 
       {showOneRM && <OneRMModal onClose={() => setShowOneRM(false)} />}
       {showRestModal && (

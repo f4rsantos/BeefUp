@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEscapeKey } from "../lib/useEscapeKey";
 import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
 import { uid } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises } from "../lib/exerciseTree";
@@ -8,12 +9,13 @@ import ConfirmModal from "./ConfirmModal";
 import { localizedName } from "../lib/localizedName"
 
 function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
+  useEscapeKey(onClose);
   const [note, setNote] = useState(item.note ?? "");
   const [weight, setWeight] = useState(item.weight ?? "");
   const [reps, setReps] = useState(item.reps ?? "");
 
   return (
-    <div className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
         <p className="font-semibold mb-3" style={{ color: "var(--text)" }}>{exerciseLabel}</p>
 

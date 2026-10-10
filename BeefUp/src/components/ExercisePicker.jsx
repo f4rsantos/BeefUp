@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, SlidersHorizontal, X, Check, CheckCircle2, Circle, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useEscapeKey } from "../lib/useEscapeKey";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { useApp } from "../context/useApp";
 import {
   listBaseExercises,
   filterAndSortExercises,
@@ -34,6 +35,9 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [queue, setQueue] = useState([]); // Array of { instanceId, baseId, equipmentId, variantId, barType, ref }
   const [isEditingInstanceId, setIsEditingInstanceId] = useState(null);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
+  useEscapeKey(onClose);
+  useEscapeKey(() => cancelCustomize(), !!activeBase);
+  useEscapeKey(() => setShowFilters(false), showFilters);
 
   const bodyParts = useMemo(() => listBodyParts(), []);
   const equipmentList = useMemo(() => listEquipmentUsed(), []);
@@ -383,7 +387,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
       </div>
 
       {activeBase && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={cancelCustomize}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={cancelCustomize}>
           <div className="modal-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
               {(step === "bartype" || step === "variant") &&
@@ -521,7 +525,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                           <Pencil size={18} style={{ color: "var(--text)" }} />
                         </button>
                         <button className="btn btn-ghost p-2" onClick={() => handleRemoveQueueItem(item.instanceId)} aria-label={t.delete}>
-                          <Trash2 size={18} style={{ color: "var(--error)" }} />
+                          <Trash2 size={18} style={{ color: "var(--danger)" }} />
                         </button>
                       </div>
                     </div>
@@ -543,7 +547,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
       )}
 
       {showFilters && (
-        <div className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowFilters(false)}>
           <div className="modal-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-semibold text-base" style={{ color: "var(--text)" }}>

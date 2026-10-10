@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Star, Search, Play, Dumbbell } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../context/useApp";
 import { getPref, setPref } from "../lib/prefs";
 
 export default function WorkoutPicker({ onSelect, onBack }) {

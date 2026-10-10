@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { useEscapeKey } from '../lib/useEscapeKey'
 import { Trophy, Flame } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../context/useApp'
 
 function formatSessionLength(seconds) {
   const h = Math.floor(seconds / 3600)
@@ -14,6 +15,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
   const { t, lang } = useApp()
   const fired = useRef(false)
   const prs = stats.prs || []
+  useEscapeKey(onClose)
 
   useEffect(() => {
     if (fired.current) return
@@ -29,7 +31,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
   }, [prs.length])
 
   return (
-    <div className="modal-overlay">
+    <div role="dialog" aria-modal="true" className="modal-overlay">
       <div className="modal-center" onClick={e => e.stopPropagation()}>
         <div className="flex flex-col items-center mb-5">
           <div
