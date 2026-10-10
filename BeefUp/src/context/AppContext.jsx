@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { AppContext } from './useApp'
 import { db, STORES } from '../lib/db'
 import { todayISO } from '../lib/planUtils'
 import { getAllPrefs, migrateLegacyPrefs, setPref, PREF_DEFAULTS } from '../lib/prefs'
@@ -9,7 +10,6 @@ import { applyCustomAccent } from '../lib/colorTheme'
 import { registerCustomExercises } from '../lib/exerciseTree'
 import strings from '../strings'
 
-const AppContext = createContext(null)
 
 function upsertById(list, item) {
   const idx = list.findIndex((x) => x.id === item.id)
@@ -485,10 +485,4 @@ export function AppProvider({ children }) {
   if (!hydrated) return null
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
-}
-
-export function useApp() {
-  const ctx = useContext(AppContext)
-  if (!ctx) throw new Error('useApp must be used within AppProvider')
-  return ctx
 }
