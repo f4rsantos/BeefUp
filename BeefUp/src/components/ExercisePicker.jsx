@@ -15,18 +15,28 @@ import {
   BAR_TYPES,
 } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName";
+import { lastUsedChoice } from "../lib/planUtils";
 import CustomExerciseEditor from "./CustomExerciseEditor";
 import ExerciseFilterModal from "./ExerciseFilterModal";
 
+function ChoiceGroup({ label, children }) {
+  return (
+    <div>
+      <p className="section-title" style={{ marginBottom: 8 }}>{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
 export default function AddExercisesPicker({ onConfirm, onClose }) {
-  const { t, lang } = useApp();
+  const { t, lang, sessions } = useApp();
   const [query, setQuery] = useState("");
   const [bodyPart, setBodyPart] = useState(null);
   const [equipment, setEquipment] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
 
-  const [step, setStep] = useState("list"); // 'list' | 'equipment' | 'bartype' | 'variant' | 'custom'
+  const [step, setStep] = useState("list"); // 'list' | 'custom'
   const [activeBase, setActiveBase] = useState(null);
   const [activeEquipmentId, setActiveEquipmentId] = useState(null);
   const [activeBarType, setActiveBarType] = useState("");
@@ -35,7 +45,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [isEditingInstanceId, setIsEditingInstanceId] = useState(null);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   useEscapeKey(onClose);
-  useEscapeKey(() => cancelCustomize(), !!activeBase);
+  useEscapeKey(() => resetCustomize(), !!activeBase);
 
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
@@ -49,18 +59,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     [sortedExercises, lang],
   );
 
-  function addToQueue(baseId, equipmentId, variantId, barType = "") {
-    const ref = buildExerciseRef(baseId, equipmentId, variantId);
-    setQueue((prev) => {
-      if (isEditingInstanceId) {
-        return prev.map(item => item.instanceId === isEditingInstanceId 
-          ? { ...item, baseId, equipmentId, variantId, barType, ref } 
-          : item);
-      }
-      return [...prev, { instanceId: crypto.randomUUID(), baseId, equipmentId, variantId, barType, ref }];
-    });
-    setIsBottomSheetExpanded(true);
-    setStep("list");
+  function resetCustomize() {
     setActiveBase(null);
     setActiveEquipmentId(null);
     setActiveBarType("");
@@ -68,51 +67,60 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     setIsEditingInstanceId(null);
   }
 
-  function proceedAfterEquipment(baseId, equipmentId) {
-    setSelectedVariantIds([]);
-    if (equipmentId === "barbell") {
-      setActiveEquipmentId(equipmentId);
-      setStep("bartype");
-      return;
-    }
-    const variantOptions = getVariantOptions(baseId, equipmentId);
-    if (variantOptions.length > 0) {
-      setActiveEquipmentId(equipmentId);
-      setStep("variant");
-      return;
-    }
-    addToQueue(baseId, equipmentId, "");
+  function addToQueue(baseId, equipmentId, variantId, barType = "") {
+    const ref = buildExerciseRef(baseId, equipmentId, variantId);
+    setQueue((prev) => {
+      if (isEditingInstanceId) {
+        return prev.map(item => item.instanceId === isEditingInstanceId
+          ? { ...item, baseId, equipmentId, variantId, barType, ref }
+          : item);
+      }
+      return [...prev, { instanceId: crypto.randomUUID(), baseId, equipmentId, variantId, barType, ref }];
+    });
+    setIsBottomSheetExpanded(true);
+    setStep("list");
+    resetCustomize();
+  }
+
+  function hasChoices(baseId) {
+    const options = getEquipmentOptions(baseId);
+    return options.length > 1 || options.some((eq) => eq.id === "barbell") || getVariantOptions(baseId).length > 0;
+  }
+
+  // Last used combination
+  function initialChoice(base, saved) {
+    const equipmentIds = getEquipmentOptions(base.id).map((eq) => eq.id);
+    const equipmentId = saved && equipmentIds.includes(saved.equipmentId) ? saved.equipmentId : equipmentIds[0] ?? "";
+    const validVariants = getVariantOptions(base.id, equipmentId).map((v) => v.id);
+    const variantIds = saved?.variantId && saved.equipmentId === equipmentId
+      ? saved.variantId.split("+").filter((id) => validVariants.includes(id))
+      : [];
+    const savedBar = BAR_TYPES.some((b) => b.id === saved?.barType) ? saved.barType : BAR_TYPES[0].id;
+    return { equipmentId, variantIds, barType: equipmentId === "barbell" ? savedBar : "" };
+  }
+
+  function openCustomize(base, choice, instanceId = null) {
+    setActiveBase(base);
+    setActiveEquipmentId(choice.equipmentId);
+    setActiveBarType(choice.barType);
+    setSelectedVariantIds(choice.variantIds);
+    setIsEditingInstanceId(instanceId);
   }
 
   function handleAddClick(base) {
-    setIsEditingInstanceId(null);
-    const equipmentOptions = getEquipmentOptions(base.id);
-    setActiveBase(base);
-    if (equipmentOptions.length > 1) {
-      setStep("equipment");
+    const choice = initialChoice(base, lastUsedChoice(sessions, base.id));
+    if (!hasChoices(base.id)) {
+      addToQueue(base.id, choice.equipmentId, "");
       return;
     }
-    proceedAfterEquipment(base.id, equipmentOptions[0]?.id ?? "");
+    openCustomize(base, choice);
   }
 
   function handleEditQueueItem(item) {
     const base = listBaseExercises().find(ex => ex.id === item.baseId);
     if (!base) return;
-    setActiveBase(base);
-    setActiveEquipmentId(item.equipmentId);
-    setActiveBarType(item.barType);
-    setSelectedVariantIds(item.variantId ? item.variantId.split("+") : []);
-    setIsEditingInstanceId(item.instanceId);
-    
-    const equipOpts = getEquipmentOptions(item.baseId);
-    if (equipOpts.length > 1) {
-      setStep("equipment");
-    } else {
-      const variantOpts = getVariantOptions(item.baseId, item.equipmentId);
-      if (variantOpts.length > 0) {
-        setStep("variant");
-      }
-    }
+    const variantIds = item.variantId ? item.variantId.split("+") : [];
+    openCustomize(base, { equipmentId: item.equipmentId, variantIds, barType: item.barType }, item.instanceId);
   }
 
   function handleRemoveQueueItem(instanceId) {
@@ -129,18 +137,10 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   }
 
   function pickEquipment(equipmentId) {
-    proceedAfterEquipment(activeBase.id, equipmentId);
-  }
-
-  function pickBarType(barType) {
-    setActiveBarType(barType);
-    setSelectedVariantIds([]);
-    const variantOptions = getVariantOptions(activeBase.id, activeEquipmentId);
-    if (variantOptions.length > 0) {
-      setStep("variant");
-      return;
-    }
-    addToQueue(activeBase.id, activeEquipmentId, "", barType);
+    setActiveEquipmentId(equipmentId);
+    const valid = getVariantOptions(activeBase.id, equipmentId).map((v) => v.id);
+    setSelectedVariantIds((prev) => prev.filter((id) => valid.includes(id)));
+    setActiveBarType(equipmentId === "barbell" ? activeBarType || BAR_TYPES[0].id : "");
   }
 
   function toggleVariant(variantId) {
@@ -149,28 +149,8 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     );
   }
 
-  function confirmVariants() {
+  function confirmCustomize() {
     addToQueue(activeBase.id, activeEquipmentId, selectedVariantIds.join("+"), activeBarType);
-  }
-
-  function backFromCustomize() {
-    if (step === "variant" && activeEquipmentId === "barbell") {
-      setStep("bartype");
-      return;
-    }
-    if ((step === "variant" || step === "bartype") && getEquipmentOptions(activeBase.id).length > 1) {
-      setStep("equipment");
-      return;
-    }
-    cancelCustomize();
-  }
-
-  function cancelCustomize() {
-    setStep("list");
-    setActiveBase(null);
-    setActiveEquipmentId(null);
-    setActiveBarType("");
-    setIsEditingInstanceId(null);
   }
 
   const equipmentOptions = activeBase ? getEquipmentOptions(activeBase.id) : [];
@@ -383,66 +363,67 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
       </div>
 
       {activeBase && (
-        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={cancelCustomize}>
+        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={resetCustomize}>
           <div className="modal-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
-              {(step === "bartype" || step === "variant") &&
-                (activeEquipmentId === "barbell" || getEquipmentOptions(activeBase.id).length > 1) && (
-                <button className="btn btn-ghost p-1.5" onClick={backFromCustomize} aria-label={t.back}>
-                  <ChevronLeft size={18} style={{ color: "var(--text)" }} />
-                </button>
-              )}
               <span className="font-semibold text-base flex-1" style={{ color: "var(--text)" }}>
                 {localizedName(activeBase, lang)}
               </span>
-              <button className="btn btn-ghost p-2" onClick={cancelCustomize} aria-label={t.cancel}>
+              <button className="btn btn-ghost p-2" onClick={resetCustomize} aria-label={t.cancel}>
                 <X size={18} />
               </button>
             </div>
 
-            {step === "equipment" && (
-              <div className="flex flex-wrap gap-2">
-                {equipmentOptions.map((eq) => (
-                  <button key={eq.id} className="chip" onClick={() => pickEquipment(eq.id)}>
-                    {localizedName(eq, lang)}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              {equipmentOptions.length > 1 && (
+                <ChoiceGroup label={t.filterEquipment}>
+                  {equipmentOptions.map((eq) => (
+                    <button
+                      key={eq.id}
+                      className={`chip ${activeEquipmentId === eq.id ? "active" : ""}`}
+                      aria-pressed={activeEquipmentId === eq.id}
+                      onClick={() => pickEquipment(eq.id)}
+                    >
+                      {localizedName(eq, lang)}
+                    </button>
+                  ))}
+                </ChoiceGroup>
+              )}
 
-            {step === "bartype" && (
-              <div className="flex flex-wrap gap-2">
-                {BAR_TYPES.map((bt) => (
-                  <button key={bt.id} className="chip" onClick={() => pickBarType(bt.id)}>
-                    {localizedName(bt, lang)}
-                  </button>
-                ))}
-              </div>
-            )}
+              {activeEquipmentId === "barbell" && (
+                <ChoiceGroup label={t.barTypeTitle}>
+                  {BAR_TYPES.map((bt) => (
+                    <button
+                      key={bt.id}
+                      className={`chip ${activeBarType === bt.id ? "active" : ""}`}
+                      aria-pressed={activeBarType === bt.id}
+                      onClick={() => setActiveBarType(bt.id)}
+                    >
+                      {localizedName(bt, lang)}
+                    </button>
+                  ))}
+                </ChoiceGroup>
+              )}
 
-            {step === "variant" && (
-              <>
-                <div className="flex flex-wrap gap-2">
+              {variantOptions.length > 0 && (
+                <ChoiceGroup label={`${t.variantsTitle} · ${t.optionalHint}`}>
                   {variantOptions.map((v) => (
                     <button
                       key={v.id}
                       className={`chip ${selectedVariantIds.includes(v.id) ? "active" : ""}`}
+                      aria-pressed={selectedVariantIds.includes(v.id)}
                       onClick={() => toggleVariant(v.id)}
                     >
                       {localizedName(v, lang)}
                     </button>
                   ))}
-                </div>
-                <button
-                  className="btn btn-primary w-full mt-4"
-                  style={{ marginTop: 16 }}
-                  disabled={selectedVariantIds.length === 0}
-                  onClick={confirmVariants}
-                >
-                  {t.confirm}
-                </button>
-              </>
-            )}
+                </ChoiceGroup>
+              )}
+            </div>
+
+            <button className="btn btn-primary w-full" style={{ marginTop: 20 }} onClick={confirmCustomize}>
+              {isEditingInstanceId ? t.save : t.add}
+            </button>
           </div>
         </div>
       )}
@@ -517,9 +498,11 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button className="btn btn-ghost p-2" onClick={() => handleEditQueueItem(item)} aria-label={t.edit}>
-                          <Pencil size={18} style={{ color: "var(--text)" }} />
-                        </button>
+                        {hasChoices(item.baseId) && (
+                          <button className="btn btn-ghost p-2" onClick={() => handleEditQueueItem(item)} aria-label={t.edit}>
+                            <Pencil size={18} style={{ color: "var(--text)" }} />
+                          </button>
+                        )}
                         <button className="btn btn-ghost p-2" onClick={() => handleRemoveQueueItem(item.instanceId)} aria-label={t.delete}>
                           <Trash2 size={18} style={{ color: "var(--danger)" }} />
                         </button>
