@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import { db, STORES } from '../../src/lib/db.js'
 import { setPref, getPref } from '../../src/lib/prefs.js'
 import { buildBackup, parseBackup, restoreBackup } from '../../src/lib/backup.js'
+import { migrateExerciseRefs } from '../../src/lib/refMigration.js'
 
 async function reset() {
   for (const store of Object.values(STORES)) await db.clear(store)
@@ -112,4 +113,21 @@ test('a normal backup of workouts, sessions and theme round-trips', async () => 
   const [session] = await db.getAllSessions()
   assert.equal(session.id, 's1')
   assert.equal(await getPref('theme'), 'dark')
+})
+
+test('restoring an old backup rewrites its variant refs on the next boot', async () => {
+  await reset()
+  await db.addSession({ id: 's1', date: '2026-01-01', exercises: [{ id: 'e', exerciseId: 'chest_fly|dumbbell|unilateral_inclinado', sets: [] }] })
+  await db.put(STORES.workouts, { id: 'w1', name: 'Peito', exercises: [{ ref: 'crunch|band|bicycle' }] })
+  await db.setSetting('refAliasesVersion', 99)
+
+  const backup = await buildBackup()
+  await reset()
+  await restoreBackup(backup)
+
+  assert.equal(await db.getSetting('refAliasesVersion', 0), 0, 'a restore must trigger the migration again')
+  await migrateExerciseRefs(1)
+  const [session] = await db.getAllSessions()
+  assert.equal(session.exercises[0].exerciseId, 'chest_fly|dumbbell|incline+unilateral')
+  assert.equal((await db.get(STORES.workouts, 'w1')).exercises[0].ref, 'bicycle_crunch|bodyweight|')
 })
