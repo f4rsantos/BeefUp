@@ -1,0 +1,230 @@
+{
+  "version": 7,
+  "bases": {
+    "push_up": {
+      "com_bola_medicinal": {
+        "to": [],
+        "equipment": "medicine_ball"
+      }
+    },
+    "chest_fly": {
+      "lever_seated": {
+        "to": [],
+        "equipment": "machine"
+      },
+      "one_arm_bench": {
+        "to": [
+          "unilateral"
+        ]
+      },
+      "one_arm_on_exercise_ball": {
+        "to": [
+          "unilateral"
+        ]
+      },
+      "unilateral_inclinado": {
+        "to": [
+          "incline",
+          "unilateral"
+        ]
+      }
+    },
+    "dip": {
+      "em_argolas": {
+        "to": [],
+        "equipment": "rings"
+      }
+    },
+    "lat_pulldown": {
+      "lateral": {
+        "to": [
+          "um_braco"
+        ]
+      }
+    },
+    "squat": {
+      "largo": {
+        "to": [
+          "sumo"
+        ]
+      },
+      "hack": {
+        "to": [
+          "hack"
+        ],
+        "equipment": "machine"
+      }
+    },
+    "calf_raise": {
+      "seated_one_leg": {
+        "to": [
+          "seated",
+          "unilateral"
+        ]
+      },
+      "smith_one_leg_floor": {
+        "to": [
+          "unilateral"
+        ]
+      },
+      "uma_perna_no_leg_press": {
+        "to": [
+          "lever_seated_squat_on_leg_press_machine",
+          "unilateral"
+        ]
+      }
+    },
+    "lateral_raise": {
+      "inclinada_um_braco": {
+        "to": [
+          "inclinado",
+          "um_braco"
+        ]
+      }
+    },
+    "rear_delt_fly": {
+      "reverse_pec_deck": {
+        "to": [],
+        "equipment": "machine"
+      },
+      "cross_over_revers": {
+        "to": [],
+        "equipment": "cable"
+      },
+      "inclinada_um_braco": {
+        "to": [
+          "unilateral"
+        ]
+      },
+      "um_braco": {
+        "to": [
+          "unilateral"
+        ]
+      }
+    },
+    "bicep_curl": {
+      "normal": {
+        "to": []
+      },
+      "deitado": {
+        "to": []
+      }
+    },
+    "hammer_curl": {
+      "alternada_sentado": {
+        "to": [
+          "sentado",
+          "alternada"
+        ]
+      },
+      "em_pe_um_braco": {
+        "to": [
+          "unilateral"
+        ]
+      },
+      "sentado_um_braco": {
+        "to": [
+          "sentado",
+          "unilateral"
+        ]
+      }
+    },
+    "concentration_curl": {
+      "um_braco_sentado": {
+        "to": []
+      }
+    },
+    "tricep_extension": {
+      "deitado": {
+        "to": []
+      }
+    },
+    "plank": {
+      "inversa": {
+        "to": [
+          "de_costas",
+          "elevacao"
+        ]
+      }
+    },
+    "crunch": {
+      "standard": {
+        "to": []
+      },
+      "bicycle": {
+        "base": "bicycle_crunch",
+        "to": []
+      },
+      "reverse": {
+        "base": "reverse_crunch",
+        "to": []
+      },
+      "curl_up": {
+        "base": "sit_up",
+        "to": []
+      },
+      "heel_touchers": {
+        "base": "heel_touch",
+        "to": []
+      },
+      "elbow_to_knee": {
+        "base": "elbow_to_knee",
+        "to": []
+      }
+    },
+    "horizontal_press": {
+      "pallof": {
+        "to": []
+      }
+    },
+    "box_jump": {
+      "normal": {
+        "to": []
+      }
+    },
+    "running": {
+      "outdoor": {
+        "to": [],
+        "equipment": "bodyweight"
+      },
+      "passadeira": {
+        "to": [],
+        "equipment": "machine"
+      }
+    },
+    "walking": {
+      "outdoor": {
+        "to": [],
+        "equipment": "bodyweight"
+      },
+      "passadeira": {
+        "to": [],
+        "equipment": "machine"
+      }
+    },
+    "stationary_bike": {
+      "outdoor": {
+        "to": [],
+        "equipment": "bicycle"
+      },
+      "estatica": {
+        "to": [
+          "estatica"
+        ],
+        "equipment": "machine"
+      },
+      "assault_echo": {
+        "to": [
+          "assault_echo"
+        ],
+        "equipment": "machine"
+      },
+      "bracos": {
+        "to": [
+          "bracos"
+        ],
+        "equipment": "machine"
+      }
+    }
+  }
+}

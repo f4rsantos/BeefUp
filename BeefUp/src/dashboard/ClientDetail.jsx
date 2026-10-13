@@ -11,6 +11,7 @@ import { MICRONUTRIENTS } from "../lib/foodProvider";
 import { MEASURE_GROUPS, LEGACY_TYPE_MAP, getMeasureUnit, measureTypeLabel, UNIT_PRESETS } from "../lib/measureTypes";
 import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import { resolvedExerciseName } from "../lib/exerciseTree";
+import { canonicalClientData } from "../lib/refMigration";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { getClientData, unlinkClient, prescribeRow, unprescribeRow } from "../lib/trainerData";
@@ -281,7 +282,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
     function run() {
       setLoading(true);
       getClientData(client.linkedUserId, scopes)
-        .then((d) => { if (!cancelled) setData(d); })
+        .then((d) => { if (!cancelled) setData(canonicalClientData(d)); })
         .catch((e) => { if (!cancelled) setError(friendlyError(e, t)); })
         .finally(() => { if (!cancelled) setLoading(false); });
     }

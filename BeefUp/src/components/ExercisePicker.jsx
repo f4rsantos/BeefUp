@@ -8,6 +8,9 @@ import {
   groupExercisesByLetter,
   getEquipmentOptions,
   getVariantOptions,
+  getVariantGroups,
+  canonicalRef,
+  parseExerciseRef,
   getBodyPartLabel,
   getMuscleLabel,
   getEquipmentLabel,
@@ -67,8 +70,9 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     setIsEditingInstanceId(null);
   }
 
-  function addToQueue(baseId, equipmentId, variantId, barType = "") {
-    const ref = buildExerciseRef(baseId, equipmentId, variantId);
+  function addToQueue(baseId, rawEquipmentId, rawVariantId, barType = "") {
+    const ref = canonicalRef(buildExerciseRef(baseId, rawEquipmentId, rawVariantId));
+    const { equipmentId, variantId } = parseExerciseRef(ref);
     setQueue((prev) => {
       if (isEditingInstanceId) {
         return prev.map(item => item.instanceId === isEditingInstanceId
@@ -84,11 +88,15 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
 
   function hasChoices(baseId) {
     const options = getEquipmentOptions(baseId);
-    return options.length > 1 || options.some((eq) => eq.id === "barbell") || getVariantOptions(baseId).length > 0;
+    return options.length > 1 || options.some((eq) => eq.id === "barbell") || getVariantGroups(baseId).length > 0;
   }
 
   // Last used combination
-  function initialChoice(base, saved) {
+  function initialChoice(base, rawSaved) {
+    const saved = rawSaved && {
+      ...parseExerciseRef(canonicalRef(buildExerciseRef(base.id, rawSaved.equipmentId, rawSaved.variantId))),
+      barType: rawSaved.barType,
+    };
     const equipmentIds = getEquipmentOptions(base.id).map((eq) => eq.id);
     const equipmentId = saved && equipmentIds.includes(saved.equipmentId) ? saved.equipmentId : equipmentIds[0] ?? "";
     const validVariants = getVariantOptions(base.id, equipmentId).map((v) => v.id);
@@ -143,10 +151,12 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
     setActiveBarType(equipmentId === "barbell" ? activeBarType || BAR_TYPES[0].id : "");
   }
 
-  function toggleVariant(variantId) {
-    setSelectedVariantIds((prev) =>
-      prev.includes(variantId) ? prev.filter((id) => id !== variantId) : [...prev, variantId]
-    );
+  // One pick per group; null picks the default.
+  function pickVariant(group, variantId) {
+    setSelectedVariantIds((prev) => {
+      const others = prev.filter((id) => groupByVariant[id] !== group);
+      return variantId ? [...others, variantId] : others;
+    });
   }
 
   function confirmCustomize() {
@@ -154,7 +164,10 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   }
 
   const equipmentOptions = activeBase ? getEquipmentOptions(activeBase.id) : [];
-  const variantOptions = activeBase ? getVariantOptions(activeBase.id, activeEquipmentId) : [];
+  const variantGroups = activeBase ? getVariantGroups(activeBase.id, activeEquipmentId) : [];
+  const groupByVariant = Object.fromEntries(
+    variantGroups.flatMap(({ group, options }) => options.map((v) => [v.id, group])),
+  );
 
   if (step === "custom") {
     return <CustomExerciseEditor onClose={() => setStep("list")} onCreated={handleCustomCreated} />;
@@ -405,20 +418,33 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                 </ChoiceGroup>
               )}
 
-              {variantOptions.length > 0 && (
-                <ChoiceGroup label={`${t.variantsTitle} · ${t.optionalHint}`}>
-                  {variantOptions.map((v) => (
+              {variantGroups.map(({ group, defaultOption, options }) => {
+                const picked = options.find((v) => selectedVariantIds.includes(v.id));
+                return (
+                  <ChoiceGroup key={group} label={t[`variantGroup_${group}`]}>
                     <button
-                      key={v.id}
-                      className={`chip ${selectedVariantIds.includes(v.id) ? "active" : ""}`}
-                      aria-pressed={selectedVariantIds.includes(v.id)}
-                      onClick={() => toggleVariant(v.id)}
+                      className={`chip ${picked ? "" : "active"}`}
+                      aria-pressed={!picked}
+                      onClick={() => pickVariant(group, null)}
                     >
-                      {localizedName(v, lang)}
+                      {defaultOption ? localizedName(defaultOption, lang) : t.variantNormal}
                     </button>
-                  ))}
-                </ChoiceGroup>
-              )}
+                    {options.map((v) => {
+                      const active = selectedVariantIds.includes(v.id);
+                      return (
+                        <button
+                          key={v.id}
+                          className={`chip ${active ? "active" : ""}`}
+                          aria-pressed={active}
+                          onClick={() => pickVariant(group, v.id)}
+                        >
+                          {localizedName(v, lang)}
+                        </button>
+                      );
+                    })}
+                  </ChoiceGroup>
+                );
+              })}
             </div>
 
             <button className="btn btn-primary w-full" style={{ marginTop: 20 }} onClick={confirmCustomize}>

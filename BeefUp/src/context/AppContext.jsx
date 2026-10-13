@@ -8,6 +8,7 @@ import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
 import { registerCustomExercises } from '../lib/exerciseTree'
+import { migrateExerciseRefs, canonicalizeList, canonicalSession, canonicalWorkout } from '../lib/refMigration'
 import strings from '../strings'
 
 
@@ -218,6 +219,7 @@ export function AppProvider({ children }) {
   // Load from DB
   useEffect(() => {
     async function load() {
+      await migrateExerciseRefs().catch(err => console.error('exercise ref migration failed', err))
       const [p, w, s, allSteps, apid, activeWo, allMeasurements, log, foods, water, cli, customEx, measureTy, prescribedGoalsRow, measureGoalsRows, appts] = await Promise.all([
         db.getAll(STORES.plans),
         db.getAll(STORES.workouts),
@@ -237,8 +239,8 @@ export function AppProvider({ children }) {
         db.getAll(STORES.appointments),
       ])
       setPlans(p)
-      setWorkouts(w)
-      setSessions(s)
+      setWorkouts(canonicalizeList(w, canonicalWorkout))
+      setSessions(canonicalizeList(s, canonicalSession))
       setActivePlanId(apid)
       setActiveWorkoutState(activeWo)
       setAppointments(appts)

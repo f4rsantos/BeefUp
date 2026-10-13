@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useApp } from "../context/useApp";
-import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions } from "../lib/exerciseTree";
+import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions, getVariantGroups } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName"
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -105,27 +105,35 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
             <h2 className="text-sm font-semibold mb-2" style={{ color: "var(--text)" }}>
               {t.variantsTitle}
             </h2>
-            <div className="flex flex-col gap-2">
-              {exercise.variants.map((variant) => {
-                const active = activeVariantIds.includes(variant.id);
-                const note = lang === "pt" ? variant.notePt : variant.note;
-                return (
-                  <div
-                    key={variant.id}
-                    className="card"
-                    style={active ? { borderColor: "var(--accent)" } : undefined}
-                  >
-                    <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                      {localizedName(variant, lang)}
-                    </p>
-                    {note && (
-                      <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                        {note}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex flex-col gap-4">
+              {getVariantGroups(exercise.id).map(({ group, defaultOption, options }) => (
+                <div key={group} className="flex flex-col gap-2">
+                  <p className="section-title">{t[`variantGroup_${group}`]}</p>
+                  {[defaultOption, ...options].filter(Boolean).map((variant) => {
+                    const active = activeVariantIds.includes(variant.id) || (
+                      variant === defaultOption && activeVariantId !== undefined &&
+                      !options.some((o) => activeVariantIds.includes(o.id))
+                    );
+                    const note = lang === "pt" ? variant.notePt : variant.note;
+                    return (
+                      <div
+                        key={variant.id}
+                        className="card"
+                        style={active ? { borderColor: "var(--accent)" } : undefined}
+                      >
+                        <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                          {localizedName(variant, lang)}
+                        </p>
+                        {note && (
+                          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                            {note}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
         )}
