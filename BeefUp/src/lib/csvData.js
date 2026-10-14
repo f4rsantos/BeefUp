@@ -1,5 +1,5 @@
 import { uid, todayISO } from './planUtils.js'
-import { listBaseExercises, listEquipmentUsed, buildExerciseRef } from './exerciseTree.js'
+import { listBaseExercises, listEquipmentUsed, buildExerciseRef, canonicalRef } from './exerciseTree.js'
 import { normalizeTime } from './timeFormat.js'
 
 // Reading CSV has two modes: 
@@ -197,6 +197,37 @@ function bestVariant(base, leftoverTokens) {
   return { id, score }
 }
 
+// Token count when every word of one of the variant's names is present, else 0.
+function fullMatch(variant, leftoverTokens) {
+  let best = 0
+  for (const name of [variant.name, variant.namePt]) {
+    const variantTokens = tokenize(name)
+    if (variantTokens.length === 0) continue
+    if (variantTokens.every((token) => hasToken(leftoverTokens, token))) best = Math.max(best, variantTokens.length)
+  }
+  return best
+}
+
+// The best match, plus one fully matched variant from each other group.
+function bestVariants(base, leftoverTokens) {
+  const first = bestVariant(base, leftoverTokens)
+  if (!first.id) return []
+  const variants = base.variants ?? []
+  const firstGroup = variants.find((v) => v.id === first.id)?.group
+  const ids = [first.id]
+  for (const group of new Set(variants.map((v) => v.group))) {
+    if (group === firstGroup) continue
+    let pick = null
+    let score = 0
+    for (const variant of variants.filter((v) => v.group === group)) {
+      const matched = fullMatch(variant, leftoverTokens)
+      if (matched > score) { pick = variant; score = matched }
+    }
+    if (pick) ids.push(pick.id)
+  }
+  return ids
+}
+
 function leftoverTokens(allTokens, baseTokens) {
   return allTokens.filter((token) => !baseTokens.some((t) => tokensMatch(t, token)))
 }
@@ -235,12 +266,12 @@ function matchExercise(rawName) {
     return { ref: buildExerciseRef(`ext:${normalizeText(rawName).replace(/ /g, '_')}`), matched: false }
   }
 
-  const variant = bestVariant(best.base, leftoverTokens(allTokens, best.tokens))
+  const variantIds = bestVariants(best.base, leftoverTokens(allTokens, best.tokens))
   const equipmentId = equipment && best.base.equipment.includes(equipment.id)
     ? equipment.id
     : best.base.equipment[0] ?? ''
 
-  return { ref: buildExerciseRef(best.base.id, equipmentId, variant.id), matched: true }
+  return { ref: canonicalRef(buildExerciseRef(best.base.id, equipmentId, variantIds.join('+'))), matched: true }
 }
 
 // ── Import ───────────────────────────────────────────
@@ -314,7 +345,7 @@ export function parseWorkoutCsv(text, mode = 'generic') {
 
     if (!session.exercises.has(exerciseName)) {
       const savedRef = restoring ? String(row[beefUpRefCol] ?? '').trim() : ''
-      let ref = savedRef
+      let ref = savedRef ? canonicalRef(savedRef) : ''
       if (!ref) {
         const match = matchExercise(exerciseName)
         ref = match.ref

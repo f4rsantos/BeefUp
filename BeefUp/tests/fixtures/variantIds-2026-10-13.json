@@ -1,0 +1,721 @@
+{
+ "bench_press": {
+  "equipment": [
+   "band",
+   "barbell",
+   "cable",
+   "dumbbell",
+   "machine",
+   "smith_machine"
+  ],
+  "variants": [
+   "reto",
+   "inclinado",
+   "declinado",
+   "invertido",
+   "aberta",
+   "fechada",
+   "neutra"
+  ]
+ },
+ "push_up": {
+  "equipment": [
+   "band",
+   "bodyweight",
+   "bosu_ball",
+   "dumbbell",
+   "medicine_ball",
+   "rings",
+   "stability_ball",
+   "weighted"
+  ],
+  "variants": [
+   "normal",
+   "aberta",
+   "fechada",
+   "diamante",
+   "pes_elevados",
+   "inclinada",
+   "joelhos",
+   "na_parede",
+   "arqueiro",
+   "com_palmas",
+   "pliometrica",
+   "profunda",
+   "com_bola_medicinal"
+  ]
+ },
+ "row": {
+  "equipment": [
+   "band",
+   "barbell",
+   "bodyweight",
+   "cable",
+   "dumbbell",
+   "kettlebell",
+   "machine",
+   "smith_machine"
+  ],
+  "variants": [
+   "curvado",
+   "sentado",
+   "um_braco",
+   "invertida",
+   "banco_inclinado",
+   "alta",
+   "pendlay",
+   "pega_fechada",
+   "suspensa"
+  ]
+ },
+ "pull_up": {
+  "equipment": [
+   "band",
+   "bodyweight",
+   "machine",
+   "weighted"
+  ],
+  "variants": [
+   "pronada",
+   "supinada",
+   "aberta",
+   "archer",
+   "escapular",
+   "lado_a_lado"
+  ]
+ },
+ "lat_pulldown": {
+  "equipment": [
+   "band",
+   "cable",
+   "machine"
+  ],
+  "variants": [
+   "aberta",
+   "fechada",
+   "invertida",
+   "lateral",
+   "um_braco"
+  ]
+ },
+ "squat": {
+  "equipment": [
+   "band",
+   "barbell",
+   "bodyweight",
+   "bosu_ball",
+   "dumbbell",
+   "kettlebell",
+   "sled",
+   "smith_machine",
+   "weighted"
+  ],
+  "variants": [
+   "back",
+   "front",
+   "overhead",
+   "goblet",
+   "sumo",
+   "extensao_overhead",
+   "pes_juntos",
+   "curtsey",
+   "jefferson",
+   "largo",
+   "pliometrico",
+   "zercher",
+   "cossack",
+   "sissy",
+   "split_squats",
+   "hack"
+  ]
+ },
+ "deadlift": {
+  "equipment": [
+   "band",
+   "barbell",
+   "dumbbell",
+   "smith_machine"
+  ],
+  "variants": [
+   "convencional",
+   "romeno",
+   "sumo",
+   "rack_pull",
+   "uma_perna"
+  ]
+ },
+ "leg_press": {
+  "equipment": [
+   "machine",
+   "sled"
+  ],
+  "variants": [
+   "normal",
+   "uma_perna"
+  ]
+ },
+ "leg_curl": {
+  "equipment": [
+   "cable",
+   "machine",
+   "stability_ball"
+  ],
+  "variants": [
+   "deitado",
+   "sentado",
+   "inverso"
+  ]
+ },
+ "calf_raise": {
+  "equipment": [
+   "band",
+   "barbell",
+   "bodyweight",
+   "dumbbell",
+   "machine",
+   "sled",
+   "smith_machine",
+   "weighted"
+  ],
+  "variants": [
+   "standing",
+   "seated",
+   "donkey",
+   "lever_seated_squat_on_leg_press_machine",
+   "seated_one_leg",
+   "smith_one_leg_floor",
+   "uma_perna_no_leg_press"
+  ]
+ },
+ "lunge": {
+  "equipment": [
+   "barbell",
+   "bodyweight",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "variants": [
+   "a_frente",
+   "atras",
+   "caminhando",
+   "lateral",
+   "com_salto",
+   "com_torcao"
+  ]
+ },
+ "overhead_press": {
+  "equipment": [
+   "band",
+   "barbell",
+   "cable",
+   "dumbbell",
+   "kettlebell",
+   "machine",
+   "smith_machine"
+  ],
+  "variants": [
+   "em_pe",
+   "sentado",
+   "push_press",
+   "um_braco",
+   "alternado",
+   "arnold"
+  ]
+ },
+ "lateral_raise": {
+  "equipment": [
+   "band",
+   "cable",
+   "dumbbell",
+   "machine"
+  ],
+  "variants": [
+   "inclinada_um_braco",
+   "um_braco",
+   "landmine",
+   "bracos_dobrados",
+   "sentado",
+   "alternada"
+  ]
+ },
+ "rear_delt_fly": {
+  "equipment": [
+   "band",
+   "cable",
+   "dumbbell",
+   "machine"
+  ],
+  "variants": [
+   "bent_over",
+   "incline_bench",
+   "reverse_pec_deck",
+   "cross_over_revers",
+   "inclinada_um_braco",
+   "um_braco",
+   "deitado_no_chao",
+   "unilateral"
+  ]
+ },
+ "bicep_curl": {
+  "equipment": [
+   "band",
+   "barbell",
+   "cable",
+   "dumbbell",
+   "machine"
+  ],
+  "variants": [
+   "normal",
+   "alternado",
+   "banco_inclinado",
+   "um_braco",
+   "de_pe",
+   "sentado",
+   "deitado"
+  ]
+ },
+ "tricep_extension": {
+  "equipment": [
+   "barbell",
+   "cable",
+   "dumbbell",
+   "machine",
+   "rope"
+  ],
+  "variants": [
+   "acima_da_cabeca",
+   "deitado",
+   "sentado",
+   "de_pe",
+   "um_braco",
+   "alternada"
+  ]
+ },
+ "plank": {
+  "equipment": [
+   "bodyweight",
+   "weighted"
+  ],
+  "variants": [
+   "baixa",
+   "lateral",
+   "alta",
+   "elevacao",
+   "inversa",
+   "toque_ombro"
+  ]
+ },
+ "crunch": {
+  "equipment": [
+   "assisted",
+   "band",
+   "bodyweight",
+   "cable",
+   "machine"
+  ],
+  "variants": [
+   "standard",
+   "bicycle",
+   "reverse",
+   "decline",
+   "standing",
+   "curl_up",
+   "heel_touchers",
+   "twist",
+   "side",
+   "elbow_to_knee"
+  ]
+ },
+ "hanging_leg_raise": {
+  "equipment": [
+   "bodyweight",
+   "assisted",
+   "weighted"
+  ],
+  "variants": [
+   "joelhos_fletidos",
+   "estendidas",
+   "toes_to_bar",
+   "knees_to_elbows"
+  ]
+ },
+ "hip_thrust": {
+  "equipment": [
+   "band",
+   "barbell",
+   "bodyweight",
+   "dumbbell",
+   "machine",
+   "smith_machine"
+  ],
+  "variants": [
+   "single_leg",
+   "floor",
+   "twist_lift",
+   "ponte_marcha",
+   "no_banco"
+  ]
+ },
+ "dip": {
+  "equipment": [
+   "bodyweight",
+   "machine",
+   "weighted",
+   "rings"
+  ],
+  "variants": [
+   "foco_peito",
+   "foco_triceps",
+   "entre_bancos",
+   "em_argolas"
+  ]
+ },
+ "chest_fly": {
+  "equipment": [
+   "cable",
+   "dumbbell",
+   "machine"
+  ],
+  "variants": [
+   "flat",
+   "incline",
+   "decline",
+   "floor",
+   "lever_seated",
+   "one_arm_bench",
+   "one_arm_on_exercise_ball",
+   "standing",
+   "unilateral",
+   "unilateral_inclinado"
+  ]
+ },
+ "bulgarian_split_squat": {
+  "equipment": [
+   "bodyweight",
+   "dumbbell",
+   "barbell"
+  ],
+  "variants": [
+   "back_rack",
+   "front_rack"
+  ]
+ },
+ "face_pull": {
+  "equipment": [
+   "cable"
+  ],
+  "variants": [
+   "de_pe"
+  ]
+ },
+ "clean": {
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "variants": [
+   "power",
+   "squat",
+   "hang",
+   "alternado"
+  ]
+ },
+ "snatch": {
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "variants": [
+   "power",
+   "squat",
+   "hang",
+   "a_um_braco",
+   "alternado"
+  ]
+ },
+ "jerk": {
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "variants": [
+   "split",
+   "power",
+   "squat",
+   "one_arm",
+   "alternado"
+  ]
+ },
+ "muscle_up": {
+  "equipment": [
+   "bodyweight",
+   "rings"
+  ],
+  "variants": [
+   "strict",
+   "kipping"
+  ]
+ },
+ "handstand_pushup": {
+  "equipment": [
+   "bodyweight"
+  ],
+  "variants": [
+   "strict",
+   "wall_facing",
+   "deficit",
+   "no_support"
+  ]
+ },
+ "burpee": {
+  "equipment": [
+   "bodyweight"
+  ],
+  "variants": [
+   "standard",
+   "bar_facing",
+   "box_jump_over",
+   "lateral_over_bar",
+   "wall_target",
+   "com_jack"
+  ]
+ },
+ "rope_climb": {
+  "equipment": [
+   "bodyweight"
+  ],
+  "variants": [
+   "standard",
+   "legless"
+  ]
+ },
+ "running": {
+  "equipment": [
+   "bodyweight",
+   "machine"
+  ],
+  "variants": [
+   "outdoor",
+   "passadeira"
+  ]
+ },
+ "kettlebell_swing": {
+  "equipment": [
+   "kettlebell"
+  ],
+  "variants": [
+   "russian",
+   "american",
+   "one_arm",
+   "alternating"
+  ]
+ },
+ "box_jump": {
+  "equipment": [
+   "bodyweight"
+  ],
+  "variants": [
+   "normal"
+  ]
+ },
+ "chest_to_bar": {
+  "equipment": [
+   "bodyweight",
+   "machine"
+  ],
+  "variants": [
+   "pronated",
+   "wide",
+   "pegada_supinada",
+   "pegada_neutra"
+  ]
+ },
+ "hammer_curl": {
+  "equipment": [
+   "cable",
+   "dumbbell"
+  ],
+  "variants": [
+   "alternada_sentado",
+   "cruzada",
+   "em_pe_um_braco",
+   "inclinada",
+   "sentado",
+   "sentado_um_braco"
+  ]
+ },
+ "preacher_curl": {
+  "equipment": [
+   "barbell",
+   "cable",
+   "dumbbell",
+   "machine"
+  ],
+  "variants": [
+   "um_braco",
+   "pega_invertida",
+   "alternada",
+   "pega_fechada"
+  ]
+ },
+ "concentration_curl": {
+  "equipment": [
+   "band",
+   "cable",
+   "dumbbell"
+  ],
+  "variants": [
+   "um_braco_sentado"
+  ]
+ },
+ "wrist_curl": {
+  "equipment": [
+   "band",
+   "barbell",
+   "cable",
+   "dumbbell"
+  ],
+  "variants": [
+   "dedos",
+   "inversa",
+   "banco"
+  ]
+ },
+ "tricep_kickback": {
+  "equipment": [
+   "cable",
+   "dumbbell"
+  ],
+  "variants": [
+   "um_braco",
+   "dois_bracos"
+  ]
+ },
+ "stationary_bike": {
+  "equipment": [
+   "bicycle",
+   "machine"
+  ],
+  "variants": [
+   "assault_echo",
+   "bracos",
+   "estatica",
+   "outdoor"
+  ]
+ },
+ "walking": {
+  "equipment": [
+   "bodyweight",
+   "machine"
+  ],
+  "variants": [
+   "outdoor",
+   "passadeira"
+  ]
+ },
+ "clean_and_jerk": {
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "variants": [
+   "normal",
+   "a_um_braco",
+   "variado"
+  ]
+ },
+ "ex_clean_and_press": {
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "variants": [
+   "normal",
+   "a_um_braco",
+   "variado"
+  ]
+ },
+ "horizontal_press": {
+  "equipment": [
+   "band"
+  ],
+  "variants": [
+   "pallof"
+  ]
+ },
+ "ex_hyperextension": {
+  "equipment": [
+   "bodyweight",
+   "weighted"
+  ],
+  "variants": [
+   "bola_suica"
+  ]
+ },
+ "ex_pullover": {
+  "equipment": [
+   "barbell",
+   "cable",
+   "dumbbell",
+   "machine"
+  ],
+  "variants": [
+   "declinado",
+   "bracos_fletidos"
+  ]
+ },
+ "ex_front_raise": {
+  "equipment": [
+   "band",
+   "barbell",
+   "cable",
+   "dumbbell"
+  ],
+  "variants": [
+   "acima_da_cabeca",
+   "alternada",
+   "simultaneo"
+  ]
+ },
+ "ex_jump_squat": {
+  "equipment": [
+   "barbell",
+   "bodyweight"
+  ],
+  "variants": [
+   "com_queda",
+   "ajoelhado",
+   "meio_agachamento",
+   "salto_ao_agachamento"
+  ]
+ },
+ "ex_side_hip_abduction": {
+  "equipment": [
+   "band",
+   "bodyweight",
+   "cable",
+   "machine"
+  ],
+  "variants": [
+   "sentado",
+   "prancha",
+   "pe",
+   "deitado"
+  ]
+ },
+ "ex_flexion_leg_sit_up": {
+  "equipment": [
+   "bodyweight",
+   "band"
+  ],
+  "variants": [
+   "alternating",
+   "two_feet"
+  ]
+ }
+}

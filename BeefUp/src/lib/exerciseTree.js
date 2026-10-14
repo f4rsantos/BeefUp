@@ -1,6 +1,7 @@
 import exercisesBase from '../data/exercisesBase.json' with { type: 'json' }
 import exercisesBulk from '../data/exercisesBulk.json' with { type: 'json' }
 import exerciseEquipment from '../data/exerciseEquipment.json' with { type: 'json' }
+import variantAliases from '../data/variantAliases.json' with { type: 'json' }
 import { localizedName } from './localizedName.js'
 
 const ALL_BASE = [...exercisesBase, ...exercisesBulk]
@@ -176,7 +177,67 @@ function composeName(base, equipment, variants, field) {
   return name
 }
 
-export function resolveExercise(ref) {
+export const VARIANT_GROUPS = ['type', 'angle', 'grip', 'posture', 'side']
+
+export const VARIANT_ALIASES_VERSION = variantAliases.version ?? 0
+
+function groupOf(variant) {
+  return variant.group ?? 'type'
+}
+
+export function canonicalRef(ref) {
+  const { baseId: startId, equipmentId, variantId } = parseExerciseRef(ref)
+  if (!findBase(startId)) return ref
+
+  const aliases = variantAliases.bases?.[startId] ?? {}
+  let baseId = startId
+  let equipment = equipmentId
+  const ids = []
+  for (const id of variantId ? variantId.split('+') : []) {
+    const alias = aliases[id]
+    if (!alias) {
+      ids.push(id)
+      continue
+    }
+    if (alias.base && findBase(alias.base)) baseId = alias.base
+    if (alias.equipment) equipment = alias.equipment
+    ids.push(...alias.to)
+  }
+
+  const base = findBase(baseId)
+  if (baseId !== startId && !base.equipment.includes(equipment)) equipment = base.equipment[0] ?? ''
+
+  const kept = []
+  for (const id of ids) {
+    const variant = (base.variants ?? []).find((v) => v.id === id)
+    if (!variant || variant.default || kept.includes(variant)) continue
+    const group = groupOf(variant)
+    if (kept.some((v) => groupOf(v) === group)) continue
+    kept.push(variant)
+  }
+  kept.sort((a, b) => VARIANT_GROUPS.indexOf(groupOf(a)) - VARIANT_GROUPS.indexOf(groupOf(b)))
+
+  const nextVariantId = kept.map((v) => v.id).join('+')
+  if (baseId === startId && equipment === equipmentId && nextVariantId === variantId) return ref
+  return buildExerciseRef(baseId, equipment, nextVariantId)
+}
+
+export function getVariantGroups(baseId, equipmentId) {
+  const variants = getVariantOptions(baseId, equipmentId)
+  return VARIANT_GROUPS
+    .map((group) => {
+      const inGroup = variants.filter((v) => groupOf(v) === group)
+      return {
+        group,
+        defaultOption: inGroup.find((v) => v.default) ?? null,
+        options: inGroup.filter((v) => !v.default),
+      }
+    })
+    .filter(({ options }) => options.length > 0)
+}
+
+export function resolveExercise(rawRef) {
+  const ref = canonicalRef(rawRef)
   const { baseId, equipmentId, variantId } = parseExerciseRef(ref)
   const base = findBase(baseId)
   if (!base) return null

@@ -1,4 +1,4 @@
-import { resolveExercise, getBodyPartLabel, listBodyParts, countsAsReps } from './exerciseTree.js'
+import { resolveExercise, getBodyPartLabel, listBodyParts, countsAsReps, parseExerciseRef } from './exerciseTree.js'
 import { localizedName } from './localizedName.js'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
@@ -88,6 +88,22 @@ export function lastCompletedSets(sessions, exerciseId) {
 
 export function lastExerciseNote(sessions, exerciseId) {
   return latestExerciseField(sessions, exerciseId, (e) => e.note) ?? ''
+}
+
+export function lastUsedChoice(sessions, baseId) {
+  let latest = null
+  for (const s of sessions) {
+    for (const e of s.exercises ?? []) {
+      const { baseId: id, equipmentId, variantId } = parseExerciseRef(e.exerciseId)
+      if (id !== baseId) continue
+      if (!latest || s.date > latest.date) {
+        latest = { date: s.date, equipmentId, variantId, barType: e.barType ?? '' }
+      }
+    }
+  }
+  if (!latest) return null
+  const { equipmentId, variantId, barType } = latest
+  return { equipmentId, variantId, barType }
 }
 
 export function formatElapsedClock(seconds) {

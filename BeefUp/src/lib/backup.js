@@ -1,6 +1,7 @@
 import { db, STORES } from './db.js'
 import { getPref, setPref, PREF_KEYS, MIGRATION_FLAG, isLocalOnlySetting, NON_PORTABLE_PREFS } from './prefs.js'
 import { todayISO } from './planUtils.js'
+import { REF_VERSION_SETTING } from './refMigration.js'
 
 const BACKUP_APP = 'BeefUp'
 const BACKUP_VERSION = 1
@@ -91,6 +92,8 @@ export async function restoreBackup(backup) {
   // Clearing the settings store dropped the migration flag; re-set it so the
   // next boot does not re-import prefs from a stale localStorage.
   await db.setSetting(MIGRATION_FLAG, true)
+  // Old backups carry old variant ids; next boot rewrites them.
+  await db.setSetting(REF_VERSION_SETTING, 0)
 }
 
 export function backupFilename() {

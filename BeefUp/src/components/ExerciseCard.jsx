@@ -1,6 +1,6 @@
 import NumberField from "./NumberField";
 import TimeField from "./TimeField";
-import { useState, useRef, useCallback, useEffect, memo } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, memo } from "react";
 import { Trash2, Plus, Check, MoreHorizontal, StickyNote } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
 import { repUnitFor, isCardioExercise, getBarTypeLabel } from "../lib/exerciseTree"
@@ -33,6 +33,16 @@ function PopoverMenu({ anchor, onClose, children }) {
       window.removeEventListener("scroll", handleScroll, true);
     };
   }, [onClose]);
+
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!el) return;
+    const viewportBottom = window.visualViewport?.height ?? window.innerHeight;
+    const restBar = document.querySelector('[role="timer"]');
+    const limit = Math.min(viewportBottom, restBar ? restBar.getBoundingClientRect().top : Infinity) - 8;
+    const h = el.offsetHeight;
+    if (anchor.top + h > limit) el.style.top = `${Math.max(8, anchor.above - h)}px`;
+  }, [anchor]);
 
   return (
     <div
@@ -160,7 +170,7 @@ function Swipeable({ onDelete, children }) {
   }, [dx, onDelete]);
 
   return (
-    <div className="relative overflow-hidden" style={{ borderRadius: 14 }}>
+    <div className="relative overflow-hidden" style={{ borderRadius: 12 }}>
       <div
         className="absolute inset-0 flex items-center justify-end pr-4"
         style={{ background: "var(--danger)", opacity: dx < -10 ? 1 : 0, transition: "opacity .15s" }}
@@ -188,7 +198,7 @@ function SetRow({ exIdx, setIdx, set, isNext, previous, exerciseRef, repUnit, ca
     fontSize: isNext ? 17 : 15,
     fontWeight: isNext ? 800 : 600,
     minHeight: isNext ? 46 : 40,
-    background: set.done ? "var(--surface2)" : "var(--surface)",
+    background: "var(--surface)",
     color: "var(--text)",
   };
   return (
@@ -278,8 +288,8 @@ function ExerciseCard({
   function openMenu(e, kind, setIdx) {
     const r = e.currentTarget.getBoundingClientRect();
     const anchor = kind === "exercise"
-      ? { top: r.bottom + 4, right: window.innerWidth - r.right }
-      : { top: r.bottom + 4, left: r.left };
+      ? { top: r.bottom + 4, above: r.top - 4, right: window.innerWidth - r.right }
+      : { top: r.bottom + 4, above: r.top - 4, left: r.left };
     setMenu({ kind, setIdx, anchor });
   }
 

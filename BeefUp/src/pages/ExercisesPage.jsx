@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, Search, SlidersHorizontal, LayoutGrid, List, Image as ImageIcon, Plus } from "lucide-react";
 import { useApp } from "../context/useApp";
-import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getEquipmentOptions, getVariantOptions,getBodyPartLabel, getMuscleLabel, getBaseExercise,} from "../lib/exerciseTree";
+import {listBaseExercises, filterAndSortExercises, groupExercisesByLetter, getBodyPartLabel, getMuscleLabel, getBaseExercise,} from "../lib/exerciseTree";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import ExerciseFilterModal from "../components/ExerciseFilterModal";
 import CustomExerciseEditor from "../components/CustomExerciseEditor";
@@ -179,65 +179,29 @@ export default function ExercisesPage({ onBack }) {
                 </span>
               </div>
               <div className="flex flex-col">
-                {items.map((ex) => {
-                  const equipmentOptions = getEquipmentOptions(ex.id);
-                  const variantOptions = getVariantOptions(ex.id);
-                  return (
-                    <div
-                      key={ex.id}
-                      onClick={() => setSelectedId(ex.id)}
-                      style={{
-                        padding: "10px 4px",
-                        cursor: "pointer",
-                        borderBottom: "1px solid var(--border)",
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                          {localizedName(ex, lang)}
-                        </span>
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--muted)", textTransform: "capitalize" }}
-                        >
-                          {getBodyPartLabel(ex.bodyPart, lang)}
-                        </span>
-                      </div>
-                      {(equipmentOptions.length > 0 || variantOptions.length > 0) && (
-                        <div className="flex flex-wrap" style={{ gap: 4, marginTop: 4 }}>
-                          {equipmentOptions.map((eq) => (
-                            <span
-                              key={eq.id}
-                              className="text-xs"
-                              style={{
-                                color: "var(--muted)",
-                                background: "var(--surface2)",
-                                borderRadius: 6,
-                                padding: "1px 6px",
-                              }}
-                            >
-                              {localizedName(eq, lang)}
-                            </span>
-                          ))}
-                          {variantOptions.map((v) => (
-                            <span
-                              key={v.id}
-                              className="text-xs"
-                              style={{
-                                color: "var(--accent)",
-                                background: "var(--accent-soft)",
-                                borderRadius: 6,
-                                padding: "1px 6px",
-                              }}
-                            >
-                              {localizedName(v, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                {items.map((ex) => (
+                  <div
+                    key={ex.id}
+                    onClick={() => setSelectedId(ex.id)}
+                    style={{
+                      padding: "10px 4px",
+                      cursor: "pointer",
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                        {localizedName(ex, lang)}
+                      </span>
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--muted)", textTransform: "capitalize" }}
+                      >
+                        {getBodyPartLabel(ex.bodyPart, lang)}
+                      </span>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           ))
