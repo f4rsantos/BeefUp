@@ -9,6 +9,7 @@ import CalendarView from "./CalendarView";
 import ClientDetail from "./ClientDetail";
 import DashboardSettings from "./DashboardSettings";
 import SyncView from "./SyncView";
+import SchemaUpdateBanner from "./SchemaUpdateBanner";
 import { Skeleton } from "./parts";
 import "./dashboard.css";
 
@@ -79,6 +80,7 @@ export default function HelperDashboard() {
 
   return (
     <div className="dash-root">
+      <div className="dash-top">
       <header className="dash-header">
         {isDesktop ? (
           <>
@@ -110,6 +112,8 @@ export default function HelperDashboard() {
           <span className="dash-brand">{current.label}</span>
         )}
       </header>
+      {remote && <SchemaUpdateBanner />}
+      </div>
 
       <div className="dash-body">
         {tab === "calendar" && <CalendarView students={clients} />}

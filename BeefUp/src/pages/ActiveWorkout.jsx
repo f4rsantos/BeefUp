@@ -13,6 +13,7 @@ import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
 import RestBar from "../components/RestBar";
 import EndWorkoutModal from "../components/EndWorkoutModal";
+import SaveFreeWorkoutModal from "../components/SaveFreeWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import { localizedName } from "../lib/localizedName"
@@ -130,6 +131,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
   const [pendingTemplateUpdate, setPendingTemplateUpdate] = useState(false);
+  const [savingFree, setSavingFree] = useState(false);
   const [viewingExercise, setViewingExercise] = useState(null);
 
   const openExerciseInfo = useCallback((ref) => {
@@ -313,14 +315,14 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     setShowExPicker(false);
   }, [sessions]);
 
-  async function handleEnd() {
+  async function handleEnd(saved = null) {
     const duration = Math.floor((Date.now() - startedAt) / 1000);
 
     const session = {
       id: uid(),
       date: nowISO(),
-      workoutId: activeWorkout?.workoutId ?? null,
-      workoutName: activeWorkout?.workoutName ?? "",
+      workoutId: saved?.id ?? activeWorkout?.workoutId ?? null,
+      workoutName: saved?.name ?? activeWorkout?.workoutName ?? "",
       duration,
       exercises: exercises
         .map((e) => ({
@@ -385,6 +387,21 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       return item;
     });
     saveWorkout({ ...sourceWorkout, exercises: newExercises });
+  }
+
+  async function saveFreeAsWorkout(name) {
+    const items = exercises
+      .filter((e) => e.sets.some((s) => s.done))
+      .map((e) => {
+        const item = { ref: e.exerciseId };
+        if (e.note?.trim()) item.note = e.note.trim();
+        if (e.barType) item.barType = e.barType;
+        return item;
+      });
+    const workout = { id: uid(), name, exercises: items, restAfterSet };
+    await saveWorkout(workout);
+    setSavingFree(false);
+    handleEnd(workout);
   }
 
   return (
@@ -497,6 +514,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             setEndModal(null);
             if (workoutChanged) {
               setPendingTemplateUpdate(true);
+            } else if (!sourceWorkout) {
+              setSavingFree(true);
             } else {
               handleEnd();
             }
@@ -517,6 +536,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           onConfirm={() => {
             applyTemplateUpdate();
             setPendingTemplateUpdate(false);
+            handleEnd();
+          }}
+        />
+      )}
+
+      {savingFree && (
+        <SaveFreeWorkoutModal
+          onSave={saveFreeAsWorkout}
+          onSkip={() => {
+            setSavingFree(false);
             handleEnd();
           }}
         />

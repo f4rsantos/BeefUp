@@ -33,6 +33,23 @@ export function itemToRow(item, store, userId) {
   }
 }
 
+// Keys already tombstoned on the server. PostgREST puts `in` lists in the URL.
+async function remotelyDeleted(client, userId, store, keys) {
+  const dead = new Set()
+  for (let i = 0; i < keys.length; i += 100) {
+    const { data, error } = await client
+      .from('sync_rows')
+      .select('row_key')
+      .eq('user_id', userId)
+      .eq('store', store)
+      .in('row_key', keys.slice(i, i + 100))
+      .not('deleted_at', 'is', null)
+    if (error) throw error
+    for (const row of data || []) dead.add(row.row_key)
+  }
+  return dead
+}
+
 export function chunkForPush(items, size = PUSH_BATCH_SIZE) {
   const out = []
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
@@ -103,7 +120,13 @@ export function createSupabaseBackend() {
       const acked = []
 
       for (const batch of chunkForPush(items)) {
-        const rows = batch.map((item) => itemToRow(item, store, userId))
+        // Pushing without pulling first must not undo a deletion made elsewhere.
+        const live = batch.filter((item) => !item.deleted).map((item) => item.key)
+        const dead = live.length ? await remotelyDeleted(client, userId, store, live) : new Set()
+        const sendable = batch.filter((item) => item.deleted || !dead.has(item.key))
+        if (!sendable.length) continue
+
+        const rows = sendable.map((item) => itemToRow(item, store, userId))
         const { data, error } = await client
           .from('sync_rows')
           .upsert(rows, { onConflict: 'user_id,store,row_key' })

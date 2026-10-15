@@ -1,7 +1,7 @@
 import { STORES } from '../stores.js'
 import { db } from '../db.js'
 import { SCOPES, cursorKey, keyFieldOf, storesForScopes } from './stores.js'
-import { stampSynced, stampFromRemote, isDeleted, stripMeta } from './meta.js'
+import { stampFromRemote, isDeleted, stripMeta } from './meta.js'
 import { mergeStore, pendingPush, purgeableKeys } from './merge.js'
 
 // Backend contract, so Supabase can drop in without touching this file:
@@ -79,23 +79,38 @@ export async function syncStore(backend, store) {
   const { writes, kept } = mergeStore(beforeMerge, remote, keyField)
   for (const row of writes) await db.rawPut(store, row)
 
-  const local = await db.rawAll(store)
-  const outgoing = pendingPush(local).map((r) => toPushItem(r, keyField))
-  let pushed = 0
-
-  if (outgoing.length) {
-    const res = await backend.push(store, outgoing)
-    pushed = outgoing.length
-    const byKey = new Map(local.map((r) => [r[keyField], r]))
-    for (const ack of res.acked || []) {
-      const row = byKey.get(ack.key)
-      if (row) await db.rawPut(store, stampSynced(row, ack.serverAt))
-    }
-  }
+  const { pushed } = await pushStore(backend, store)
 
   // Cursor from pull-time only: prevents losing rows committed during our push.
   await writeCursor(store, pullRes.serverNow)
   return { pushed, pulled: writes.length, kept }
+}
+
+export async function pushStore(backend, store) {
+  const keyField = keyFieldOf(store)
+  const local = await db.rawAll(store)
+  const outgoing = pendingPush(local).map((r) => toPushItem(r, keyField))
+  if (!outgoing.length) return { pushed: 0 }
+
+  const res = await backend.push(store, outgoing)
+  const byKey = new Map(local.map((r) => [r[keyField], r]))
+  for (const ack of res.acked || []) {
+    const row = byKey.get(ack.key)
+    if (row) await db.rawAck(store, ack.key, row, ack.serverAt)
+  }
+  return { pushed: (res.acked || []).length }
+}
+
+export async function pushAll(backend, { scopes = [] } = {}) {
+  const stores = storesForScopes(scopes)
+  const identity = await backend.identity()
+  await assertOwnerMatches(identity)
+
+  const report = {}
+  for (const store of stores) report[store] = await pushStore(backend, store)
+
+  await recordOwnerOnce(identity)
+  return report
 }
 
 export async function purgeStore(store, { linked, now = Date.now() } = {}) {

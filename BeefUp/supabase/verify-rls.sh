@@ -322,6 +322,48 @@ psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
 F12_AFTER=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a3','calendar','{}') returning row_key")
 check "after re-running setup.sql, appointments are accepted" "$(echo $F12_AFTER | xargs)" "a3"
 
+# --- F13: the project reports which setup.sql it runs ----------------------
+echo "== F13: schema_version() matches the revision the app expects =="
+EXPECTED_REV=$(grep -m1 '^-- schema-revision: ' "$SQL" | awk '{print $3}')
+F13_STUDENT=$(run_as $RUI "select public.schema_version()")
+check "a signed-in user reads the schema revision" "$(echo $F13_STUDENT | xargs)" "$EXPECTED_REV"
+F13_ANON=$(psql -U postgres -d postgres -Atc "set role anon; select public.schema_version()" 2>&1 || true)
+case "$F13_ANON" in *"permission denied"*) F13_ANON=DENIED;; esac
+check "anon cannot call schema_version()" "$(echo $F13_ANON | xargs)" "DENIED"
+
+# --- F14: invites live 7 days and are then deleted --------------------------
+echo "== F14: invites expire after 7 days and can then be deleted =="
+run_as $TRAINER "insert into public.trainer_invites(code, trainer_id, expires_at) values ('TTLAAAAA','$TRAINER', null), ('TTLBBBBB','$TRAINER', now() + interval '10 years')" >/dev/null
+F14_TTL=$(psql -U postgres -d postgres -Atc "select bool_and(expires_at - created_at = interval '7 days') from public.trainer_invites where code in ('TTLAAAAA','TTLBBBBB')")
+check "the server sets 7 days whatever the client sends" "$F14_TTL" "t"
+
+run_as $TRAINER "update public.trainer_invites set expires_at = now() + interval '1 year', created_at = now() + interval '1 year' where code = 'TTLAAAAA'" >/dev/null
+F14_STRETCH=$(psql -U postgres -d postgres -Atc "select expires_at - created_at = interval '7 days' and created_at <= now() from public.trainer_invites where code = 'TTLAAAAA'")
+check "a trainer cannot stretch an invite's life" "$F14_STRETCH" "t"
+
+F14_REVOKE=$(run_as $TRAINER "update public.trainer_invites set revoked = true where code = 'TTLBBBBB' returning revoked")
+check "revoking still works" "$(echo $F14_REVOKE | xargs)" "t"
+
+F14_LIVE_DELETE=$(run_as $TRAINER "delete from public.trainer_invites where code = 'TTLAAAAA' returning code")
+check "a live invite cannot be deleted" "$(echo $F14_LIVE_DELETE | xargs)" ""
+
+# Age one invite past its 7 days (triggers off, as only a real week could).
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica; update public.trainer_invites set created_at = now() - interval '8 days', expires_at = now() - interval '1 day' where code = 'TTLAAAAA'"
+F14_REDEEM=$(run_as $ANA "select * from public.redeem_invite('TTLAAAAA', '{}')")
+case "$F14_REDEEM" in *"expired"*) F14_REDEEM=EXPIRED;; esac
+check "an expired invite is refused" "$(echo $F14_REDEEM | xargs)" "EXPIRED"
+
+F14_STUDENT_DELETE=$(run_as $ANA "delete from public.trainer_invites where code = 'TTLAAAAA' returning code")
+check "a student cannot delete someone else's invite" "$(echo $F14_STUDENT_DELETE | xargs)" ""
+F14_DELETE=$(run_as $TRAINER "delete from public.trainer_invites where expires_at < now() returning code")
+check "the trainer deletes their expired invite" "$(echo $F14_DELETE | xargs)" "TTLAAAAA"
+
+# Codes from before the 7-day rule had no expiry; re-running setup.sql fixes them.
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica; insert into public.trainer_invites(code, trainer_id, created_at, expires_at) values ('TTLCCCCC','$TRAINER', now() - interval '2 days', null)"
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL" 2>/dev/null
+F14_BACKFILL=$(psql -U postgres -d postgres -Atc "select expires_at - created_at = interval '7 days' from public.trainer_invites where code = 'TTLCCCCC'")
+check "re-running setup.sql gives old invites a 7-day expiry" "$F14_BACKFILL" "t"
+
 echo
 echo "passed: $pass   failed: $fail"
 pg_ctl -D "$PGDATA" -w stop >/dev/null 2>&1 || true

@@ -1,6 +1,6 @@
 import { STORES } from './stores.js'
 import { isSynced, keyFieldOf, cursorKey } from './sync/stores.js'
-import { stampLocal, stampDeleted, stripMeta, isDeleted } from './sync/meta.js'
+import { stampLocal, stampDeleted, stampSynced, stripMeta, isDeleted } from './sync/meta.js'
 
 const DB_NAME = 'beefup'
 const DB_VERSION = 9
@@ -56,15 +56,24 @@ async function tx(storeName, mode, fn) {
 }
 
 // Synced stores stamp writes/deletes, hide metadata from reads.
+export const LOCAL_WRITE_EVENT = 'beefup:local-write'
 
-function writeRow(store, value) {
-  return tx(store, 'readwrite', s => s.put(isSynced(store) ? stampLocal(value) : value))
+function announceLocalWrite(store) {
+  if (isSynced(store) && typeof window !== 'undefined') window.dispatchEvent(new Event(LOCAL_WRITE_EVENT))
+}
+
+async function writeRow(store, value) {
+  const result = await tx(store, 'readwrite', s => s.put(isSynced(store) ? stampLocal(value) : value))
+  announceLocalWrite(store)
+  return result
 }
 
 async function deleteRow(store, key) {
   if (!isSynced(store)) return tx(store, 'readwrite', s => s.delete(key))
   const tombstone = stampDeleted({ [keyFieldOf(store)]: key })
-  return tx(store, 'readwrite', s => s.put(tombstone))
+  const result = await tx(store, 'readwrite', s => s.put(tombstone))
+  announceLocalWrite(store)
+  return result
 }
 
 async function readAll(store) {
@@ -163,4 +172,21 @@ export const db = {
   rawAll: (store) => tx(store, 'readonly', s => s.getAll()),
   rawPut: (store, value) => tx(store, 'readwrite', s => s.put(value)),
   rawDelete: (store, key) => tx(store, 'readwrite', s => s.delete(key)),
+
+  rawAck: async (store, key, pushed, serverAt) => {
+    const database = await openDB()
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(store, 'readwrite')
+      const objectStore = transaction.objectStore(store)
+      const get = objectStore.get(key)
+      get.onsuccess = () => {
+        const current = get.result
+        if (current && JSON.stringify(current) === JSON.stringify(pushed)) {
+          objectStore.put(stampSynced(current, serverAt))
+        }
+      }
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = e => reject(e.target.error)
+    })
+  },
 }

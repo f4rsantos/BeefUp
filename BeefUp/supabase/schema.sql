@@ -67,7 +67,12 @@ create table if not exists public.trainer_invites (
 );
 
 comment on table public.trainer_invites is
-  'Reusable invite codes. Live = not revoked and (no expiry or not yet expired).';
+  'Invite codes, valid for 7 days. Live = not revoked and not yet expired; expired rows are deleted.';
+
+-- Invites last 7 days (policies.sql's trainer_invites_guard enforces it on
+-- every write). Codes created before that rule had no expiry: give them one.
+alter table public.trainer_invites alter column expires_at set default now() + interval '7 days';
+update public.trainer_invites set expires_at = created_at + interval '7 days' where expires_at is null;
 
 -- "list my invites" (trainer dashboard).
 create index if not exists trainer_invites_trainer_idx
