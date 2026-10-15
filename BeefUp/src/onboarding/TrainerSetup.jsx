@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { validateConfig, testConnection, fetchAuthSettings, setSupabaseConfig, sanitizeUrlInput, sanitizeKeyInput } from "../lib/supabaseConfig";
 import { resetSupabase } from "../lib/supabaseClient";
+import { loadSetupSql } from "../lib/setupSql";
 
 const STEPS = ["intro", "project", "sql", "auth", "credentials"];
 
@@ -28,7 +29,6 @@ export default function TrainerSetup({ onDone, onCancel }) {
   const [errorReason, setErrorReason] = useState("");
   const [copied, setCopied] = useState(false);
   const [confirmEmailOn, setConfirmEmailOn] = useState(false);
-  const sqlRef = useRef(null);
 
   const stepIndex = STEPS.indexOf(step);
   const canBack = stepIndex > 0 || !!onCancel;
@@ -43,17 +43,9 @@ export default function TrainerSetup({ onDone, onCancel }) {
     setStep(STEPS[stepIndex + 1]);
   }
 
-  async function loadSql() {
-    if (!sqlRef.current) {
-      const mod = await import("../../supabase/setup.sql?raw");
-      sqlRef.current = mod.default;
-    }
-    return sqlRef.current;
-  }
-
   async function copySql() {
     try {
-      const text = await loadSql();
+      const text = await loadSetupSql();
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);

@@ -51,6 +51,26 @@
   outline-offset: 2px;
 }
 
+/* ── setup.sql out of date ─────────────────────────────────────────── */
+.dash-schema-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--d-3) var(--d-4);
+  padding: var(--d-3) var(--d-6);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.dash-schema-banner-icon { color: var(--warn); flex-shrink: 0; }
+.dash-schema-banner-text { flex: 1 1 260px; min-width: 0; }
+.dash-schema-banner-title { font-weight: var(--d-w-em); color: var(--text); }
+.dash-schema-banner-body { font-size: var(--d-sm); color: var(--muted); margin-top: 2px; }
+.dash-schema-banner-error { font-size: var(--d-meta); color: var(--danger); margin-top: 4px; }
+.dash-schema-banner-actions { display: flex; flex-wrap: wrap; gap: var(--d-2); }
+@media (max-width: 719px) {
+  .dash-schema-banner { padding: var(--d-3) var(--d-4); }
+}
+
 /* ── header ─────────────────────────────────────────────────────────── */
 .dash-header {
   display: flex;

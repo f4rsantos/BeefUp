@@ -322,6 +322,15 @@ psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL"
 F12_AFTER=$(run_as $TRAINER "insert into public.sync_rows(user_id,store,row_key,scope,data) values('$RUI','appointments','a3','calendar','{}') returning row_key")
 check "after re-running setup.sql, appointments are accepted" "$(echo $F12_AFTER | xargs)" "a3"
 
+# --- F13: the project reports which setup.sql it runs ----------------------
+echo "== F13: schema_version() matches the revision the app expects =="
+EXPECTED_REV=$(grep -m1 '^-- schema-revision: ' "$SQL" | awk '{print $3}')
+F13_STUDENT=$(run_as $RUI "select public.schema_version()")
+check "a signed-in user reads the schema revision" "$(echo $F13_STUDENT | xargs)" "$EXPECTED_REV"
+F13_ANON=$(psql -U postgres -d postgres -Atc "set role anon; select public.schema_version()" 2>&1 || true)
+case "$F13_ANON" in *"permission denied"*) F13_ANON=DENIED;; esac
+check "anon cannot call schema_version()" "$(echo $F13_ANON | xargs)" "DENIED"
+
 echo
 echo "passed: $pass   failed: $fail"
 pg_ctl -D "$PGDATA" -w stop >/dev/null 2>&1 || true

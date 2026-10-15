@@ -40,6 +40,16 @@ async function trainerClient() {
   return trainerId ? { supabase, trainerId } : null
 }
 
+// Which setup.sql revision the project runs: 0 if it predates schema_version(), null if it can't be told.
+export async function fetchSchemaRevision() {
+  const ctx = await trainerClient()
+  if (!ctx) return null
+  const { data, error } = await ctx.supabase.rpc('schema_version')
+  if (!error) return typeof data === 'number' ? data : null
+  if (error.code === 'PGRST202' || /could not find the function/i.test(error.message || '')) return 0
+  return null
+}
+
 // Accepted links for the signed-in trainer, with each client's shared scopes.
 export async function listTrainerLinks() {
   const ctx = await trainerClient()
