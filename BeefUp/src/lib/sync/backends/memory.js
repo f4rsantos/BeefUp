@@ -25,6 +25,7 @@ export function createMemoryBackend({ startAt = 1000, identity = { projectRef: '
       const table = tableFor(store)
       const acked = []
       for (const item of items) {
+        if (!item.deleted && table.get(item.key)?.deleted) continue
         const serverAt = tick()
         table.set(item.key, { key: item.key, row: item.row, serverAt, deleted: !!item.deleted })
         acked.push({ key: item.key, serverAt })

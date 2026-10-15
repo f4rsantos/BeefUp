@@ -14,6 +14,8 @@ async function readCache() {
   return { ...link, scopes }
 }
 
+export const getCachedLink = readCache
+
 async function writeCache(link, scopes) {
   await setPref('syncLink', link ? { trainerId: link.trainerId, trainerName: link.trainerName, status: link.status } : null)
   await setPref('syncScopes', scopes)
