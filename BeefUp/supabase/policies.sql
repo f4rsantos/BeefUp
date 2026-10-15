@@ -25,7 +25,7 @@
 -- redeem_invite()), which run as the table owner and need no grant.
 grant select, update on public.profiles to authenticated;
 grant select, update on public.trainer_links to authenticated;
-grant select, insert, update on public.trainer_invites to authenticated;
+grant select, insert, update, delete on public.trainer_invites to authenticated;
 grant select, insert, update, delete on public.sync_rows to authenticated;
 
 -- ---------------------------------------------------------------------------
@@ -226,7 +226,42 @@ create policy trainer_invites_update on public.trainer_invites
   using (trainer_id = auth.uid())
   with check (trainer_id = auth.uid());
 
--- No DELETE policy: revoke via the `revoked` flag, keep the record.
+-- Expired invites are deleted, not kept. The trainer's app clears its own
+-- every time the invites list loads (listInvites in trainerData.js); a live
+-- invite can only be revoked, never deleted, so the revoke stays on record
+-- until the 7 days are up.
+drop policy if exists trainer_invites_delete_expired on public.trainer_invites;
+create policy trainer_invites_delete_expired on public.trainer_invites
+  for delete
+  using (trainer_id = auth.uid() and expires_at < now());
+
+-- An invite lives exactly 7 days and nobody can stretch that, whatever the
+-- client sends: on insert the server sets created_at and expires_at itself,
+-- and on update only `revoked` may change (code, owner, creation time and
+-- expiry are put back). SECURITY INVOKER (default): it only touches NEW/OLD.
+create or replace function public.trainer_invites_guard()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.created_at := now();
+    new.expires_at := now() + interval '7 days';
+  else
+    new.code := old.code;
+    new.trainer_id := old.trainer_id;
+    new.created_at := old.created_at;
+    new.expires_at := coalesce(old.expires_at, old.created_at + interval '7 days');
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trainer_invites_before_write on public.trainer_invites;
+create trigger trainer_invites_before_write
+  before insert or update on public.trainer_invites
+  for each row execute function public.trainer_invites_guard();
 
 -- ---------------------------------------------------------------------------
 -- sync_rows
