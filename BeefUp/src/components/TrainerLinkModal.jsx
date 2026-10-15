@@ -85,8 +85,14 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
     setSubmitting(true);
     setError("");
     try {
-      if (mode === "signup") await signUp(email, password, email.split("@")[0]);
-      else await signIn(email, password);
+      const session = mode === "signup"
+        ? await signUp(email, password, email.split("@")[0])
+        : await signIn(email, password);
+      if (!session) {
+        setMode("signin");
+        setError(t.errEmailNotConfirmed);
+        return;
+      }
       setStep("confirm");
     } catch (e) {
       setError(friendlyError(e, t));

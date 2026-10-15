@@ -36,6 +36,28 @@ function projectRefOf(url) {
   return new URL(url).hostname.split('.')[0]
 }
 
+export function sanitizeUrlInput(raw) {
+  const stripped = (raw || '').trim().replace(/^['"]|['"]$/g, '')
+  const host = stripped.match(/([a-z0-9-]+)\.supabase\.co/i)
+  return host ? `https://${host[1].toLowerCase()}.supabase.co` : stripped.replace(/\/+$/, '')
+}
+
+export function sanitizeKeyInput(raw) {
+  const stripped = (raw || '').trim().replace(/^['"]|['"]$/g, '')
+  const jwt = stripped.match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/)
+  if (jwt) return jwt[0]
+  const key = stripped.match(/sb_(?:publishable|secret)_[A-Za-z0-9_-]+/)
+  return key ? key[0] : stripped
+}
+
+function jwtRole(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).role
+  } catch {
+    return null
+  }
+}
+
 // Reason codes only, never sentences — the wizard maps these through
 // src/strings.js so pt/en stay in sync. Never surface these to a human directly.
 export function validateConfig({ url, anonKey }) {
@@ -48,11 +70,15 @@ export function validateConfig({ url, anonKey }) {
   if (parsed.protocol !== 'https:') throw new Error('not-https')
   if (!parsed.hostname.endsWith('.supabase.co')) throw new Error('bad-host')
 
+  // The service key bypasses every policy: it must never end up in a phone.
+  if ((anonKey || '').startsWith('sb_secret_') || jwtRole(anonKey || '') === 'service_role') {
+    throw new Error('secret-key')
+  }
   const isJwt = /^[\w-]+\.[\w-]+\.[\w-]+$/.test(anonKey || '')
   const isPublishable = (anonKey || '').startsWith('sb_publishable_')
   if (!anonKey || !(isJwt || isPublishable)) throw new Error('bad-key')
 
-  return { url: url.replace(/\/+$/, ''), anonKey, projectRef: projectRefOf(url) }
+  return { url: parsed.origin, anonKey, projectRef: projectRefOf(parsed.origin) }
 }
 
 // Only kicks in when nothing was ever saved — a real config always wins.
@@ -105,6 +131,18 @@ export async function clearSupabaseConfig() {
 export function __setConfigForTests(cfg) {
   snapshot = cfg
   loadPromise = Promise.resolve(cfg)
+}
+
+export async function fetchAuthSettings(cfg) {
+  try {
+    const res = await fetch(`${cfg.url}/auth/v1/settings`, { headers: { apikey: cfg.anonKey } })
+    if (!res.ok) return { confirmEmail: null }
+    const settings = await res.json()
+    if (typeof settings.mailer_autoconfirm !== 'boolean') return { confirmEmail: null }
+    return { confirmEmail: !settings.mailer_autoconfirm }
+  } catch {
+    return { confirmEmail: null }
+  }
 }
 
 // has_scope is the only function granted to anon, so it's the only probe

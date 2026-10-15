@@ -1,29 +1,15 @@
 import { useRef, useState } from "react";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { useApp } from "../context/useApp";
-import { validateConfig, testConnection, setSupabaseConfig } from "../lib/supabaseConfig";
+import { validateConfig, testConnection, fetchAuthSettings, setSupabaseConfig, sanitizeUrlInput, sanitizeKeyInput } from "../lib/supabaseConfig";
 import { resetSupabase } from "../lib/supabaseClient";
 
-const STEPS = ["intro", "project", "sql", "credentials"];
+const STEPS = ["intro", "project", "sql", "auth", "credentials"];
 
 // testConnection()'s two distinguishable reasons; validateConfig's four
 // format codes fold into one generic message, same pattern as
 // TrainerLinkModal.jsx's CONNECT_REASON_KEYS/INVALID_LINK_CODES.
 const KNOWN_TEST_REASONS = new Set(["schema-missing", "unreachable"]);
-
-function sanitizeUrlInput(raw) {
-  const stripped = (raw || "").trim().replace(/^['"]|['"]$/g, "");
-  const match = stripped.match(/https:\/\/[a-z0-9-]+\.supabase\.co\S*/i);
-  return (match ? match[0] : stripped).replace(/\/+$/, "");
-}
-
-function sanitizeKeyInput(raw) {
-  const stripped = (raw || "").trim().replace(/^['"]|['"]$/g, "");
-  const jwt = stripped.match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/);
-  if (jwt) return jwt[0];
-  const publishable = stripped.match(/sb_publishable_[A-Za-z0-9_-]+/);
-  return publishable ? publishable[0] : stripped;
-}
 
 function hostOf(url) {
   try {
@@ -41,6 +27,7 @@ export default function TrainerSetup({ onDone, onCancel }) {
   const [testing, setTesting] = useState(false);
   const [errorReason, setErrorReason] = useState("");
   const [copied, setCopied] = useState(false);
+  const [confirmEmailOn, setConfirmEmailOn] = useState(false);
   const sqlRef = useRef(null);
 
   const stepIndex = STEPS.indexOf(step);
@@ -75,13 +62,14 @@ export default function TrainerSetup({ onDone, onCancel }) {
     }
   }
 
-  async function handleConnect() {
+  async function handleConnect(force = false) {
     setErrorReason("");
+    setConfirmEmailOn(false);
     let validated;
     try {
-      validated = validateConfig({ url, anonKey });
-    } catch {
-      setErrorReason("invalid");
+      validated = validateConfig({ url: sanitizeUrlInput(url), anonKey: sanitizeKeyInput(anonKey) });
+    } catch (e) {
+      setErrorReason(e?.message === "secret-key" ? "secret-key" : "invalid");
       return;
     }
     setTesting(true);
@@ -89,6 +77,10 @@ export default function TrainerSetup({ onDone, onCancel }) {
       const probe = await testConnection(validated);
       if (!probe.ok) {
         setErrorReason(KNOWN_TEST_REASONS.has(probe.reason) ? probe.reason : "unknown");
+        return;
+      }
+      if (!force && (await fetchAuthSettings(validated)).confirmEmail === true) {
+        setConfirmEmailOn(true);
         return;
       }
       // Purges any session tied to a previously configured project first.
@@ -106,6 +98,7 @@ export default function TrainerSetup({ onDone, onCancel }) {
   const canTest = url.trim().length > 0 && anonKey.trim().length > 0;
   const errorKey = {
     invalid: "trainerSetupInvalidConfig",
+    "secret-key": "trainerSetupSecretKey",
     "schema-missing": "trainerSetupSchemaMissing",
     unreachable: "trainerSetupUnreachable",
     unknown: "trainerSetupTestUnknown",
@@ -158,6 +151,27 @@ export default function TrainerSetup({ onDone, onCancel }) {
         </>
       )}
 
+      {step === "auth" && (
+        <>
+          <h2 style={{ color: "var(--text)", fontSize: 20, fontWeight: 800 }}>{t.trainerSetupAuthTitle}</h2>
+          <p className="text-sm" style={{ color: "var(--muted)", lineHeight: 1.6 }}>{t.trainerSetupAuthBody}</p>
+          <ol className="text-sm" style={{ color: "var(--text)", lineHeight: 1.7, paddingLeft: 20, listStyle: "decimal" }}>
+            <li>{t.trainerSetupAuthStep1}</li>
+            <li>{t.trainerSetupAuthStep2}</li>
+            <li>{t.trainerSetupAuthStep3}</li>
+          </ol>
+          <a
+            className="btn btn-ghost flex items-center gap-2"
+            style={{ alignSelf: "flex-start" }}
+            href="https://supabase.com/dashboard/project/_/auth/providers"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink size={15} /> {t.trainerSetupAuthLink}
+          </a>
+        </>
+      )}
+
       {step === "credentials" && (
         <>
           <h2 style={{ color: "var(--text)", fontSize: 20, fontWeight: 800 }}>{t.trainerSetupCredentialsTitle}</h2>
@@ -171,8 +185,10 @@ export default function TrainerSetup({ onDone, onCancel }) {
               autoComplete="off"
               spellCheck={false}
               onChange={(e) => setUrl(e.target.value)}
+              onBlur={() => setUrl(sanitizeUrlInput(url))}
               onPaste={(e) => { e.preventDefault(); setUrl(sanitizeUrlInput(e.clipboardData.getData("text"))); }}
             />
+            <p className="text-xs mt-1" style={{ color: "var(--muted)", lineHeight: 1.5 }}>{t.trainerSetupUrlHelp}</p>
           </div>
           <div>
             <label className="section-title">{t.trainerSetupKeyLabel}</label>
@@ -182,8 +198,10 @@ export default function TrainerSetup({ onDone, onCancel }) {
               autoComplete="off"
               spellCheck={false}
               onChange={(e) => setAnonKey(e.target.value)}
+              onBlur={() => setAnonKey(sanitizeKeyInput(anonKey))}
               onPaste={(e) => { e.preventDefault(); setAnonKey(sanitizeKeyInput(e.clipboardData.getData("text"))); }}
             />
+            <p className="text-xs mt-1" style={{ color: "var(--muted)", lineHeight: 1.5 }}>{t.trainerSetupKeyHelp}</p>
           </div>
           {host && (
             <div className="card card-flat" style={{ padding: 12, background: "var(--surface2)" }}>
@@ -191,6 +209,14 @@ export default function TrainerSetup({ onDone, onCancel }) {
                 <span className="text-xs" style={{ color: "var(--muted)" }}>{t.trainerLinkConnectHostLabel}</span>
                 <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{host}</span>
               </div>
+            </div>
+          )}
+          {confirmEmailOn && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs" style={{ color: "var(--danger)" }}>{t.trainerSetupConfirmEmailOn}</p>
+              <button className="btn btn-ghost text-xs" style={{ alignSelf: "flex-start" }} disabled={testing} onClick={() => handleConnect(true)}>
+                {t.trainerSetupConnectAnyway}
+              </button>
             </div>
           )}
           {error && (
@@ -213,7 +239,7 @@ export default function TrainerSetup({ onDone, onCancel }) {
         {step !== "credentials" ? (
           <button className="btn btn-primary flex-1" onClick={next}>{t.obNext}</button>
         ) : (
-          <button className="btn btn-primary flex-1" disabled={!canTest || testing} onClick={handleConnect}>
+          <button className="btn btn-primary flex-1" disabled={!canTest || testing} onClick={() => handleConnect()}>
             {testing ? "…" : t.trainerSetupConnectButton}
           </button>
         )}
