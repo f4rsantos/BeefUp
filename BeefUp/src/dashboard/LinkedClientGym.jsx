@@ -1,16 +1,47 @@
-import { useEffect, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Dumbbell, Moon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Pencil, Trash2, Dumbbell, Moon, Lock } from "lucide-react";
+import { normalizeWorkoutExercises, resolvedExerciseName } from "../lib/exerciseTree";
 import ConfirmModal from "../components/ConfirmModal";
 import WorkoutEditor from "../components/WorkoutEditor";
-import { Empty, AuthorBadge } from "./parts";
+import { Empty, PanelHead } from "./parts";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { friendlyError } from "../lib/friendlyError";
 import { isPrescribed, uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import { STORES } from "../lib/stores";
 
-// Own card for the workouts library a trainer prescribes to a linked
-// client. Split out from the plan editor so each can live on its own
-// sub-nav entry (Plano / Treinos / Sessões) instead of side by side.
+// Prescribed workouts as cards, the student's own below.
+function WorkoutCard({ workout, mine, lang, t, busy, onEdit, onDelete }) {
+  const items = normalizeWorkoutExercises(workout.exercises);
+  return (
+    <div className={`dash-workcard ${mine ? "is-mine" : ""}`}>
+      <div className="dash-workcard-top">
+        <div style={{ minWidth: 0 }}>
+          <div className="dash-workcard-name truncate">{workout.name}</div>
+          <div className="dash-workcard-count">{items.length} {t.exercises}</div>
+        </div>
+        {mine ? (
+          <div className="dash-panel-actions">
+            <button className="btn-icon" onClick={onEdit} aria-label={t.edit} title={t.edit} disabled={busy}>
+              <Pencil size={15} style={{ color: "var(--muted)" }} />
+            </button>
+            <button className="btn-icon" onClick={onDelete} aria-label={t.delete} title={t.delete} disabled={busy}>
+              <Trash2 size={15} style={{ color: "var(--muted)" }} />
+            </button>
+          </div>
+        ) : (
+          <Lock size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={t.dashClientOwn} />
+        )}
+      </div>
+      <ul className="dash-workcard-list">
+        {items.slice(0, 3).map((it, i) => (
+          <li key={i} className="truncate">{resolvedExerciseName(it.ref, lang)}</li>
+        ))}
+        {items.length > 3 && <li className="more tabular">+{items.length - 3}</li>}
+      </ul>
+    </div>
+  );
+}
+
 export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t, onChanged }) {
   const [workouts, setWorkouts] = useState(initialWorkouts);
   const [editing, setEditing] = useState(null);
@@ -54,51 +85,32 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
     }
   }
 
+  const mine = workouts.filter((w) => isPrescribed(w));
+  const theirs = workouts.filter((w) => !isPrescribed(w));
+
   return (
-    <section className="dash-panel">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="dash-card-title">{t.workouts}</h3>
-      </div>
-      <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribeDesc}</p>
+    <section>
+      <PanelHead title={t.workouts} desc={t.dashPrescribeDesc} />
       {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
-      {workouts.length === 0 && <Empty>{t.dashNoWorkouts}</Empty>}
-
-      <div className="flex flex-col gap-2">
-        {workouts.map((w) => {
-          const mine = isPrescribed(w);
-          return (
-            <div key={w.id} className={`dash-day ${mine ? "is-mine" : ""}`}>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm truncate" style={{ color: "var(--text)", fontWeight: 700 }}>{w.name}</div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs" style={{ color: "var(--muted)" }}>{w.exercises?.length ?? 0} {t.exercises}</span>
-                  <AuthorBadge mine={mine} t={t} />
-                </div>
-              </div>
-              {mine && (
-                <>
-                  <button className="btn-icon" onClick={() => setEditing(w)} aria-label={t.edit} disabled={busy}>
-                    <Pencil size={15} style={{ color: "var(--muted)" }} />
-                  </button>
-                  <button className="btn-icon" onClick={() => setPendingDelete(w)} aria-label={t.delete} disabled={busy}>
-                    <Trash2 size={15} style={{ color: "var(--muted)" }} />
-                  </button>
-                </>
-              )}
-            </div>
-          );
-        })}
+      <h4 className="dash-subhead"><span className="dash-subhead-label">{t.dashPrescribedByYou}</span> <span className="tabular">{mine.length}</span></h4>
+      <div className="dash-cards">
+        {mine.map((w) => (
+          <WorkoutCard key={w.id} workout={w} mine lang={lang} t={t} busy={busy} onEdit={() => setEditing(w)} onDelete={() => setPendingDelete(w)} />
+        ))}
+        <button className="dash-workcard add" onClick={() => setEditing("new")} disabled={busy}>
+          <Plus size={15} /> {t.dashPrescribeWorkout}
+        </button>
       </div>
 
-      <button
-        className="btn btn-ghost w-full py-3 mt-4"
-        style={{ borderStyle: "dashed" }}
-        onClick={() => setEditing("new")}
-        disabled={busy}
-      >
-        <Plus size={15} /> {t.dashPrescribeWorkout}
-      </button>
+      {theirs.length > 0 && (
+        <>
+          <h4 className="dash-subhead"><span className="dash-subhead-label">{t.dashClientOwn}</span> <span className="tabular">{theirs.length}</span></h4>
+          <div className="dash-cards">
+            {theirs.map((w) => <WorkoutCard key={w.id} workout={w} lang={lang} t={t} />)}
+          </div>
+        </>
+      )}
 
       {editing && (
         <div style={{ position: "absolute", inset: 0, zIndex: 200, background: "var(--bg)" }}>
@@ -126,25 +138,42 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
   );
 }
 
-// The one plan this trainer prescribes for a linked client, mirroring
-// ClientGym.jsx's own plan editor but synced via prescribeRow/unprescribeRow
-// instead of saveClient. A client-authored plan (no prescribedBy) is theirs
-// alone and never shown or touched here.
-export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
+// Edits stay in a draft until "Guardar plano".
+export function LinkedPlan({ client, plans: initialPlans, workouts, t, onDirtyChange }) {
   const [plans, setPlans] = useState(initialPlans);
+  const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
-  const [pendingRemoveDay, setPendingRemoveDay] = useState(null);
   const [pendingUnprescribe, setPendingUnprescribe] = useState(false);
 
-  const plan = plans.find((p) => isPrescribed(p)) || null;
+  const saved = plans.find((p) => isPrescribed(p)) || null;
+  const plan = draft ?? saved;
+  const dirty = draft !== null && (!saved || JSON.stringify(draft) !== JSON.stringify(saved));
+  const canSave = dirty && draft.name.trim() !== "" && !busy;
 
-  async function persist(next) {
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
+
+  function edit(next) {
+    setDraft(next);
+    setJustSaved(false);
+  }
+
+  function createPlan() {
+    edit({ id: uid(), name: "", startDate: todayISO(), days: [] });
+  }
+
+  async function save() {
     setBusy(true);
     setError("");
     try {
-      const saved = await prescribeRow(client.linkedUserId, STORES.plans, next);
-      setPlans((prev) => [...prev.filter((p) => p.id !== saved.id), saved]);
+      const row = await prescribeRow(client.linkedUserId, STORES.plans, { ...draft, name: draft.name.trim() });
+      setPlans((prev) => [...prev.filter((p) => p.id !== row.id), row]);
+      setDraft(null);
+      setJustSaved(true);
     } catch (e) {
       setError(friendlyError(e, t));
     } finally {
@@ -152,45 +181,13 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
     }
   }
 
-  // The name field used to upsert on every keystroke, and each round trip
-  // flipped `busy`, disabling the controls around it mid-typing. Keep the
-  // typed value local and write once the trainer pauses.
-  const [nameDraft, setNameDraft] = useState(null);
-  const nameTimer = useRef(null);
-
-  function editName(value) {
-    setNameDraft(value);
-    clearTimeout(nameTimer.current);
-    nameTimer.current = setTimeout(() => {
-      persist({ ...plan, name: value });
-      setNameDraft(null);
-    }, 600);
-  }
-
-  useEffect(() => () => clearTimeout(nameTimer.current), []);
-
-  function createPlan() {
-    persist({ id: uid(), name: "", startDate: todayISO(), days: [] });
-  }
-
-  function addDay(type) {
-    persist({ ...plan, days: addPlanDay(plan.days, type, workouts) });
-  }
-
-  function updateDay(i, dpatch) {
-    persist({ ...plan, days: updatePlanDay(plan.days, i, dpatch) });
-  }
-
-  function removeDay(i) {
-    persist({ ...plan, days: removePlanDay(plan.days, i) });
-  }
-
   async function removePlan() {
     setBusy(true);
     setError("");
     try {
-      await unprescribeRow(client.linkedUserId, STORES.plans, plan.id);
-      setPlans((prev) => prev.filter((p) => p.id !== plan.id));
+      await unprescribeRow(client.linkedUserId, STORES.plans, saved.id);
+      setPlans((prev) => prev.filter((p) => p.id !== saved.id));
+      setDraft(null);
       setPendingUnprescribe(false);
     } catch (e) {
       setError(friendlyError(e, t));
@@ -199,89 +196,115 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t }) {
     }
   }
 
+  const status = dirty ? t.dashPlanUnsaved : justSaved ? t.dashPlanSaved : "";
+
+  function setType(i, type) {
+    edit({ ...plan, days: updatePlanDay(plan.days, i, type === "workout" ? { type, workoutId: workouts[0]?.id ?? null } : { type, workoutId: null }) });
+  }
+
   return (
-    <section className="dash-panel">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="dash-card-title">{t.editPlan}</h3>
-        {plan && (
-          <button className="btn-icon" onClick={() => setPendingUnprescribe(true)} aria-label={t.delete} disabled={busy}>
-            <Trash2 size={15} style={{ color: "var(--muted)" }} />
-          </button>
+    <section className="dash-plan">
+      <header className="dash-plan-head">
+        {plan ? (
+          <input
+            className="dash-plan-title"
+            value={plan.name}
+            onChange={(e) => edit({ ...plan, name: e.target.value })}
+            placeholder={t.planName}
+            aria-label={t.planName}
+            maxLength={60}
+          />
+        ) : (
+          <h3 className="dash-card-title">{t.editPlan}</h3>
         )}
-      </div>
-      <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribePlanDesc}</p>
+        {plan && (
+          <div className="dash-plan-actions">
+            <span className={`dash-savebar-status ${dirty ? "unsaved" : ""}`} role="status">
+              {dirty && <span className="dash-dot warn" />}
+              {status}
+            </span>
+            {dirty && (
+              <button className="btn btn-ghost" onClick={() => { setDraft(null); setJustSaved(false); }} disabled={busy}>
+                {t.dashPlanDiscard}
+              </button>
+            )}
+            <button className="btn btn-primary" onClick={save} disabled={!canSave}>
+              {t.dashPlanSave}
+            </button>
+            {saved && (
+              <button className="btn-icon" onClick={() => setPendingUnprescribe(true)} aria-label={t.delete} title={t.delete} disabled={busy}>
+                <Trash2 size={15} style={{ color: "var(--muted)" }} />
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+      <p className="dash-panel-desc dash-plan-desc">{t.dashPrescribePlanDesc}</p>
       {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
+      {plan && dirty && plan.name.trim() === "" && <p className="dash-empty mb-3">{t.dashPlanNameRequired}</p>}
 
       {!plan ? (
         <>
-          <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashNoPlan}</p>
-          <button className="btn btn-ghost w-full py-3" style={{ borderStyle: "dashed" }} onClick={createPlan} disabled={busy}>
+          <Empty>{t.dashNoPlan}</Empty>
+          <button className="btn btn-ghost py-3 mt-3" style={{ borderStyle: "dashed" }} onClick={createPlan}>
             <Plus size={15} /> {t.dashPrescribePlan}
           </button>
         </>
       ) : (
-        <>
-          <label className="section-title">{t.planName}</label>
-          <input
-            className="field mt-2 mb-5"
-            value={nameDraft ?? plan.name}
-            onChange={(e) => editName(e.target.value)}
-            placeholder="PPL"
-          />
-
-          <div className="flex flex-col gap-3">
-            {plan.days.map((day, i) => {
-              const isWorkout = day.type === "workout";
-              return (
-                <div key={day.id} className="dash-day">
-                  <span className="dash-day-num">{i + 1}</span>
-                  <button
-                    className="btn-icon"
-                    onClick={() => updateDay(i, { type: isWorkout ? "rest" : "workout", workoutId: !isWorkout ? (workouts[0]?.id ?? null) : null })}
-                    aria-label={t.toggleDayType}
-                    disabled={busy}
-                  >
-                    {isWorkout ? <Dumbbell size={16} style={{ color: "var(--accent)" }} /> : <Moon size={16} style={{ color: "var(--accent-2)" }} />}
-                  </button>
+        <div className="dash-days" role="list">
+          {plan.days.map((day, i) => {
+            const isWorkout = day.type === "workout";
+            const Icon = isWorkout ? Dumbbell : Moon;
+            return (
+              <div key={day.id} className="dash-dayslot" role="listitem">
+                <div className={`dash-daycard ${isWorkout ? "workout" : "rest"}`}>
+                  <Icon className="dash-daycard-icon" size={72} strokeWidth={1.5} aria-hidden="true" />
+                  <div className="dash-daycard-top">
+                    <span className="dash-daycard-num tabular">{t.dashDayN.replace("{n}", i + 1)}</span>
+                    <button
+                      className="btn-icon"
+                      onClick={() => edit({ ...plan, days: removePlanDay(plan.days, i) })}
+                      aria-label={t.delete}
+                      title={t.delete}
+                    >
+                      <Trash2 size={15} style={{ color: "var(--muted)" }} />
+                    </button>
+                  </div>
                   {isWorkout ? (
                     workouts.length > 0 ? (
-                      <select className="field flex-1" value={day.workoutId ?? ""} onChange={(e) => updateDay(i, { workoutId: e.target.value })} disabled={busy}>
+                      <select
+                        className="field"
+                        aria-label={t.workouts}
+                        value={day.workoutId ?? ""}
+                        onChange={(e) => edit({ ...plan, days: updatePlanDay(plan.days, i, { workoutId: e.target.value }) })}
+                      >
                         {workouts.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                       </select>
                     ) : (
-                      <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>{t.newWorkout} →</span>
+                      <span className="dash-daycard-rest">{t.newWorkout}</span>
                     )
                   ) : (
-                    <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>{t.dayRest}</span>
+                    <span className="dash-daycard-rest">{t.dayRest}</span>
                   )}
-                  <button className="btn-icon" onClick={() => setPendingRemoveDay(i)} aria-label={t.delete} disabled={busy}>
-                    <Trash2 size={15} style={{ color: "var(--muted)" }} />
-                  </button>
+                  <div className="dash-seg" role="group" aria-label={t.toggleDayType}>
+                    <button type="button" className={isWorkout ? "on" : ""} aria-pressed={isWorkout} onClick={() => !isWorkout && setType(i, "workout")}>{t.workoutDay}</button>
+                    <button type="button" className={isWorkout ? "" : "on"} aria-pressed={!isWorkout} onClick={() => isWorkout && setType(i, "rest")}>{t.dayRest}</button>
+                  </div>
                 </div>
-              );
-            })}
-            {plan.days.length === 0 && <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashUnassigned}</p>}
+              </div>
+            );
+          })}
+          <div className="dash-dayslot add">
+            <div className="dash-daycard add">
+              <button className="btn btn-ghost" onClick={() => edit({ ...plan, days: addPlanDay(plan.days, "workout", workouts) })}>
+                <Plus size={15} /> {t.workoutDay}
+              </button>
+              <button className="btn btn-ghost" onClick={() => edit({ ...plan, days: addPlanDay(plan.days, "rest", workouts) })}>
+                <Plus size={15} /> {t.dayRest}
+              </button>
+            </div>
           </div>
-
-          <div className="flex gap-3 mt-4">
-            <button className="btn btn-ghost flex-1 py-3" style={{ borderStyle: "dashed" }} onClick={() => addDay("workout")} disabled={busy}><Plus size={15} /> {t.workoutDay}</button>
-            <button className="btn btn-ghost flex-1 py-3" style={{ borderStyle: "dashed" }} onClick={() => addDay("rest")} disabled={busy}><Plus size={15} /> {t.dayRest}</button>
-          </div>
-        </>
-      )}
-
-      {pendingRemoveDay !== null && (
-        <ConfirmModal
-          title={t.deletePlanDayTitle}
-          message={t.cannotUndo}
-          cancelLabel={t.cancel}
-          confirmLabel={t.delete}
-          onCancel={() => setPendingRemoveDay(null)}
-          onConfirm={() => {
-            removeDay(pendingRemoveDay);
-            setPendingRemoveDay(null);
-          }}
-        />
+        </div>
       )}
 
       {pendingUnprescribe && (

@@ -1,12 +1,14 @@
 import { useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X, Clock, Keyboard, Stethoscope, Dumbbell, Ruler, Utensils, Repeat, RotateCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, Clock, Keyboard, Stethoscope, Dumbbell, Ruler, Utensils, Repeat, RotateCw, Check } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { formatDateShort, todayISO, isFutureAppt } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
+import { PanelHead } from "./parts";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { STORES } from "../lib/stores";
+import { weekdayOf, needsConfirmation } from "./appointments";
 
 function localizedDow(lang) {
   const locale = lang === "pt" ? "pt-PT" : undefined;
@@ -20,11 +22,6 @@ function localizedDow(lang) {
 
 function isoOf(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-}
-
-function weekdayOf(iso, lang) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(lang === "pt" ? "pt-PT" : undefined, { weekday: "short" });
 }
 
 const APPT_TYPES = [
@@ -43,12 +40,13 @@ function sharesCalendar(client) {
   return (client.scopes || []).includes("calendar");
 }
 
-function ApptRow({ client, entry, onRemove, onResend }) {
+function ApptRow({ client, entry, onRemove, onResend, onOutcome }) {
   const { t } = useApp();
   const { Icon, label } = apptTypeMeta(entry.type);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(false);
-  const canResend = entry.unsynced && sharesCalendar(client);
+  const past = !isFutureAppt(entry.date, entry.time);
+  const canResend = !past && entry.unsynced && sharesCalendar(client);
 
   async function resend() {
     setSending(true);
@@ -64,11 +62,35 @@ function ApptRow({ client, entry, onRemove, onResend }) {
 
   const status = !sharesCalendar(client) ? t.dashApptCalendarNotShared : failed ? t.dashApptSendFailed : t.dashApptNotSent;
   return (
-    <div className="dash-day">
+    <div className={`dash-day ${entry.done || entry.missed ? "is-closed" : ""} ${past ? "has-actions" : ""}`}>
       <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
       <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
-      <span className="flex-1 truncate" style={{ color: "var(--text)" }}>{client.name}</span>
-      {entry.unsynced && (
+      <span className="flex-1 truncate dash-appt-name">{client.name}</span>
+      {past && (
+        <span className="dash-appt-actions">
+          {!entry.missed && (
+            <button
+              type="button"
+              className={`dash-outcome ${entry.done ? "done" : ""}`}
+              title={entry.done ? t.dashApptUndo : undefined}
+              onClick={() => onOutcome("done")}
+            >
+              {entry.done ? <><Check size={13} /> {t.dashApptDone}</> : t.dashApptMarkDone}
+            </button>
+          )}
+          {!entry.done && (
+            <button
+              type="button"
+              className={`dash-outcome ${entry.missed ? "missed" : ""}`}
+              title={entry.missed ? t.dashApptUndo : undefined}
+              onClick={() => onOutcome("missed")}
+            >
+              {entry.missed ? <><X size={13} /> {t.dashApptMissed}</> : t.dashApptMissed}
+            </button>
+          )}
+        </span>
+      )}
+      {!past && entry.unsynced && (
         <span style={{ fontSize: "var(--d-label)", fontWeight: "var(--d-w-em)", color: "var(--danger)", flexShrink: 0 }}>
           {status}
         </span>
@@ -314,6 +336,38 @@ function TimePicker({ value, onChange }) {
   );
 }
 
+function apptState(entry) {
+  if (entry.done) return "done";
+  if (entry.missed) return "missed";
+  return needsConfirmation(entry) ? "pending" : "";
+}
+
+function groupByDate(rows) {
+  const groups = [];
+  for (const row of rows) {
+    let g = groups.find((x) => x.date === row.entry.date);
+    if (!g) { g = { date: row.entry.date, rows: [] }; groups.push(g); }
+    g.rows.push(row);
+  }
+  return groups;
+}
+
+function ApptGroups({ groups, lang, onDay, renderRow }) {
+  return (
+    <div className="flex flex-col" style={{ gap: "var(--d-4)" }}>
+      {groups.map((group) => (
+        <div key={group.date} className="flex flex-col gap-2">
+          <button type="button" className="section-title dash-upcoming-day" onClick={() => onDay(group.date)}>
+            {weekdayOf(group.date, lang)} {formatDateShort(group.date)}
+            <ChevronRight size={13} />
+          </button>
+          {group.rows.map(renderRow)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // `students` are the linked students (id + name); their appointments live in
 // the local `clients` store, which holds the trainer's own annotations keyed
 // by student id. Merged here so the calendar reads one list.
@@ -357,23 +411,23 @@ export default function CalendarView({ students = [] }) {
   // One flat, time-ordered list for a day, so a cell and the day panel agree.
   function entriesOn(iso) {
     return clients
-      .flatMap((c) => (c.schedule || []).filter((e) => e.date === iso && isFutureAppt(e.date, e.time)).map((e) => ({ client: c, entry: e })))
-      .sort((a, b) => (a.entry.time || "").localeCompare(b.entry.time || ""));
+      .flatMap((c) => (c.schedule || []).filter((e) => e.date === iso && e.time).map((e) => ({ client: c, entry: e })))
+      .sort((a, b) => a.entry.time.localeCompare(b.entry.time));
   }
-  
-  const upcoming = useMemo(() => {
-    const rows = clients
+
+  const upcoming = useMemo(() => groupByDate(
+    clients
       .filter((c) => !filterClient || c.id === filterClient)
       .flatMap((c) => (c.schedule || []).filter((e) => isFutureAppt(e.date, e.time)).map((e) => ({ client: c, entry: e })))
-      .sort((a, b) => (a.entry.date + a.entry.time).localeCompare(b.entry.date + b.entry.time));
-    const groups = [];
-    for (const row of rows) {
-      let g = groups.find((x) => x.date === row.entry.date);
-      if (!g) { g = { date: row.entry.date, rows: [] }; groups.push(g); }
-      g.rows.push(row);
-    }
-    return groups;
-  }, [clients, filterClient]);
+      .sort((a, b) => (a.entry.date + a.entry.time).localeCompare(b.entry.date + b.entry.time)),
+  ), [clients, filterClient]);
+
+  // Newest first: the one that just happened is the likeliest to mark.
+  const toConfirm = useMemo(() => groupByDate(
+    clients
+      .flatMap((c) => (c.schedule || []).filter(needsConfirmation).map((e) => ({ client: c, entry: e })))
+      .sort((a, b) => (b.entry.date + b.entry.time).localeCompare(a.entry.date + a.entry.time)),
+  ), [clients]);
 
   const [pickClient, setPickClient] = useState("");
   const picked = clients.find((c) => c.id === pickClient);
@@ -421,6 +475,20 @@ export default function CalendarView({ students = [] }) {
     await saveSchedule(client.id, client.schedule.map((e) => (e.id === entry.id ? row : e)));
   }
 
+  // Trainer-only bookkeeping: stays in the local annotation.
+  async function setOutcome(client, entry, outcome) {
+    const same = entry.id
+      ? (e) => e.id === entry.id
+      : (e) => !e.id && e.date === entry.date && e.time === entry.time;
+    await saveSchedule(client.id, client.schedule.map((e) => {
+      if (!same(e)) return e;
+      const { done, missed, ...rest } = e;
+      const current = done ? "done" : missed ? "missed" : null;
+      if (current === outcome) return rest;
+      return { ...rest, [outcome]: true };
+    }));
+  }
+
   async function removeAppointment(client, entry) {
     await unsync(client.id, entry);
     const same = entry.id
@@ -465,16 +533,17 @@ export default function CalendarView({ students = [] }) {
               {isDesktop
                 ? dayEntries.map(({ client, entry }, k) => {
                     const { Icon } = apptTypeMeta(entry.type);
+                    const state = apptState(entry);
                     return (
-                      <span key={client.id + k} className="dash-cal-chip flex items-center gap-1">
-                        <Icon size={10} style={{ flexShrink: 0 }} />
+                      <span key={client.id + k} className={`dash-cal-chip ${state} flex items-center gap-1`}>
+                        {state === "done" ? <Check size={10} style={{ flexShrink: 0 }} /> : state === "missed" ? <X size={10} style={{ flexShrink: 0 }} /> : <Icon size={10} style={{ flexShrink: 0 }} />}
                         {entry.time ? `${entry.time} ` : ""}{client.name}
                       </span>
                     );
                   })
                 : dayEntries.length > 0 && (
                     <span className="dash-cal-dots">
-                      {dayEntries.slice(0, 3).map((_, k) => <span key={k} className="dash-cal-dot" />)}
+                      {dayEntries.slice(0, 3).map(({ entry }, k) => <span key={k} className={`dash-cal-dot ${apptState(entry)}`} />)}
                       {dayEntries.length > 3 && <span className="dash-cal-more">+{dayEntries.length - 3}</span>}
                     </span>
                   )}
@@ -503,18 +572,41 @@ export default function CalendarView({ students = [] }) {
                   entry={entry}
                   onRemove={() => setPendingRemove({ client, entry })}
                   onResend={() => resendAppointment(client, entry)}
+                  onOutcome={(o) => setOutcome(client, entry, o)}
                 />
               ))}
             </div>
           )}
 
-          <button
-            className="btn btn-primary w-full flex items-center justify-center gap-2"
-            style={{ marginTop: "var(--d-3)" }}
-            onClick={() => openAssign(openDay)}
-          >
-            <Plus size={16} /> {t.dashAssign}
-          </button>
+          {openDay >= todayISO() && (
+            <button
+              className="btn btn-primary w-full flex items-center justify-center gap-2"
+              style={{ marginTop: "var(--d-3)" }}
+              onClick={() => openAssign(openDay)}
+            >
+              <Plus size={16} /> {t.dashAssign}
+            </button>
+          )}
+        </section>
+      )}
+
+      {!openDay && toConfirm.length > 0 && (
+        <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
+          <PanelHead title={t.dashToConfirm} desc={t.dashToConfirmDesc} />
+          <ApptGroups
+            groups={toConfirm}
+            lang={lang}
+            onDay={goToMonthOf}
+            renderRow={({ client, entry }, k) => (
+              <ApptRow
+                key={entry.id || client.id + k}
+                client={client}
+                entry={entry}
+                onRemove={() => setPendingRemove({ client, entry })}
+                onOutcome={(o) => setOutcome(client, entry, o)}
+              />
+            )}
+          />
         </section>
       )}
 
@@ -541,29 +633,20 @@ export default function CalendarView({ students = [] }) {
                 : t.dashNoUpcoming}
             </p>
           ) : (
-            <div className="flex flex-col" style={{ gap: "var(--d-4)" }}>
-              {upcoming.map((group) => (
-                <div key={group.date} className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    className="section-title dash-upcoming-day"
-                    onClick={() => goToMonthOf(group.date)}
-                  >
-                    {weekdayOf(group.date, lang)} {formatDateShort(group.date)}
-                    <ChevronRight size={13} />
-                  </button>
-                  {group.rows.map(({ client, entry }, k) => (
-                    <ApptRow
-                      key={entry.id || client.id + k}
-                      client={client}
-                      entry={entry}
-                      onRemove={() => setPendingRemove({ client, entry })}
-                      onResend={() => resendAppointment(client, entry)}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
+            <ApptGroups
+              groups={upcoming}
+              lang={lang}
+              onDay={goToMonthOf}
+              renderRow={({ client, entry }, k) => (
+                <ApptRow
+                  key={entry.id || client.id + k}
+                  client={client}
+                  entry={entry}
+                  onRemove={() => setPendingRemove({ client, entry })}
+                  onResend={() => resendAppointment(client, entry)}
+                />
+              )}
+            />
           )}
         </section>
       )}
