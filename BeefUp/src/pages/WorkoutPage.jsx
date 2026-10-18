@@ -1,3 +1,4 @@
+import BrandStrip from "../components/BrandStrip";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2 } from "lucide-react";
 import { useApp } from "../context/useApp";
@@ -287,6 +288,7 @@ export default function WorkoutPage({
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ padding: "var(--page-py-top) var(--page-px) 16px" }}>
+        <BrandStrip />
         {/* Header com ícones à direita */}
         <div className="flex items-center justify-between" style={{ marginBottom: SPACE.lg }}>
           <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>

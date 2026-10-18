@@ -10,7 +10,7 @@ export function Empty({ children }) {
 export function PanelHead({ title, desc, actions }) {
   return (
     <div className="dash-panel-top">
-      <div style={{ minWidth: 0 }}>
+      <div style={{ minWidth: 0, flex: "1 1 240px" }}>
         <h3 className="dash-card-title">{title}</h3>
         {desc && <p className="dash-panel-desc">{desc}</p>}
       </div>

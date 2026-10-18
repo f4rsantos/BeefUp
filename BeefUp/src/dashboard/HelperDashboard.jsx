@@ -10,6 +10,8 @@ import ClientDetail from "./ClientDetail";
 import DashboardSettings from "./DashboardSettings";
 import SyncView from "./SyncView";
 import SchemaUpdateBanner from "./SchemaUpdateBanner";
+import BrandNotice from "./BrandNotice";
+import BrandMark from "../components/BrandMark";
 import StudentHome from "./StudentHome";
 import "./dashboard.css";
 
@@ -86,7 +88,7 @@ export default function HelperDashboard() {
       <header className="dash-header">
         {isDesktop ? (
           <>
-            <span className="dash-brand">BeefUp</span>
+            <BrandMark fallback="BeefUp" className="dash-brand" />
             <div className="dash-tabs">
               <button className={`dash-tab ${tab === "clients" ? "active" : ""}`} onClick={() => go("clients")}>{t.dashClients}</button>
               <button className={`dash-tab ${tab === "calendar" ? "active" : ""}`} onClick={() => setTab("calendar")}>{t.dashCalendar}</button>
@@ -119,6 +121,7 @@ export default function HelperDashboard() {
         )}
       </header>
       {remote && <SchemaUpdateBanner />}
+      {remote && tab !== "settings" && <BrandNotice onOpen={() => setTab("settings")} />}
       </div>
 
       <div className="dash-body">

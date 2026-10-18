@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { syncAll, pushAll } from './engine.js'
 import { createSupabaseBackend } from './backends/supabase.js'
 import { getLink, getCachedLink } from './link.js'
+import { refreshBrand } from '../brand.js'
 import { getPref, setPref } from '../prefs.js'
 import { loadSupabaseConfig, getConfigEpoch } from '../supabaseConfig.js'
 import { LOCAL_WRITE_EVENT } from '../db.js'
@@ -108,6 +109,8 @@ export function useSync() {
         setStatus('syncing')
         setError(null)
       }
+
+      if (pulling) refreshBrand(link.trainerId)
 
       const scopes = await getPref('syncScopes', [])
       if (!backendRef.current) backendRef.current = createSupabaseBackend()

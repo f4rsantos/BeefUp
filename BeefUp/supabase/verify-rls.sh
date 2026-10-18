@@ -334,11 +334,11 @@ check "anon cannot call schema_version()" "$(echo $F13_ANON | xargs)" "DENIED"
 # --- F14: invites live 7 days and are then deleted --------------------------
 echo "== F14: invites expire after 7 days and can then be deleted =="
 run_as $TRAINER "insert into public.trainer_invites(code, trainer_id, expires_at) values ('TTLAAAAA','$TRAINER', null), ('TTLBBBBB','$TRAINER', now() + interval '10 years')" >/dev/null
-F14_TTL=$(psql -U postgres -d postgres -Atc "select bool_and(expires_at - created_at = interval '7 days') from public.trainer_invites where code in ('TTLAAAAA','TTLBBBBB')")
+F14_TTL=$(psql -U postgres -d postgres -Atc "select bool_and(expires_at = created_at + interval '7 days') from public.trainer_invites where code in ('TTLAAAAA','TTLBBBBB')")
 check "the server sets 7 days whatever the client sends" "$F14_TTL" "t"
 
 run_as $TRAINER "update public.trainer_invites set expires_at = now() + interval '1 year', created_at = now() + interval '1 year' where code = 'TTLAAAAA'" >/dev/null
-F14_STRETCH=$(psql -U postgres -d postgres -Atc "select expires_at - created_at = interval '7 days' and created_at <= now() from public.trainer_invites where code = 'TTLAAAAA'")
+F14_STRETCH=$(psql -U postgres -d postgres -Atc "select expires_at = created_at + interval '7 days' and created_at <= now() from public.trainer_invites where code = 'TTLAAAAA'")
 check "a trainer cannot stretch an invite's life" "$F14_STRETCH" "t"
 
 F14_REVOKE=$(run_as $TRAINER "update public.trainer_invites set revoked = true where code = 'TTLBBBBB' returning revoked")
@@ -361,8 +361,56 @@ check "the trainer deletes their expired invite" "$(echo $F14_DELETE | xargs)" "
 # Codes from before the 7-day rule had no expiry; re-running setup.sql fixes them.
 psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "set session_replication_role = replica; insert into public.trainer_invites(code, trainer_id, created_at, expires_at) values ('TTLCCCCC','$TRAINER', now() - interval '2 days', null)"
 psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$SQL" 2>/dev/null
-F14_BACKFILL=$(psql -U postgres -d postgres -Atc "select expires_at - created_at = interval '7 days' from public.trainer_invites where code = 'TTLCCCCC'")
+F14_BACKFILL=$(psql -U postgres -d postgres -Atc "select expires_at = created_at + interval '7 days' from public.trainer_invites where code = 'TTLCCCCC'")
 check "re-running setup.sql gives old invites a 7-day expiry" "$F14_BACKFILL" "t"
+
+# --- F15: a trainer's brand reaches only their linked students --------------
+echo "== F15: trainer_brand is written by the trainer and read by linked students =="
+STUDENT_E=eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+STRANGER=ffffffff-ffff-ffff-ffff-ffffffffffff
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q <<'F15SEED'
+insert into auth.users(id, email) values
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee','e@example.com'),
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff','f@example.com');
+insert into public.trainer_links(trainer_id, client_id, status, scopes) values
+  ('11111111-1111-1111-1111-111111111111','eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee','accepted','{}');
+F15SEED
+
+F15_WRITE=$(run_as $TRAINER "insert into public.trainer_brand(trainer_id, name, color) values ('$TRAINER', 'Ginasio Silva', '#2461e6') returning name")
+check "the trainer publishes a brand" "$(echo $F15_WRITE | xargs)" "Ginasio Silva"
+
+F15_READ=$(run_as $STUDENT_E "select name from public.trainer_brand where trainer_id = '$TRAINER'")
+check "a linked student reads it" "$(echo $F15_READ | xargs)" "Ginasio Silva"
+F15_STRANGER=$(run_as $STRANGER "select count(*) from public.trainer_brand")
+check "someone not linked sees nothing" "$(echo $F15_STRANGER | xargs)" "0"
+
+F15_STUDENT_WRITE=$(run_as $STUDENT_E "insert into public.trainer_brand(trainer_id, name) values ('$STUDENT_E', 'Fake')")
+case "$F15_STUDENT_WRITE" in *"violates row-level security"*) F15_STUDENT_WRITE=DENIED;; esac
+check "a student cannot publish a brand" "$(echo $F15_STUDENT_WRITE | xargs)" "DENIED"
+F15_FORGE=$(run_as $STUDENT_E "update public.trainer_brand set name = 'Hacked' where trainer_id = '$TRAINER' returning name")
+check "a student cannot edit the trainer's brand" "$(echo $F15_FORGE | xargs)" ""
+
+F15_BADCOLOR=$(run_as $TRAINER "update public.trainer_brand set color = 'red; background:url(x)' where trainer_id = '$TRAINER'")
+case "$F15_BADCOLOR" in *"check constraint"*) F15_BADCOLOR=REJECTED;; esac
+check "a colour that is not #rrggbb is rejected" "$(echo $F15_BADCOLOR | xargs)" "REJECTED"
+F15_SVG=$(run_as $TRAINER "update public.trainer_brand set logo = 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=' where trainer_id = '$TRAINER'")
+case "$F15_SVG" in *"check constraint"*) F15_SVG=REJECTED;; esac
+check "an svg logo is rejected" "$(echo $F15_SVG | xargs)" "REJECTED"
+F15_LONG=$(run_as $TRAINER "update public.trainer_brand set name = repeat('x', 41) where trainer_id = '$TRAINER'")
+case "$F15_LONG" in *"check constraint"*) F15_LONG=REJECTED;; esac
+check "a name over 40 characters is rejected" "$(echo $F15_LONG | xargs)" "REJECTED"
+F15_BIG=$(run_as $TRAINER "update public.trainer_brand set logo = 'data:image/png;base64,' || repeat('A', 120001) where trainer_id = '$TRAINER'")
+case "$F15_BIG" in *"check constraint"*) F15_BIG=REJECTED;; esac
+check "an oversized logo is rejected" "$(echo $F15_BIG | xargs)" "REJECTED"
+F15_PNG=$(run_as $TRAINER "update public.trainer_brand set logo = 'data:image/png;base64,iVBORw0KGgo=' where trainer_id = '$TRAINER' returning 'ok'")
+check "a small png logo is accepted" "$(echo $F15_PNG | xargs)" "ok"
+
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -c "update public.trainer_links set status = 'revoked' where client_id = '$STUDENT_E'"
+F15_REVOKED=$(run_as $STUDENT_E "select count(*) from public.trainer_brand")
+check "a revoked student no longer sees the brand" "$(echo $F15_REVOKED | xargs)" "0"
+
+F15_DELETE=$(run_as $TRAINER "delete from public.trainer_brand where trainer_id = '$TRAINER' returning name")
+check "the trainer removes their brand" "$(echo $F15_DELETE | xargs)" "Ginasio Silva"
 
 echo
 echo "passed: $pass   failed: $fail"

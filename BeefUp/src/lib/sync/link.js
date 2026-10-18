@@ -3,6 +3,7 @@ import { loadSupabaseConfig } from '../supabaseConfig.js'
 import { getSession } from '../auth.js'
 import { getPref, setPref } from '../prefs.js'
 import { clearAllCursors } from './engine.js'
+import { clearBrand, refreshBrand } from '../brand.js'
 
 // Typing an invite code is the consent step. Nothing shares until the
 // student also picks scopes with setScopes(); redeeming alone shares nothing.
@@ -43,6 +44,7 @@ export async function getLink() {
     // The server answered and there is no accepted link: revoked, not offline.
     if (!row) {
       await writeCache(null, [])
+      if (cached) await clearBrand()
       return null
     }
 
@@ -88,6 +90,7 @@ export async function redeemInvite(code) {
 
   const link = { trainerId, trainerName, status: 'accepted' }
   await writeCache(link, [])
+  await refreshBrand(trainerId)
   return { ...link, scopes: [] }
 }
 
@@ -124,6 +127,7 @@ export async function unlink() {
   await setPref('syncLink', null)
   await setPref('syncScopes', [])
   await setPref('syncLastSyncAt', null)
+  await clearBrand()
   // A stale cursor would make the next trainer's own rows look already-seen.
   await clearAllCursors()
 

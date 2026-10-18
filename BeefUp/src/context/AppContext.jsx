@@ -7,6 +7,8 @@ import { loadSupabaseConfig } from '../lib/supabaseConfig'
 import { LEGACY_TYPE_MAP } from '../lib/measureTypes'
 import { DEFAULT_STATS_LAYOUT, resolveStatsLayout, STATS_LAYOUT_VERSION } from '../lib/statsLayout'
 import { applyCustomAccent } from '../lib/colorTheme'
+import { loadBrandCache, resolveAccent, brandTitle } from '../lib/brand'
+import { useBrand } from '../lib/useBrand'
 import { registerCustomExercises } from '../lib/exerciseTree'
 import { migrateExerciseRefs, canonicalizeList, canonicalSession, canonicalWorkout } from '../lib/refMigration'
 import strings from '../strings'
@@ -56,6 +58,8 @@ export function AppProvider({ children }) {
   const [keepAwake, setKeepAwakeState] = useState(PREF_DEFAULTS.keepAwake)
   const [accentColor, setAccentColorState] = useState(PREF_DEFAULTS.accentColor)
   const [customAccentHex, setCustomAccentHexState] = useState(PREF_DEFAULTS.customAccentHex)
+  const [accentChosen, setAccentChosenState] = useState(false)
+  const brand = useBrand()
   const [lang, setLangState] = useState(PREF_DEFAULTS.lang)
   const [onboarded, setOnboardedState] = useState(PREF_DEFAULTS.onboarded)
   const [joinedAt, setJoinedAtState] = useState(PREF_DEFAULTS.joinedAt)
@@ -119,14 +123,35 @@ export function AppProvider({ children }) {
     setPref('keepAwake', v)
   }, [])
 
-  useEffect(() => {
-    if (accentColor === 'custom') applyCustomAccent(customAccentHex)
-    else if (accentColor === 'green') document.documentElement.removeAttribute('data-accent')
-    else document.documentElement.setAttribute('data-accent', accentColor)
-    if (hydrated) setPref('accentColor', accentColor)
-  }, [accentColor, customAccentHex, hydrated])
+  const effectiveAccent = resolveAccent({ brand, accentChosen, accentColor, customAccentHex })
 
-  const setAccentColor = useCallback((v) => setAccentColorState(v), [])
+  useEffect(() => {
+    const { accentColor: shown, customAccentHex: shownHex } = effectiveAccent
+    if (shown === 'custom') applyCustomAccent(shownHex)
+    else if (shown === 'green') document.documentElement.removeAttribute('data-accent')
+    else document.documentElement.setAttribute('data-accent', shown)
+    if (hydrated) setPref('accentColor', accentColor)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveAccent.accentColor, effectiveAccent.customAccentHex, accentColor, hydrated])
+
+  useEffect(() => {
+    document.title = brandTitle(brand)
+  }, [brand])
+
+  const chooseAccent = useCallback(() => {
+    setAccentChosenState(true)
+    setPref('accentChosen', true)
+  }, [])
+
+  const resetAccentToBrand = useCallback(() => {
+    setAccentChosenState(false)
+    setPref('accentChosen', false)
+  }, [])
+
+  const setAccentColor = useCallback((v) => {
+    setAccentColorState(v)
+    chooseAccent()
+  }, [chooseAccent])
 
   const setActiveWorkout = useCallback((v) => {
     setActiveWorkoutState(v)
@@ -137,7 +162,8 @@ export function AppProvider({ children }) {
     setPref('customAccentHex', hex)
     setCustomAccentHexState(hex)
     setAccentColorState('custom')
-  }, [])
+    chooseAccent()
+  }, [chooseAccent])
 
   const completeOnboarding = useCallback(({ mode, focus }) => {
     setPref('appMode', mode); setAppModeState(mode)
@@ -181,7 +207,7 @@ export function AppProvider({ children }) {
 
       let prefs
       try {
-        const results = await Promise.all([getAllPrefs(), loadSupabaseConfig()])
+        const results = await Promise.all([getAllPrefs(), loadSupabaseConfig(), loadBrandCache()])
         prefs = results[0]
       } catch (err) {
         // Falling through with defaults keeps the app usable when IndexedDB is
@@ -198,6 +224,7 @@ export function AppProvider({ children }) {
       setKeepAwakeState(prefs.keepAwake)
       setAccentColorState(prefs.accentColor)
       setCustomAccentHexState(prefs.customAccentHex)
+      setAccentChosenState(prefs.accentChosen ?? prefs.accentColor !== 'green')
       setLangState(prefs.lang)
       setOnboardedState(prefs.onboarded)
       setJoinedAtState(prefs.joinedAt)
@@ -463,6 +490,7 @@ export function AppProvider({ children }) {
     soundEnabled, setSoundEnabled,
     keepAwake, setKeepAwake,
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
+    accentChosen, effectiveAccent, resetAccentToBrand,
     lang, setLang,
     t,
     onboarded, appMode, focus, completeOnboarding, joinedAt, activePlanSince,

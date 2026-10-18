@@ -27,6 +27,7 @@ grant select, update on public.profiles to authenticated;
 grant select, update on public.trainer_links to authenticated;
 grant select, insert, update, delete on public.trainer_invites to authenticated;
 grant select, insert, update, delete on public.sync_rows to authenticated;
+grant select, insert, update, delete on public.trainer_brand to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- profiles
@@ -346,3 +347,47 @@ drop policy if exists sync_rows_delete on public.sync_rows;
 create policy sync_rows_delete on public.sync_rows
   for delete
   using (user_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- trainer_brand
+-- ---------------------------------------------------------------------------
+
+alter table public.trainer_brand enable row level security;
+
+-- The trainer reads their own brand; a student reads the brand of the trainer
+-- they are linked to, and loses it the moment the link is revoked.
+drop policy if exists trainer_brand_select on public.trainer_brand;
+create policy trainer_brand_select on public.trainer_brand
+  for select
+  using (
+    trainer_id = auth.uid()
+    or exists (
+      select 1 from public.trainer_links tl
+      where tl.trainer_id = trainer_brand.trainer_id
+        and tl.client_id = auth.uid()
+        and tl.status = 'accepted'
+    )
+  );
+
+-- Only an actual trainer writes, and only their own row: a plain 'solo'
+-- profile cannot publish a brand that students would see.
+drop policy if exists trainer_brand_insert on public.trainer_brand;
+create policy trainer_brand_insert on public.trainer_brand
+  for insert
+  with check (
+    trainer_id = auth.uid()
+    and exists (
+      select 1 from public.profiles p where p.id = auth.uid() and p.role = 'trainer'
+    )
+  );
+
+drop policy if exists trainer_brand_update on public.trainer_brand;
+create policy trainer_brand_update on public.trainer_brand
+  for update
+  using (trainer_id = auth.uid())
+  with check (trainer_id = auth.uid());
+
+drop policy if exists trainer_brand_delete on public.trainer_brand;
+create policy trainer_brand_delete on public.trainer_brand
+  for delete
+  using (trainer_id = auth.uid());

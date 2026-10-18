@@ -447,6 +447,7 @@
 }
 .dash-panel-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--d-3);
@@ -590,6 +591,18 @@
 .dash-seg button + button { border-left: 1px solid var(--border); }
 .dash-seg button:hover { color: var(--text); }
 .dash-seg button.on { background: var(--accent-soft); color: var(--accent); }
+
+/* Brand settings: fields beside a live preview. */
+.dash-brand-grid { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: var(--d-5); align-items: start; }
+.dash-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: var(--d-2); }
+.dash-color-input { width: 40px; height: 40px; padding: 0; border: 1px solid var(--border); border-radius: var(--d-r-inset); background: none; cursor: pointer; }
+.dash-color-hex { margin-right: var(--d-2); font-size: var(--d-sm); color: var(--muted); }
+.dash-swatch { width: 28px; height: 28px; border: 2px solid transparent; border-radius: 6px; cursor: pointer; }
+.dash-swatch.on { border-color: var(--text); }
+.dash-brand-preview { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: var(--d-r-panel); }
+.dash-brand-preview-bar { display: flex; align-items: center; gap: var(--d-2); min-width: 0; padding: var(--d-3); border-bottom: 1px solid var(--border); font-size: var(--d-sm); font-weight: var(--d-w-em); color: var(--text); }
+.dash-brand-preview-body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--d-2); padding: var(--d-3); }
+.dash-brand-preview-btn { padding: 8px 14px; border-radius: var(--d-r-inset); color: #fff; font-size: var(--d-sm); font-weight: var(--d-w-em); }
 
 /* Measures: chart in the middle, types on the right. */
 .dash-measures-grid { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: var(--d-5); align-items: start; }
@@ -895,6 +908,7 @@
   .dash-client-name { font-size: 22px; }
   .dash-student-head > .btn { align-self: flex-start; }
   .dash-field, .dash-narrow { max-width: none; }
+  .dash-brand-grid { grid-template-columns: 1fr; }
   .dash-plan-title { font-size: 24px; }
   .dash-plan-actions { width: 100%; }
   .dash-plan-actions .dash-savebar-status { flex: 1 1 100%; }

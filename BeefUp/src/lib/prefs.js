@@ -9,6 +9,7 @@ export const PREF_DEFAULTS = {
   keepAwake: true,
   accentColor: 'green',
   customAccentHex: '#109a14',
+  accentChosen: null, // true once the person picks a colour; null = derived from accentColor
   lang: 'pt',
   onboarded: false,
   joinedAt: null,
@@ -53,7 +54,7 @@ function mirrorForPaint(key, value) {
 }
 
 // Trainer's Supabase project and this device's sync bookkeeping: never leave.
-const LOCAL_ONLY_SETTING_PREFIXES = ['supabase:', 'sync:cursor:', 'sync:owner']
+const LOCAL_ONLY_SETTING_PREFIXES = ['supabase:', 'sync:cursor:', 'sync:owner', 'brand:']
 
 export function isLocalOnlySetting(key) {
   return LOCAL_ONLY_SETTING_PREFIXES.some(prefix => key.startsWith(prefix))
