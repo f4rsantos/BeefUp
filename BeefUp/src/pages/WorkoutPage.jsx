@@ -1,8 +1,8 @@
 import BrandStrip from "../components/BrandStrip";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2, Shapes } from "lucide-react";
+import { Plus, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, FilePenLine, Share2, Shapes } from "lucide-react";
 import { useApp } from "../context/useApp";
-import { todaysPlanEntry, isPrescribed } from "../lib/planUtils";
+import { isPrescribed } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
 import { encodeWorkoutShare } from "../lib/workoutShare";
 import HumanBody from "../components/HumanBody";
@@ -147,14 +147,6 @@ export default function WorkoutPage({
   const [pendingDelete, setPendingDelete] = useState(null);
   const [iconFor, setIconFor] = useState(null);
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
-  const todayEntry = useMemo(
-    () => todaysPlanEntry(activePlan),
-    [activePlan],
-  );
-  const todayWorkout =
-    todayEntry?.type === "workout"
-      ? (workouts.find((w) => w.id === todayEntry.workoutId) ?? null)
-      : null;
 
   // Muscles trained in the last 7 days, for the home heatmap figure.
   const weekAreas = useMemo(
@@ -162,8 +154,6 @@ export default function WorkoutPage({
     [sessions],
   );
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
-
-  const workoutLabel = todayWorkout ? todayWorkout.name : null;
 
   const handleRename = (workout) => {
     const newName = window.prompt(
@@ -197,58 +187,6 @@ export default function WorkoutPage({
     setPendingDelete(workout);
   };
 
-  function renderTodayHero() {
-    // "Plano Atual" below already covers the no-plan state.
-    if (!activePlan) return null;
-
-    if (todayEntry?.type === "rest") {
-      return (
-        <div className="hero" style={{ background: "var(--grad-energy)", marginBottom: SPACE.md }}>
-          <div className="flex items-center justify-between" style={{ position: "relative" }}>
-            <div>
-              <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
-              <p className="display" style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>{t.restDay}</p>
-              <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-                {t.restDayBody}
-              </p>
-            </div>
-            <Moon size={40} style={{ opacity: 0.9 }} />
-          </div>
-        </div>
-      );
-    }
-
-    if (todayWorkout) {
-      return (
-        <div className="hero" style={{ marginBottom: SPACE.md }}>
-          <div style={{ position: "relative" }}>
-            <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>{activePlan.name}</p>
-            <p className="display" style={{ fontSize: 28, fontWeight: 900, marginTop: 2, lineHeight: 1.1 }}>
-              {workoutLabel}
-            </p>
-            <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
-              {todayWorkout.exercises?.length ?? 0} {t.exercises}
-            </p>
-            <button
-              className="btn w-full mt-4 py-3.5 text-base"
-              style={{ background: "#fff", color: "var(--accent)", fontWeight: 800 }}
-              onClick={() => onStartWorkout({ workoutId: todayWorkout.id, workoutName: workoutLabel })}
-            >
-              <Play size={20} fill="currentColor" /> {t.startWorkout}
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="card" style={{ marginBottom: SPACE.md }}>
-        <p className="text-xs mb-0.5" style={{ color: "var(--muted)" }}>{activePlan.name}</p>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noWorkoutScheduled}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ padding: "var(--page-py-top) var(--page-px) 16px" }}>
@@ -277,9 +215,6 @@ export default function WorkoutPage({
             </button>
           </div>
         </div>
-
-        {/* ── Today's hero ── */}
-        {renderTodayHero()}
 
         {/* ── Weekly muscle heatmap (signature figure) ── */}
         <div className="card card-elevated" style={{ marginBottom: SPACE.md }}>
