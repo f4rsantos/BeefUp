@@ -237,8 +237,6 @@ export default function WorkoutPage({
                 gap: 24,
                 overflow: "hidden",
                 padding: "12px 0 4px",
-                background: "radial-gradient(60% 80% at 50% 20%, var(--accent-soft), transparent 70%)",
-                borderRadius: 16,
               }}
             >
               {["front", "back"].map((view) => (
