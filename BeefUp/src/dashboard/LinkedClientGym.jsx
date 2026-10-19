@@ -118,6 +118,7 @@ export function LinkedWorkoutsList({ client, workouts: initialWorkouts, lang, t,
             workout={editing === "new" ? null : editing}
             lang={lang}
             t={t}
+            chooseIcon={false}
             onSave={save}
             onBack={() => setEditing(null)}
           />

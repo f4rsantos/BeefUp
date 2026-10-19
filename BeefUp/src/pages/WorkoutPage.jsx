@@ -1,23 +1,14 @@
 import BrandStrip from "../components/BrandStrip";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, Clock, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2 } from "lucide-react";
+import { Plus, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, Play, FilePenLine, Moon, Share2, Shapes } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { todaysPlanEntry, isPrescribed } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
-import { resolveExercise, normalizeWorkoutExercises, BODY_PART_ACCENT } from "../lib/exerciseTree";
 import { encodeWorkoutShare } from "../lib/workoutShare";
 import HumanBody from "../components/HumanBody";
+import WorkoutIconModal from "../components/WorkoutIconModal";
+import { workoutBodyParts, workoutColors, workoutIconFor, workoutTint } from "../lib/workoutArt";
 import ConfirmModal from "../components/ConfirmModal";
-import { localizedNameOrEnglish } from "../lib/localizedName"
-
-function formatLastDate(iso, lang) {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleDateString(lang === "pt" ? "pt-PT" : undefined, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
 
 const SPACE = { sm: 8, md: 16, lg: 32 };
 
@@ -36,25 +27,7 @@ const MENU_ITEM_STYLE = {
   textAlign: "left",
 };
 
-function workoutAccentColors(workout) {
-  const counts = {};
-  normalizeWorkoutExercises(workout.exercises).forEach((item) => {
-    const ex = resolveExercise(item.ref);
-    if (!ex?.bodyPart) return;
-    counts[ex.bodyPart] = (counts[ex.bodyPart] || 0) + 1;
-  });
-
-  const colors = [];
-  Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([bodyPart]) => {
-      const color = BODY_PART_ACCENT[bodyPart];
-      if (color && !colors.includes(color)) colors.push(color);
-    });
-  return colors;
-}
-
-function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete, onEdit }) {
+function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete, onEdit, onIcon }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -99,6 +72,7 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
       { Icon: FilePenLine, label: t.rename, onSelect: () => onRename(workout) },
     ]),
     { Icon: Copy, label: t.duplicate, onSelect: () => onDuplicate(workout) },
+    { Icon: Shapes, label: t.workoutIconAction, onSelect: () => onIcon(workout) },
     { Icon: Share2, label: t.share, onSelect: () => onShare(workout) },
     ...(locked ? [] : [
       { Icon: Trash2, label: t.deleteWorkoutAction, onSelect: () => onDelete(workout), danger: true },
@@ -169,8 +143,9 @@ export default function WorkoutPage({
   onManagePlans,
   onViewPlanDetails,
 }) {
-  const { t, lang, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout } = useApp()
+  const { t, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout, workoutIcons, setWorkoutIcon } = useApp()
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [iconFor, setIconFor] = useState(null);
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const todayEntry = useMemo(
     () => todaysPlanEntry(activePlan),
@@ -189,17 +164,6 @@ export default function WorkoutPage({
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
 
   const workoutLabel = todayWorkout ? todayWorkout.name : null;
-
-  const lastSessionByWorkout = useMemo(() => {
-    const map = {};
-    sessions.forEach((s) => {
-      if (!s.workoutId) return;
-      if (!map[s.workoutId] || new Date(s.date) > new Date(map[s.workoutId])) {
-        map[s.workoutId] = s.date;
-      }
-    });
-    return map;
-  }, [sessions]);
 
   const handleRename = (workout) => {
     const newName = window.prompt(
@@ -411,23 +375,14 @@ export default function WorkoutPage({
           style={{ gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: SPACE.lg }}
         >
           {workouts.map((w) => {
-            const name = w.name;
-            const exerciseCount = w.exercises?.length ?? 0;
-            const exerciseNames = normalizeWorkoutExercises(w.exercises)
-              .slice(0, 3)
-              .map((item) => {
-                const ex = resolveExercise(item.ref);
-                return ex ? (localizedNameOrEnglish(ex, lang)) : null;
-              })
-              .filter(Boolean)
-              .join(", ");
-            const extraCount = exerciseCount - 3;
-            const accentColors = workoutAccentColors(w);
+            const parts = workoutBodyParts(w);
+            const colors = workoutColors(parts);
+            const { Icon } = workoutIconFor(parts, workoutIcons[w.id]);
             return (
               <div
                 key={w.id}
-                className="card"
-                style={{ cursor: "pointer", position: "relative" }}
+                className="card workout-card"
+                style={{ background: workoutTint(colors), "--art-color": colors[0] ?? "var(--muted)" }}
                 onClick={() =>
                   onStartWorkout({
                     workoutId: w.id,
@@ -435,24 +390,8 @@ export default function WorkoutPage({
                   })
                 }
               >
-                {accentColors.length > 0 && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      background: accentColors.length === 1
-                        ? accentColors[0]
-                        : `linear-gradient(90deg, ${accentColors.join(", ")})`,
-                    }}
-                  />
-                )}
-                <div className="flex items-start justify-between" style={{ marginBottom: 8 }}>
-                  <p className="text-base font-bold truncate" style={{ color: "var(--text)", minWidth: 0 }}>
-                    {name}
-                  </p>
+                <Icon className="workout-card-icon" size={92} strokeWidth={1.5} aria-hidden="true" />
+                <div className="workout-card-menu">
                   <WorkoutCardMenu
                     workout={w}
                     t={t}
@@ -461,34 +400,25 @@ export default function WorkoutPage({
                     onDuplicate={handleDuplicate}
                     onShare={handleShare}
                     onDelete={handleDelete}
+                    onIcon={setIconFor}
                   />
                 </div>
-                <p
-                  className="text-xs"
-                  style={{
-                    color: "var(--muted)",
-                    marginBottom: 12,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {exerciseNames
-                    ? `${exerciseNames}${extraCount > 0 ? ` +${extraCount}` : ""}`
-                    : "-"}
-                </p>
-                <div className="flex items-center" style={{ gap: 6 }}>
-                  <Clock size={12} style={{ color: "var(--muted)" }} />
-                  <span className="text-xs" style={{ color: "var(--muted)" }}>
-                    {formatLastDate(lastSessionByWorkout[w.id], lang)}
-                  </span>
-                </div>
+                <p className="workout-card-title">{w.name}</p>
               </div>
             );
           })}
         </div>
       </div>
+
+      {iconFor && (
+        <WorkoutIconModal
+          workout={iconFor}
+          current={workoutIconFor(workoutBodyParts(iconFor), workoutIcons[iconFor.id]).key}
+          color={workoutColors(workoutBodyParts(iconFor))[0] ?? "var(--muted)"}
+          onPick={(key) => setWorkoutIcon(iconFor.id, key)}
+          onClose={() => setIconFor(null)}
+        />
+      )}
 
       {pendingDelete && (
         <ConfirmModal

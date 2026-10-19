@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { ChevronLeft, Plus, Trash2, Pencil, GripVertical } from "lucide-react";
+import { useApp } from "../context/useApp";
 import { uid } from "../lib/planUtils";
+import { workoutBodyParts, workoutColors, workoutIconFor } from "../lib/workoutArt";
+import WorkoutIconModal from "./WorkoutIconModal";
 import { resolveExercise, normalizeWorkoutExercises, isCardioExercise } from "../lib/exerciseTree";
 import ExercisePicker from "./ExercisePicker";
 import NumberField from "./NumberField";
@@ -81,8 +84,12 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   );
 }
 
-export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActiveWorkout = false }) {
+// `chooseIcon` is off for a trainer prescribing: the symbol lives on the student's own device.
+export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActiveWorkout = false, chooseIcon = true }) {
+  const { workoutIcons, setWorkoutIcon } = useApp();
   const [name, setName] = useState(workout?.name ?? "");
+  const [iconKey, setIconKey] = useState(workout?.id ? workoutIcons[workout.id] ?? null : null);
+  const [showIcons, setShowIcons] = useState(false);
   const [exItems, setExItems] = useState(() => normalizeWorkoutExercises(workout?.exercises));
   const [restAfterSet, setRestAfterSet] = useState(workout?.restAfterSet ?? 120);
   const [showPicker, setShowPicker] = useState(false);
@@ -90,15 +97,21 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
   const [confirmingSave, setConfirmingSave] = useState(false);
 
   function commit() {
+    const id = workout?.id ?? uid();
+    if (chooseIcon && iconKey !== (workoutIcons[id] ?? null)) setWorkoutIcon(id, iconKey);
     onSave({
       ...workout,
-      id: workout?.id ?? uid(),
+      id,
       name: name.trim(),
       exercises: exItems,
       restAfterSet: Math.max(0, parseInt(restAfterSet) || 120),
     });
     onBack();
   }
+
+  const bodyParts = workoutBodyParts({ exercises: exItems });
+  const { key: shownIcon, Icon: ShownIcon } = workoutIconFor(bodyParts, iconKey);
+  const iconColor = workoutColors(bodyParts)[0] ?? "var(--accent)";
 
   function save() {
     if (!name.trim()) return;
@@ -128,12 +141,26 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
             <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
               {t.workoutName}
             </label>
-            <input
-              className="field"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Leg Day"
-            />
+            <div className="flex gap-2">
+              {chooseIcon && (
+                <button
+                  type="button"
+                  className="workout-icon-trigger"
+                  style={{ "--art-color": iconColor }}
+                  aria-label={t.workoutIconTitle}
+                  title={t.workoutIconTitle}
+                  onClick={() => setShowIcons(true)}
+                >
+                  <ShownIcon size={22} strokeWidth={1.75} />
+                </button>
+              )}
+              <input
+                className="field flex-1"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Leg Day"
+              />
+            </div>
           </div>
           <div>
             <label
@@ -212,6 +239,16 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
             setShowPicker(false);
           }}
           onClose={() => setShowPicker(false)}
+        />
+      )}
+
+      {showIcons && (
+        <WorkoutIconModal
+          workout={{ name: name.trim() || t.newWorkout }}
+          current={shownIcon}
+          color={iconColor}
+          onPick={setIconKey}
+          onClose={() => setShowIcons(false)}
         />
       )}
 

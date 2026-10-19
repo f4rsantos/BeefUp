@@ -59,6 +59,7 @@ export function AppProvider({ children }) {
   const [accentColor, setAccentColorState] = useState(PREF_DEFAULTS.accentColor)
   const [customAccentHex, setCustomAccentHexState] = useState(PREF_DEFAULTS.customAccentHex)
   const [accentChosen, setAccentChosenState] = useState(false)
+  const [workoutIcons, setWorkoutIconsState] = useState({})
   const brand = useBrand()
   const [lang, setLangState] = useState(PREF_DEFAULTS.lang)
   const [onboarded, setOnboardedState] = useState(PREF_DEFAULTS.onboarded)
@@ -184,6 +185,14 @@ export function AppProvider({ children }) {
     setPref('sectionPrefs', next)
   }, [])
 
+  const setWorkoutIcon = useCallback((id, key) => {
+    const next = { ...workoutIcons }
+    if (key) next[id] = key
+    else delete next[id]
+    setWorkoutIconsState(next)
+    setPref('workoutIcons', next)
+  }, [workoutIcons])
+
   const setMealTypes = useCallback((next) => {
     setMealTypesState(next)
     setPref('mealTypes', next)
@@ -238,6 +247,7 @@ export function AppProvider({ children }) {
       setRecentFoodIds(prefs.recentFoods)
       setNutritionGoalsState(prefs.nutritionGoals)
       setMealTypesState(prefs.mealTypes ?? DEFAULT_MEAL_TYPES)
+      setWorkoutIconsState(prefs.workoutIcons ?? {})
       setHydrated(true)
     }
     hydrate()
@@ -491,6 +501,7 @@ export function AppProvider({ children }) {
     keepAwake, setKeepAwake,
     accentColor, setAccentColor, customAccentHex, setCustomAccentColor,
     accentChosen, effectiveAccent, resetAccentToBrand,
+    workoutIcons, setWorkoutIcon,
     lang, setLang,
     t,
     onboarded, appMode, focus, completeOnboarding, joinedAt, activePlanSince,

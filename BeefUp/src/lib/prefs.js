@@ -25,6 +25,7 @@ export const PREF_DEFAULTS = {
   recentFoods: [],
   nutritionGoals: { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 },
   mealTypes: null,    // defaults to DEFAULT_MEAL_TYPES at hydration
+  workoutIcons: {},   // workout id -> icon key, chosen on the card
   pwaInstallDismissedAt: 0,
   syncLink: null,     // cached { trainerId, trainerName, status } | null
   syncScopes: [],      // areas the student shares: workouts/nutrition/measures

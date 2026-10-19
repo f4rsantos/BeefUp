@@ -728,3 +728,65 @@ input.field:focus, select.field:focus, textarea.field:focus {
 .brand-strip { margin-bottom: 8px; }
 .brand-strip .brand-mark-name { font-size: 14px; font-weight: 700; color: var(--muted); }
 .brand-credit { margin-top: 24px; text-align: center; font-size: 11px; color: var(--muted); }
+
+/* ── Workout cards ───────────────────────────────────── */
+.workout-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 136px;
+  padding: 14px;
+  cursor: pointer;
+}
+/* The symbol bleeds off the top-left corner in the group colour. */
+.workout-card-icon { position: absolute; top: -20px; left: -20px; color: var(--art-color); opacity: 0.35; pointer-events: none; }
+.workout-card-menu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.workout-card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.workout-icon-trigger {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 48px;
+  min-height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--art-color) 18%, var(--surface2));
+  color: var(--art-color);
+  cursor: pointer;
+}
+.workout-icon-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.workout-icon-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--art-color) 14%, var(--surface2));
+  color: var(--art-color);
+  cursor: pointer;
+}
+.workout-icon-option.on { border-color: var(--art-color); }
+.workout-icon-check { position: absolute; top: 4px; right: 4px; }
