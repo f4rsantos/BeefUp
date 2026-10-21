@@ -126,6 +126,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
+  const [replacingIdx, setReplacingIdx] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
@@ -303,6 +304,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
 
+  // The replaced exercise's logged sets are dropped.
+  const replaceExercise = useCallback((exIdx, pick) => {
+    const ex = resolveExercise(pick.ref);
+    if (!ex) return;
+    const entry = buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, pick.barType);
+    setExercises((prev) => prev.map((e, i) => (i === exIdx ? entry : e)));
+    setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
+    setReplacingIdx(null);
+  }, [sessions]);
+
   const addExercises = useCallback((picks) => {
     const entries = picks
       .map(({ ref, barType }) => {
@@ -448,6 +459,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onAddSet={addSet}
             onRemoveSet={removeSet}
             onRemoveExercise={setPendingRemoveExercise}
+            onReplaceExercise={setReplacingIdx}
             onSetType={setSetType}
             note={ex.note}
             onUpdateNote={updateNote}
@@ -486,6 +498,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         <ExercisePicker
           onConfirm={addExercises}
           onClose={() => setShowExPicker(false)}
+        />
+      )}
+      {replacingIdx !== null && exercises[replacingIdx] && (
+        <ExercisePicker
+          replace={{ ref: exercises[replacingIdx].exerciseId, barType: exercises[replacingIdx].barType }}
+          onConfirm={(picks) => replaceExercise(replacingIdx, picks[0])}
+          onClose={() => setReplacingIdx(null)}
         />
       )}
 

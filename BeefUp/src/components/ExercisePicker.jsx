@@ -31,8 +31,21 @@ function ChoiceGroup({ label, children }) {
   );
 }
 
-export default function AddExercisesPicker({ onConfirm, onClose }) {
+// `replace` swaps one exercise; the result is a single pick.
+export default function AddExercisesPicker({ onConfirm, onClose, replace = null }) {
   const { t, lang, sessions } = useApp();
+  const [start] = useState(() => {
+    if (!replace) return null;
+    const { baseId, equipmentId, variantId } = parseExerciseRef(replace.ref);
+    const base = listBaseExercises().find((ex) => ex.id === baseId);
+    if (!base) return null;
+    return {
+      base,
+      equipmentId,
+      variantIds: variantId ? variantId.split("+") : [],
+      barType: equipmentId === "barbell" ? replace.barType || BAR_TYPES[0].id : "",
+    };
+  });
   const [query, setQuery] = useState("");
   const [bodyPart, setBodyPart] = useState(null);
   const [equipment, setEquipment] = useState(null);
@@ -40,10 +53,10 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'card'
 
   const [step, setStep] = useState("list"); // 'list' | 'custom'
-  const [activeBase, setActiveBase] = useState(null);
-  const [activeEquipmentId, setActiveEquipmentId] = useState(null);
-  const [activeBarType, setActiveBarType] = useState("");
-  const [selectedVariantIds, setSelectedVariantIds] = useState([]);
+  const [activeBase, setActiveBase] = useState(start?.base ?? null);
+  const [activeEquipmentId, setActiveEquipmentId] = useState(start?.equipmentId ?? null);
+  const [activeBarType, setActiveBarType] = useState(start?.barType ?? "");
+  const [selectedVariantIds, setSelectedVariantIds] = useState(start?.variantIds ?? []);
   const [queue, setQueue] = useState([]); // Array of { instanceId, baseId, equipmentId, variantId, barType, ref }
   const [isEditingInstanceId, setIsEditingInstanceId] = useState(null);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
@@ -73,6 +86,10 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
   function addToQueue(baseId, rawEquipmentId, rawVariantId, barType = "") {
     const ref = canonicalRef(buildExerciseRef(baseId, rawEquipmentId, rawVariantId));
     const { equipmentId, variantId } = parseExerciseRef(ref);
+    if (replace) {
+      onConfirm([{ ref, barType }]);
+      return;
+    }
     setQueue((prev) => {
       if (isEditingInstanceId) {
         return prev.map(item => item.instanceId === isEditingInstanceId
@@ -190,7 +207,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
               <ChevronLeft size={24} style={{ color: "var(--text)" }} />
             </button>
             <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-              {t.addExercise}
+              {replace ? t.replaceExercise : t.addExercise}
             </h1>
           </div>
 
@@ -386,6 +403,7 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
                 <X size={18} />
               </button>
             </div>
+            {replace && <p className="text-sm" style={{ color: "var(--muted)", marginBottom: 16 }}>{t.replaceExerciseNote}</p>}
 
             <div className="flex flex-col" style={{ gap: 16 }}>
               {equipmentOptions.length > 1 && (
@@ -448,8 +466,13 @@ export default function AddExercisesPicker({ onConfirm, onClose }) {
             </div>
 
             <button className="btn btn-primary w-full" style={{ marginTop: 20 }} onClick={confirmCustomize}>
-              {isEditingInstanceId ? t.save : t.add}
+              {replace ? t.replaceExerciseAction : isEditingInstanceId ? t.save : t.add}
             </button>
+            {replace && (
+              <button className="btn btn-ghost w-full" style={{ marginTop: 8 }} onClick={resetCustomize}>
+                {t.replaceExerciseOther}
+              </button>
+            )}
           </div>
         </div>
       )}
