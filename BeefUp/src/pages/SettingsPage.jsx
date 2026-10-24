@@ -1,3 +1,4 @@
+import { useBrand } from "../lib/useBrand";
 import { useEffect, useState } from "react";
 import { Apple, Database, Dumbbell, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/useApp";
@@ -25,9 +26,10 @@ export default function SettingsPage() {
     setSoundEnabled,
     keepAwake,
     setKeepAwake,
-    accentColor,
     setAccentColor,
-    customAccentHex,
+    effectiveAccent,
+    accentChosen,
+    resetAccentToBrand,
     setCustomAccentColor,
     savePlan,
     saveWorkout,
@@ -102,7 +104,8 @@ export default function SettingsPage() {
     setSectionPrefs(next);
   }
 
-  const currentAccentHex = accentHexOf(accentColor, customAccentHex);
+  const currentAccentHex = accentHexOf(effectiveAccent.accentColor, effectiveAccent.customAccentHex);
+  const brand = useBrand();
 
   async function loadDemoPreset() {
     setLoadingDemo(true);
@@ -158,6 +161,15 @@ export default function SettingsPage() {
               }}
             />
           </button>
+          {brand?.color && accentChosen && (
+            <button
+              className="text-sm"
+              style={{ color: "var(--accent)", fontWeight: 600, background: "none", border: "none", padding: "8px 4px", minHeight: 44, textAlign: "left" }}
+              onClick={resetAccentToBrand}
+            >
+              {brand.name ? t.brandUseColor.replace("{name}", brand.name) : t.brandUseColorNoName}
+            </button>
+          )}
         </section>
 
         {/* Font scale */}
@@ -364,6 +376,8 @@ export default function SettingsPage() {
         </section>
 
         <BackupSection chooseLabel={chooseLabel} />
+
+        {brand && <p className="brand-credit">{t.brandCredit}</p>}
       </div>
 
       {showColorPicker && (

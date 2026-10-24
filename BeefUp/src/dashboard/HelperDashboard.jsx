@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Plus, Search, Settings, Users, Calendar, ArrowLeftRight, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Settings, Users, Calendar, ArrowLeftRight, ChevronLeft } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { useIsDesktop } from "../lib/useIsDesktop";
@@ -9,15 +9,18 @@ import CalendarView from "./CalendarView";
 import ClientDetail from "./ClientDetail";
 import DashboardSettings from "./DashboardSettings";
 import SyncView from "./SyncView";
-import { Skeleton } from "./parts";
+import SchemaUpdateBanner from "./SchemaUpdateBanner";
+import BrandNotice from "./BrandNotice";
+import BrandMark from "../components/BrandMark";
+import StudentHome from "./StudentHome";
 import "./dashboard.css";
 
 export default function HelperDashboard() {
-  const { t } = useApp();
+  const { t, clients: annotations } = useApp();
   const [tab, setTab] = useState("clients");
   const [selectedId, setSelectedId] = useState(null);
-  const [query, setQuery] = useState("");
-  const [clients, setClients] = useState(() => (isDashDemo() ? DEMO_STUDENTS : []));
+  const [clientNav, setClientNav] = useState({ section: "overview", gym: "plan", nutrition: "goals", measures: "log" });
+  const [roster, setRoster] = useState(() => (isDashDemo() ? DEMO_STUDENTS : []));
   const configured = useSupabaseConfigured();
   const isDesktop = useIsDesktop();
   const [status, setStatus] = useState("loading");
@@ -25,6 +28,11 @@ export default function HelperDashboard() {
   const remote = configured && !isDashDemo();
   const loading = remote && status === "loading";
   const failed = remote && status === "error";
+  // The trainer's private nickname wins everywhere below this line.
+  const clients = useMemo(() => roster.map((c) => {
+    const alias = annotations.find((a) => a.id === c.id)?.alias;
+    return alias ? { ...c, name: alias, realName: c.name } : c;
+  }), [roster, annotations]);
 
   useEffect(() => {
     if (!remote) return;
@@ -32,7 +40,7 @@ export default function HelperDashboard() {
     listTrainerLinks()
       .then((links) => {
         if (cancelled) return;
-        setClients(links.map((l) => ({ id: l.clientId, linkedUserId: l.clientId, name: l.name, scopes: l.scopes })));
+        setRoster(links.map((l) => ({ id: l.clientId, linkedUserId: l.clientId, name: l.name, scopes: l.scopes })));
         setStatus("ready");
       })
       .catch((e) => {
@@ -58,9 +66,6 @@ export default function HelperDashboard() {
   }
 
   const selected = clients.find((c) => c.id === selectedId) || null;
-  const shown = query.trim()
-    ? clients.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
-    : clients;
 
   // The four destinations. On desktop they split between the header's tabs and
   // its right cluster; on a phone they are one bottom bar, thumb-reachable.
@@ -79,12 +84,13 @@ export default function HelperDashboard() {
 
   return (
     <div className="dash-root">
+      <div className="dash-top">
       <header className="dash-header">
         {isDesktop ? (
           <>
-            <span className="dash-brand">BeefUp</span>
+            <BrandMark fallback="BeefUp" className="dash-brand" />
             <div className="dash-tabs">
-              <button className={`dash-tab ${tab === "clients" ? "active" : ""}`} onClick={() => setTab("clients")}>{t.dashClients}</button>
+              <button className={`dash-tab ${tab === "clients" ? "active" : ""}`} onClick={() => go("clients")}>{t.dashClients}</button>
               <button className={`dash-tab ${tab === "calendar" ? "active" : ""}`} onClick={() => setTab("calendar")}>{t.dashCalendar}</button>
             </div>
             <div style={{ flex: 1 }} />
@@ -106,78 +112,44 @@ export default function HelperDashboard() {
               <Settings size={17} />
             </button>
           </>
+        ) : tab === "clients" && selected ? (
+          <button type="button" className="dash-back" onClick={() => setSelectedId(null)}>
+            <ChevronLeft size={18} /> {t.dashClients}
+          </button>
         ) : (
           <span className="dash-brand">{current.label}</span>
         )}
       </header>
+      {remote && <SchemaUpdateBanner />}
+      {remote && tab !== "settings" && <BrandNotice onOpen={() => setTab("settings")} />}
+      </div>
 
       <div className="dash-body">
         {tab === "calendar" && <CalendarView students={clients} />}
         {tab === "sync" && <SyncView />}
         {tab === "settings" && <DashboardSettings />}
 
-        {/* On a phone the roster and the client sheet are two screens, not two
-            panes: only one of them is mounted at a time. */}
-        {tab === "clients" && (
-          <div className="dash-clients">
-            {(isDesktop || !selected) && (
-            <aside className="dash-list">
-              <label className="dash-search">
-                <Search size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t.dashSearchClients}
-                  aria-label={t.dashSearchClients}
-                />
-              </label>
-              <button className="btn btn-primary flex items-center justify-center gap-2 mb-2" onClick={() => setTab("sync")}>
-                <Plus size={16} /> {t.dashInviteClient}
-              </button>
-              {loading && <Skeleton rows={3} />}
-              {failed && (
-                <div className="text-center mt-4">
-                  <p className="text-sm" style={{ color: "var(--danger)" }}>{t.dashClientsLoadFailed}</p>
-                  <button className="btn btn-ghost mt-2" onClick={retry}>{t.retry}</button>
-                </div>
-              )}
-              {!loading && !failed && clients.length === 0 && (
-                <p className="text-sm text-center mt-4" style={{ color: "var(--muted)" }}>{t.dashNoClients}</p>
-              )}
-              {clients.length > 0 && shown.length === 0 && (
-                <p className="text-sm text-center mt-4" style={{ color: "var(--muted)" }}>{t.noResults}</p>
-              )}
-              {shown.map((c) => (
-                <button
-                  key={c.id}
-                  className={`dash-list-item ${selectedId === c.id ? "active" : ""}`}
-                  onClick={() => setSelectedId(c.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div style={{ fontWeight: "var(--d-w-em)", color: "var(--text)" }}>{c.name}</div>
-                    {!isDesktop && (
-                      <ChevronRight size={16} style={{ color: "var(--muted)", flexShrink: 0, marginLeft: "auto" }} />
-                    )}
-                  </div>
-                </button>
-              ))}
-            </aside>
-            )}
-
-            {selected ? (
-              <ClientDetail
-                key={selected.id}
-                client={selected}
-                onUnlinked={() => setSelectedId(null)}
-                onBack={isDesktop ? null : () => setSelectedId(null)}
-              />
-            ) : isDesktop ? (
-              <div style={{ display: "grid", placeItems: "center", color: "var(--muted)" }}>
-                {t.dashSelectClient}
-              </div>
-            ) : null}
-          </div>
-        )}
+        {tab === "clients" && (selected ? (
+          <ClientDetail
+            key={selected.id}
+            client={selected}
+            students={clients}
+            onSwitch={setSelectedId}
+            nav={clientNav}
+            onNav={(patch) => setClientNav((n) => ({ ...n, ...patch }))}
+            onUnlinked={() => { setSelectedId(null); setReloadKey((k) => k + 1); }}
+            onBack={() => setSelectedId(null)}
+          />
+        ) : (
+          <StudentHome
+            students={clients}
+            loading={loading}
+            failed={failed}
+            onRetry={retry}
+            onOpen={setSelectedId}
+            onInvite={() => setTab("sync")}
+          />
+        ))}
       </div>
 
       {!isDesktop && (

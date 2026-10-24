@@ -6,7 +6,8 @@ import { friendlyError } from "../lib/friendlyError";
 import { signIn, signUp } from "../lib/auth";
 import { redeemInvite, setScopes as applyScopes } from "../lib/sync/link";
 import { getPref, setPref } from "../lib/prefs";
-import { setSupabaseConfig, testConnection } from "../lib/supabaseConfig";
+import { setSupabaseConfig, testConnection, validateConfig, loadSupabaseConfig } from "../lib/supabaseConfig";
+import { previewProjectSwitch, switchSupabaseProject } from "../lib/sync/project";
 
 const STEPS = ["scopes", "connect", "account", "confirm", "done"];
 const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
@@ -17,6 +18,14 @@ const CONNECT_REASON_KEYS = {
   unreachable: "trainerLinkConnectUnreachable",
 };
 const INVALID_LINK_CODES = new Set(["bad-url", "not-https", "bad-host", "bad-key"]);
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url || "";
+  }
+}
 
 export default function TrainerLinkModal({ onClose, onLinked }) {
   useEscapeKey(onClose);
@@ -32,6 +41,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resultLink, setResultLink] = useState(null);
+  const [switchFrom, setSwitchFrom] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,13 +54,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
   const stepIndex = STEPS.indexOf(step);
   const emailValid = /\S+@\S+\.\S+/.test(email);
   const passwordValid = password.length >= 6;
-  const hostname = (() => {
-    try {
-      return pendingInvite ? new URL(pendingInvite.url).hostname : "";
-    } catch {
-      return pendingInvite?.url || "";
-    }
-  })();
+  const hostname = pendingInvite ? hostOf(pendingInvite.url) : "";
 
   function toggleScope(id) {
     setScopes((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
@@ -66,12 +70,24 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
     setSubmitting(true);
     setError("");
     try {
-      const probe = await testConnection({ url: pendingInvite.url, anonKey: pendingInvite.anonKey });
+      const next = validateConfig({ url: pendingInvite.url, anonKey: pendingInvite.anonKey });
+      const probe = await testConnection(next);
       if (!probe.ok) {
         setError(t[CONNECT_REASON_KEYS[probe.reason]] || t.trainerLinkConnectUnknown);
         return;
       }
-      await setSupabaseConfig({ url: pendingInvite.url, anonKey: pendingInvite.anonKey });
+      const current = await loadSupabaseConfig();
+      if (current && current.projectRef !== next.projectRef) {
+        // Another trainer: confirm, then reset and revoke the old link.
+        if (!switchFrom) {
+          setSwitchFrom({ host: hostOf(current.url), ...(await previewProjectSwitch()) });
+          return;
+        }
+        await switchSupabaseProject(next);
+      } else {
+        await setSupabaseConfig(next);
+      }
+      setSwitchFrom(null);
       setStep("account");
     } catch (e) {
       setError(INVALID_LINK_CODES.has(e.message) ? t.trainerLinkConnectInvalidLink : t.trainerLinkConnectUnknown);
@@ -85,8 +101,14 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
     setSubmitting(true);
     setError("");
     try {
-      if (mode === "signup") await signUp(email, password, email.split("@")[0]);
-      else await signIn(email, password);
+      const session = mode === "signup"
+        ? await signUp(email, password, email.split("@")[0])
+        : await signIn(email, password);
+      if (!session) {
+        setMode("signin");
+        setError(t.errEmailNotConfirmed);
+        return;
+      }
       setStep("confirm");
     } catch (e) {
       setError(friendlyError(e, t));
@@ -170,6 +192,19 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
             <div className="card card-flat" style={{ padding: 12, background: "var(--surface2)" }}>
               <SummaryRow label={t.trainerLinkConnectHostLabel} value={hostname} />
             </div>
+            {switchFrom && (
+              <div className="card card-flat flex flex-col gap-2" role="alert" style={{ padding: 12, borderColor: "var(--warn)" }}>
+                <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{t.trainerLinkSwitchTitle}</p>
+                <p className="text-sm" style={{ color: "var(--muted)" }}>
+                  {t.trainerLinkSwitchBody.replace("{host}", switchFrom.host)}
+                </p>
+                {switchFrom.removedCount > 0 && (
+                  <p className="text-sm" style={{ color: "var(--muted)" }}>
+                    {t.trainerLinkSwitchRemoved.replace("{n}", switchFrom.removedCount)}
+                  </p>
+                )}
+              </div>
+            )}
             {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
           </div>
         )}
@@ -259,11 +294,11 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
           )}
           {pendingInvite && step === "connect" && (
             <>
-              <button className="btn btn-ghost flex-1" onClick={() => setStep("scopes")} disabled={submitting}>
+              <button className="btn btn-ghost flex-1" onClick={() => { setSwitchFrom(null); setStep("scopes"); }} disabled={submitting}>
                 {t.back}
               </button>
               <button className="btn btn-primary flex-1" disabled={submitting} onClick={handleConnect}>
-                {t.trainerLinkNext}
+                {switchFrom ? t.trainerLinkSwitchConfirm : t.trainerLinkNext}
               </button>
             </>
           )}

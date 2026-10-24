@@ -67,11 +67,37 @@ create table if not exists public.trainer_invites (
 );
 
 comment on table public.trainer_invites is
-  'Reusable invite codes. Live = not revoked and (no expiry or not yet expired).';
+  'Invite codes, valid for 7 days. Live = not revoked and not yet expired; expired rows are deleted.';
+
+-- Invites last 7 days (policies.sql's trainer_invites_guard enforces it on
+-- every write). Codes created before that rule had no expiry: give them one.
+alter table public.trainer_invites alter column expires_at set default now() + interval '7 days';
+update public.trainer_invites set expires_at = created_at + interval '7 days' where expires_at is null;
 
 -- "list my invites" (trainer dashboard).
 create index if not exists trainer_invites_trainer_idx
   on public.trainer_invites (trainer_id);
+
+-- ---------------------------------------------------------------------------
+-- trainer_brand
+-- ---------------------------------------------------------------------------
+-- The trainer's own name, colour and logo, shown to the students linked to
+-- them. One row per trainer. The logo is a small data URI (the app resizes it
+-- to 192px); png/jpeg/webp only, never svg, and capped here as well.
+
+create table if not exists public.trainer_brand (
+  trainer_id uuid primary key references public.profiles (id) on delete cascade,
+  name       text check (name is null or char_length(name) between 1 and 40),
+  color      text check (color is null or color ~ '^#[0-9a-fA-F]{6}$'),
+  logo       text check (
+    logo is null
+    or (char_length(logo) <= 120000 and logo ~ '^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$')
+  ),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.trainer_brand is
+  'Trainer branding (name, colour, logo) that linked students see in the app.';
 
 -- ---------------------------------------------------------------------------
 -- sync_rows
@@ -136,6 +162,11 @@ $$;
 drop trigger if exists sync_rows_set_updated_at on public.sync_rows;
 create trigger sync_rows_set_updated_at
   before insert or update on public.sync_rows
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trainer_brand_set_updated_at on public.trainer_brand;
+create trigger trainer_brand_set_updated_at
+  before insert or update on public.trainer_brand
   for each row execute function public.set_updated_at();
 
 drop trigger if exists trainer_links_set_updated_at on public.trainer_links;

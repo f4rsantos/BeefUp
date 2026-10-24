@@ -1,7 +1,7 @@
 import NumberField from "./NumberField";
 import TimeField from "./TimeField";
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, memo } from "react";
-import { Trash2, Plus, Check, MoreHorizontal, StickyNote } from "lucide-react";
+import { Trash2, Plus, Check, MoreHorizontal, StickyNote, ArrowLeftRight } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
 import { repUnitFor, isCardioExercise, getBarTypeLabel } from "../lib/exerciseTree"
 import { formatSet } from "../lib/setFormat"
@@ -266,6 +266,7 @@ function ExerciseCard({
   onAddSet,
   onRemoveSet,
   onRemoveExercise,
+  onReplaceExercise,
   onSetType,
   note,
   onUpdateNote,
@@ -389,6 +390,9 @@ function ExerciseCard({
         <PopoverMenu anchor={menu.anchor} onClose={closeMenu}>
           <MenuItem onClick={() => { setShowNote((v) => !v); closeMenu(); }}>
             <span className="flex items-center gap-2"><StickyNote size={15} /> {t.exerciseNote}</span>
+          </MenuItem>
+          <MenuItem onClick={() => { closeMenu(); onReplaceExercise(exIdx); }}>
+            <span className="flex items-center gap-2"><ArrowLeftRight size={15} /> {t.replaceExercise}</span>
           </MenuItem>
           <MenuItem color="var(--danger)" onClick={() => { closeMenu(); onRemoveExercise(exIdx); }}>
             <span className="flex items-center gap-2"><Trash2 size={15} /> {t.removeExercise}</span>

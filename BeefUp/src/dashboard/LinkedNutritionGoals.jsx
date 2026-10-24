@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, ChevronDown } from "lucide-react";
 import ConfirmModal from "../components/ConfirmModal";
+import { PanelHead } from "./parts";
 import NumberField from "../components/NumberField";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { friendlyError } from "../lib/friendlyError";
@@ -59,20 +60,20 @@ export default function LinkedNutritionGoals({ client, goals: initialGoals, t })
 
   return (
     <section className="dash-panel">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="dash-card-title">{t.nutritionGoals}</h3>
-        {goals && !editing && (
-          <div className="flex items-center gap-2">
-            <button className="btn-icon" onClick={() => setEditing(true)} aria-label={t.edit} disabled={busy}>
+      <PanelHead
+        title={t.nutritionGoals}
+        desc={t.dashPrescribeGoalsDesc}
+        actions={goals && !editing && (
+          <>
+            <button className="btn-icon" onClick={() => setEditing(true)} aria-label={t.edit} title={t.edit} disabled={busy}>
               <Pencil size={15} style={{ color: "var(--muted)" }} />
             </button>
-            <button className="btn-icon" onClick={() => setPendingUnprescribe(true)} aria-label={t.delete} disabled={busy}>
+            <button className="btn-icon" onClick={() => setPendingUnprescribe(true)} aria-label={t.delete} title={t.delete} disabled={busy}>
               <Trash2 size={15} style={{ color: "var(--muted)" }} />
             </button>
-          </div>
+          </>
         )}
-      </div>
-      <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>{t.dashPrescribeGoalsDesc}</p>
+      />
       {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
       {!goals && !editing && (
@@ -115,7 +116,7 @@ function GoalsForm({ initial, onSave, onCancel, busy, t }) {
   const [showMicros, setShowMicros] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 dash-narrow">
       <NumField label={`${t.calories} (${t.kcal})`} value={g.kcal} onChange={(v) => setG({ ...g, kcal: v })} />
       <div className="grid grid-cols-3 gap-3">
         <NumField label={`${t.protein} (g)`} value={g.protein} onChange={(v) => setG({ ...g, protein: v })} />
@@ -152,7 +153,7 @@ function GoalsForm({ initial, onSave, onCancel, busy, t }) {
 function GoalsSummary({ goals, t }) {
   const definedMicros = MICRONUTRIENTS.filter((m) => goals[m.key] != null);
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 dash-narrow">
       <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
         <span style={{ color: "var(--muted)" }}>{t.calories}</span>
         <span style={{ color: "var(--text)", fontWeight: 700 }}>{goals.kcal} {t.kcal}</span>

@@ -13,6 +13,7 @@ import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
 import RestBar from "../components/RestBar";
 import EndWorkoutModal from "../components/EndWorkoutModal";
+import SaveFreeWorkoutModal from "../components/SaveFreeWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import { localizedName } from "../lib/localizedName"
@@ -125,11 +126,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
   const [showOneRM, setShowOneRM] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
+  const [replacingIdx, setReplacingIdx] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
   const [endModal, setEndModal] = useState(null);
   const [cancelModal, setCancelModal] = useState(false);
   const [pendingRemoveExercise, setPendingRemoveExercise] = useState(null);
   const [pendingTemplateUpdate, setPendingTemplateUpdate] = useState(false);
+  const [savingFree, setSavingFree] = useState(false);
   const [viewingExercise, setViewingExercise] = useState(null);
 
   const openExerciseInfo = useCallback((ref) => {
@@ -301,6 +304,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
 
+  // The replaced exercise's logged sets are dropped.
+  const replaceExercise = useCallback((exIdx, pick) => {
+    const ex = resolveExercise(pick.ref);
+    if (!ex) return;
+    const entry = buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, pick.barType);
+    setExercises((prev) => prev.map((e, i) => (i === exIdx ? entry : e)));
+    setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
+    setReplacingIdx(null);
+  }, [sessions]);
+
   const addExercises = useCallback((picks) => {
     const entries = picks
       .map(({ ref, barType }) => {
@@ -313,14 +326,14 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     setShowExPicker(false);
   }, [sessions]);
 
-  async function handleEnd() {
+  async function handleEnd(saved = null) {
     const duration = Math.floor((Date.now() - startedAt) / 1000);
 
     const session = {
       id: uid(),
       date: nowISO(),
-      workoutId: activeWorkout?.workoutId ?? null,
-      workoutName: activeWorkout?.workoutName ?? "",
+      workoutId: saved?.id ?? activeWorkout?.workoutId ?? null,
+      workoutName: saved?.name ?? activeWorkout?.workoutName ?? "",
       duration,
       exercises: exercises
         .map((e) => ({
@@ -387,6 +400,21 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     saveWorkout({ ...sourceWorkout, exercises: newExercises });
   }
 
+  async function saveFreeAsWorkout(name) {
+    const items = exercises
+      .filter((e) => e.sets.some((s) => s.done))
+      .map((e) => {
+        const item = { ref: e.exerciseId };
+        if (e.note?.trim()) item.note = e.note.trim();
+        if (e.barType) item.barType = e.barType;
+        return item;
+      });
+    const workout = { id: uid(), name, exercises: items, restAfterSet };
+    await saveWorkout(workout);
+    setSavingFree(false);
+    handleEnd(workout);
+  }
+
   return (
     <div
       className="flex flex-col h-full overflow-y-auto"
@@ -431,6 +459,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             onAddSet={addSet}
             onRemoveSet={removeSet}
             onRemoveExercise={setPendingRemoveExercise}
+            onReplaceExercise={setReplacingIdx}
             onSetType={setSetType}
             note={ex.note}
             onUpdateNote={updateNote}
@@ -471,6 +500,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           onClose={() => setShowExPicker(false)}
         />
       )}
+      {replacingIdx !== null && exercises[replacingIdx] && (
+        <ExercisePicker
+          replace={{ ref: exercises[replacingIdx].exerciseId, barType: exercises[replacingIdx].barType }}
+          onConfirm={(picks) => replaceExercise(replacingIdx, picks[0])}
+          onClose={() => setReplacingIdx(null)}
+        />
+      )}
 
       {viewingExercise && (
         <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
@@ -497,6 +533,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             setEndModal(null);
             if (workoutChanged) {
               setPendingTemplateUpdate(true);
+            } else if (!sourceWorkout) {
+              setSavingFree(true);
             } else {
               handleEnd();
             }
@@ -517,6 +555,16 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
           onConfirm={() => {
             applyTemplateUpdate();
             setPendingTemplateUpdate(false);
+            handleEnd();
+          }}
+        />
+      )}
+
+      {savingFree && (
+        <SaveFreeWorkoutModal
+          onSave={saveFreeAsWorkout}
+          onSkip={() => {
+            setSavingFree(false);
             handleEnd();
           }}
         />

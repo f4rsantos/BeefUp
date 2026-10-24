@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { Trash2, Plus, Pencil, Check, LayoutDashboard, Dumbbell, Ruler, StickyNote, Link as LinkIcon, Lock, Utensils, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { StudentNav, StudentNavBar, StudentSwitcher } from "./StudentNav";
+import RenameStudentModal from "./RenameStudentModal";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/useApp";
 import { friendlyError } from "../lib/friendlyError";
@@ -20,7 +22,7 @@ import { STORES } from "../lib/stores";
 import { LinkedPlan, LinkedWorkoutsList } from "./LinkedClientGym";
 import LinkedNutritionGoals from "./LinkedNutritionGoals";
 import ConfirmModal from "../components/ConfirmModal";
-import { Empty, Skeleton } from "./parts";
+import { Empty, Skeleton, PanelHead } from "./parts";
 import NumberField from "../components/NumberField";
 import MacroRing from "../components/MacroRing";
 
@@ -36,6 +38,12 @@ function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, save
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Fit data and goal line, not from zero.
+  const scale = chartData.map((d) => d.value).concat(goal ? [goal.target] : []);
+  const lo = Math.min(...scale);
+  const hi = Math.max(...scale);
+  const pad = (hi - lo) * 0.15 || 1;
 
   async function handleSave() {
     const n = parseFloat(val);
@@ -59,7 +67,7 @@ function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, save
     <div className="dash-panel flex flex-col gap-3">
       {onSave && (
         <div className="flex gap-3 items-center">
-          <div className="flex-1" style={{ position: "relative" }}>
+          <div style={{ position: "relative", flex: "0 1 280px" }}>
             <NumberField
               className="field"
               placeholder={t.measureValuePlaceholder}
@@ -91,11 +99,11 @@ function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, save
       {chartData.length === 0 ? (
         <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>{t.noMeasures}</p>
       ) : (
-        <div style={{ width: "100%", height: 140 }}>
+        <div style={{ width: "100%", height: 180 }}>
           <ResponsiveContainer>
             <LineChart data={chartData}>
               <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
-              <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} />
+              <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} width={32} domain={[Math.floor(lo - pad), Math.ceil(hi + pad)]} />
               <Tooltip {...CHART_TOOLTIP_STYLE} />
               {goal && (
                 <ReferenceLine
@@ -252,19 +260,20 @@ function Notes({ client, saveClient, t }) {
   );
 }
 
-export default function ClientDetail({ client, onUnlinked, onBack }) {
+// `nav` lives in the parent so switching student keeps the page.
+export default function ClientDetail({ client, students, onSwitch, nav, onNav, onUnlinked, onBack }) {
   const { t, lang, clients, saveClient } = useApp();
   const configured = useSupabaseConfigured() || isDashDemo();
   const isDesktop = useIsDesktop();
-  const [section, setSection] = useState("overview");
-  const [gymSub, setGymSub] = useState("plan");
-  const [nutritionSub, setNutritionSub] = useState("goals");
-  const [measuresSub, setMeasuresSub] = useState("log");
+  const { section, gym: gymSub, nutrition: nutritionSub, measures: measuresSub } = nav;
   const [data, setData] = useState(() => (isDashDemo() ? demoClientData(client.linkedUserId) : null));
   const [loading, setLoading] = useState(configured && !isDashDemo());
   const [error, setError] = useState("");
   const [confirmingUnlink, setConfirmingUnlink] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [planDirty, setPlanDirty] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState(null);
 
   const scopes = client.scopes || [];
   const hasWorkouts = scopes.includes("workouts");
@@ -317,7 +326,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
         { id: "workouts", label: t.workouts },
         { id: "sessions", label: t.dashSessions },
       ],
-      view: gymSub, setView: setGymSub,
+      view: gymSub,
     },
     {
       id: "nutrition", Icon: Utensils, label: t.dashNutrition, shared: hasNutrition,
@@ -325,7 +334,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
         { id: "goals", label: t.nutritionGoals },
         { id: "daily", label: t.dashDailyData },
       ],
-      view: nutritionSub, setView: setNutritionSub,
+      view: nutritionSub,
     },
     {
       id: "measures", Icon: Ruler, label: t.dashMeasures, shared: hasMeasures,
@@ -333,34 +342,133 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
         { id: "log", label: t.dashMeasuresLogTab },
         { id: "goals", label: t.dashMeasuresGoalsTab },
       ],
-      view: measuresSub, setView: setMeasuresSub,
+      view: measuresSub,
     },
     { id: "notes", Icon: StickyNote, label: t.dashNotes, shared: true },
   ];
   const area = areas.find((a) => a.id === section) || areas[0];
   const sharedScopes = areas.filter((a) => a.shared && a.views).map((a) => a.label.toLowerCase());
 
+  // Leaving mid-edit asks first; the draft is in memory.
+  function guard(go) {
+    if (planDirty) setPendingLeave(() => go);
+    else go();
+  }
+
+  function select(id, viewId) {
+    if (id === section && (!viewId || viewId === nav[id])) return;
+    guard(() => onNav(viewId ? { section: id, [id]: viewId } : { section: id }));
+  }
+
+  const identity = (
+    <>
+      {isDesktop && (
+        <button type="button" className="dash-back" onClick={() => guard(onBack)}>
+          <ChevronLeft size={16} /> {t.dashClients}
+        </button>
+      )}
+      <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
+        <StudentSwitcher current={client} students={students} onSwitch={(id) => guard(() => onSwitch(id))} />
+        <button type="button" className="btn-icon" onClick={() => setRenaming(true)} aria-label={t.dashRenameStudent} title={t.dashRenameStudent}>
+          <Pencil size={15} style={{ color: "var(--muted)" }} />
+        </button>
+      </div>
+      <p className="dash-client-meta">
+        <LinkIcon size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+        <span style={{ color: "var(--accent)" }}>{t.dashLinked}</span>
+      </p>
+      {sharedScopes.length > 0 && <p className="dash-client-scopes">{sharedScopes.join(", ")}</p>}
+    </>
+  );
+  const unlinkButton = configured && (
+    <button className="btn btn-ghost text-sm" onClick={() => setConfirmingUnlink(true)} disabled={unlinking}>
+      {t.dashUnlinkClient}
+    </button>
+  );
+
   return (
-    <div className="dash-detail-wrap">
-      <div className="dash-detail-head">
-        {onBack && (
-          <button className="btn-back flex items-center gap-1 text-sm" style={{ color: "var(--muted)" }} onClick={onBack}>
-            <ChevronLeft size={18} /> {t.back}
-          </button>
+    <div className="dash-student">
+      {isDesktop && (
+        <aside className="dash-rail">
+          <div className="dash-student-id">{identity}</div>
+          <StudentNav areas={areas} section={section} onSelect={select} />
+          <div className="dash-rail-foot">{unlinkButton}</div>
+        </aside>
+      )}
+
+      <div className="dash-student-main">
+        {!isDesktop && (
+          <>
+            <header className="dash-student-head">
+              <div className="dash-student-id">{identity}</div>
+              {unlinkButton}
+            </header>
+            <StudentNavBar areas={areas} section={section} onSelect={select} />
+          </>
         )}
-        <div style={{ minWidth: 0 }}>
-          <h2 className="dash-client-name">{client.name}</h2>
-          <p className="dash-client-meta">
-            <LinkIcon size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
-            <span style={{ color: "var(--accent)" }}>{t.dashLinked}</span>
-            {sharedScopes.length > 0 && <span> · {sharedScopes.join(", ")}</span>}
-          </p>
+        <div className="dash-content">
+          {!configured ? (
+            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashSyncUnavailable}</p>
+          ) : loading ? (
+            <Skeleton rows={4} />
+          ) : error ? (
+            <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+          ) : (
+            <>
+              {!area.shared && <ScopeNotShared label={area.label} t={t} />}
+
+              {section === "overview" && (
+                <LinkedOverview
+                  data={data}
+                  annotations={annotations}
+                  hasWorkouts={hasWorkouts}
+                  hasNutrition={hasNutrition}
+                  hasMeasures={hasMeasures}
+                  t={t}
+                />
+              )}
+              {section === "gym" && hasWorkouts && (
+                <>
+                  {gymSub === "plan" && <LinkedPlan client={client} plans={data.plans || []} workouts={data.workouts || []} t={t} onDirtyChange={setPlanDirty} />}
+                  {gymSub === "workouts" && (
+                    <LinkedWorkoutsList
+                      client={client}
+                      workouts={data.workouts || []}
+                      lang={lang}
+                      t={t}
+                      onChanged={(next) => setData((d) => ({ ...d, workouts: next }))}
+                    />
+                  )}
+                  {gymSub === "sessions" && <LinkedSessions sessions={data.sessions || []} lang={lang} t={t} />}
+                </>
+              )}
+              {section === "nutrition" && hasNutrition && (
+                <>
+                  {nutritionSub === "goals" && <LinkedNutritionGoals client={client} goals={data.nutritionGoals?.[0] || null} t={t} />}
+                  {nutritionSub === "daily" && <LinkedNutrition foodLog={data.foodLog || []} goals={data.nutritionGoals?.[0] || null} t={t} />}
+                </>
+              )}
+              {section === "measures" && hasMeasures && (
+                <>
+                  {measuresSub === "log" && (
+                    <LinkedMeasures client={client} measurements={data.measurements || []} customTypes={data.measureTypes || []} goals={data.measureGoals || []} t={t} />
+                  )}
+                  {measuresSub === "goals" && (
+                    <LinkedMeasureGoals
+                      client={client}
+                      measurements={data.measurements || []}
+                      customTypes={data.measureTypes || []}
+                      goals={data.measureGoals || []}
+                      onChanged={(next) => setData((d) => ({ ...d, measureGoals: next }))}
+                      t={t}
+                    />
+                  )}
+                </>
+              )}
+              {section === "notes" && <Notes client={annotations} saveClient={saveClient} t={t} />}
+            </>
+          )}
         </div>
-        {configured && (
-          <button className="btn btn-ghost text-sm" onClick={() => setConfirmingUnlink(true)} disabled={unlinking}>
-            {t.dashUnlinkClient}
-          </button>
-        )}
       </div>
 
       {confirmingUnlink && (
@@ -374,104 +482,28 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
         />
       )}
 
-      {!configured ? (
-        <div className="dash-section">
-          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashSyncUnavailable}</p>
-        </div>
-      ) : loading ? (
-        <div className="dash-section">
-          <Skeleton rows={4} />
-        </div>
-      ) : error ? (
-        <div className="dash-section">
-          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
-        </div>
-      ) : (
-        <>
-          <nav className="dash-areas">
-            {areas.map((a) => (
-              <button
-                key={a.id}
-                className={`dash-area ${section === a.id ? "active" : ""}`}
-                onClick={() => setSection(a.id)}
-              >
-                {/* The icon is decoration here; dropping it on a phone is what
-                    lets all five labels fit without a scrolling strip. */}
-                {isDesktop && <a.Icon size={15} />}
-                <span>{a.label}</span>
-                {!a.shared && <Lock size={12} style={{ opacity: 0.7 }} />}
-              </button>
-            ))}
-          </nav>
+      {pendingLeave && (
+        <ConfirmModal
+          title={t.dashLeaveTitle}
+          message={t.dashLeaveMessage}
+          confirmLabel={t.dashLeaveConfirm}
+          cancelLabel={t.dashLeaveStay}
+          onCancel={() => setPendingLeave(null)}
+          onConfirm={() => {
+            const go = pendingLeave;
+            setPendingLeave(null);
+            go();
+          }}
+        />
+      )}
 
-          <div className="dash-section">
-            {area.shared && area.views && (
-              <div className="pill-toggle dash-views">
-                {area.views.map((v) => (
-                  <button
-                    key={v.id}
-                    className={`pill-option ${area.view === v.id ? "active" : ""}`}
-                    onClick={() => area.setView(v.id)}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {!area.shared && <ScopeNotShared label={area.label} t={t} />}
-
-            {section === "overview" && (
-              <LinkedOverview
-                data={data}
-                annotations={annotations}
-                hasWorkouts={hasWorkouts}
-                hasNutrition={hasNutrition}
-                hasMeasures={hasMeasures}
-                t={t}
-              />
-            )}
-            {section === "gym" && hasWorkouts && (
-              <>
-                {gymSub === "plan" && <LinkedPlan client={client} plans={data.plans || []} workouts={data.workouts || []} t={t} />}
-                {gymSub === "workouts" && (
-                  <LinkedWorkoutsList
-                    client={client}
-                    workouts={data.workouts || []}
-                    lang={lang}
-                    t={t}
-                    onChanged={(next) => setData((d) => ({ ...d, workouts: next }))}
-                  />
-                )}
-                {gymSub === "sessions" && <LinkedSessions sessions={data.sessions || []} lang={lang} t={t} />}
-              </>
-            )}
-            {section === "nutrition" && hasNutrition && (
-              <>
-                {nutritionSub === "goals" && <LinkedNutritionGoals client={client} goals={data.nutritionGoals?.[0] || null} t={t} />}
-                {nutritionSub === "daily" && <LinkedNutrition foodLog={data.foodLog || []} goals={data.nutritionGoals?.[0] || null} t={t} />}
-              </>
-            )}
-            {section === "measures" && hasMeasures && (
-              <>
-                {measuresSub === "log" && (
-                  <LinkedMeasures client={client} measurements={data.measurements || []} customTypes={data.measureTypes || []} goals={data.measureGoals || []} t={t} />
-                )}
-                {measuresSub === "goals" && (
-                  <LinkedMeasureGoals
-                    client={client}
-                    measurements={data.measurements || []}
-                    customTypes={data.measureTypes || []}
-                    goals={data.measureGoals || []}
-                    onChanged={(next) => setData((d) => ({ ...d, measureGoals: next }))}
-                    t={t}
-                  />
-                )}
-              </>
-            )}
-            {section === "notes" && <Notes client={annotations} saveClient={saveClient} t={t} />}
-          </div>
-        </>
+      {renaming && (
+        <RenameStudentModal
+          client={client}
+          alias={annotations.alias || ""}
+          onSave={(alias) => saveClient({ ...annotations, alias })}
+          onClose={() => setRenaming(false)}
+        />
       )}
     </div>
   );
@@ -480,8 +512,7 @@ export default function ClientDetail({ client, onUnlinked, onBack }) {
 function ScopeNotShared({ label, t }) {
   return (
     <section className="dash-panel">
-      <h3 className="dash-card-title">{label}</h3>
-      <p className="dash-panel-desc" style={{ marginBottom: 0 }}>{t.dashScopeNotShared}</p>
+      <PanelHead title={label} desc={t.dashScopeNotShared} />
     </section>
   );
 }
@@ -653,13 +684,13 @@ function LinkedSessions({ sessions, lang, t }) {
       {recent.length === 0 && <Empty>{t.dashNoSessions}</Empty>}
       {recent.map((s) => (
         <div key={s.id} className="dash-panel">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm" style={{ color: "var(--muted)" }}>{Math.round(sessionVolume(s))} kg · {sessionSets(s)} {t.sets.toLowerCase()}</span>
+          <div className="flex items-baseline justify-between gap-3 mb-2">
             <span style={{ fontWeight: 700, color: "var(--text)" }}>{formatDateTimeShort(s.date)}</span>
+            <span className="text-sm tabular" style={{ color: "var(--muted)" }}>{Math.round(sessionVolume(s))} kg · {sessionSets(s)} {t.sets.toLowerCase()}</span>
           </div>
           <div className="flex flex-col gap-1">
             {(s.exercises || []).map((e, i) => (
-              <span key={i} className="text-xs" style={{ color: "var(--muted)" }}>{resolvedExerciseName(e.exerciseId, lang)}</span>
+              <span key={i} className="text-sm" style={{ color: "var(--text)" }}>{resolvedExerciseName(e.exerciseId, lang)}</span>
             ))}
           </div>
         </div>
@@ -681,8 +712,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
   if (days.length === 0) {
     return (
       <section className="dash-panel">
-        <h3 className="dash-card-title">{t.dashNutrition}</h3>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoNutritionData}</p>
+        <PanelHead title={t.dashNutrition} desc={t.dashNoNutritionData} />
       </section>
     );
   }
@@ -716,18 +746,23 @@ function LinkedNutrition({ foodLog, goals, t }) {
 
   return (
     <section className="dash-panel">
-      <h3 className="dash-card-title">{t.dashNutrition}</h3>
+      <PanelHead
+        title={t.dashNutrition}
+        actions={
+          <>
+            <button className="btn-icon" onClick={() => setIndex((i) => Math.min(days.length - 1, i + 1))} disabled={index >= days.length - 1} aria-label={t.dashPrevDay}>
+              <ChevronLeft size={18} style={{ color: "var(--text)" }} />
+            </button>
+            <span className="text-sm font-semibold tabular" style={{ color: "var(--text)", minWidth: 72, textAlign: "center" }}>{formatDateShort(selected)}</span>
+            <button className="btn-icon" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index <= 0} aria-label={t.dashNextDay}>
+              <ChevronRight size={18} style={{ color: "var(--text)" }} />
+            </button>
+          </>
+        }
+      />
 
-      <div className="flex items-center justify-between mb-5">
-        <button className="btn-icon" onClick={() => setIndex((i) => Math.min(days.length - 1, i + 1))} disabled={index >= days.length - 1} aria-label={t.dashPrevDay}>
-          <ChevronLeft size={18} style={{ color: "var(--text)" }} />
-        </button>
-        <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{formatDateShort(selected)}</span>
-        <button className="btn-icon" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index <= 0} aria-label={t.dashNextDay}>
-          <ChevronRight size={18} style={{ color: "var(--text)" }} />
-        </button>
-      </div>
-
+      <div className="dash-nutri">
+      <div className="dash-nutri-sum">
       <div className="flex items-center justify-center">
         {/* The denominator is the goal, so the ring actually shows adherence.
             It used to be totals.kcal, which pinned it at 100% every day. */}
@@ -785,7 +820,10 @@ function LinkedNutrition({ foodLog, goals, t }) {
         </div>
       )}
 
-      <p className="section-title" style={{ fontSize: 13, marginTop: 20, marginBottom: 10 }}>{t.meals}</p>
+      </div>
+
+      <div>
+      <p className="section-title" style={{ fontSize: 13, marginBottom: 10 }}>{t.meals}</p>
 
       <div className="flex flex-col" style={{ gap: 16 }}>
         {mealGroups.length === 0 && <Empty>{t.dashNoMeals}</Empty>}
@@ -803,6 +841,8 @@ function LinkedNutrition({ foodLog, goals, t }) {
             ))}
           </div>
         ))}
+      </div>
+      </div>
       </div>
     </section>
   );
@@ -826,6 +866,7 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
   const history = useMemo(() => [...chart].reverse(), [chart]);
   const unit = getMeasureUnit(mType, customTypes);
   const goal = goals.find((g) => g.id === mType) || null;
+  const typeIds = [...MEASURE_TYPES, ...customTypes.map((m) => m.id)];
 
   async function addType(name, unit) {
     setBusy(true);
@@ -868,26 +909,33 @@ function LinkedMeasures({ client, measurements: initialMeasurements, customTypes
   return (
     <div className="dash-measures">
       {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
-      <div className="flex gap-2" style={{ flexWrap: "wrap", marginBottom: 28 }}>
-        {MEASURE_TYPES.map((m) => (
-          <button key={m} className={`chip ${mType === m ? "active" : ""}`} onClick={() => setMType(m)}>{measureTypeLabel(m, customTypes, t)}</button>
-        ))}
-        {customTypes.map((m) => (
-          <button key={m.id} className={`chip ${mType === m.id ? "active" : ""}`} onClick={() => setMType(m.id)}>{measureTypeLabel(m.id, customTypes, t)}</button>
-        ))}
-        <button className="chip chip-add" onClick={() => setAddingType(true)} aria-label={t.measureAddTypeAria} disabled={busy}>{t.measureAddTypePill}</button>
-      </div>
+      <div className="dash-measures-grid">
+        <MeasureCard
+          t={t}
+          chartData={chart}
+          history={history}
+          unit={unit}
+          goal={goal}
+          onSave={addMeasurement}
+          onDelete={(id) => setPendingDelete(id)}
+          saveError={saveError}
+        />
 
-      <MeasureCard
-        t={t}
-        chartData={chart}
-        history={history}
-        unit={unit}
-        goal={goal}
-        onSave={addMeasurement}
-        onDelete={(id) => setPendingDelete(id)}
-        saveError={saveError}
-      />
+        <div className="dash-mtypes">
+          {typeIds.map((id) => {
+            const latest = measurementsForType(measures, id).at(-1);
+            return (
+              <button key={id} type="button" className={`dash-mtype ${mType === id ? "active" : ""}`} aria-pressed={mType === id} onClick={() => setMType(id)}>
+                <span className="truncate">{measureTypeLabel(id, customTypes, t)}</span>
+                <span className="dash-mtype-value tabular">{latest ? `${latest.value} ${getMeasureUnit(id, customTypes)}` : "–"}</span>
+              </button>
+            );
+          })}
+          <button type="button" className="dash-mtype add" onClick={() => setAddingType(true)} aria-label={t.measureAddTypeAria} disabled={busy}>
+            {t.measureAddTypePill}
+          </button>
+        </div>
+      </div>
 
       {addingType && (
         <AddMeasureTypeModal
@@ -981,8 +1029,7 @@ function LinkedMeasureGoals({ client, measurements, customTypes, goals: initialG
 
   return (
     <section className="dash-panel">
-      <h3 className="dash-card-title mb-1">{t.dashMeasuresGoalsTab}</h3>
-      <p className="dash-panel-desc">{t.dashMeasureGoalsDesc}</p>
+      <PanelHead title={t.dashMeasuresGoalsTab} desc={t.dashMeasureGoalsDesc} />
       {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="flex flex-col gap-2">

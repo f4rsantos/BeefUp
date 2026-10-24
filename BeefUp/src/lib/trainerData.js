@@ -40,6 +40,16 @@ async function trainerClient() {
   return trainerId ? { supabase, trainerId } : null
 }
 
+// Which setup.sql revision the project runs: 0 if it predates schema_version(), null if it can't be told.
+export async function fetchSchemaRevision() {
+  const ctx = await trainerClient()
+  if (!ctx) return null
+  const { data, error } = await ctx.supabase.rpc('schema_version')
+  if (!error) return typeof data === 'number' ? data : null
+  if (error.code === 'PGRST202' || /could not find the function/i.test(error.message || '')) return 0
+  return null
+}
+
 // Accepted links for the signed-in trainer, with each client's shared scopes.
 export async function listTrainerLinks() {
   const ctx = await trainerClient()
@@ -162,17 +172,22 @@ export async function unlinkClient(clientId) {
   if (error) throw error
 }
 
-// Live (not revoked) invite codes for the signed-in trainer, newest first.
+// Live invites, newest first; expired ones are deleted here.
 export async function listInvites() {
   const ctx = await trainerClient()
   if (!ctx) return []
   const { supabase, trainerId } = ctx
+  const now = new Date().toISOString()
+
+  // Without the delete policy, the filter still hides expired.
+  await supabase.from('trainer_invites').delete().eq('trainer_id', trainerId).lt('expires_at', now)
 
   const { data, error } = await supabase
     .from('trainer_invites')
     .select('code, created_at, expires_at, revoked')
     .eq('trainer_id', trainerId)
     .eq('revoked', false)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []

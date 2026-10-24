@@ -4,15 +4,20 @@ import AccentColorModal from "../components/AccentColorModal";
 import { ThemeButtons, FontScaleButtons, LanguageButtons } from "../components/PreferenceControls";
 import { accentHexOf } from "../lib/colorTheme";
 import { useIsDesktop } from "../lib/useIsDesktop";
+import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
+import { useBrand } from "../lib/useBrand";
+import BrandSettings from "./BrandSettings";
 
 // The appearance preferences a trainer can actually use. Sound (there are no
 // timers here), section visibility (there is no bottom nav), linking to a
 // trainer (they are one) and the demo plan (it seeds a solo user's own
 // workouts) all belong to the phone app, so they are deliberately absent.
 export default function DashboardSettings() {
-  const { t, accentColor, setAccentColor, customAccentHex, setCustomAccentColor } = useApp();
+  const { t, effectiveAccent, setAccentColor, setCustomAccentColor } = useApp();
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const accentHex = accentHexOf(accentColor, customAccentHex);
+  const accentHex = accentHexOf(effectiveAccent.accentColor, effectiveAccent.customAccentHex);
+  const configured = useSupabaseConfigured();
+  const brand = useBrand();
   // Phone header already shows this title.
   const isDesktop = useIsDesktop();
 
@@ -20,6 +25,8 @@ export default function DashboardSettings() {
     <div className="dash-cal">
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         {isDesktop && <h2 className="dash-card-title" style={{ marginBottom: "var(--d-5)" }}>{t.settingsTitle}</h2>}
+
+        {configured && <BrandSettings />}
 
         <section className="dash-panel">
           <p className="section-title mb-3">{t.theme}</p>
@@ -55,6 +62,8 @@ export default function DashboardSettings() {
           <p className="section-title mb-3">{t.language}</p>
           <div className="flex gap-2"><LanguageButtons /></div>
         </section>
+
+        {brand && <p className="brand-credit">{t.brandCredit}</p>}
       </div>
 
       {showColorPicker && (

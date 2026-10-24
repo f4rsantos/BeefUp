@@ -7,6 +7,7 @@ import { Skeleton } from "./parts";
 import { listInvites, createInvite, revokeInvite } from "../lib/trainerData";
 import { encodeTrainerInvite } from "../lib/trainerInvite";
 import { getConfigSync } from "../lib/supabaseConfig";
+import { formatDateTimeShort } from "../lib/planUtils";
 
 // Spaced: easier to read and copy.
 function formatCode(code) {
@@ -131,6 +132,9 @@ export default function InviteCodes() {
                 <span className="text-xs" style={{ color: "var(--muted)", flex: 1 }}>
                   {t.dashInviteCodeLabel}{" "}
                   <span style={{ fontFamily: "monospace", letterSpacing: 1, color: "var(--text)" }}>{formatCode(inv.code)}</span>
+                  {inv.expires_at && (
+                    <> · {t.dashInviteValidUntil.replace("{date}", formatDateTimeShort(inv.expires_at))}</>
+                  )}
                 </span>
 
                 <button className="btn-icon" onClick={() => setPendingRevoke(inv.code)} aria-label={t.dashRevoke} title={t.dashRevoke}>

@@ -346,6 +346,7 @@ deserving a real run against an actual Supabase project before shipping:
   `sync_rows` gets a DELETE policy (student, own rows only), matching the
   app's tombstone-then-purge model where the server-side hard delete isn't
   actually part of the normal sync flow.
+- **`trainer_brand` (schema revision 3).** One row per trainer: `name` (1-40 chars), `color` (`#rrggbb`) and `logo` (a png/jpeg/webp data URI, at most 120000 characters, never svg), all CHECK-constrained so a bad value is refused by the database and not only by the app. The trainer reads and writes their own row (insert also requires `profiles.role = 'trainer'`); a student reads it only while a `trainer_links` row to that trainer is `accepted`, so revoking the link takes the brand away. No server-side image handling and no storage bucket: the app shrinks the logo to 192px before upload.
 - **`profiles` SELECT policies reach across the trainer/client boundary.**
   The contract's access rules are written in terms of `sync_rows`, but
   `getLink()`/the trainer dashboard need a *name* to show, not just a uuid.

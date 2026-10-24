@@ -9,6 +9,7 @@ export const PREF_DEFAULTS = {
   keepAwake: true,
   accentColor: 'green',
   customAccentHex: '#109a14',
+  accentChosen: null, // true once the person picks a colour; null = derived from accentColor
   lang: 'pt',
   onboarded: false,
   joinedAt: null,
@@ -24,6 +25,7 @@ export const PREF_DEFAULTS = {
   recentFoods: [],
   nutritionGoals: { kcal: 2200, protein: 150, carbs: 220, fat: 70, waterMl: 2500 },
   mealTypes: null,    // defaults to DEFAULT_MEAL_TYPES at hydration
+  workoutIcons: {},   // workout id -> icon key, chosen on the card
   pwaInstallDismissedAt: 0,
   syncLink: null,     // cached { trainerId, trainerName, status } | null
   syncScopes: [],      // areas the student shares: workouts/nutrition/measures
@@ -53,7 +55,7 @@ function mirrorForPaint(key, value) {
 }
 
 // Trainer's Supabase project and this device's sync bookkeeping: never leave.
-const LOCAL_ONLY_SETTING_PREFIXES = ['supabase:', 'sync:cursor:', 'sync:owner']
+const LOCAL_ONLY_SETTING_PREFIXES = ['supabase:', 'sync:cursor:', 'sync:owner', 'brand:']
 
 export function isLocalOnlySetting(key) {
   return LOCAL_ONLY_SETTING_PREFIXES.some(prefix => key.startsWith(prefix))
