@@ -5,22 +5,18 @@ import { Download, RefreshCw, X } from "lucide-react";
 function Banner({ Icon, title, desc, action, onAction, onDismiss, dismissLabel, aboveNav }) {
   return (
     <div
-      className="fade-in"
+      className="fade-in glass"
       style={{
         position: "absolute",
         left: 12,
         right: 12,
-        // Clear the bottom nav when it is showing, otherwise sit at the screen edge.
-        bottom: aboveNav ? "calc(84px + env(safe-area-inset-bottom))" : "calc(12px + env(safe-area-inset-bottom))",
+        bottom: aboveNav ? "calc(var(--dock-h, 0px) + 12px)" : "calc(12px + env(safe-area-inset-bottom))",
         zIndex: 60,
         display: "flex",
         alignItems: "center",
         gap: 12,
         padding: 12,
-        borderRadius: 14,
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-lg)",
+        borderRadius: 22,
       }}
     >
       <div

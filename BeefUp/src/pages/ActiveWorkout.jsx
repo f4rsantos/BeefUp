@@ -419,7 +419,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     <div
       className="flex flex-col h-full overflow-y-auto"
       style={{
-        background: "var(--bg)",
+        background: "var(--canvas, var(--bg))",
         touchAction: "pan-x pan-y pinch-zoom",
       }}
       onPointerDownCapture={unlockAudio}
@@ -509,7 +509,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       )}
 
       {viewingExercise && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--canvas, var(--bg))" }}>
           <ExerciseDetailPage
             exercise={viewingExercise.base}
             activeVariantId={viewingExercise.activeVariantId}

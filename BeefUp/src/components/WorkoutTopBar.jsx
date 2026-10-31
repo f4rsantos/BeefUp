@@ -1,42 +1,26 @@
 import { ChevronDown, Dumbbell, Square, Timer as TimerIcon } from "lucide-react";
 import { formatElapsedClock } from "../lib/planUtils";
 import ProgressRing from "./ProgressRing";
+import IconButton from "./ui/IconButton";
 
 export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onEnd, onMinimize, minimizeLabel, t }) {
   const restRunning = restState?.running ?? false;
   const restRemaining = restRunning ? Math.max(0, restState.duration - restState.elapsed) : 0;
 
   return (
-    <div
-      className="flex items-center justify-between px-4 pt-5 pb-3 gap-2"
-      style={{ position: "relative" }}
-    >
+    <div className="workout-topbar">
       <div className="flex gap-2">
-        <button
-          className="btn btn-ghost p-2.5"
-          title={minimizeLabel}
-          aria-label={minimizeLabel}
-          onClick={onMinimize}
-        >
-          <ChevronDown size={16} />
-        </button>
-        <button className="btn btn-ghost p-2.5" title={t.oneRM} onClick={onOneRM}>
-          <Dumbbell size={16} />
-        </button>
-        <button className={`btn btn-ghost ${restRunning ? "p-1.5" : "p-2.5"}`} title={t.rest} onClick={onRest}>
-          {restRunning ? (
-            <ProgressRing value={restRemaining} max={restState.duration} size={26} stroke={3} color="var(--accent)">
-              <span
-                className="font-mono"
-                style={{ fontSize: 9, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}
-              >
+        <IconButton icon={ChevronDown} label={minimizeLabel} onClick={onMinimize} />
+        <IconButton icon={Dumbbell} label={t.oneRM} onClick={onOneRM} />
+        <IconButton label={t.rest} onClick={onRest} icon={restRunning ? null : TimerIcon}>
+          {restRunning && (
+            <ProgressRing value={restRemaining} max={restState.duration} size={30} stroke={3} color="var(--accent)">
+              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
                 {restRemaining}
               </span>
             </ProgressRing>
-          ) : (
-            <TimerIcon size={16} />
           )}
-        </button>
+        </IconButton>
       </div>
 
       <div
@@ -46,24 +30,20 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
           left: "50%",
           transform: "translateX(-50%)",
           pointerEvents: "none",
-          background: "var(--grad-accent)",
-          boxShadow: "var(--shadow-glow)",
+          background: "var(--fill)",
           borderRadius: 999,
           padding: "7px 14px",
         }}
       >
         <span className="workout-timer-dot" />
-        <span
-          className="font-mono text-lg font-bold"
-          style={{ color: "#fff", fontVariantNumeric: "tabular-nums" }}
-        >
+        <span className="stat-value" style={{ fontSize: 17, color: "var(--text)" }}>
           {formatElapsedClock(elapsed)}
         </span>
       </div>
 
-      <button className="btn btn-danger p-2.5" title={t.end} onClick={onEnd}>
-        <Square size={16} fill="currentColor" />
-      </button>
+      <IconButton variant="danger" label={t.end} onClick={onEnd}>
+        <Square size={14} fill="currentColor" />
+      </IconButton>
     </div>
   );
 }

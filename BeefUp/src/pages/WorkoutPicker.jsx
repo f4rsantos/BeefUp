@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { ChevronLeft, Star, Search, Play, Dumbbell } from "lucide-react";
+import { Star, Search, Play, Dumbbell } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { getPref, setPref } from "../lib/prefs";
+import NavHeader from "../components/ui/NavHeader";
 
 export default function WorkoutPicker({ onSelect, onBack }) {
   const { t, lang, workouts } = useApp();
@@ -43,19 +44,16 @@ export default function WorkoutPicker({ onSelect, onBack }) {
   }, [workouts, query, favIds]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)", position: "relative" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))", position: "relative" }}>
       <div
         className="flex-1 overflow-y-auto pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in"
         style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
       >
-        <div className="flex items-center gap-1">
-          <button className="btn-back" onClick={onBack} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-          </button>
-          <h1 className="display" style={{ fontSize: 26, fontWeight: 900, color: "var(--text)" }}>
-            {t.startAnother}
-          </h1>
-        </div>
+        <NavHeader
+          title={t.startAnother}
+          onBack={onBack}
+          backLabel={t.back}
+        />
 
         <div style={{ position: "relative" }}>
           <Search size={16} style={{ position: "absolute", left: 12, top: 13, color: "var(--muted)" }} />

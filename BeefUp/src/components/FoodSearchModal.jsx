@@ -281,7 +281,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
               <ChevronLeft size={20} /> <span style={{ fontSize: 15 }}>{t.back}</span>
             </button>
             <div className="flex items-center gap-2">
-              <h3 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+              <h3 className="display flex-1" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
                 {localizedNameOrEnglish(selected, lang)}
               </h3>
               <button
@@ -358,7 +358,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
             <button className="btn btn-back mb-3 flex items-center gap-1" onClick={() => setCreating(false)}>
               <ChevronLeft size={20} /> <span style={{ fontSize: 15 }}>{t.back}</span>
             </button>
-            <h3 className="display mb-3" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            <h3 className="display mb-3" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
               {t.customFood}
             </h3>
             <p className="mb-5" style={{ color: "var(--muted)", fontSize: 14 }}>
@@ -426,7 +426,7 @@ export default function FoodSearchModal({ meal, onClose, initialDraft }) {
           /* ── Search list ── */
           <div className="fade-in">
             <div className="flex items-center gap-2 mb-4">
-              <h3 className="display flex-1" style={{ fontSize: 21, fontWeight: 900, color: "var(--text)" }}>
+              <h3 className="display flex-1" style={{ fontSize: 21, fontWeight: 700, color: "var(--text)" }}>
                 {t.addFood}
               </h3>
               <span className="chip active" style={{ pointerEvents: "none" }}>{mealLabel}</span>
@@ -575,7 +575,7 @@ function MacroPreview({ macros, t }) {
         <MacroRing value={macros.kcal} max={macros.kcal || 1} shares={macroShares(macros)}>
           <span
             className="display"
-            style={{ fontSize: 30, fontWeight: 900, color: "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}
+            style={{ fontSize: 30, fontWeight: 700, color: "var(--text)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}
           >
             {macros.kcal}
           </span>

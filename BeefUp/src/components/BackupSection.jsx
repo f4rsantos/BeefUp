@@ -5,31 +5,10 @@ import { useApp } from "../context/useApp";
 import { buildWorkoutCsv, downloadFile, parseWorkoutCsv, workoutCsvFilename } from "../lib/csvData";
 import { backupFilename, buildBackup, parseBackup, restoreBackup } from "../lib/backup";
 import ConfirmModal from "./ConfirmModal";
-
-const ICON_WRAPPER = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
-
-function DataRow({ Icon, label, desc, action, primary, busy, onClick }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3 min-w-0">
-        <div style={ICON_WRAPPER}>
-          <Icon size={16} style={{ color: "var(--text)" }} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{label}</p>
-          <p className="text-xs" style={{ color: "var(--muted)" }}>{desc}</p>
-        </div>
-      </div>
-      <button
-        className={`btn ${primary ? "btn-primary" : "btn-ghost"} px-3 py-2 text-xs`}
-        onClick={onClick}
-        disabled={busy}
-      >
-        {action}
-      </button>
-    </div>
-  );
-}
+import IconButton from "./ui/IconButton";
+import { ListGroup, ListRow } from "./ui/List";
+import GlassPanel from "./ui/GlassPanel";
+import ActionTile from "./ui/ActionTile";
 
 // Export and import both ask "which kind?" with the same layout
 function ChoiceModal({ title, question, options, onClose }) {
@@ -40,34 +19,28 @@ function ChoiceModal({ title, question, options, onClose }) {
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold text-base" style={{ color: "var(--text)" }}>{title}</span>
-          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
-            <X size={18} />
-          </button>
+          <IconButton icon={X} size="sm" label={t.cancel} onClick={onClose} />
         </div>
         <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>{question}</p>
 
-        <div className="flex flex-col gap-3">
+        <ListGroup icons>
           {options.map((option) => (
-            <button
+            <ListRow
               key={option.label}
-              className="card flex items-center gap-3"
-              style={{ textAlign: "left" }}
+              icon={option.Icon}
+              title={option.label}
+              subtitle={option.desc}
+              chevron
               onClick={option.onSelect}
-            >
-              <option.Icon size={20} style={{ color: "var(--accent)", flexShrink: 0 }} />
-              <div>
-                <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>{option.label}</div>
-                <div className="text-xs" style={{ color: "var(--muted)" }}>{option.desc}</div>
-              </div>
-            </button>
+            />
           ))}
-        </div>
+        </ListGroup>
       </div>
     </div>
   );
 }
 
-export default function BackupSection({ chooseLabel }) {
+export default function BackupSection({ extraActions = [] }) {
   const { t, lang, sessions, addSession } = useApp();
 
   const [busy, setBusy] = useState(false);
@@ -178,27 +151,15 @@ export default function BackupSection({ chooseLabel }) {
   return (
     <>
       <section>
-        <p className="section-title mb-1">{t.dataSection}</p>
-        <p className="text-xs" style={{ color: "var(--muted)", marginBottom: 6 }}>{t.dataSectionDesc}</p>
-        <div className="card flex flex-col gap-4">
-          <DataRow
-            Icon={Download}
-            label={t.exportData}
-            desc={t.exportDataDesc}
-            action={chooseLabel}
-            primary
-            busy={busy}
-            onClick={() => setChoosingExport(true)}
-          />
-          <DataRow
-            Icon={Upload}
-            label={t.importCsv}
-            desc={t.importCsvDesc}
-            action={chooseLabel}
-            busy={busy}
-            onClick={() => setChoosingImport(true)}
-          />
-        </div>
+        <GlassPanel title={t.dataSection} footer={t.dataSectionDesc}>
+          <div className="action-tiles">
+            {extraActions.map((action) => (
+              <ActionTile key={action.label} {...action} />
+            ))}
+            <ActionTile icon={Download} color="var(--fat)" label={t.exportData} disabled={busy} onClick={() => setChoosingExport(true)} />
+            <ActionTile icon={Upload} color="var(--success)" label={t.importCsv} disabled={busy} onClick={() => setChoosingImport(true)} />
+          </div>
+        </GlassPanel>
 
         {status && (
           <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: "var(--success)" }}>
