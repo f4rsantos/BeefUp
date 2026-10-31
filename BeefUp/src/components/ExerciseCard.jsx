@@ -1,6 +1,7 @@
 import NumberField from "./NumberField";
 import TimeField from "./TimeField";
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, memo } from "react";
+import { createPortal } from "react-dom";
 import { Trash2, Plus, Check, MoreHorizontal, StickyNote, ArrowLeftRight } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
 import { repUnitFor, isCardioExercise, getBarTypeLabel } from "../lib/exerciseTree"
@@ -44,26 +45,26 @@ function PopoverMenu({ anchor, onClose, children }) {
     if (anchor.top + h > limit) el.style.top = `${Math.max(8, anchor.above - h)}px`;
   }, [anchor]);
 
-  return (
+  // Portalled out of the card: its stacking context would trap the glass.
+  return createPortal(
     <div
       ref={menuRef}
       role="menu"
       onClick={(e) => e.stopPropagation()}
+      className="glass-menu fade-in"
       style={{
         position: "fixed",
         top: anchor.top,
         ...(anchor.right !== undefined ? { right: anchor.right } : { left: anchor.left }),
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: 12,
+        borderRadius: 16,
         minWidth: 180,
         zIndex: 1000,
-        boxShadow: "var(--shadow-lg)",
         overflow: "hidden",
       }}
     >
       {children}
-    </div>
+    </div>,
+    document.querySelector(".app-shell") ?? document.body
   );
 }
 
@@ -71,7 +72,7 @@ function MenuItem({ onClick, children, color }) {
   return (
     <button
       role="menuitem"
-      className="tap"
+      className="tap glass-menu-item"
       onClick={onClick}
       style={{
         width: "100%",
@@ -80,7 +81,6 @@ function MenuItem({ onClick, children, color }) {
         alignItems: "center",
         justifyContent: "space-between",
         gap: 8,
-        background: "none",
         border: "none",
         cursor: "pointer",
         fontSize: 14,
