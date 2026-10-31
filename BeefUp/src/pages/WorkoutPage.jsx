@@ -1,6 +1,7 @@
 import BrandStrip from "../components/BrandStrip";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Plus, History, ChevronRight, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, FilePenLine, Share2, Shapes } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, History, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, FilePenLine, Share2, Shapes, CalendarRange, Activity, ChevronRight } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { isPrescribed } from "../lib/planUtils";
 import { bodyAreasForSessions, recentSessions } from "../lib/muscles";
@@ -9,38 +10,64 @@ import HumanBody from "../components/HumanBody";
 import WorkoutIconModal from "../components/WorkoutIconModal";
 import { workoutBodyParts, workoutColors, workoutIconFor, workoutTint } from "../lib/workoutArt";
 import ConfirmModal from "../components/ConfirmModal";
+import RenameModal from "../components/RenameModal";
+import Screen from "../components/ui/Screen";
+import LargeTitle from "../components/ui/LargeTitle";
+import IconButton from "../components/ui/IconButton";
+import SectionHeader from "../components/ui/SectionHeader";
+import EmptyState from "../components/ui/EmptyState";
 
-const SPACE = { sm: 8, md: 16, lg: 32 };
-
-const ICON_BUTTON_STYLE = { background: "none", border: "none", cursor: "pointer", color: "var(--text)" };
+const MENU_WIDTH = 220;
+const MENU_ITEM_HEIGHT = 44;
+const MENU_DIVIDER = 6;
 
 const MENU_ITEM_STYLE = {
   width: "100%",
-  padding: "10px 14px",
+  minHeight: MENU_ITEM_HEIGHT,
+  padding: "0 16px",
   display: "flex",
   alignItems: "center",
-  gap: 8,
-  background: "none",
+  justifyContent: "space-between",
+  gap: 12,
   border: "none",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: 16,
   textAlign: "left",
 };
 
 function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete, onEdit, onIcon }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [portalTarget, setPortalTarget] = useState(null);
   const btnRef = useRef(null);
   const menuRef = useRef(null);
+
+  const locked = isPrescribed(workout);
+
+  const menuItems = [
+    ...(locked ? [] : [
+      { Icon: Pencil, label: t.edit, onSelect: () => onEdit(workout) },
+      { Icon: FilePenLine, label: t.rename, onSelect: () => onRename(workout) },
+    ]),
+    { Icon: Copy, label: t.duplicate, onSelect: () => onDuplicate(workout) },
+    { Icon: Shapes, label: t.workoutIconAction, onSelect: () => onIcon(workout) },
+    { Icon: Share2, label: t.share, onSelect: () => onShare(workout) },
+    ...(locked ? [] : [
+      { Icon: Trash2, label: t.deleteWorkoutAction, onSelect: () => onDelete(workout), danger: true },
+    ]),
+  ];
 
   const toggleMenu = (e) => {
     e.stopPropagation();
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
+      const menuHeight = menuItems.length * MENU_ITEM_HEIGHT + MENU_DIVIDER;
+      const fitsBelow = rect.bottom + 4 + menuHeight <= window.innerHeight - 8;
       setCoords({
-        top: rect.bottom + 4,
-        left: rect.right - 160,
+        top: fitsBelow ? rect.bottom + 4 : Math.max(8, rect.top - 4 - menuHeight),
+        left: Math.max(8, rect.right - MENU_WIDTH),
       });
+      setPortalTarget(btnRef.current.closest(".app-shell") ?? document.body);
     }
     setOpen((prev) => !prev);
   };
@@ -64,68 +91,52 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
     };
   }, [open]);
 
-  const locked = isPrescribed(workout);
-
-  const menuItems = [
-    ...(locked ? [] : [
-      { Icon: Pencil, label: t.edit, onSelect: () => onEdit(workout) },
-      { Icon: FilePenLine, label: t.rename, onSelect: () => onRename(workout) },
-    ]),
-    { Icon: Copy, label: t.duplicate, onSelect: () => onDuplicate(workout) },
-    { Icon: Shapes, label: t.workoutIconAction, onSelect: () => onIcon(workout) },
-    { Icon: Share2, label: t.share, onSelect: () => onShare(workout) },
-    ...(locked ? [] : [
-      { Icon: Trash2, label: t.deleteWorkoutAction, onSelect: () => onDelete(workout), danger: true },
-    ]),
-  ];
-
   return (
     <>
-      <button
+      <IconButton
         ref={btnRef}
-        className="tap"
-        aria-label={t.workoutOptions}
+        icon={MoreHorizontal}
+        size="sm"
+        label={t.workoutOptions}
         onClick={toggleMenu}
-        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent)", flexShrink: 0 }}
-      >
-        <MoreHorizontal size={16} />
-      </button>
+      />
 
-      {open && (
+      {/* Portalled out of the card: its stacking context would trap the menu under later cards. */}
+      {open && portalTarget && createPortal(
         <div
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
+          className="glass-menu fade-in"
           style={{
             position: "fixed",
             top: coords.top,
             left: coords.left,
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            minWidth: 160,
+            borderRadius: 16,
+            width: MENU_WIDTH,
             zIndex: 1000,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
             overflow: "hidden",
           }}
         >
           {menuItems.map(({ Icon, label, onSelect, danger }) => (
             <button
               key={label}
+              className="glass-menu-item"
               onClick={() => {
                 setOpen(false);
                 onSelect();
               }}
               style={{
                 ...MENU_ITEM_STYLE,
-                color: danger ? "#ef4444" : "var(--text)",
-                borderTop: danger ? "1px solid var(--border)" : "none",
+                color: danger ? "var(--danger)" : "var(--text)",
+                borderTop: danger ? `${MENU_DIVIDER}px solid var(--fill)` : "none",
               }}
             >
-              <Icon size={14} />
               {label}
+              <Icon size={17} />
             </button>
           ))}
-        </div>
+        </div>,
+        portalTarget
       )}
     </>
   );
@@ -146,6 +157,7 @@ export default function WorkoutPage({
   const { t, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout, workoutIcons, setWorkoutIcon } = useApp()
   const [pendingDelete, setPendingDelete] = useState(null);
   const [iconFor, setIconFor] = useState(null);
+  const [pendingRename, setPendingRename] = useState(null);
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
 
   // Muscles trained in the last 7 days, for the home heatmap figure.
@@ -155,14 +167,7 @@ export default function WorkoutPage({
   );
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
 
-  const handleRename = (workout) => {
-    const newName = window.prompt(
-      t.renameWorkoutPrompt,
-      workout.name,
-    );
-    if (!newName || !newName.trim()) return;
-    saveWorkout({ ...workout, name: newName.trim() });
-  };
+  const handleRename = (workout) => setPendingRename(workout);
 
   const handleDuplicate = (workout) => {
     const copy = {
@@ -187,162 +192,8 @@ export default function WorkoutPage({
     setPendingDelete(workout);
   };
 
-  return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ padding: "var(--page-py-top) var(--page-px) 16px" }}>
-        <BrandStrip />
-        {/* Header com ícones à direita */}
-        <div className="flex items-center justify-between" style={{ marginBottom: SPACE.lg }}>
-          <h1 className="display" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
-            {t.homeTitle}
-          </h1>
-          <div className="flex items-center" style={{ gap: 8 }}>
-            <button
-              aria-label={t.history}
-              title={t.history}
-              onClick={onViewHistory}
-              className="btn btn-ghost p-2"
-            >
-              <History size={16} />
-            </button>
-            <button
-              aria-label={t.exercisesTitle}
-              title={t.exercisesTitle}
-              onClick={onViewExercises}
-              className="btn btn-ghost p-2"
-            >
-              <Dumbbell size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Weekly muscle heatmap (signature figure) ── */}
-        <div className="card card-elevated" style={{ marginBottom: SPACE.md }}>
-          <div className="section-header">
-            <p className="section-title" style={{ marginBottom: 0 }}>
-              {t.weekMuscles}
-            </p>
-            <span className="chip active" style={{ pointerEvents: "none" }}>
-              <Dumbbell size={12} /> {weekSessionCount}
-            </span>
-          </div>
-          {weekSessionCount === 0 ? (
-            <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "20px 0" }}>
-              {t.noWorkoutsThisWeek}
-            </p>
-          ) : (
-            <div
-              className="flex justify-center"
-              style={{
-                gap: 24,
-                overflow: "hidden",
-                padding: "12px 0 4px",
-              }}
-            >
-              {["front", "back"].map((view) => (
-                <div key={view} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700 }}>
-                    {view === "front" ? (t.bodyFront) : (t.bodyBack)}
-                  </div>
-                  <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
-                    <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
-                      <HumanBody view={view} highlightedMuscles={weekAreas[view]} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Plano ativo */}
-        <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
-          <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>
-            {t.currentPlan}
-          </p>
-          <div className="flex items-center" style={{ gap: 12 }}>
-            <button className="tap" aria-label={t.managePlans} onClick={onManagePlans} style={ICON_BUTTON_STYLE}>
-              <MoreHorizontal size={18} />
-            </button>
-          </div>
-        </div>
-        <button
-          className="card w-full flex items-center justify-between text-left"
-          style={{ cursor: "pointer", marginBottom: SPACE.lg }}
-          onClick={activePlan ? onViewPlanDetails : onManagePlans}
-        >
-          {activePlan ? (
-            <div style={{ minWidth: 0 }}>
-              <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
-                {activePlan.name}
-              </p>
-              <p className="text-xs" style={{ color: "var(--muted)", marginTop: 4 }}>
-                {activePlan.days?.length ?? 0} {t.days}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
-              {t.noActivePlanTap}
-            </p>
-          )}
-          <ChevronRight size={16} style={{ color: "var(--muted)", flexShrink: 0 }} />
-        </button>
-
-        {/* Outros Treinos */}
-        <div className="flex items-center justify-between" style={{ marginBottom: SPACE.sm }}>
-          <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-          {t.myWorkouts} ({workouts.length})
-          </p>
-          <div className="flex items-center" style={{ gap: 12 }}>
-            <button className="tap" aria-label={t.newWorkout} onClick={onCreateWorkout} style={ICON_BUTTON_STYLE}>
-              <Plus size={18} />
-            </button>
-            <button className="tap" aria-label={t.manageWorkouts} onClick={onManageWorkouts} style={ICON_BUTTON_STYLE}>
-              <MoreHorizontal size={18} />
-            </button>
-          </div>
-        </div>
-
-        <div
-          className="grid"
-          style={{ gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: SPACE.lg }}
-        >
-          {workouts.map((w) => {
-            const parts = workoutBodyParts(w);
-            const colors = workoutColors(parts);
-            const { Icon } = workoutIconFor(parts, workoutIcons[w.id]);
-            return (
-              <div
-                key={w.id}
-                className="card workout-card"
-                style={{ background: workoutTint(colors), "--art-color": colors[0] ?? "var(--muted)" }}
-                onClick={() =>
-                  onStartWorkout({
-                    workoutId: w.id,
-                    workoutName: w.name,
-                  })
-                }
-              >
-                <Icon className="workout-card-icon" size={92} strokeWidth={1.5} aria-hidden="true" />
-                <div className="workout-card-menu">
-                  <WorkoutCardMenu
-                    workout={w}
-                    t={t}
-                    onEdit={onEditWorkout}
-                    onRename={handleRename}
-                    onDuplicate={handleDuplicate}
-                    onShare={handleShare}
-                    onDelete={handleDelete}
-                    onIcon={setIconFor}
-                  />
-                </div>
-                <p className="workout-card-title">{w.name}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+  const modals = (
+    <>
       {iconFor && (
         <WorkoutIconModal
           workout={iconFor}
@@ -350,6 +201,21 @@ export default function WorkoutPage({
           color={workoutColors(workoutBodyParts(iconFor))[0] ?? "var(--muted)"}
           onPick={(key) => setWorkoutIcon(iconFor.id, key)}
           onClose={() => setIconFor(null)}
+        />
+      )}
+
+      {pendingRename && (
+        <RenameModal
+          title={t.rename}
+          label={t.renameWorkoutPrompt}
+          initialValue={pendingRename.name}
+          cancelLabel={t.cancel}
+          saveLabel={t.save}
+          onCancel={() => setPendingRename(null)}
+          onSave={(name) => {
+            saveWorkout({ ...pendingRename, name });
+            setPendingRename(null);
+          }}
         />
       )}
 
@@ -366,6 +232,143 @@ export default function WorkoutPage({
           }}
         />
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <Screen gap={28} after={modals}>
+      <div>
+        <BrandStrip />
+        <LargeTitle
+          title={t.homeTitle}
+          actions={
+            <>
+              <IconButton icon={History} label={t.history} onClick={onViewHistory} />
+              <IconButton icon={Dumbbell} label={t.exercisesTitle} onClick={onViewExercises} />
+            </>
+          }
+        />
+      </div>
+
+      <section>
+        <SectionHeader
+          title={t.currentPlan}
+          actions={<IconButton icon={MoreHorizontal} size="sm" label={t.managePlans} onClick={onManagePlans} />}
+        />
+        <button className="card feature-card" onClick={activePlan ? onViewPlanDetails : onManagePlans}>
+          <span className="feature-card-orb">
+            <CalendarRange size={24} strokeWidth={2.2} />
+          </span>
+          <span className="flex-1" style={{ minWidth: 0 }}>
+            <span className="feature-card-title" style={{ display: "block" }}>
+              {activePlan ? activePlan.name : t.noActivePlanTap}
+            </span>
+            {activePlan && (
+              <span className="feature-card-meta" style={{ display: "block" }}>
+                {activePlan.days?.length ?? 0} {t.days}
+              </span>
+            )}
+          </span>
+          <ChevronRight size={20} strokeWidth={2.4} style={{ color: "var(--muted)", flexShrink: 0 }} />
+        </button>
+      </section>
+
+      <section className="card">
+        <div className="card-head">
+          <h2 className="card-title">{t.weekMuscles}</h2>
+          <span className="card-meta flex items-center gap-1">
+            <Dumbbell size={13} /> {weekSessionCount}
+          </span>
+        </div>
+        {weekSessionCount === 0 ? (
+          <EmptyState icon={Activity} text={t.noWorkoutsThisWeek} />
+        ) : (
+          <div className="flex justify-center" style={{ gap: 28, overflow: "hidden", paddingTop: 4 }}>
+            {["front", "back"].map((view) => (
+              <div key={view} className="flex flex-col items-center" style={{ gap: 6 }}>
+                <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
+                  <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
+                    <HumanBody view={view} highlightedMuscles={weekAreas[view]} />
+                  </div>
+                </div>
+                <span className="card-meta">{view === "front" ? t.bodyFront : t.bodyBack}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <SectionHeader
+          title={t.myWorkouts}
+          meta={workouts.length}
+          actions={
+            <>
+              <IconButton icon={Plus} size="sm" label={t.newWorkout} onClick={onCreateWorkout} />
+              <IconButton icon={MoreHorizontal} size="sm" label={t.manageWorkouts} onClick={onManageWorkouts} />
+            </>
+          }
+        />
+        {workouts.length === 0 ? (
+          <div className="card">
+            <EmptyState
+              icon={Dumbbell}
+              action={
+                <button className="btn btn-primary" onClick={onCreateWorkout}>
+                  <Plus size={16} /> {t.newWorkout}
+                </button>
+              }
+            />
+          </div>
+        ) : (
+          <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {workouts.map((w) => {
+              const parts = workoutBodyParts(w);
+              const colors = workoutColors(parts);
+              const { Icon } = workoutIconFor(parts, workoutIcons[w.id]);
+              const start = () => onStartWorkout({ workoutId: w.id, workoutName: w.name });
+              return (
+                <div
+                  key={w.id}
+                  role="button"
+                  tabIndex={0}
+                  className="card workout-card"
+                  style={{
+                    "--art-color": colors[0] ?? "var(--muted)",
+                    "--art-wash": workoutTint(colors),
+                  }}
+                  onClick={start}
+                  onKeyDown={(e) => {
+                    if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      start();
+                    }
+                  }}
+                >
+                  <Icon className="workout-card-icon" size={22} strokeWidth={2} aria-hidden="true" />
+                  <div className="workout-card-menu">
+                    <WorkoutCardMenu
+                      workout={w}
+                      t={t}
+                      onEdit={onEditWorkout}
+                      onRename={handleRename}
+                      onDuplicate={handleDuplicate}
+                      onShare={handleShare}
+                      onDelete={handleDelete}
+                      onIcon={setIconFor}
+                    />
+                  </div>
+                  <div>
+                    <p className="workout-card-title">{w.name}</p>
+                    <p className="workout-card-meta">{w.exercises?.length ?? 0} {t.exercises}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </Screen>
   );
 }
+

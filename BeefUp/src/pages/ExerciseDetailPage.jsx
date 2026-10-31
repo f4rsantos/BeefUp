@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ChevronLeft, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Image as ImageIcon, Trash2 } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { getBodyPartLabel, getMuscleLabel, getEquipmentOptions, getVariantGroups } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName"
 import ConfirmModal from "../components/ConfirmModal";
+import NavHeader from "../components/ui/NavHeader";
+import IconButton from "../components/ui/IconButton";
 
 export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }) {
   const { t, lang, deleteCustomExercise } = useApp();
@@ -30,41 +32,24 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
   ];
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
       <div
         className="flex-1 overflow-y-auto pb-6 flex flex-col gap-5 scrollbar-hide"
         style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
       >
-        <div className="flex items-center gap-1">
-          <button className="btn-back" onClick={onBack} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-          </button>
-          <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
-            {name}
-          </h1>
-          {exercise.custom && (
-            <span
-              className="text-xs font-semibold"
-              style={{
-                color: "var(--accent)",
-                background: "var(--accent-soft)",
-                padding: "4px 10px",
-                borderRadius: 999,
-              }}
-            >
-              {t.customExerciseBadge}
-            </span>
-          )}
-          {exercise.custom && (
-            <button
-              className="btn btn-ghost p-2"
-              onClick={() => setConfirmingDelete(true)}
-              aria-label={t.delete}
-            >
-              <Trash2 size={18} color="var(--muted)" />
-            </button>
-          )}
-        </div>
+        <NavHeader
+          title={name}
+          onBack={onBack}
+          backLabel={t.back}
+          actions={
+            exercise.custom && (
+              <IconButton icon={Trash2} variant="danger" label={t.delete} onClick={() => setConfirmingDelete(true)} />
+            )
+          }
+          accessory={
+            exercise.custom && <span className="chip active" style={{ pointerEvents: "none" }}>{t.customExerciseBadge}</span>
+          }
+        />
         <div
           className="flex flex-col items-center justify-center"
           style={{

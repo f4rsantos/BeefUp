@@ -1,54 +1,19 @@
-export default function StatTile({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  accent = "var(--accent)",
-  accentSoft = "var(--accent-soft)",
-  gradient = false,
-  onClick,
-}) {
+export default function StatTile({ icon: Icon, label, value, unit, accent = "var(--accent)", onClick }) {
   const Comp = onClick ? "button" : "div";
   return (
     <Comp
       onClick={onClick}
-      className="card"
-      style={{
-        flex: 1,
-        minWidth: 0,
-        textAlign: "left",
-        padding: 14,
-        cursor: onClick ? "pointer" : "default",
-        ...(gradient
-          ? { background: "var(--grad-accent)", border: "none", color: "#fff" }
-          : {}),
-      }}
+      className="card flex flex-col"
+      style={{ flex: 1, minWidth: 0, textAlign: "left", padding: 14, gap: 10, cursor: onClick ? "pointer" : "default" }}
     >
-      {Icon && (
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 8,
-            background: gradient ? "rgba(255,255,255,0.22)" : accentSoft,
-          }}
-        >
-          <Icon size={17} style={{ color: gradient ? "#fff" : accent }} />
-        </div>
-      )}
-      <div className="display" style={{ fontSize: 22, fontWeight: 900, lineHeight: 1, color: gradient ? "#fff" : "var(--text)" }}>
+      <span className="flex items-center gap-1.5 card-meta" style={{ color: accent, fontWeight: 600 }}>
+        {Icon && <Icon size={14} strokeWidth={2.4} />}
+        <span className="truncate" style={{ color: "var(--muted)", fontWeight: 500 }}>{label}</span>
+      </span>
+      <span className="stat-value" style={{ fontSize: 24, color: "var(--text)" }}>
         {value}
-        {unit && (
-          <span style={{ fontSize: 12, fontWeight: 700, marginLeft: 3, opacity: 0.7 }}>{unit}</span>
-        )}
-      </div>
-      <div style={{ fontSize: 11, marginTop: 5, fontWeight: 600, color: gradient ? "rgba(255,255,255,0.85)" : "var(--muted)" }}>
-        {label}
-      </div>
+        {unit && <span className="card-meta" style={{ fontSize: 14, fontWeight: 500, marginLeft: 3 }}>{unit}</span>}
+      </span>
     </Comp>
   );
 }

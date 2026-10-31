@@ -191,7 +191,7 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--canvas, var(--bg))" }} onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-col h-full">
         <div
           className="flex-1 overflow-y-auto scrollbar-hide"
@@ -206,7 +206,7 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
             <button className="btn-back" onClick={onClose} aria-label={t.back}>
               <ChevronLeft size={24} style={{ color: "var(--text)" }} />
             </button>
-            <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            <h1 className="display" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
               {replace ? t.replaceExercise : t.addExercise}
             </h1>
           </div>
@@ -328,7 +328,7 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                         position: "sticky",
                         top: 0,
                         zIndex: 1,
-                        background: "var(--bg)",
+                        background: "var(--bar, var(--bg))", backdropFilter: "blur(16px) saturate(180%)", WebkitBackdropFilter: "blur(16px) saturate(180%)",
                         padding: "10px 4px 6px",
                       }}
                     >

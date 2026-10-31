@@ -43,7 +43,7 @@ export default function Onboarding() {
 
   if (mode === null) {
     return (
-      <div className="ob-root">
+      <div className="ob-root app-shell">
         <div className="ob-frame" style={{ paddingBottom: 0, flex: "0 0 auto" }}>
           <div className="flex items-center justify-between" style={{ gap: 12 }}>
             <h1 className="ob-title">{t.obWelcome}</h1>
@@ -279,7 +279,7 @@ function StepDots({ total, current }) {
 
 function Frame({ children, t, onBack, total, current, theme, setTheme, lang, setLang }) {
   return (
-    <div className="ob-root">
+    <div className="ob-root app-shell">
       <div className="ob-frame">
         <div className="ob-header">
           <div className="ob-header-side">

@@ -4,7 +4,7 @@ function SkeletonBlock({ height, style }) {
 
 export default function ProfileSkeleton() {
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
       <div
         className="flex-1 overflow-y-auto pb-4 flex flex-col gap-4 scrollbar-hide"
         style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}

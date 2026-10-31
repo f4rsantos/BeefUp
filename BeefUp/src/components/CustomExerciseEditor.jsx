@@ -91,7 +91,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--bg)" }} onClick={(e) => e.stopPropagation()}>
+    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--canvas, var(--bg))" }} onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-col h-full">
         <div
           className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
@@ -101,7 +101,7 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
             <button className="btn-back" onClick={onClose} aria-label={t.back}>
               <ChevronLeft size={24} style={{ color: "var(--text)" }} />
             </button>
-            <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+            <h1 className="display" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
               {t.createCustomExercise}
             </h1>
           </div>

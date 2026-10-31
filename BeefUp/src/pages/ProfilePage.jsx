@@ -1,7 +1,12 @@
 import { useState } from "react";
-import {CalendarDays, Clock, Dumbbell, Eye, EyeOff, Flame, GripVertical, Layers,Repeat, Ruler, SlidersHorizontal, Weight,} from "lucide-react";
+import { CalendarDays, Check, Clock, Dumbbell, Eye, EyeOff, GripVertical, Layers, Repeat, Ruler, SlidersHorizontal, Weight } from "lucide-react";
 import { useApp } from "../context/useApp";
 import StepsModal from "../components/StepsModal";
+import Screen from "../components/ui/Screen";
+import LargeTitle from "../components/ui/LargeTitle";
+import IconButton from "../components/ui/IconButton";
+import EmptyState from "../components/ui/EmptyState";
+import { ListGroup, ListRow } from "../components/ui/List";
 import { DEFAULT_CHART_DAYS, useProfileStats } from "./profile/useProfileStats";
 import { useBlockReorder } from "./profile/useBlockReorder";
 import {
@@ -106,89 +111,61 @@ export default function ProfilePage({ onOpenMeasures }) {
   const editableBlocks = reorder.layout;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div
-        className="flex-1 overflow-y-auto pb-4 flex flex-col gap-4 scrollbar-hide fade-in"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
-      >
-        <div className="flex items-center gap-1">
-          <h1 className="display flex-1" style={{ fontSize: 30, fontWeight: 900, color: "var(--text)" }}>
-            {t.profileTitle}
-          </h1>
-          <button
-            aria-label={reorder.editing ? t.doneEditing : t.customizeStats}
-            title={reorder.editing ? t.doneEditing : t.customizeStats}
-            className={`btn ${reorder.editing ? "btn-primary" : "btn-ghost"} p-2`}
+    <Screen gap={20} after={showSteps && <StepsModal onClose={() => setShowSteps(false)} />}>
+      <LargeTitle
+        title={t.profileTitle}
+        actions={
+          <IconButton
+            icon={reorder.editing ? Check : SlidersHorizontal}
+            variant={reorder.editing ? "filled" : ""}
+            label={reorder.editing ? t.doneEditing : t.customizeStats}
             onClick={() => (reorder.editing ? reorder.setEditing(false) : reorder.startEditing())}
-          >
-            <SlidersHorizontal size={16} />
-          </button>
-        </div>
-        <button
-          className="btn btn-ghost w-full py-3 text-sm flex items-center justify-center gap-2"
-          onClick={onOpenMeasures}
-        >
-          <Ruler size={15} />
-          {t.measures}
-        </button>
+          />
+        }
+      />
 
-        {upcomingAppointments.length > 0 && (
-          <NextAppointmentsBlock appointments={upcomingAppointments} />
-        )}
+      <ListGroup icons>
+        <ListRow icon={Ruler} iconColor="var(--fat)" title={t.measures} chevron onClick={onOpenMeasures} />
+      </ListGroup>
 
-        <div className="hero">
-          <div className="flex items-center justify-between" style={{ position: "relative" }}>
-            <div>
-              <p style={{ fontSize: 12, opacity: 0.85, fontWeight: 600 }}>
-                {t.currentStreak}
-              </p>
-              <p className="display" style={{ fontSize: 40, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
-                {stats.streak}
-                <span style={{ fontSize: 16, fontWeight: 700, opacity: 0.85, marginLeft: 6 }}>
-                  {t.days}
-                </span>
-              </p>
-              <p style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
-                {t.bestStreakLabel.replace("{n}", stats.bestStreak)}
-              </p>
-            </div>
-            <Flame size={40} style={{ opacity: 0.9 }} fill="currentColor" />
-          </div>
-        </div>
+      {upcomingAppointments.length > 0 && (
+        <NextAppointmentsBlock appointments={upcomingAppointments} />
+      )}
 
-        {reorder.editing ? (
-          editableBlocks.map((block) => (
+      {reorder.editing ? (
+        <ListGroup header={t.customizeStats}>
+          {editableBlocks.map((block) => (
             <div
               key={block.key}
               ref={(node) => { reorder.itemRefs.current[block.key] = node; }}
-              className="card flex items-center gap-3"
-              style={{ opacity: block.enabled ? 1 : 0.5 }}
+              className="list-row"
+              style={{ opacity: block.enabled ? 1 : 0.45 }}
             >
-              <div
+              <span
                 onPointerDown={(e) => reorder.handlePointerDown(e, block.key)}
                 onPointerMove={reorder.handlePointerMove}
                 onPointerUp={reorder.handlePointerUp}
                 onPointerCancel={reorder.handlePointerUp}
-                style={{ touchAction: "none", cursor: "grab", display: "flex" }}
+                style={{ touchAction: "none", cursor: "grab", display: "flex", padding: 6, margin: -6 }}
               >
                 <GripVertical size={18} style={{ color: "var(--muted)" }} />
-              </div>
-              <span className="flex-1 text-sm font-semibold" style={{ color: "var(--text)" }}>
-                {blockTitles[block.key]}
               </span>
-              <button className="btn btn-ghost p-2" onClick={() => reorder.toggleEnabled(block.key)}>
-                {block.enabled ? <Eye size={16} /> : <EyeOff size={16} style={{ color: "var(--muted)" }} />}
-              </button>
+              <span className="list-row-body list-row-title">{blockTitles[block.key]}</span>
+              <IconButton
+                icon={block.enabled ? Eye : EyeOff}
+                size="sm"
+                variant="plain"
+                label={blockTitles[block.key]}
+                onClick={() => reorder.toggleEnabled(block.key)}
+              />
             </div>
-          ))
-        ) : visibleBlocks.length === 0 ? (
-          <p className="text-sm text-center py-8" style={{ color: "var(--muted)" }}>{t.noStatsEnabled}</p>
-        ) : (
-          visibleBlocks.map((block) => <div key={block.key}>{blocks[block.key]?.() ?? null}</div>)
-        )}
-      </div>
-
-      {showSteps && <StepsModal onClose={() => setShowSteps(false)} />}
-    </div>
+          ))}
+        </ListGroup>
+      ) : visibleBlocks.length === 0 ? (
+        <EmptyState icon={SlidersHorizontal} text={t.noStatsEnabled} />
+      ) : (
+        visibleBlocks.map((block) => <div key={block.key}>{blocks[block.key]?.() ?? null}</div>)
+      )}
+    </Screen>
   );
 }

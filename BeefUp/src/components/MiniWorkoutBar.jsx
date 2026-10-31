@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { ChevronUp } from "lucide-react";
 import { formatElapsedClock } from "../lib/planUtils";
 
-// Collapsed view of a running workout
 export default function MiniWorkoutBar({ startedAt, workoutName, onExpand, label }) {
   const [elapsed, setElapsed] = useState(() =>
     Math.floor((Date.now() - startedAt) / 1000),
@@ -17,33 +16,12 @@ export default function MiniWorkoutBar({ startedAt, workoutName, onExpand, label
   }, [startedAt]);
 
   return (
-    <button
-      onClick={onExpand}
-      aria-label={label}
-      className="flex items-center gap-3"
-      style={{
-        border: "1px solid var(--border)",
-        borderRadius: 22,
-        background: "var(--surface)",
-        boxShadow: "var(--shadow-md)",
-        margin: "0 12px -4px",
-        padding: "10px 14px",
-        flexShrink: 0,
-        cursor: "pointer",
-      }}
-    >
-      <ChevronUp size={18} style={{ color: "var(--accent)", flexShrink: 0 }} />
-      <span
-        className="text-sm font-semibold flex-1 truncate"
-        style={{ color: "var(--text)", textAlign: "left" }}
-      >
-        {workoutName}
-      </span>
-      <span
-        className="font-mono text-sm font-semibold"
-        style={{ color: "var(--accent)", flexShrink: 0 }}
-      >
-        {formatElapsedClock(elapsed)}
+    <button onClick={onExpand} aria-label={label} className="mini-player glass">
+      <span className="workout-timer-dot" />
+      <span className="mini-player-title">{workoutName}</span>
+      <span className="mini-player-time">{formatElapsedClock(elapsed)}</span>
+      <span className="icon-btn sm" aria-hidden="true">
+        <ChevronUp size={16} strokeWidth={2.4} />
       </span>
     </button>
   );

@@ -39,7 +39,7 @@ export default function RestBar({ remaining, total, onAdjust, onSkip, t }) {
           <p
             className="display tabular-nums"
             aria-live="off"
-            style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: "var(--text)" }}
+            style={{ fontSize: 34, fontWeight: 700, lineHeight: 1, color: "var(--text)" }}
           >
             {clock(remaining)}
           </p>

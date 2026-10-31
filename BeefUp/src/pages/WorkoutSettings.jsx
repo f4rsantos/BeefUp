@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, Pencil, Trash2, Lock } from "lucide-react";
+import { Plus, Pencil, Trash2, Lock } from "lucide-react";
 import { useApp } from "../context/useApp";
 import WorkoutEditor from "../components/WorkoutEditor";
 import ConfirmModal from "../components/ConfirmModal";
 import { isPrescribed } from "../lib/planUtils";
+import NavHeader from "../components/ui/NavHeader";
 
 export default function WorkoutSettings({ onBack, initialView = "main", initialWorkout = null }) {
   const {
@@ -33,19 +34,16 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
       <div
         className="flex-1 overflow-y-auto pb-6 flex flex-col gap-3 scrollbar-hide"
         style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
       >
-        <div className="flex items-center gap-1">
-          <button className="btn-back" onClick={onBack} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-          </button>
-          <h1 className="display" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
-            {t.settingsTitle}
-          </h1>
-        </div>
+        <NavHeader
+          title={t.settingsTitle}
+          onBack={onBack}
+          backLabel={t.back}
+        />
         {workouts.map((w) => (
           <div key={w.id} className="card flex items-center justify-between gap-3">
             <div>

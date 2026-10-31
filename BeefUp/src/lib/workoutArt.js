@@ -62,11 +62,20 @@ export function workoutColors(bodyParts) {
   return colors
 }
 
-const tint = (color) => `color-mix(in srgb, ${color} 16%, var(--surface))`
+const MESH_SPOTS = ['0% 0%', '100% 10%', '90% 100%', '5% 95%', '55% 50%']
+const NEUTRAL_MESH = ['#a1a1aa', '#71717a', '#52525b']
 
-// The card background: the group colour, a gradient when groups are mixed.
+const shade = (color, toward, amount) => `color-mix(in srgb, ${color} ${amount}%, ${toward})`
+
+function meshPalette(colors) {
+  if (colors.length === 0) return NEUTRAL_MESH
+  if (colors.length === 1) return [shade(colors[0], 'white', 62), colors[0], shade(colors[0], 'black', 70)]
+  return colors
+}
+
+// The card background: a mesh of the group colours, blended like a spending card.
 export function workoutTint(colors) {
-  if (colors.length === 0) return 'var(--surface)'
-  if (colors.length === 1) return tint(colors[0])
-  return `linear-gradient(135deg, ${colors.map(tint).join(', ')})`
+  const palette = meshPalette(colors)
+  const blobs = palette.map((color, i) => `radial-gradient(circle at ${MESH_SPOTS[i % MESH_SPOTS.length]} in oklch, ${color}, transparent 66%)`)
+  return [...blobs, `linear-gradient(135deg in oklch, ${palette.join(', ')})`].join(', ')
 }

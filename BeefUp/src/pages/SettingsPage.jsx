@@ -1,22 +1,81 @@
 import { useBrand } from "../lib/useBrand";
 import { useEffect, useState } from "react";
-import { Apple, Database, Dumbbell, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
+import { Apple, Check, Dumbbell, Plus, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { buildDemoPreset } from "../lib/demoData";
-import { accentHexOf } from "../lib/colorTheme";
+import { accentHexOf, PRESET_ACCENTS } from "../lib/colorTheme";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getLink, setScopes as applyScopes, unlink } from "../lib/sync/link";
 import { useSync } from "../lib/sync/useSync";
 import AccentColorModal from "../components/AccentColorModal";
-import { ThemeButtons, FontScaleButtons, LanguageButtons } from "../components/PreferenceControls";
+import { useThemeOptions, useFontScaleOptions, useLanguageOptions } from "../lib/usePreferenceOptions";
 import BackupSection from "../components/BackupSection";
 import ConfirmModal from "../components/ConfirmModal";
-import PageHeader from "../components/PageHeader";
 import TrainerLinkModal from "../components/TrainerLinkModal";
+import Screen from "../components/ui/Screen";
+import LargeTitle from "../components/ui/LargeTitle";
+import Segmented from "../components/ui/Segmented";
+import ChoiceTiles from "../components/ui/ChoiceTiles";
+import ToggleTile from "../components/ui/ToggleTile";
+import GlassPanel from "../components/ui/GlassPanel";
+import SectionHeader from "../components/ui/SectionHeader";
+import IconButton from "../components/ui/IconButton";
 
 const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
 
-const SETTINGS_ICON_WRAPPER_STYLE = { padding: 8, borderRadius: 10, background: "var(--surface2)", display: "flex" };
+const TILE_COLORS = {
+  sound: "#ff375f",
+  awake: "#0a84ff",
+  gym: "var(--accent)",
+  nutrition: "#30c25a",
+};
+
+function FieldLabel({ children }) {
+  return <p className="card-meta" style={{ margin: "18px 2px 10px", fontWeight: 600 }}>{children}</p>;
+}
+
+function AccentSwatches({ current, isCustom, customHex, onPreset, onCustom, t }) {
+  return (
+    <div className="swatches" role="radiogroup" aria-label={t.accentColor}>
+      {PRESET_ACCENTS.map(({ id, hex, label }) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={current === id}
+          aria-label={t[label]}
+          title={t[label]}
+          className={`swatch ${current === id ? "on" : ""}`}
+          style={{ "--swatch": hex }}
+          onClick={() => onPreset(id)}
+        >
+          {current === id && <Check size={18} strokeWidth={3} color="#fff" />}
+        </button>
+      ))}
+      <button
+        type="button"
+        aria-label={t.accentColor}
+        title={t.accentColor}
+        className={`swatch more ${isCustom ? "on" : ""}`}
+        style={{ "--swatch": isCustom ? customHex : "transparent" }}
+        onClick={onCustom}
+      >
+        {isCustom ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
+      </button>
+    </div>
+  );
+}
+
+function FontScaleSegmented({ label }) {
+  const { options, ...rest } = useFontScaleOptions();
+  return (
+    <Segmented
+      {...rest}
+      label={label}
+      options={options.map((o) => ({ ...o, content: <span style={{ fontSize: o.size - 2, fontWeight: 700, lineHeight: 1 }}>A</span> }))}
+    />
+  );
+}
 
 export default function SettingsPage() {
   const {
@@ -37,6 +96,8 @@ export default function SettingsPage() {
     sectionPrefs,
     setSectionPrefs,
   } = useApp();
+  const themeOptions = useThemeOptions();
+  const languageOptions = useLanguageOptions();
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -48,6 +109,7 @@ export default function SettingsPage() {
   const [unlinkError, setUnlinkError] = useState(false);
   const { status: syncStatus, lastSyncAt, syncNow } = useSync();
   const configured = useSupabaseConfigured();
+  const brand = useBrand();
 
   useEffect(() => {
     if (!configured) return;
@@ -93,19 +155,20 @@ export default function SettingsPage() {
     ? t.trainerLastSyncedAt.replace("{time}", new Date(lastSyncAt).toLocaleString(lang === "pt" ? "pt-PT" : undefined))
     : t.trainerNeverSynced;
 
+  const stateLabel = (on) => (on ? t.toggleOn : t.toggleOff);
+
+  function toggleSection(id) {
+    const next = { ...sectionPrefs, [id]: !sectionPrefs[id] };
+    if (!next.gym && !next.nutrition) return;
+    setSectionPrefs(next);
+  }
+
   const sections = [
     { id: "gym", Icon: Dumbbell, label: t.sectionGym },
     { id: "nutrition", Icon: Apple, label: t.nutrition },
   ];
 
-  function toggleSection(id) {
-    const next = { ...sectionPrefs, [id]: !sectionPrefs[id] };
-    if (!next.gym && !next.nutrition) return; // pelo menos uma secção fica sempre visível
-    setSectionPrefs(next);
-  }
-
   const currentAccentHex = accentHexOf(effectiveAccent.accentColor, effectiveAccent.customAccentHex);
-  const brand = useBrand();
 
   async function loadDemoPreset() {
     setLoadingDemo(true);
@@ -120,266 +183,16 @@ export default function SettingsPage() {
     setDemoLoaded(true);
   }
 
-  const loadDemoLabel = loadingDemo
-    ? (t.loading)
-    : (t.load);
+  const demoAction = {
+    icon: Sparkles,
+    color: "var(--warn)",
+    label: loadingDemo ? t.loading : demoLoaded ? t.demoPresetLoaded : t.demoPresetTitle,
+    disabled: loadingDemo,
+    onClick: loadDemoPreset,
+  };
 
-  const chooseLabel = t.choose;
-
-  return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
-      <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-6 scrollbar-hide fade-in"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
-      >
-        <PageHeader title={t.settingsTitle} />
-
-        {/* Theme */}
-        <section>
-          <p className="section-title" style={{ marginBottom: 6 }}>{t.theme}</p>
-          <div className="card flex gap-2 p-2">
-            <ThemeButtons />
-          </div>
-        </section>
-
-        {/* Accent color */}
-        <section>
-          <button
-            className="card flex items-center justify-between"
-            style={{ width: "100%", textAlign: "left" }}
-            onClick={() => setShowColorPicker(true)}
-          >
-            <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.accentColor}</span>
-            <span
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                background: currentAccentHex,
-                border: "1px solid var(--border)",
-                flexShrink: 0,
-              }}
-            />
-          </button>
-          {brand?.color && accentChosen && (
-            <button
-              className="text-sm"
-              style={{ color: "var(--accent)", fontWeight: 600, background: "none", border: "none", padding: "8px 4px", minHeight: 44, textAlign: "left" }}
-              onClick={resetAccentToBrand}
-            >
-              {brand.name ? t.brandUseColor.replace("{name}", brand.name) : t.brandUseColorNoName}
-            </button>
-          )}
-        </section>
-
-        {/* Font scale */}
-        <section>
-          <p className="section-title" style={{ marginBottom: 6 }}>{t.fontSize}</p>
-          <div className="card flex gap-2 p-2">
-            <FontScaleButtons />
-          </div>
-        </section>
-
-        {/* Sound */}
-        <section>
-          <p className="section-title" style={{ marginBottom: 6 }}>{t.sound}</p>
-          <div className="card flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                <Volume2 size={16} style={{ color: "var(--text)" }} />
-              </div>
-              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.soundToggle}</p>
-            </div>
-            <button
-              role="switch"
-              aria-checked={soundEnabled}
-              aria-label={t.soundToggle}
-              className={`switch ${soundEnabled ? "on" : ""}`}
-              onClick={() => setSoundEnabled(!soundEnabled)}
-            />
-          </div>
-          {"wakeLock" in navigator && (
-            <>
-              <div className="card flex items-center justify-between gap-3" style={{ marginTop: 8 }}>
-                <div className="flex items-center gap-3 min-w-0">
-                  <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                    <Smartphone size={16} style={{ color: "var(--text)" }} />
-                  </div>
-                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.keepAwakeToggle}</p>
-                </div>
-                <button
-                  role="switch"
-                  aria-checked={keepAwake}
-                  aria-label={t.keepAwakeToggle}
-                  className={`switch ${keepAwake ? "on" : ""}`}
-                  onClick={() => setKeepAwake(!keepAwake)}
-                />
-              </div>
-              <p className="text-xs" style={{ color: "var(--muted)", marginTop: 6 }}>{t.keepAwakeDesc}</p>
-            </>
-          )}
-        </section>
-
-        {/* Language */}
-        <section>
-          <p className="section-title" style={{ marginBottom: 6 }}>{t.language}</p>
-          <div className="card flex gap-2 p-2">
-            <LanguageButtons />
-          </div>
-        </section>
-
-        {/* Sections visibility */}
-        <section>
-          <p className="section-title mb-1">{t.settingsSections}</p>
-          <p className="text-xs" style={{ color: "var(--muted)", marginBottom: 6 }}>{t.settingsSectionsDesc}</p>
-          <div className="card flex flex-col gap-3">
-            {sections.map(({ id, Icon, label }) => (
-              <div key={id} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                    <Icon size={16} style={{ color: "var(--text)" }} />
-                  </div>
-                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{label}</p>
-                </div>
-                <button
-                  role="switch"
-                  aria-checked={sectionPrefs[id]}
-                  aria-label={label}
-                  className={`switch ${sectionPrefs[id] ? "on" : ""}`}
-                  disabled={sectionPrefs[id] && !sectionPrefs[id === "gym" ? "nutrition" : "gym"]}
-                  onClick={() => toggleSection(id)}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Personal trainer link */}
-        <section>
-          <p className="section-title" style={{ marginBottom: 6 }}>{t.trainerSectionTitle}</p>
-          {!configured ? (
-            <div className="card">
-              <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerUnavailable}</p>
-            </div>
-          ) : !trainerLink ? (
-            <div className="card flex flex-col gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                  <UserCheck size={16} style={{ color: "var(--text)" }} />
-                </div>
-                <p className="text-sm" style={{ color: "var(--text)" }}>{t.trainerLinkExplain}</p>
-              </div>
-              <button className="btn btn-primary w-full" onClick={() => setShowTrainerLink(true)}>
-                {t.trainerLinkButton}
-              </button>
-            </div>
-          ) : (
-            <div className="card flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                    <UserCheck size={16} style={{ color: "var(--text)" }} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: "var(--text)" }}>
-                      {trainerLink.trainerName}
-                    </p>
-                    <p className="text-xs truncate" style={{ color: "var(--muted)" }}>{syncStatusLabel}</p>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-ghost p-2"
-                  onClick={() => syncNow?.()}
-                  disabled={syncStatus === "syncing"}
-                  aria-label={t.trainerSyncNowLabel}
-                >
-                  <RefreshCw size={14} />
-                </button>
-              </div>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>{lastSyncedLabel}</p>
-
-              <div className="divider" />
-
-              <p className="section-title" style={{ fontSize: 12 }}>{t.trainerShareSectionTitle}</p>
-              {SCOPE_IDS.map((id) => (
-                <div key={id} className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t[id]}</p>
-                  <button
-                    role="switch"
-                    aria-checked={trainerLink.scopes.includes(id)}
-                    aria-label={t[id]}
-                    className={`switch ${trainerLink.scopes.includes(id) ? "on" : ""}`}
-                    disabled={scopeSaving}
-                    onClick={() => toggleTrainerScope(id)}
-                  />
-                </div>
-              ))}
-              <p className="text-xs" style={{ color: "var(--muted)" }}>{t.trainerScopesNote}</p>
-              {scopeError && (
-                <p className="text-xs" style={{ color: "var(--danger)" }}>{t.trainerScopeUpdateFailed}</p>
-              )}
-
-              <div className="divider" />
-
-              <button
-                className="btn btn-ghost w-full"
-                style={{ color: "var(--danger)" }}
-                onClick={() => setShowUnlinkConfirm(true)}
-              >
-                {t.trainerUnlinkButton}
-              </button>
-              {unlinkError && (
-                <p className="text-xs" style={{ color: "var(--danger)" }}>{t.trainerUnlinkFailed}</p>
-              )}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <p className="section-title" style={{ marginBottom: 6 }}>
-            {t.advanced}
-          </p>
-          <div className="card flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div style={SETTINGS_ICON_WRAPPER_STYLE}>
-                <Database size={16} style={{ color: "var(--text)" }} />
-              </div>
-              <div className="min-w-0">
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text)" }}
-                >
-                  {t.demoPresetTitle}
-                </p>
-                <p
-                  className="text-xs truncate"
-                  style={{ color: "var(--muted)" }}
-                >
-                  {t.demoPresetDesc}
-                </p>
-              </div>
-            </div>
-            <button
-              className="btn btn-primary px-3 py-2 text-xs"
-              onClick={loadDemoPreset}
-              disabled={loadingDemo}
-            >
-              <Sparkles size={14} />
-              {loadDemoLabel}
-            </button>
-          </div>
-          {demoLoaded && (
-            <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
-              {t.demoPresetLoaded}
-            </p>
-          )}
-        </section>
-
-        <BackupSection chooseLabel={chooseLabel} />
-
-        {brand && <p className="brand-credit">{t.brandCredit}</p>}
-      </div>
-
+  const modals = (
+    <>
       {showColorPicker && (
         <AccentColorModal
           value={currentAccentHex}
@@ -407,6 +220,146 @@ export default function SettingsPage() {
           onConfirm={handleUnlink}
         />
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <Screen gap={28} after={modals}>
+      <LargeTitle title={t.settingsTitle} />
+
+      <GlassPanel title={t.theme}>
+        <ChoiceTiles {...themeOptions} label={t.theme} />
+
+        <FieldLabel>{t.accentColor}</FieldLabel>
+        <AccentSwatches
+          current={effectiveAccent.accentColor}
+          isCustom={effectiveAccent.accentColor === "custom"}
+          customHex={effectiveAccent.customAccentHex}
+          onPreset={setAccentColor}
+          onCustom={() => setShowColorPicker(true)}
+          t={t}
+        />
+        {brand?.color && accentChosen && (
+          <button className="text-button" style={{ marginTop: 10 }} onClick={resetAccentToBrand}>
+            {brand.name ? t.brandUseColor.replace("{name}", brand.name) : t.brandUseColorNoName}
+          </button>
+        )}
+
+        <FieldLabel>{t.fontSize}</FieldLabel>
+        <FontScaleSegmented label={t.fontSize} />
+
+        <FieldLabel>{t.language}</FieldLabel>
+        <Segmented {...languageOptions} label={t.language} />
+      </GlassPanel>
+
+      <section>
+        <SectionHeader title={t.sound} />
+        <div className="toggle-tiles">
+          <ToggleTile
+            icon={Volume2}
+            color={TILE_COLORS.sound}
+            label={t.soundToggle}
+            stateLabel={stateLabel(soundEnabled)}
+            checked={soundEnabled}
+            onChange={setSoundEnabled}
+          />
+          {"wakeLock" in navigator && (
+            <ToggleTile
+              icon={Smartphone}
+              color={TILE_COLORS.awake}
+              label={t.keepAwakeToggle}
+              stateLabel={stateLabel(keepAwake)}
+              checked={keepAwake}
+              onChange={setKeepAwake}
+            />
+          )}
+        </div>
+        {"wakeLock" in navigator && <p className="list-footer">{t.keepAwakeDesc}</p>}
+      </section>
+
+      <section>
+        <SectionHeader title={t.settingsSections} />
+        <div className="toggle-tiles">
+          {sections.map(({ id, Icon, label }) => (
+            <ToggleTile
+              key={id}
+              icon={Icon}
+              color={TILE_COLORS[id]}
+              label={label}
+              stateLabel={stateLabel(sectionPrefs[id])}
+              checked={sectionPrefs[id]}
+              disabled={sectionPrefs[id] && !sectionPrefs[id === "gym" ? "nutrition" : "gym"]}
+              onChange={() => toggleSection(id)}
+            />
+          ))}
+        </div>
+        <p className="list-footer">{t.settingsSectionsDesc}</p>
+      </section>
+
+      <GlassPanel title={t.trainerSectionTitle}>
+        {!configured ? (
+          <p className="card-meta" style={{ fontSize: 15, lineHeight: 1.45 }}>{t.trainerUnavailable}</p>
+        ) : !trainerLink ? (
+          <div className="flex flex-col" style={{ gap: 16 }}>
+            <div className="flex items-center" style={{ gap: 14 }}>
+              <span className="feature-card-orb" style={{ width: 48, height: 48 }}><UserCheck size={22} /></span>
+              <p className="card-meta" style={{ fontSize: 15, lineHeight: 1.45 }}>{t.trainerLinkExplain}</p>
+            </div>
+            <button className="btn btn-primary w-full" onClick={() => setShowTrainerLink(true)}>
+              {t.trainerLinkButton}
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col" style={{ gap: 18 }}>
+            <div className="flex items-center" style={{ gap: 14 }}>
+              <span className="feature-card-orb" style={{ width: 48, height: 48 }}><UserCheck size={22} /></span>
+              <div className="flex-1" style={{ minWidth: 0 }}>
+                <p className="card-title truncate">{trainerLink.trainerName}</p>
+                <p className="card-meta truncate">{syncStatusLabel} · {lastSyncedLabel}</p>
+              </div>
+              <IconButton
+                icon={RefreshCw}
+                label={t.trainerSyncNowLabel}
+                disabled={syncStatus === "syncing"}
+                onClick={() => syncNow?.()}
+              />
+            </div>
+
+            <div>
+              <p className="card-meta" style={{ fontWeight: 600, marginBottom: 10 }}>{t.trainerShareSectionTitle}</p>
+              <div className="flex flex-wrap" style={{ gap: 8 }}>
+                {SCOPE_IDS.map((id) => {
+                  const on = trainerLink.scopes.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      role="switch"
+                      aria-checked={on}
+                      className={`chip ${on ? "active" : ""}`}
+                      disabled={scopeSaving}
+                      onClick={() => toggleTrainerScope(id)}
+                    >
+                      {on && <Check size={14} strokeWidth={3} />}
+                      {t[id]}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="card-meta" style={{ marginTop: 10, lineHeight: 1.45 }}>{t.trainerScopesNote}</p>
+              {scopeError && <p className="card-meta" style={{ color: "var(--danger)", marginTop: 6 }}>{t.trainerScopeUpdateFailed}</p>}
+            </div>
+
+            <button className="btn btn-danger w-full" onClick={() => setShowUnlinkConfirm(true)}>
+              {t.trainerUnlinkButton}
+            </button>
+            {unlinkError && <p className="card-meta" style={{ color: "var(--danger)" }}>{t.trainerUnlinkFailed}</p>}
+          </div>
+        )}
+      </GlassPanel>
+
+      <BackupSection extraActions={[demoAction]} />
+
+      {brand && <p className="brand-credit">{t.brandCredit}</p>}
+    </Screen>
   );
 }

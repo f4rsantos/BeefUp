@@ -44,7 +44,7 @@ export default function PlanEditor({
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
       <div
         className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in"
         style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
@@ -53,7 +53,7 @@ export default function PlanEditor({
           <button className="btn-back" onClick={onBack} aria-label={t.back}>
             <ChevronLeft size={24} style={{ color: "var(--text)" }} />
           </button>
-          <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+          <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
             {plan?.id ? t.editPlan : t.newPlan}
           </h1>
           {locked && <Lock size={16} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />}
@@ -95,7 +95,7 @@ export default function PlanEditor({
             >
               <span
                 className="display text-xs w-6 text-center"
-                style={{ color: "var(--muted)", fontWeight: 900 }}
+                style={{ color: "var(--muted)", fontWeight: 700 }}
               >
                 {i + 1}
               </span>
@@ -196,7 +196,7 @@ export default function PlanEditor({
       </div>
 
       {creatingWorkoutForDay !== null && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 200, background: "var(--bg)" }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 200, background: "var(--canvas, var(--bg))" }}>
           <WorkoutEditor
             workout={null}
             lang={lang}

@@ -44,7 +44,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
           >
             <Trophy size={32} style={{ color: '#fff' }} />
           </div>
-          <h2 className="display" style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)' }}>{t.workoutDone}</h2>
+          <h2 className="display" style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{t.workoutDone}</h2>
           <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.great}</p>
         </div>
 
@@ -83,7 +83,7 @@ export default function EndWorkoutModal({ stats, onClose }) {
 function StatBox({ label, value }) {
   return (
     <div className="flex-1 flex flex-col items-center py-3 rounded-2xl" style={{ background: 'var(--surface2)' }}>
-      <span className="display" style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>{value}</span>
+      <span className="display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{value}</span>
       <span className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{label}</span>
     </div>
   )

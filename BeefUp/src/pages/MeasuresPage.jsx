@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Plus, X, Lock, Check } from "lucide-react";
+import { Plus, X, Lock, Check } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { useApp } from "../context/useApp";
 import { uid, todayISO, measurementsForType, measureGoalProgress, isPrescribed } from "../lib/planUtils";
@@ -8,6 +8,8 @@ import { CHART_TOOLTIP_STYLE } from "../lib/chartTheme";
 import ConfirmModal from "../components/ConfirmModal";
 import AddMeasureTypeModal from "../components/AddMeasureTypeModal";
 import NumberField from "../components/NumberField";
+import NavHeader from "../components/ui/NavHeader";
+import IconButton from "../components/ui/IconButton";
 
 const MAX_VALUE = 1000;
 
@@ -193,27 +195,22 @@ export default function MeasuresPage({ onBack }) {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
       <div
         className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide"
         style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
       >
-        <div className="flex items-center gap-1">
-          <button className="btn-back" onClick={onBack}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
-          </button>
-          <h1 className="display flex-1" style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>
-            {t.measures}
-          </h1>
-          <button className="btn btn-ghost p-2" onClick={() => setShowAddType(true)} aria-label={t.measureAddTypeAria}>
-            <Plus size={22} style={{ color: "var(--text)" }} />
-          </button>
-        </div>
+        <NavHeader
+          title={t.measures}
+          onBack={onBack}
+          backLabel={t.back}
+          actions={<IconButton icon={Plus} label={t.measureAddTypeAria} onClick={() => setShowAddType(true)} />}
+        />
         <div className="flex gap-2 flex-wrap">
           {groups.map((g) => (
             <button
               key={g.key}
-              className={`btn ${activeGroup === g.key ? "btn-primary" : "btn-ghost"} text-xs px-3 py-2`}
+              className={`chip ${activeGroup === g.key ? "active" : ""}`}
               onClick={() => setActiveGroup(g.key)}
             >
               {measureGroupLabel(g.key, t)}
