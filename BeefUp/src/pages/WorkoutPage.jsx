@@ -1,5 +1,6 @@
 import BrandStrip from "../components/BrandStrip";
 import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Plus, History, Dumbbell, MoreHorizontal, Pencil, Copy, Trash2, FilePenLine, Share2, Shapes, CalendarRange, Activity, ChevronRight } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { isPrescribed } from "../lib/planUtils";
@@ -9,6 +10,7 @@ import HumanBody from "../components/HumanBody";
 import WorkoutIconModal from "../components/WorkoutIconModal";
 import { workoutBodyParts, workoutColors, workoutIconFor, workoutTint } from "../lib/workoutArt";
 import ConfirmModal from "../components/ConfirmModal";
+import RenameModal from "../components/RenameModal";
 import Screen from "../components/ui/Screen";
 import LargeTitle from "../components/ui/LargeTitle";
 import IconButton from "../components/ui/IconButton";
@@ -27,7 +29,6 @@ const MENU_ITEM_STYLE = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 12,
-  background: "none",
   border: "none",
   cursor: "pointer",
   fontSize: 16,
@@ -37,6 +38,7 @@ const MENU_ITEM_STYLE = {
 function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete, onEdit, onIcon }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [portalTarget, setPortalTarget] = useState(null);
   const btnRef = useRef(null);
   const menuRef = useRef(null);
 
@@ -65,6 +67,7 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
         top: fitsBelow ? rect.bottom + 4 : Math.max(8, rect.top - 4 - menuHeight),
         left: Math.max(8, rect.right - MENU_WIDTH),
       });
+      setPortalTarget(btnRef.current.closest(".app-shell") ?? document.body);
     }
     setOpen((prev) => !prev);
   };
@@ -98,7 +101,8 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
         onClick={toggleMenu}
       />
 
-      {open && (
+      {/* Portalled out of the card: its stacking context would trap the menu under later cards. */}
+      {open && portalTarget && createPortal(
         <div
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
@@ -116,6 +120,7 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
           {menuItems.map(({ Icon, label, onSelect, danger }) => (
             <button
               key={label}
+              className="glass-menu-item"
               onClick={() => {
                 setOpen(false);
                 onSelect();
@@ -130,7 +135,8 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
               <Icon size={17} />
             </button>
           ))}
-        </div>
+        </div>,
+        portalTarget
       )}
     </>
   );
@@ -151,6 +157,7 @@ export default function WorkoutPage({
   const { t, plans, activePlanId, workouts, sessions, saveWorkout, deleteWorkout, workoutIcons, setWorkoutIcon } = useApp()
   const [pendingDelete, setPendingDelete] = useState(null);
   const [iconFor, setIconFor] = useState(null);
+  const [pendingRename, setPendingRename] = useState(null);
   const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
 
   // Muscles trained in the last 7 days, for the home heatmap figure.
@@ -160,14 +167,7 @@ export default function WorkoutPage({
   );
   const weekSessionCount = useMemo(() => recentSessions(sessions, 7).length, [sessions]);
 
-  const handleRename = (workout) => {
-    const newName = window.prompt(
-      t.renameWorkoutPrompt,
-      workout.name,
-    );
-    if (!newName || !newName.trim()) return;
-    saveWorkout({ ...workout, name: newName.trim() });
-  };
+  const handleRename = (workout) => setPendingRename(workout);
 
   const handleDuplicate = (workout) => {
     const copy = {
@@ -201,6 +201,21 @@ export default function WorkoutPage({
           color={workoutColors(workoutBodyParts(iconFor))[0] ?? "var(--muted)"}
           onPick={(key) => setWorkoutIcon(iconFor.id, key)}
           onClose={() => setIconFor(null)}
+        />
+      )}
+
+      {pendingRename && (
+        <RenameModal
+          title={t.rename}
+          label={t.renameWorkoutPrompt}
+          initialValue={pendingRename.name}
+          cancelLabel={t.cancel}
+          saveLabel={t.save}
+          onCancel={() => setPendingRename(null)}
+          onSave={(name) => {
+            saveWorkout({ ...pendingRename, name });
+            setPendingRename(null);
+          }}
         />
       )}
 

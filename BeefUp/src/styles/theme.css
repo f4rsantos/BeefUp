@@ -194,6 +194,10 @@
 .glass-menu,
 .app-shell .modal-center,
 .app-shell .modal-sheet { background: var(--glass-fill-strong); }
+.glass-menu-item { background: none; transition: background 0.15s; }
+.glass-menu-item:hover,
+.glass-menu-item:focus-visible { background: var(--fill); outline: none; }
+.glass-menu-item:active { background: color-mix(in srgb, var(--text) 14%, transparent); }
 
 .app-shell .card { border-radius: var(--radius-card); padding: 18px; }
 .app-shell .hero { border-radius: var(--radius-card); color: var(--text); }
@@ -381,6 +385,26 @@
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.18);
 }
 .app-shell .workout-card-meta { font-size: 13px; color: rgba(255, 255, 255, 0.82); margin-top: 3px; font-weight: 600; }
+
+/* Dark mode: shade the lower card under the text so it reads on bright group colours. */
+[data-theme="dark"] .app-shell .workout-card {
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.12) 60%, rgba(0, 0, 0, 0) 85%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%),
+    var(--art-wash, none);
+}
+[data-theme="dark"] .app-shell .workout-card-title { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 2px 12px rgba(0, 0, 0, 0.35); }
+[data-theme="dark"] .app-shell .workout-card-meta { color: rgba(255, 255, 255, 0.94); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .app-shell .workout-card {
+    background-image:
+      linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.12) 60%, rgba(0, 0, 0, 0) 85%),
+      linear-gradient(155deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%),
+      var(--art-wash, none);
+  }
+  [data-theme="system"] .app-shell .workout-card-title { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 2px 12px rgba(0, 0, 0, 0.35); }
+  [data-theme="system"] .app-shell .workout-card-meta { color: rgba(255, 255, 255, 0.94); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+}
 .app-shell .workout-icon-trigger { background: color-mix(in srgb, var(--art-color) 18%, var(--fill)); border-radius: 999px; }
 .app-shell .workout-icon-option { background: color-mix(in srgb, var(--art-color) 16%, var(--fill)); border-radius: 18px; }
 
@@ -631,7 +655,7 @@ button.list-row:disabled { opacity: 0.4; cursor: not-allowed; }
 .choice-tile.on {
   color: var(--accent);
   background: var(--glass-tint);
-  box-shadow: var(--glass-specular), inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 70%, transparent), 0 10px 24px -12px var(--accent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 .toggle-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
