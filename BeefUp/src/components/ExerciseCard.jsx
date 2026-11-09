@@ -192,7 +192,7 @@ function Swipeable({ onDelete, children }) {
 const SET_GRID = "44px minmax(0,1fr) minmax(0,1fr) 44px";
 
 // Every set is editable; the next one to do is slightly larger.
-function SetRow({ exIdx, setIdx, set, isNext, previous, exerciseRef, repUnit, cardio, onOpenType, onUpdateSet, onToggle, t }) {
+function SetRow({ exIdx, setIdx, set, isNext, previous, similar, exerciseRef, repUnit, cardio, onOpenType, onUpdateSet, onToggle, t }) {
   const fieldStyle = {
     padding: "6px 8px",
     fontSize: isNext ? 17 : 15,

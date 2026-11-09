@@ -36,38 +36,6 @@ function restoreSetTimer(saved) {
   return remaining <= 0 ? null : saved;
 }
 
-// Priority for weight/reps/note when a set isn't covered by real history:
-function buildExerciseEntry(ex, lastSets = [], lastNote = "", workoutItem = null, barType = "") {
-  return {
-    id: uid(),
-    exerciseId: ex.id,
-    name: ex.name,
-    namePt: ex.namePt,
-    note: lastNote || workoutItem?.note || "",
-    barType: barType || workoutItem?.barType || "",
-    sets: Array.from({ length: ex.defaultSets }, (_, i) => {
-      const last = lastSets[Math.min(i, lastSets.length - 1)];
-      if (isCardioExercise(ex.id)) {
-        // Cardio keeps metres in reps, minutes in time.
-        return {
-          id: uid(),
-          reps: last ? last.reps ?? "" : workoutItem?.reps || "",
-          time: last ? last.time ?? "" : workoutItem?.time || "",
-          done: false,
-        };
-      }
-      const fallbackWeight = workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : "");
-      const fallbackReps = workoutItem?.reps || String(ex.defaultReps);
-      return {
-        id: uid(),
-        weight: last ? last.weight : fallbackWeight,
-        reps: last ? last.reps : fallbackReps,
-        done: false,
-      };
-    }),
-  };
-}
-
 export default function ActiveWorkout({ onEnd, onMinimize }) {
   const { t, lang, activeWorkout, workouts, addSession, sessions, saveWorkout, keepAwake } = useApp();
   const sourceWorkout =
@@ -309,6 +277,23 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   }, []);
 
   // The replaced exercise's logged sets are dropped.
+  const moveExercise = useCallback((exIdx, dir) => {
+    const to= exIdx + dir;
+    setExercises((prev) => {
+      if (to < 0 || to >= prev.length) return prev;
+      const next= [...prev];
+      const [moved]= next.splice(exIdx, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setSetTimer((prev) => {
+      if (!prev) return prev;
+      if (prev.exIdx === exIdx) return { ...prev, exIdx: to };
+      if (prev.exIdx === to) return { ...prev, exIdx };
+      return prev;
+    });
+  }, []);
+
   const replaceExercise = useCallback((exIdx, pick) => {
     const ex = resolveExercise(pick.ref);
     if (!ex) return;
@@ -340,18 +325,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       workoutName: saved?.name ?? activeWorkout?.workoutName ?? "",
       duration,
       exercises: exercises
-        .map((e) => ({
-          exerciseId: e.exerciseId,
-          name: e.name,
-          namePt: e.namePt,
-          note: e.note?.trim() ?? "",
-          barType: e.barType ?? "",
-          sets: e.sets
-            .filter((s) => s.done)
-            .map((s) => (isCardioExercise(e.exerciseId)
-              ? { reps: s.reps, time: s.time, type: s.type }
-              : { weight: s.weight, reps: s.reps, type: s.type })),
-        }))
+        .map(sessionExerciseFromEntry)
         .filter((e) => e.sets.length > 0),
     };
 
@@ -389,18 +363,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   function applyTemplateUpdate() {
     const byRef = Object.fromEntries(templateItems.map((i) => [i.ref, i]));
-    const newExercises = exercises.map((e) => {
-      const orig = byRef[e.exerciseId];
-      const item = { ref: e.exerciseId };
-      if (orig?.weight) item.weight = orig.weight;
-      if (orig?.reps) item.reps = orig.reps;
-      if (orig?.time) item.time = orig.time;
-      const note = e.note?.trim() || orig?.note;
-      if (note) item.note = note;
-      const barType = e.barType || orig?.barType;
-      if (barType) item.barType = barType;
-      return item;
-    });
+    const newExercises = exercises.map((e) => templateItemFromEntry(e, byRef[e.exerciseId]));
     saveWorkout({ ...sourceWorkout, exercises: newExercises });
   }
 
