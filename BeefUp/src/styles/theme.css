@@ -339,6 +339,15 @@
 }
 @keyframes lensIn { from { transform: scale(0.86); opacity: 0; filter: blur(6px); } to { transform: none; opacity: 1; filter: none; } }
 
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.modal-title { min-width: 0; font: var(--font-title-card, 700 17px/1.25 system-ui, sans-serif); letter-spacing: -0.02em; color: var(--text); }
+.modal-text { font-size: 15px; line-height: 1.4; color: var(--muted); margin-bottom: 12px; }
+.modal-stack { display: flex; flex-direction: column; gap: 14px; }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.action-row { display: flex; gap: 12px; margin-top: 16px; }
+.action-row > * { flex: 1; }
+
 .app-shell .fade-in { animation: rise 0.6s var(--ease-out); }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
