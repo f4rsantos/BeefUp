@@ -2,9 +2,9 @@ import NumberField from "./NumberField";
 import TimeField from "./TimeField";
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, memo } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, Plus, Check, MoreHorizontal, StickyNote, ArrowLeftRight } from "lucide-react";
+import { Trash2, Plus, Check, MoreHorizontal, StickyNote, ArrowLeftRight, ArrowUp, ArrowDown } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
-import { repUnitFor, isCardioExercise, getBarTypeLabel } from "../lib/exerciseTree"
+import { repUnitFor, isCardioExercise, getBarTypeLabel, resolveExercise } from "../lib/exerciseTree"
 import { formatSet } from "../lib/setFormat"
 import { useEscapeKey } from "../lib/useEscapeKey";
 
@@ -391,6 +391,16 @@ function ExerciseCard({
           <MenuItem onClick={() => { setShowNote((v) => !v); closeMenu(); }}>
             <span className="flex items-center gap-2"><StickyNote size={15} /> {t.exerciseNote}</span>
           </MenuItem>
+          {!isFirst && (
+            <MenuItem onClick={() => { closeMenu(); onMoveExercise(exIdx, -1); }}>
+              <span className="flex items-center gap-2"><ArrowUp size={15} /> {t.moveExerciseUp}</span>
+            </MenuItem>
+          )}
+          {!isLast && (
+            <MenuItem onClick={() => { closeMenu(); onMoveExercise(exIdx, 1); }}>
+              <span className="flex items-center gap-2"><ArrowDown size={15} /> {t.moveExerciseDown}</span>
+            </MenuItem>
+          )}
           <MenuItem onClick={() => { closeMenu(); onReplaceExercise(exIdx); }}>
             <span className="flex items-center gap-2"><ArrowLeftRight size={15} /> {t.replaceExercise}</span>
           </MenuItem>
