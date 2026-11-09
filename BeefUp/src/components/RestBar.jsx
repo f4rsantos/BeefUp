@@ -22,14 +22,13 @@ export default function RestBar({ remaining, total, onAdjust, onSkip, t }) {
     <div
       role="timer"
       aria-label={t.rest}
+      className="glass-bar"
       style={{
         position: "sticky",
         bottom: 0,
         marginTop: "auto",
         padding: "12px var(--page-px) max(12px, env(safe-area-inset-bottom))",
-        background: "var(--surface)",
-        borderTop: "1px solid var(--border)",
-        boxShadow: "var(--shadow-md)",
+        borderTop: "1px solid var(--separator)",
         zIndex: 5,
       }}
     >
