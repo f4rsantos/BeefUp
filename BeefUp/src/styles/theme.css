@@ -53,6 +53,11 @@
   --tabbar-h: 62px;
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI Variable Text", system-ui, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI Variable Display", system-ui, sans-serif;
+  --font-title-page: 800 36px/1.05 var(--font-display);
+  --font-title-subpage: 800 32px/1.05 var(--font-display);
+  --font-title-section: 700 22px/1.2 var(--font-display);
+  --font-title-headline: 800 22px/1.15 var(--font-display);
+  --font-title-card: 700 17px/1.25 var(--font-ui);
 
   font-family: var(--font-ui);
   font-feature-settings: "cv11", "ss01";
@@ -377,10 +382,8 @@
 }
 .app-shell .workout-card .icon-btn::after { display: none; }
 .app-shell .workout-card-title {
-  font-size: 19px;
-  font-weight: 800;
+  font: var(--font-title-headline);
   letter-spacing: -0.03em;
-  line-height: 1.15;
   color: #fff;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.18);
 }
@@ -458,9 +461,7 @@
   padding-top: 6px;
 }
 .large-title h1 {
-  font-size: 36px;
-  font-weight: 800;
-  line-height: 1.05;
+  font: var(--font-title-page);
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -471,7 +472,7 @@
 .nav-header { display: flex; flex-direction: column; gap: 14px; }
 .nav-header-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: -10px; }
 .nav-header .large-title { padding-top: 0; }
-.nav-header .large-title h1 { font-size: 32px; }
+.nav-header .large-title h1 { font: var(--font-title-subpage); }
 
 .icon-btn {
   position: relative;
@@ -525,10 +526,10 @@
 .nav-back:active { transform: scale(0.88); }
 
 .section-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 0 2px; }
-.section-header-title { font-size: 22px; font-weight: 700; letter-spacing: -0.025em; color: var(--text); }
+.section-header-title { font: var(--font-title-section); letter-spacing: -0.025em; color: var(--text); }
 .section-header-actions { display: flex; align-items: center; gap: 8px; }
 
-.card-title { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.card-title { font: var(--font-title-card); letter-spacing: -0.02em; color: var(--text); }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
 .card-meta { font-size: 13px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
 
@@ -933,7 +934,7 @@ button.list-row:disabled { opacity: 0.4; cursor: not-allowed; }
   cursor: pointer;
 }
 .feature-card-eyebrow { font-size: 13px; font-weight: 600; color: var(--accent); }
-.feature-card-title { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-top: 2px; }
+.feature-card-title { font: var(--font-title-headline); letter-spacing: -0.03em; margin-top: 2px; }
 .feature-card-meta { font-size: 14px; color: var(--muted); margin-top: 4px; font-weight: 500; }
 .feature-card-orb {
   display: grid;
