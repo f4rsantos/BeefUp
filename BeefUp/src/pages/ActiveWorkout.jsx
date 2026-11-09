@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/useApp";
-import { uid, nowISO, lastCompletedSets, lastExerciseNote, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
+import { uid, nowISO, lastCompletedSets, lastSetsOfSameBase, lastExerciseNote, buildExerciseEntry, sessionExerciseFromEntry, templateItemFromEntry, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise, isCardioExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
 import { useWakeLock } from "../hooks/useWakeLock";
