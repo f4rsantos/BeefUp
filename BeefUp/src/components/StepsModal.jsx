@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { useEscapeKey } from '../lib/useEscapeKey'
-import { X } from 'lucide-react'
 import { useApp } from '../context/useApp'
 import { todayISO } from '../lib/planUtils'
 import NumberField from './NumberField'
+import Modal from './ui/Modal'
 
 export default function StepsModal({ onClose }) {
-  useEscapeKey(onClose)
   const { t, stepsMap, saveSteps } = useApp()
   const today = todayISO()
   const [val, setVal] = useState(stepsMap[today] ?? '')
@@ -20,14 +18,10 @@ export default function StepsModal({ onClose }) {
   }
 
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
-      <div className="modal-center fade-in" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <span className="font-semibold text-base" style={{ color: 'var(--text)' }}>{t.stepsToday}</span>
-          <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}><X size={18} /></button>
-        </div>
+    <Modal title={t.stepsToday} onClose={onClose} closeLabel={t.cancel} dismissOnBackdrop>
+      <div className="modal-stack">
         <NumberField
-          className="field w-full mb-4"
+          className="field w-full"
           allowDecimal={false}
           placeholder={t.stepsPlaceholder}
           value={val}
@@ -36,6 +30,6 @@ export default function StepsModal({ onClose }) {
         />
         <button className="btn btn-primary w-full" onClick={handleSave}>{t.saveSteps}</button>
       </div>
-    </div>
+    </Modal>
   )
 }
