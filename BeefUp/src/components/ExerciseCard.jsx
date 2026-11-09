@@ -7,6 +7,7 @@ import { localizedName } from "../lib/localizedName"
 import { repUnitFor, isCardioExercise, getBarTypeLabel, resolveExercise } from "../lib/exerciseTree"
 import { formatSet } from "../lib/setFormat"
 import { useEscapeKey } from "../lib/useEscapeKey";
+import { lockAxis } from "../lib/swipeAxis";
 
 const SWIPE_THRESHOLD = 90;
 const SET_TYPES = ["warmup", "dropset", "superset", "failure"];
@@ -154,19 +155,26 @@ function Swipeable({ onDelete, children }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const startX = useRef(0);
+  const startY = useRef(0);
+  const axis = useRef(null);
 
   const onTouchStart = useCallback((e) => {
     startX.current = e.touches[0].clientX;
-    setDragging(true);
+    startY.current = e.touches[0].clientY;
+    axis.current= null;
   }, []);
   const onTouchMove = useCallback((e) => {
     const delta = e.touches[0].clientX - startX.current;
+    axis.current= lockAxis(axis.current, delta, e.touches[0].clientY - startY.current);
+    if (axis.current !== "x") return;
+    setDragging(true);
     if (delta < 0) setDx(Math.max(delta, -140));
   }, []);
   const onTouchEnd = useCallback(() => {
     setDragging(false);
-    if (dx < -SWIPE_THRESHOLD) onDelete();
+    if (axis.current === "x" && dx < -SWIPE_THRESHOLD) onDelete();
     else setDx(0);
+    axis.current= null;
   }, [dx, onDelete]);
 
   return (
