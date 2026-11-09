@@ -99,6 +99,10 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     () => Object.fromEntries(JSON.parse(exerciseIdsKey).map((id) => [id, lastCompletedSets(sessions, id)])),
     [sessions, exerciseIdsKey],
   );
+  const similarSetsById = useMemo(
+    () => Object.fromEntries(JSON.parse(exerciseIdsKey).map((id) => [id, lastCompletedSets(sessions, id).length ? null : lastSetsOfSameBase(sessions, id)])),
+    [sessions, exerciseIdsKey],
+  );
 
   const [restState, setRestState] = useState(() => {
     const draft = getLS("activeWorkoutDraft", null);
@@ -453,7 +457,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             lang={lang}
             t={t}
             previousSets={previousSetsById[ex.exerciseId]}
+            similarSets={similarSetsById[ex.exerciseId]}
             isCurrent={exIdx === currentExIdx}
+            isFirst={exIdx === 0}
+            isLast={exIdx === exercises.length - 1}
+            onMoveExercise={moveExercise}
             onUpdateSet={updateSet}
             onToggleSet={toggleSet}
             onAddSet={addSet}

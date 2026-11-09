@@ -16,6 +16,7 @@ const strings = {
     manageWorkouts: 'Gerir treinos',
     markSetDone: 'Marcar série como feita',
     lastTime: 'Última vez',
+    lastTimeIn: 'Última vez em',
     exerciseOptions: 'Opções do exercício',
     removeExercise: 'Remover exercício',
     exerciseNotePlaceholder: 'Nota para este exercício',

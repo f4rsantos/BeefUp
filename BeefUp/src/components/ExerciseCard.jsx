@@ -250,6 +250,11 @@ function SetRow({ exIdx, setIdx, set, isNext, previous, exerciseRef, repUnit, ca
           {t.lastTime}: {formatSet(previous, exerciseRef)}
         </p>
       )}
+      {isNext && !previous && similar && (
+        <p className="text-xs tabular-nums" style={{ color: "var(--muted)", margin: "4px 0 2px 50px" }}>
+          {t.lastTimeIn} {similar.name}: {formatSet(similar.set, exerciseRef)}
+        </p>
+      )}
     </div>
   );
 }
@@ -260,7 +265,11 @@ function ExerciseCard({
   lang,
   t,
   previousSets,
+  similarSets,
   isCurrent,
+  isFirst,
+  isLast,
+  onMoveExercise,
   onUpdateSet,
   onToggleSet,
   onAddSet,
@@ -283,6 +292,8 @@ function ExerciseCard({
   const allDone = doneCount === sets.length && sets.length > 0;
   // Only the current exercise lights up its next set.
   const nextIdx = isCurrent ? sets.findIndex((s) => !s.done) : -1;
+  const similarExercise= similarSets ? resolveExercise(similarSets.ref) : null;
+  const similarName= similarExercise ? localizedName(similarExercise, lang) : "";
 
   const closeMenu = useCallback(() => setMenu(null), []);
 
@@ -366,6 +377,7 @@ function ExerciseCard({
               set={set}
               isNext={setIdx === nextIdx}
               previous={previousSets?.[setIdx]}
+              similar={similarName ? { name: similarName, set: similarSets.sets[Math.min(setIdx, similarSets.sets.length - 1)] } : undefined}
               exerciseRef={exercise.exerciseId}
               repUnit={repUnit}
               cardio={cardio}
