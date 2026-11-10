@@ -226,15 +226,13 @@
 }
 .app-shell .btn:active { transform: scale(0.95); }
 .app-shell .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.app-shell .btn-primary,
-.app-shell .btn-energy {
+.app-shell .btn-primary {
   color: #fff;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%),
     var(--accent);
   box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.55), 0 8px 20px -8px color-mix(in srgb, var(--accent) 70%, transparent);
 }
-.app-shell .btn-energy { background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%), var(--accent-2); }
 .app-shell .btn-ghost { background: var(--glass-fill); border: none; color: var(--accent); }
 .app-shell .btn-danger { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); box-shadow: none; }
 .app-shell .btn-icon { border-radius: 999px; }
@@ -259,8 +257,6 @@
   background: var(--surface);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
-
-.app-shell .divider { height: 1px; background: var(--separator); }
 
 .app-shell .section-title {
   font-size: 15px;
@@ -291,8 +287,6 @@
 .app-shell .pill-toggle .pill-option { border-radius: 999px; font-weight: 600; color: var(--muted); }
 .app-shell .pill-toggle .pill-option.active { background: var(--glass-fill-strong); color: var(--text); box-shadow: var(--glass-specular), 0 4px 12px rgba(0, 0, 0, 0.12); }
 
-.app-shell .icon-toggle button { background: var(--fill); border: none; color: var(--text); }
-.app-shell .icon-toggle button.active { background: var(--accent); color: #fff; }
 
 .app-shell .switch {
   width: 58px;
@@ -956,6 +950,16 @@ button.list-row:disabled { opacity: 0.4; cursor: not-allowed; }
   flex-shrink: 0;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 60%), var(--accent);
   box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.6), 0 12px 24px -10px var(--accent);
+}
+
+.text-body { color: var(--text) !important; }
+.text-muted { color: var(--muted) !important; }
+.text-danger { color: var(--danger) !important; }
+.canvas-bg { background: var(--canvas, var(--bg)) !important; }
+.page-pad {
+  padding-top: var(--page-py-top) !important;
+  padding-left: var(--page-px) !important;
+  padding-right: var(--page-px) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

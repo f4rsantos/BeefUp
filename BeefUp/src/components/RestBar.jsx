@@ -34,11 +34,11 @@ export default function RestBar({ remaining, total, onAdjust, onSkip, t }) {
     >
       <div className="flex items-center" style={{ gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="text-xs" style={{ color: "var(--muted)", fontWeight: 600 }}>{t.rest}</p>
+          <p className="text-xs text-muted" style={{ fontWeight: 600 }}>{t.rest}</p>
           <p
-            className="display tabular-nums"
+            className="display tabular-nums text-body"
             aria-live="off"
-            style={{ fontSize: 34, fontWeight: 700, lineHeight: 1, color: "var(--text)" }}
+            style={{ fontSize: 34, fontWeight: 700, lineHeight: 1 }}
           >
             {clock(remaining)}
           </p>
