@@ -8,6 +8,7 @@ import { repUnitFor, isCardioExercise, getBarTypeLabel, resolveExercise } from "
 import { formatSet } from "../lib/setFormat"
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { lockAxis } from "../lib/swipeAxis";
+import "./ExerciseCard.css";
 
 const SWIPE_THRESHOLD = 90;
 const SET_TYPES = ["warmup", "dropset", "superset", "failure"];
@@ -52,15 +53,10 @@ function PopoverMenu({ anchor, onClose, children }) {
       ref={menuRef}
       role="menu"
       onClick={(e) => e.stopPropagation()}
-      className="glass-menu fade-in"
+      className="glass-menu fade-in ec-menu"
       style={{
-        position: "fixed",
         top: anchor.top,
         ...(anchor.right !== undefined ? { right: anchor.right } : { left: anchor.left }),
-        borderRadius: 16,
-        minWidth: 180,
-        zIndex: 1000,
-        overflow: "hidden",
       }}
     >
       {children}
@@ -69,25 +65,12 @@ function PopoverMenu({ anchor, onClose, children }) {
   );
 }
 
-function MenuItem({ onClick, children, color }) {
+function MenuItem({ onClick, children, danger }) {
   return (
     <button
       role="menuitem"
-      className="tap glass-menu-item"
+      className={`tap glass-menu-item ec-menu-item${danger ? " danger" : ""}`}
       onClick={onClick}
-      style={{
-        width: "100%",
-        padding: "10px 14px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 8,
-        border: "none",
-        cursor: "pointer",
-        fontSize: 14,
-        textAlign: "left",
-        color: color || "var(--text)",
-      }}
     >
       {children}
     </button>
@@ -98,25 +81,13 @@ function SetBadge({ set, setIdx, t, onOpenType }) {
   const typed = set.type && set.type !== "normal";
   return (
     <button
-      className="tap flex items-center justify-center"
+      className="tap flex items-center justify-center ec-tap"
       onClick={onOpenType}
       aria-label={`${t.setSingular} ${setIdx + 1}${typed ? `, ${t[`setType_${set.type}`]}` : ""}`}
-      style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, width: 44 }}
     >
       <span
-        className="tabular-nums"
-        style={{
-          minWidth: 26,
-          height: 26,
-          borderRadius: 8,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 13,
-          fontWeight: 800,
-          background: typed ? TYPE_COLORS[set.type] : "transparent",
-          color: typed ? "#fff" : "var(--muted)",
-        }}
+        className={`tabular-nums ec-badge${typed ? " typed" : ""}`}
+        style={typed ? { background: TYPE_COLORS[set.type] } : undefined}
       >
         {typed ? t[`setType_${set.type}`][0] : setIdx + 1}
       </span>
@@ -125,26 +96,15 @@ function SetBadge({ set, setIdx, t, onOpenType }) {
 }
 
 function DoneToggle({ done, onClick, t, large }) {
-  const size = large ? 34 : 30;
   return (
     <button
-      className="tap flex items-center justify-center"
-      style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, width: 44 }}
+      className="tap flex items-center justify-center ec-tap"
       onClick={onClick}
       aria-pressed={!!done}
       aria-label={t.markSetDone}
     >
-      <span
-        className="flex items-center justify-center"
-        style={{
-          width: size,
-          height: size,
-          borderRadius: 999,
-          background: done ? "var(--grad-accent)" : "var(--surface)",
-          border: done ? "none" : `2px solid ${large ? "var(--accent)" : "var(--border)"}`,
-        }}
-      >
-        {done && <Check size={large ? 18 : 16} strokeWidth={3} style={{ color: "#fff" }} />}
+      <span className={`flex items-center justify-center ec-done${large ? " large" : ""}${done ? " on" : ""}`}>
+        {done && <Check size={large ? 18 : 16} strokeWidth={3} />}
       </span>
     </button>
   );
@@ -178,18 +138,16 @@ function Swipeable({ onDelete, children }) {
   }, [dx, onDelete]);
 
   return (
-    <div className="relative overflow-hidden" style={{ borderRadius: 12 }}>
-      <div
-        className="absolute inset-0 flex items-center justify-end pr-4"
-        style={{ background: "var(--danger)", opacity: dx < -10 ? 1 : 0, transition: "opacity .15s" }}
-      >
-        <Trash2 size={16} style={{ color: "var(--bg)" }} />
+    <div className="relative overflow-hidden ec-swipe">
+      <div className={`absolute inset-0 flex items-center justify-end pr-4 ec-swipe-bg${dx < -10 ? " show" : ""}`}>
+        <Trash2 size={16} />
       </div>
       <div
+        className={`ec-swipe-row${dragging ? " dragging" : ""}`}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform .2s" }}
+        style={{ transform: `translateX(${dx}px)` }}
       >
         {children}
       </div>
@@ -197,69 +155,50 @@ function Swipeable({ onDelete, children }) {
   );
 }
 
-const SET_GRID = "44px minmax(0,1fr) minmax(0,1fr) 44px";
-
 // Every set is editable; the next one to do is slightly larger.
 function SetRow({ exIdx, setIdx, set, isNext, previous, similar, exerciseRef, repUnit, cardio, onOpenType, onUpdateSet, onToggle, t }) {
-  const fieldStyle = {
-    padding: "6px 8px",
-    fontSize: isNext ? 17 : 15,
-    fontWeight: isNext ? 800 : 600,
-    minHeight: isNext ? 46 : 40,
-    background: "var(--surface)",
-    color: "var(--text)",
-  };
+  const fieldClass= `field text-center tabular-nums ec-field${isNext ? " next" : ""}`;
   return (
-    <div
-      style={{
-        background: isNext ? "var(--accent-soft)" : "var(--surface)",
-        border: `1.5px solid ${isNext ? "var(--accent)" : "transparent"}`,
-        borderRadius: 12,
-        padding: "4px 0",
-      }}
-    >
-      <div className="grid items-center" style={{ gridTemplateColumns: SET_GRID, gap: 6 }}>
+    <div className={`ec-set${isNext ? " next" : ""}`}>
+      <div className="grid items-center ec-grid">
         <SetBadge set={set} setIdx={setIdx} t={t} onOpenType={onOpenType} />
         {!cardio && (
           <NumberField
-            className="field text-center tabular-nums"
+            className={fieldClass}
             value={set.weight}
             onChange={(e) => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
             placeholder="kg"
             aria-label="kg"
             disabled={set.done}
-            style={fieldStyle}
           />
         )}
         <NumberField
-          className="field text-center tabular-nums"
+          className={fieldClass}
           allowDecimal={false}
           value={set.reps}
           onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", e.target.value)}
           placeholder={cardio ? "m" : "–"}
           aria-label={repUnit}
           disabled={set.done}
-          style={fieldStyle}
         />
         {cardio && (
           <TimeField
-            className="field text-center tabular-nums"
+            className={fieldClass}
             value={set.time}
             onChange={(value) => onUpdateSet(exIdx, setIdx, "time", value)}
             aria-label={t.cardioTime}
             disabled={set.done}
-            style={fieldStyle}
           />
         )}
         <DoneToggle done={set.done} onClick={onToggle} t={t} large={isNext} />
       </div>
       {isNext && previous && (
-        <p className="text-xs tabular-nums" style={{ color: "var(--muted)", margin: "4px 0 2px 50px" }}>
+        <p className="text-xs tabular-nums text-muted ec-hint">
           {t.lastTime}: {formatSet(previous, exerciseRef)}
         </p>
       )}
       {isNext && !previous && similar && (
-        <p className="text-xs tabular-nums" style={{ color: "var(--muted)", margin: "4px 0 2px 50px" }}>
+        <p className="text-xs tabular-nums text-muted ec-hint">
           {t.lastTimeIn} {similar.name}: {formatSet(similar.set, exerciseRef)}
         </p>
       )}
@@ -315,39 +254,30 @@ function ExerciseCard({
 
   return (
     <section
-      className="card"
+      className={`card ec-card${allDone ? " done" : ""}`}
       aria-label={exLabel}
-      style={{ padding: "14px 12px 12px 16px", ...(allDone ? { borderColor: "var(--accent)" } : {}) }}
     >
       <div className="flex items-center gap-2">
         <button
-          className="tap flex-1"
-          style={{ minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+          className="tap flex-1 ec-name-btn"
           onClick={() => onOpenInfo(exercise.exerciseId)}
         >
-          <span
-            className="display"
-            style={{ display: "block", fontSize: 17, fontWeight: 800, color: "var(--text)", lineHeight: 1.2 }}
-          >
+          <span className="display text-body ec-name">
             {exLabel}
             {barTypeLabel && (
-              <span style={{ fontWeight: 500, color: "var(--muted)" }}> ({barTypeLabel})</span>
+              <span className="text-muted ec-bar"> ({barTypeLabel})</span>
             )}
           </span>
         </button>
-        <span
-          className="tabular-nums flex items-center gap-1"
-          style={{ fontSize: 14, fontWeight: 700, color: allDone ? "var(--accent)" : "var(--muted)", flexShrink: 0 }}
-        >
+        <span className={`tabular-nums flex items-center gap-1 ec-count${allDone ? " done" : ""}`}>
           {allDone && <Check size={15} strokeWidth={3} />}
           {doneCount}/{sets.length}
         </span>
         <button
-          className="tap flex items-center justify-center"
+          className="tap flex items-center justify-center text-muted ec-icon-btn"
           onClick={(e) => openMenu(e, "exercise")}
           aria-label={t.exerciseOptions}
           aria-haspopup="menu"
-          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", flexShrink: 0 }}
         >
           <MoreHorizontal size={18} />
         </button>
@@ -355,8 +285,7 @@ function ExerciseCard({
 
       {showNote && (
         <textarea
-          className="field text-sm"
-          style={{ marginTop: 8 }}
+          className="field text-sm ec-note"
           rows={2}
           placeholder={t.exerciseNotePlaceholder}
           aria-label={t.exerciseNote}
@@ -366,8 +295,7 @@ function ExerciseCard({
       )}
 
       <div
-        className="grid items-center text-xs"
-        style={{ gridTemplateColumns: SET_GRID, gap: 6, color: "var(--muted)", marginTop: 10, marginBottom: 2 }}
+        className="grid items-center text-xs text-muted ec-grid ec-grid-head"
         aria-hidden="true"
       >
         <span className="text-center">#</span>
@@ -376,7 +304,7 @@ function ExerciseCard({
         <span />
       </div>
 
-      <div className="flex flex-col" style={{ gap: 4 }}>
+      <div className="flex flex-col gap-1">
         {sets.map((set, setIdx) => (
           <Swipeable key={set.id} onDelete={() => onRemoveSet(exIdx, setIdx)}>
             <SetRow
@@ -399,8 +327,7 @@ function ExerciseCard({
       </div>
 
       <button
-        className="tap flex items-center gap-1"
-        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent)", fontSize: 14, fontWeight: 700, marginTop: 4, paddingLeft: 12 }}
+        className="tap flex items-center gap-1 ec-add"
         onClick={() => onAddSet(exIdx)}
       >
         <Plus size={16} /> {t.setSingular}
@@ -424,7 +351,7 @@ function ExerciseCard({
           <MenuItem onClick={() => { closeMenu(); onReplaceExercise(exIdx); }}>
             <span className="flex items-center gap-2"><ArrowLeftRight size={15} /> {t.replaceExercise}</span>
           </MenuItem>
-          <MenuItem color="var(--danger)" onClick={() => { closeMenu(); onRemoveExercise(exIdx); }}>
+          <MenuItem danger onClick={() => { closeMenu(); onRemoveExercise(exIdx); }}>
             <span className="flex items-center gap-2"><Trash2 size={15} /> {t.removeExercise}</span>
           </MenuItem>
         </PopoverMenu>
@@ -437,20 +364,10 @@ function ExerciseCard({
             const current = (sets[menu.setIdx]?.type ?? "normal") === type;
             return (
               <MenuItem key={type} onClick={() => { onSetType(exIdx, menu.setIdx, type); closeMenu(); }}>
-                <span style={{ fontWeight: current ? 800 : 500 }}>{label}</span>
+                <span className={`ec-type-label${current ? " current" : ""}`}>{label}</span>
                 <span
-                  style={{
-                    minWidth: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    background: type === "normal" ? "var(--surface2)" : TYPE_COLORS[type],
-                    color: type === "normal" ? "var(--muted)" : "#fff",
-                  }}
+                  className={`ec-type-chip${type === "normal" ? "" : " typed"}`}
+                  style={type === "normal" ? undefined : { background: TYPE_COLORS[type] }}
                 >
                   {type === "normal" ? menu.setIdx + 1 : label[0]}
                 </span>

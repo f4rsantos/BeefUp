@@ -384,9 +384,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   return (
     <div
-      className="flex flex-col h-full overflow-y-auto"
+      className="flex flex-col h-full overflow-y-auto canvas-bg"
       style={{
-        background: "var(--canvas, var(--bg))",
         touchAction: "pan-x pan-y pinch-zoom",
       }}
       onPointerDownCapture={unlockAudio}
@@ -404,8 +403,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
       {workoutName && (
         <p
-          className="text-center text-lg font-semibold mt-1 mb-2"
-          style={{ color: "var(--text)" }}
+          className="text-center text-lg font-semibold mt-1 mb-2 text-body"
         >
           {workoutName}
         </p>
@@ -480,7 +478,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       )}
 
       {viewingExercise && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--canvas, var(--bg))" }}>
+        <div className="canvas-bg" style={{ position: "absolute", inset: 0, zIndex: 100 }}>
           <ExerciseDetailPage
             exercise={viewingExercise.base}
             activeVariantId={viewingExercise.activeVariantId}
