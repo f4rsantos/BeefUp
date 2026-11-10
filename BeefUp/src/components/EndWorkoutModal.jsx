@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useEscapeKey } from '../lib/useEscapeKey'
 import { Trophy, Flame } from 'lucide-react'
 import { useApp } from '../context/useApp'
+import './EndWorkoutModal.css'
 
 function formatSessionLength(seconds) {
   const h = Math.floor(seconds / 3600)
@@ -35,40 +36,31 @@ export default function EndWorkoutModal({ stats, onClose }) {
       <div className="modal-center" onClick={e => e.stopPropagation()}>
         <div className="flex flex-col items-center mb-5">
           <div
-            className="pop"
-            style={{
-              width: 64, height: 64, borderRadius: 20, marginBottom: 12,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--grad-accent)', boxShadow: 'var(--shadow-glow)',
-            }}
+            className="pop ew-trophy"
           >
-            <Trophy size={32} style={{ color: '#fff' }} />
+            <Trophy className="ew-trophy-icon" size={32} />
           </div>
-          <h2 className="display" style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{t.workoutDone}</h2>
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.great}</p>
+          <h2 className="display text-body ew-title">{t.workoutDone}</h2>
+          <p className="text-sm text-muted">{t.great}</p>
         </div>
 
         {prs.length > 0 && (
           <div
-            className="fade-in"
-            style={{
-              borderRadius: 16, padding: '12px 14px', marginBottom: 16,
-              background: 'var(--grad-energy)', color: '#fff',
-            }}
+            className="fade-in ew-prs"
           >
-            <div className="flex items-center gap-2" style={{ fontWeight: 800, fontSize: 13 }}>
+            <div className="flex items-center gap-2 ew-prs-head">
               <Flame size={16} fill="currentColor" />
               {prs.length === 1
                 ? (t.newPersonalRecord)
                 : (lang === 'pt' ? `${prs.length} novos recordes!` : `${prs.length} new records!`)}
             </div>
-            <p style={{ fontSize: 12, opacity: 0.92, marginTop: 4, lineHeight: 1.4 }}>
+            <p className="ew-prs-list">
               {prs.join(' · ')}
             </p>
           </div>
         )}
 
-        <div className="flex gap-3" style={{ marginBottom: 10 }}>
+        <div className="flex gap-3 ew-stats">
           <StatBox label={t.totalTime} value={formatSessionLength(stats.duration)} />
           <StatBox label={t.totalSets} value={stats.totalSets} />
           <StatBox label={t.totalVolume} value={`${stats.totalVolume.toFixed(0)}kg`} />
@@ -82,9 +74,9 @@ export default function EndWorkoutModal({ stats, onClose }) {
 
 function StatBox({ label, value }) {
   return (
-    <div className="flex-1 flex flex-col items-center py-3 rounded-2xl" style={{ background: 'var(--surface2)' }}>
-      <span className="display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{value}</span>
-      <span className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{label}</span>
+    <div className="flex-1 flex flex-col items-center py-3 rounded-2xl ew-stat">
+      <span className="display text-body ew-stat-value">{value}</span>
+      <span className="text-xs mt-0.5 text-muted">{label}</span>
     </div>
   )
 }

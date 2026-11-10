@@ -8,6 +8,7 @@ import { redeemInvite, setScopes as applyScopes } from "../lib/sync/link";
 import { getPref, setPref } from "../lib/prefs";
 import { setSupabaseConfig, testConnection, validateConfig, loadSupabaseConfig } from "../lib/supabaseConfig";
 import { previewProjectSwitch, switchSupabaseProject } from "../lib/sync/project";
+import "./TrainerLinkModal.css";
 
 const STEPS = ["scopes", "connect", "account", "confirm", "done"];
 const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
@@ -145,9 +146,9 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
 
   return (
     <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
-      <div className="modal-center fade-in" style={{ padding: 24 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-center fade-in tl-modal" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-1">
-          <span className="font-semibold" style={{ color: "var(--text)", fontSize: 18 }}>
+          <span className="font-semibold text-body tl-title">
             {t.trainerLinkButton}
           </span>
           <button className="btn btn-ghost p-2" onClick={dismiss} aria-label={t.cancel}>
@@ -156,23 +157,23 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
         </div>
 
         {pendingInvite && step !== "done" && (
-          <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
+          <p className="text-xs mb-4 text-muted">
             {t.trainerLinkStep.replace("{n}", stepIndex + 1).replace("{total}", 4)}
           </p>
         )}
 
         {pendingInvite === null && (
-          <p className="text-sm" style={{ color: "var(--muted)", marginTop: 8 }}>
+          <p className="text-sm text-muted tl-gap">
             {t.trainerLinkNeedsInvite}
           </p>
         )}
 
         {pendingInvite && step === "scopes" && (
-          <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkScopesExplain}</p>
+          <div className="flex flex-col gap-3 tl-gap">
+            <p className="text-sm text-muted">{t.trainerLinkScopesExplain}</p>
             {SCOPE_IDS.map((id) => (
               <div key={id} className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{t[id]}</p>
+                <p className="text-sm font-medium text-body">{t[id]}</p>
                 <button
                   role="switch"
                   aria-checked={scopes.includes(id)}
@@ -182,36 +183,36 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
                 />
               </div>
             ))}
-            <p className="text-xs" style={{ color: "var(--muted)" }}>{t.trainerScopesNote}</p>
+            <p className="text-xs text-muted">{t.trainerScopesNote}</p>
           </div>
         )}
 
         {pendingInvite && step === "connect" && (
-          <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkConnectExplain}</p>
-            <div className="card card-flat" style={{ padding: 12, background: "var(--surface2)" }}>
+          <div className="flex flex-col gap-3 tl-gap">
+            <p className="text-sm text-muted">{t.trainerLinkConnectExplain}</p>
+            <div className="card card-flat tl-box">
               <SummaryRow label={t.trainerLinkConnectHostLabel} value={hostname} />
             </div>
             {switchFrom && (
-              <div className="card card-flat flex flex-col gap-2" role="alert" style={{ padding: 12, borderColor: "var(--warn)" }}>
-                <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{t.trainerLinkSwitchTitle}</p>
-                <p className="text-sm" style={{ color: "var(--muted)" }}>
+              <div className="card card-flat flex flex-col gap-2 tl-warn-box" role="alert">
+                <p className="text-sm font-semibold text-body">{t.trainerLinkSwitchTitle}</p>
+                <p className="text-sm text-muted">
                   {t.trainerLinkSwitchBody.replace("{host}", switchFrom.host)}
                 </p>
                 {switchFrom.removedCount > 0 && (
-                  <p className="text-sm" style={{ color: "var(--muted)" }}>
+                  <p className="text-sm text-muted">
                     {t.trainerLinkSwitchRemoved.replace("{n}", switchFrom.removedCount)}
                   </p>
                 )}
               </div>
             )}
-            {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
+            {error && <p className="text-xs text-danger">{error}</p>}
           </div>
         )}
 
         {pendingInvite && step === "account" && (
-          <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
+          <div className="flex flex-col gap-3 tl-gap">
+            <p className="text-sm text-muted">
               {mode === "signup" ? t.trainerLinkAccountExplain : t.trainerLinkSignInExplain}
             </p>
             <div>
@@ -235,7 +236,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
               />
             </div>
-            {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
+            {error && <p className="text-xs text-danger">{error}</p>}
             <button
               type="button"
               className="btn btn-ghost text-xs"
@@ -247,31 +248,25 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
         )}
 
         {pendingInvite && step === "confirm" && (
-          <div className="flex flex-col gap-3" style={{ marginTop: 8 }}>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.trainerLinkConfirmExplain}</p>
-            <div className="card card-flat" style={{ padding: 12, background: "var(--surface2)" }}>
+          <div className="flex flex-col gap-3 tl-gap">
+            <p className="text-sm text-muted">{t.trainerLinkConfirmExplain}</p>
+            <div className="card card-flat tl-box">
               <SummaryRow label={t.trainerLinkEmailLabel} value={email} />
               <SummaryRow
                 label={t.trainerLinkScopesTitle}
                 value={scopes.length ? scopes.map((s) => t[s]).join(", ") : t.trainerLinkScopesNone}
               />
             </div>
-            {error && <p className="text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
+            {error && <p className="text-xs text-danger">{error}</p>}
           </div>
         )}
 
         {pendingInvite && step === "done" && resultLink && (
-          <div className="flex flex-col items-center text-center gap-2" style={{ marginTop: 8 }}>
-            <div
-              style={{
-                width: 56, height: 56, borderRadius: 16, marginBottom: 4,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "var(--grad-accent)",
-              }}
-            >
-              <Check size={28} style={{ color: "#fff" }} />
+          <div className="flex flex-col items-center text-center gap-2 tl-gap">
+            <div className="tl-done-icon">
+              <Check className="tl-done-check" size={28} />
             </div>
-            <p className="font-semibold" style={{ color: "var(--text)", fontSize: 17 }}>
+            <p className="font-semibold text-body tl-done-title">
               {t.trainerLinkSuccessTitle.replace("{name}", resultLink.trainerName || "")}
             </p>
             <p className="text-sm" style={{ color: scopesPending ? "var(--warn, #d97706)" : "var(--muted)" }}>
@@ -280,7 +275,7 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
           </div>
         )}
 
-        <div className="flex gap-3" style={{ marginTop: 20 }}>
+        <div className="flex gap-3 tl-actions">
           {pendingInvite === null && (
             <button className="btn btn-primary flex-1" onClick={onClose}>{t.done}</button>
           )}
@@ -332,9 +327,9 @@ export default function TrainerLinkModal({ onClose, onLinked }) {
 
 function SummaryRow({ label, value }) {
   return (
-    <div className="flex items-center justify-between gap-3" style={{ padding: "4px 0" }}>
-      <span className="text-xs" style={{ color: "var(--muted)" }}>{label}</span>
-      <span className="text-sm font-medium truncate" style={{ color: "var(--text)", maxWidth: "60%" }}>
+    <div className="flex items-center justify-between gap-3 tl-row">
+      <span className="text-xs text-muted">{label}</span>
+      <span className="text-sm font-medium truncate text-body tl-row-name">
         {value}
       </span>
     </div>

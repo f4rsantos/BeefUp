@@ -9,19 +9,20 @@ import IconButton from "./ui/IconButton";
 import { ListGroup, ListRow } from "./ui/List";
 import GlassPanel from "./ui/GlassPanel";
 import ActionTile from "./ui/ActionTile";
+import "./BackupSection.css";
 
 // Export and import both ask "which kind?" with the same layout
 function ChoiceModal({ title, question, options, onClose }) {
   const { t } = useApp();
   useEscapeKey(onClose);
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay bk-dialog" onClick={onClose}>
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-1">
-          <span className="font-semibold text-base" style={{ color: "var(--text)" }}>{title}</span>
+          <span className="font-semibold text-base text-body">{title}</span>
           <IconButton icon={X} size="sm" label={t.cancel} onClick={onClose} />
         </div>
-        <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>{question}</p>
+        <p className="text-sm mb-4 text-muted">{question}</p>
 
         <ListGroup icons>
           {options.map((option) => (
@@ -162,13 +163,13 @@ export default function BackupSection({ extraActions = [] }) {
         </GlassPanel>
 
         {status && (
-          <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: "var(--success)" }}>
+          <p className="text-xs mt-2 flex items-center gap-1.5 bk-ok">
             <Check size={13} />
             {status}
           </p>
         )}
         {error && (
-          <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: "var(--warn)" }}>
+          <p className="text-xs mt-2 flex items-center gap-1.5 bk-warn">
             <AlertTriangle size={13} />
             {error}
           </p>

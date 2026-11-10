@@ -1,4 +1,5 @@
 import { useThemeOptions, useFontScaleOptions, useLanguageOptions } from "../lib/usePreferenceOptions";
+import "./PreferenceControls.css";
 
 // Theme, accent, text size and language are the same choices wherever they
 // are offered — the phone app's settings page and the trainer dashboard.
@@ -37,7 +38,7 @@ export function FontScaleButtons() {
   return (
     <OptionButtons
       {...useFontScaleOptions()}
-      renderGlyph={({ size }) => <span style={{ fontSize: size, fontWeight: 800, lineHeight: 1 }}>A</span>}
+      renderGlyph={({ size }) => <span className="pc-glyph" style={{ fontSize: size }}>A</span>}
     />
   );
 }

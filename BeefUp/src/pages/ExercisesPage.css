@@ -1,0 +1,102 @@
+.ex-head {
+  margin-bottom: 16px;
+}
+
+.ex-tools {
+  margin-bottom: 8px !important;
+}
+
+.ex-search-icon {
+  position: absolute !important;
+  left: 12px !important;
+}
+
+.ex-search {
+  padding-left: 36px !important;
+}
+
+.ex-tool {
+  padding: 10px !important;
+}
+
+.ex-filter-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ex-empty {
+  padding: 40px 0 !important;
+}
+
+.ex-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ex-tile {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.ex-tile-art {
+  aspect-ratio: 1 / 1;
+  background: var(--surface2);
+}
+
+.ex-tile-text {
+  padding: 8px 10px 10px;
+}
+
+.ex-capitalize {
+  text-transform: capitalize !important;
+}
+
+.ex-group {
+  margin-bottom: 4px;
+}
+
+.ex-letter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bar, var(--bg));
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  padding: 10px 4px 6px;
+}
+
+.ex-letter {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.ex-row {
+  padding: 10px 4px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.ex-create {
+  padding: 12px 4px !important;
+  text-align: left !important;
+  width: 100% !important;
+  color: var(--accent) !important;
+}
+
+.ex-create-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px dashed var(--accent);
+}

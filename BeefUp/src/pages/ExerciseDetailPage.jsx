@@ -6,6 +6,7 @@ import { localizedName } from "../lib/localizedName"
 import ConfirmModal from "../components/ConfirmModal";
 import NavHeader from "../components/ui/NavHeader";
 import IconButton from "../components/ui/IconButton";
+import "./ExerciseDetailPage.css";
 
 export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }) {
   const { t, lang, deleteCustomExercise } = useApp();
@@ -32,10 +33,9 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
   ];
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-5 scrollbar-hide"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-5 scrollbar-hide page-pad"
       >
         <NavHeader
           title={name}
@@ -47,37 +47,30 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
             )
           }
           accessory={
-            exercise.custom && <span className="chip active" style={{ pointerEvents: "none" }}>{t.customExerciseBadge}</span>
+            exercise.custom && <span className="chip active ed-badge">{t.customExerciseBadge}</span>
           }
         />
         <div
-          className="flex flex-col items-center justify-center"
-          style={{
-            aspectRatio: "16 / 9",
-            border: "2px dashed var(--border)",
-            borderRadius: 16,
-            color: "var(--muted)",
-            gap: 8,
-          }}
+          className="flex flex-col items-center justify-center text-muted ed-media"
         >
           <ImageIcon size={28} />
           <span className="text-xs">{t.noMediaYet}</span>
         </div>
 
         {description && (
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
+          <p className="text-sm text-muted">
             {description}
           </p>
         )}
 
         {instructions?.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold mb-2" style={{ color: "var(--text)" }}>
+            <h2 className="text-sm font-semibold mb-2 text-body">
               {t.instructions}
             </h2>
-            <ol className="flex flex-col gap-2" style={{ paddingLeft: 20, listStyle: "decimal" }}>
+            <ol className="flex flex-col gap-2 ed-steps">
               {instructions.map((step, i) => (
-                <li key={i} className="text-sm" style={{ color: "var(--text)" }}>
+                <li key={i} className="text-sm text-body">
                   {step}
                 </li>
               ))}
@@ -87,7 +80,7 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
 
         {exercise.variants?.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold mb-2" style={{ color: "var(--text)" }}>
+            <h2 className="text-sm font-semibold mb-2 text-body">
               {t.variantsTitle}
             </h2>
             <div className="flex flex-col gap-4">
@@ -106,11 +99,11 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
                         className="card"
                         style={active ? { borderColor: "var(--accent)" } : undefined}
                       >
-                        <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                        <p className="text-sm font-semibold text-body">
                           {localizedName(variant, lang)}
                         </p>
                         {note && (
-                          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                          <p className="text-xs mt-1 text-muted">
                             {note}
                           </p>
                         )}
@@ -126,12 +119,11 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
         <div className="card flex flex-col gap-3">
           {basics.map(({ label, value }) => (
             <div key={label} className="flex items-center justify-between gap-3">
-              <span className="text-xs" style={{ color: "var(--muted)" }}>
+              <span className="text-xs text-muted">
                 {label}
               </span>
               <span
-                className="text-xs font-medium text-right"
-                style={{ color: "var(--text)", textTransform: "capitalize" }}
+                className="text-xs font-medium text-right text-body ed-capitalize"
               >
                 {value}
               </span>

@@ -5,6 +5,7 @@ import { useApp } from "../context/useApp";
 import { uid, isPrescribed } from "../lib/planUtils";
 import { allMeasureGroups, measureGroupLabel, measureTypeLabel, UNIT_PRESETS } from "../lib/measureTypes";
 import ConfirmModal from "./ConfirmModal";
+import "./AddMeasureTypeModal.css";
 
 const NEW_GROUP = "__new__";
 const OTHER_UNIT = "__other__";
@@ -70,9 +71,9 @@ export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
 
   return (
     <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
-      <div className="modal-center fade-in" style={{ padding: 26 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-center fade-in amt-modal" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <span className="font-semibold" style={{ color: "var(--text)", fontSize: 19 }}>
+          <span className="font-semibold text-body amt-title">
             {t.measureAddType}
           </span>
           <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
@@ -80,9 +81,9 @@ export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
           </button>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label className="section-title" style={{ fontSize: 13 }}>{t.measureTypeGroupLabel}</label>
-          <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+        <div className="amt-section">
+          <label className="section-title amt-label">{t.measureTypeGroupLabel}</label>
+          <div className="flex flex-wrap mt-2 gap-1.5">
             {groups.map((g) => (
               <button
                 key={g.key}
@@ -109,8 +110,8 @@ export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
           )}
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label className="section-title" style={{ fontSize: 13 }}>{t.measureTypeNameLabel}</label>
+        <div className="amt-section">
+          <label className="section-title amt-label">{t.measureTypeNameLabel}</label>
           <input
             className="field mt-2"
             placeholder={t.measureTypeNamePlaceholder}
@@ -120,9 +121,9 @@ export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
           />
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label className="section-title" style={{ fontSize: 13 }}>{t.measureTypeUnitLabel}</label>
-          <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+        <div className="amt-section">
+          <label className="section-title amt-label">{t.measureTypeUnitLabel}</label>
+          <div className="flex flex-wrap mt-2 gap-1.5">
             {UNIT_PRESETS.map((u) => (
               <button
                 key={u}
@@ -150,33 +151,31 @@ export default function AddMeasureTypeModal({ onClose, initialGroupKey }) {
         </div>
 
         {error && (
-          <p className="text-xs" style={{ color: "var(--danger)", marginTop: -8, marginBottom: 16 }}>
+          <p className="text-xs text-danger amt-error">
             {error}
           </p>
         )}
 
         {measureTypes.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <p className="section-title" style={{ fontSize: 13 }}>{t.measureTypeYours}</p>
-            <div className="flex flex-col" style={{ marginTop: 8, borderTop: "1px solid var(--border)" }}>
+          <div className="amt-section-lg">
+            <p className="section-title amt-label">{t.measureTypeYours}</p>
+            <div className="flex flex-col amt-list">
               {measureTypes.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center justify-between text-sm"
-                  style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}
+                  className="flex items-center justify-between text-sm amt-row"
                 >
-                  <span style={{ color: "var(--text)" }}>
+                  <span className="text-body">
                     {m.name}
                     {isPrescribed(m) && <> · {t.prescribedBadge}</>}
                   </span>
                   {isPrescribed(m) ? (
-                    <Lock size={14} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />
+                    <Lock className="text-muted" size={14} aria-label={t.prescribedLocked} />
                   ) : (
-                    <button
+                    <button className="text-muted amt-delete"
                       onClick={() => setPendingDelete(m.id)}
                       aria-label={t.delete}
                       title={t.delete}
-                      style={{ color: "var(--muted)", display: "flex" }}
                     >
                       <X size={16} />
                     </button>

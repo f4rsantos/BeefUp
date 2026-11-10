@@ -148,7 +148,7 @@ export default function ProfilePage({ onOpenMeasures }) {
                 onPointerCancel={reorder.handlePointerUp}
                 style={{ touchAction: "none", cursor: "grab", display: "flex", padding: 6, margin: -6 }}
               >
-                <GripVertical size={18} style={{ color: "var(--muted)" }} />
+                <GripVertical className="text-muted" size={18} />
               </span>
               <span className="list-row-body list-row-title">{blockTitles[block.key]}</span>
               <IconButton

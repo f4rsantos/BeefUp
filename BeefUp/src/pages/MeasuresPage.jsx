@@ -10,6 +10,7 @@ import AddMeasureTypeModal from "../components/AddMeasureTypeModal";
 import NumberField from "../components/NumberField";
 import NavHeader from "../components/ui/NavHeader";
 import IconButton from "../components/ui/IconButton";
+import "./MeasuresPage.css";
 
 const MAX_VALUE = 1000;
 
@@ -49,47 +50,41 @@ function MeasureTypeCard({ t, type, customTypes, measurements, goal, onSave, onD
 
   return (
     <div className="card flex flex-col gap-3">
-      <p className="section-title" style={{ margin: 0 }}>{measureTypeLabel(type, customTypes, t)}</p>
+      <p className="section-title ms-title">{measureTypeLabel(type, customTypes, t)}</p>
 
       {goal && (
-        <div className="flex flex-col" style={{ gap: 5 }}>
-          <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
-            <span className="flex items-center gap-1" style={{ color: "var(--muted)" }}>
+        <div className="flex flex-col ms-goal">
+          <div className="flex items-center justify-between ms-goal-head">
+            <span className="flex items-center gap-1 text-muted">
               <Lock size={11} /> {t.goal}
             </span>
             {!progress.hasData ? (
-              <span style={{ color: "var(--muted)" }}>{progress.target} {unit}</span>
+              <span className="text-muted">{progress.target} {unit}</span>
             ) : progress.reached ? (
-              <span className="flex items-center gap-1 font-semibold" style={{ color: "var(--success)" }}>
+              <span className="flex items-center gap-1 font-semibold ms-goal-reached">
                 <Check size={12} /> {t.dashMeasureGoalReached}
               </span>
             ) : (
-              <span className="tabular" style={{ color: "var(--text)" }}>{progress.current} / {progress.target} {unit}</span>
+              <span className="tabular text-body">{progress.current} / {progress.target} {unit}</span>
             )}
           </div>
           {progress.hasData && !progress.reached && (
-            <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 999, width: `${progress.percent}%`, background: "var(--accent)" }} />
+            <div className="ms-goal-track">
+              <div className="ms-goal-bar" style={{ width: `${progress.percent}%` }} />
             </div>
           )}
         </div>
       )}
 
       <div className="flex gap-3 items-center">
-        <div className="flex-1" style={{ position: "relative" }}>
+        <div className="flex-1 ms-input-box">
           <NumberField
-            className="field"
+            className={`field ms-input${error ? " invalid" : ""}`}
             placeholder={t.measureValuePlaceholder}
             value={val}
             onChange={(e) => { setVal(e.target.value); setError(null); }}
-            style={{ width: "100%", paddingRight: 36, ...(error ? { borderColor: "var(--danger)" } : null) }}
           />
-          <span
-            style={{
-              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-              fontSize: 13, color: "var(--muted)", pointerEvents: "none",
-            }}
-          >
+          <span className="text-muted ms-unit">
             {unit}
           </span>
         </div>
@@ -99,17 +94,17 @@ function MeasureTypeCard({ t, type, customTypes, measurements, goal, onSave, onD
       </div>
 
       {error && (
-        <p className="text-xs" style={{ color: "var(--danger)", margin: 0 }}>
+        <p className="text-xs text-danger ms-error">
           {error}
         </p>
       )}
 
       {chartData.length === 0 ? (
-        <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>
+        <p className="text-sm text-center py-4 text-muted">
           {t.noMeasures}
         </p>
       ) : (
-        <div style={{ width: "100%", height: 140 }}>
+        <div className="ms-chart">
           <ResponsiveContainer>
             <LineChart data={chartData}>
               <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "var(--muted)" }} />
@@ -136,24 +131,22 @@ function MeasureTypeCard({ t, type, customTypes, measurements, goal, onSave, onD
       )}
 
       {history.length > 0 && (
-        <div className="flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="flex flex-col ms-history">
           {history.map((m) => (
             <div
               key={m.id}
-              className="flex items-center justify-between text-sm"
-              style={{ padding: "8px 0" }}
+              className="flex items-center justify-between text-sm ms-history-row"
             >
-              <span style={{ color: "var(--muted)" }}>{m.dateLabel}</span>
+              <span className="text-muted">{m.dateLabel}</span>
               <div className="flex items-center gap-3">
-                <span style={{ color: "var(--text)" }}>{m.value} {unit}</span>
+                <span className="text-body">{m.value} {unit}</span>
                 {isPrescribed(m) ? (
-                  <Lock size={14} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />
+                  <Lock className="text-muted" size={14} aria-label={t.prescribedLocked} />
                 ) : (
-                  <button
+                  <button className="text-muted ms-delete"
                     onClick={() => setPendingDelete(m.id)}
                     aria-label={t.delete}
                     title={t.delete}
-                    style={{ color: "var(--muted)", display: "flex" }}
                   >
                     <X size={16} />
                   </button>
@@ -195,10 +188,9 @@ export default function MeasuresPage({ onBack }) {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide page-pad"
       >
         <NavHeader
           title={t.measures}

@@ -15,7 +15,7 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
         <IconButton label={t.rest} onClick={onRest} icon={restRunning ? null : TimerIcon}>
           {restRunning && (
             <ProgressRing value={restRemaining} max={restState.duration} size={30} stroke={3} color="var(--accent)">
-              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
+              <span className="text-body" style={{ fontSize: 10, fontWeight: 700,  fontVariantNumeric: "tabular-nums" }}>
                 {restRemaining}
               </span>
             </ProgressRing>
@@ -36,7 +36,7 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
         }}
       >
         <span className="workout-timer-dot" />
-        <span className="stat-value" style={{ fontSize: 17, color: "var(--text)" }}>
+        <span className="stat-value text-body" style={{ fontSize: 17 }}>
           {formatElapsedClock(elapsed)}
         </span>
       </div>

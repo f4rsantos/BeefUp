@@ -269,12 +269,11 @@ function AppInner() {
 
           {/* Stays mounted while minimized */}
           {activeWorkout && (
-            <div
+            <div className="canvas-bg"
               style={{
                 position: "absolute",
                 inset: 0,
-                zIndex: 50,
-                background: "var(--canvas, var(--bg))",
+                zIndex: 50, 
                 display: workoutMinimized ? "none" : "block",
               }}
             >

@@ -1,0 +1,4 @@
+.ps-active {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}

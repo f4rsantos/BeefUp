@@ -1,0 +1,39 @@
+.fs-row { padding: 16px 16px; border-radius: 14px; background: var(--surface2); cursor: pointer; text-align: left; border: none; }
+.fs-row-name { margin-bottom: 4px; font-size: 15px; }
+.fs-row-meta { font-size: 13px; }
+.fs-row-actions { flex-shrink: 0; margin-left: 12px; }
+.fs-fav { padding: 6px !important; display: inline-flex !important; cursor: pointer; }
+.fs-plus { color: var(--accent-2); }
+.fs-modal { max-width: 440px !important; padding: 26px !important; }
+.fs-back-label { font-size: 15px; }
+.fs-title { font-size: 24px !important; font-weight: 700 !important; }
+.fs-title-sm { font-size: 21px !important; font-weight: 700 !important; }
+.fs-equiv { font-size: 14px; margin-top: 4px; }
+.fs-label { font-size: 13px !important; }
+.fs-label-flat { margin: 0 !important; }
+.fs-input { font-size: 16px !important; padding: 13px 14px !important; }
+.fs-input-gap { margin-bottom: 15px !important; }
+.fs-btn-text { font-size: 15px !important; }
+.fs-confirm-gap { margin-top: 15px !important; }
+.fs-intro { font-size: 14px; }
+.fs-macro-grid { margin-bottom: 8px; }
+.fs-more { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.fs-micro-grid { margin-bottom: 15px; }
+.fs-unit { font-weight: 400; }
+.fs-meal { pointer-events: none; }
+.fs-search { position: relative; margin-bottom: 12px; }
+.fs-search-icon { position: absolute; left: 13px; top: 14px; }
+.fs-scan { position: absolute !important; right: 6px; top: 6px; }
+.fs-custom-btn { font-size: 14px !important; margin-bottom: 10px !important; }
+.fs-list { max-height: 50vh; overflow-y: auto; }
+.fs-status { font-size: 14px; }
+.fs-warn { color: var(--warn); font-size: 14px; }
+.fs-status-lg { font-size: 15px; }
+.fs-credit { font-size: 9px; line-height: 1.35; margin-top: 12px; }
+.fs-micros { margin-top: 16px; }
+.fs-micro-label { line-height: 1.25; }
+.fs-micro-val { font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.fs-kcal { font-size: 30px !important; font-weight: 700 !important; line-height: 1; font-variant-numeric: tabular-nums; }
+.fs-dot { width: 7px; height: 7px; border-radius: 999px; flex-shrink: 0; }
+.fs-macro-val { font-variant-numeric: tabular-nums; margin-top: 3px; }
+.fs-search-input { font-size: 16px !important; }

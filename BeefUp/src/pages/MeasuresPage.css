@@ -1,0 +1,68 @@
+.ms-title,
+.ms-error {
+  margin: 0 !important;
+}
+
+.ms-goal {
+  gap: 5px;
+}
+
+.ms-goal-head {
+  font-size: 12px;
+}
+
+.ms-goal-reached {
+  color: var(--success);
+}
+
+.ms-goal-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+.ms-goal-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.ms-input-box {
+  position: relative;
+}
+
+.ms-input {
+  width: 100% !important;
+  padding-right: 36px !important;
+}
+
+.ms-input.invalid {
+  border-color: var(--danger) !important;
+}
+
+.ms-unit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.ms-chart {
+  width: 100%;
+  height: 140px;
+}
+
+.ms-history {
+  border-top: 1px solid var(--border);
+}
+
+.ms-history-row {
+  padding: 8px 0;
+}
+
+.ms-delete {
+  display: flex !important;
+}

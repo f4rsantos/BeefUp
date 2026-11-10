@@ -1,0 +1,20 @@
+.tl-modal { padding: 24px !important; }
+.tl-title { font-size: 18px; }
+.tl-gap { margin-top: 8px; }
+.tl-box { padding: 12px !important; background: var(--surface2) !important; }
+.tl-warn-box { padding: 12px !important; border-color: var(--warn) !important; }
+.tl-done-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grad-accent);
+}
+.tl-done-check { color: #fff; }
+.tl-done-title { font-size: 17px; }
+.tl-actions { margin-top: 20px; }
+.tl-row { padding: 4px 0; }
+.tl-row-name { max-width: 60%; }

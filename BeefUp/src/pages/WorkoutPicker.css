@@ -1,0 +1,53 @@
+.wk-root,
+.wk-search-box {
+  position: relative !important;
+}
+
+.wk-search-icon {
+  position: absolute !important;
+  left: 12px !important;
+  top: 13px !important;
+}
+
+.wk-search {
+  padding-left: 38px !important;
+}
+
+.wk-row {
+  padding: 14px !important;
+}
+
+.wk-star {
+  color: var(--border) !important;
+  fill: none !important;
+}
+
+.wk-star.on {
+  color: var(--accent-2) !important;
+  fill: var(--accent-2) !important;
+}
+
+.wk-name {
+  min-width: 0 !important;
+}
+
+.wk-play {
+  padding: 8px 12px !important;
+}
+
+.wk-free {
+  position: absolute !important;
+  bottom: 32px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  padding: 14px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-glow) !important;
+  z-index: 50 !important;
+  white-space: nowrap !important;
+}
