@@ -1,5 +1,5 @@
 import { useBrand } from "../lib/useBrand";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Apple, Check, Dumbbell, Plus, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { buildDemoPreset } from "../lib/demoData";
@@ -11,7 +11,6 @@ import AccentColorModal from "../components/AccentColorModal";
 import { useThemeOptions, useFontScaleOptions, useLanguageOptions } from "../lib/usePreferenceOptions";
 import BackupSection from "../components/BackupSection";
 import ConfirmModal from "../components/ConfirmModal";
-import TrainerLinkModal from "../components/TrainerLinkModal";
 import Screen from "../components/ui/Screen";
 import LargeTitle from "../components/ui/LargeTitle";
 import Segmented from "../components/ui/Segmented";
@@ -21,6 +20,8 @@ import GlassPanel from "../components/ui/GlassPanel";
 import SectionHeader from "../components/ui/SectionHeader";
 import IconButton from "../components/ui/IconButton";
 import "./SettingsPage.css";
+
+const TrainerLinkModal = lazy(() => import("../components/TrainerLinkModal"));
 
 const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
 
@@ -205,10 +206,12 @@ export default function SettingsPage() {
       )}
 
       {showTrainerLink && (
-        <TrainerLinkModal
-          onClose={() => setShowTrainerLink(false)}
-          onLinked={(link) => setTrainerLink(link)}
-        />
+        <Suspense fallback={null}>
+          <TrainerLinkModal
+            onClose={() => setShowTrainerLink(false)}
+            onLinked={(link) => setTrainerLink(link)}
+          />
+        </Suspense>
       )}
 
       {showUnlinkConfirm && (

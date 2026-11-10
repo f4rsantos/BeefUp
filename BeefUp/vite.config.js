@@ -5,6 +5,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: '/BeefUp/',
+  build: {
+    // foodsBase (lazy food data) is 504 kB; app chunks stay below.
+    chunkSizeWarningLimit: 520,
+  },
   plugins: [
     react(),
     tailwindcss(),

@@ -2,18 +2,10 @@ import { AppProvider } from "./context/AppContext";
 import { useApp } from "./context/useApp";
 import WorkoutPage from "./pages/WorkoutPage";
 import ActiveWorkout from "./pages/ActiveWorkout";
-import HistoryPage from "./pages/HistoryPage";
-import ExercisesPage from "./pages/ExercisesPage";
-import SettingsPage from "./pages/SettingsPage";
 import WorkoutPicker from "./pages/WorkoutPicker";
-import PlanSettings from "./pages/PlanSettings";
-import WorkoutSettings from "./pages/WorkoutSettings";
-import NutritionPage from "./pages/NutritionPage";
-import Onboarding from "./onboarding/Onboarding";
 import MiniWorkoutBar from "./components/MiniWorkoutBar";
 import ConfirmModal from "./components/ConfirmModal";
 import PwaPrompts from "./components/PwaPrompts";
-import TrainerLinkModal from "./components/TrainerLinkModal";
 import { Dumbbell, Apple, TrendingUp, Settings, Play } from "lucide-react";
 import { todaysPlanEntry, uid } from "./lib/planUtils";
 import { decodeWorkoutShare } from "./lib/workoutShare";
@@ -28,6 +20,21 @@ import { DockContext } from "./components/ui/DockContext";
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const MeasuresPage = lazy(() => import("./pages/MeasuresPage"));
 const HelperDashboard = lazy(() => import("./dashboard/HelperDashboard"));
+const loadNutrition = () => import("./pages/NutritionPage");
+const loadSettings = () => import("./pages/SettingsPage");
+const loadHistory = () => import("./pages/HistoryPage");
+const loadExercises = () => import("./pages/ExercisesPage");
+const loadPlanSettings = () => import("./pages/PlanSettings");
+const loadWorkoutSettings = () => import("./pages/WorkoutSettings");
+const NutritionPage = lazy(loadNutrition);
+const SettingsPage = lazy(loadSettings);
+const HistoryPage = lazy(loadHistory);
+const ExercisesPage = lazy(loadExercises);
+const PlanSettings = lazy(loadPlanSettings);
+const WorkoutSettings = lazy(loadWorkoutSettings);
+const Onboarding = lazy(() => import("./onboarding/Onboarding"));
+const TrainerLinkModal = lazy(() => import("./components/TrainerLinkModal"));
+const IDLE_PRELOADS = [loadNutrition, loadSettings, loadHistory, loadExercises, loadPlanSettings, loadWorkoutSettings];
 
 function PageFallback() {
   return <div style={{ height: "100%", background: "var(--bg)" }} />;
@@ -99,6 +106,17 @@ function AppInner() {
 
   useEffect(() => {
     if (!onboarded) return;
+    const preload = () => IDLE_PRELOADS.forEach((load) => load().catch(() => {}));
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(preload, { timeout: 5000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(preload, 3000);
+    return () => clearTimeout(id);
+  }, [onboarded]);
+
+  useEffect(() => {
+    if (!onboarded) return;
     let cancelled = false;
     getPref("pendingTrainerInvite", null).then((pending) => {
       if (!cancelled && pending) setShowTrainerLinkModal(true);
@@ -106,7 +124,13 @@ function AppInner() {
     return () => { cancelled = true; };
   }, [onboarded]);
 
-  if (!onboarded) return <Onboarding />;
+  if (!onboarded) {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <Onboarding />
+      </Suspense>
+    );
+  }
 
   if (appMode === "helper") {
     return (
@@ -227,6 +251,7 @@ function AppInner() {
               onViewExercises={() => setOverlay("exercises")}
             />
           )}
+          <Suspense fallback={<PageFallback />}>
           {overlay === null && tab2 === "nutrition" && showNutrition && <NutritionPage />}
           {overlay === null && tab2 === "progress" && (
             <Suspense fallback={<ProfileSkeleton />}>
@@ -261,11 +286,8 @@ function AppInner() {
               initialWorkout={workoutSettingsWorkout}
             />
           )}
-          {overlay === "measures" && (
-            <Suspense fallback={<PageFallback />}>
-              <MeasuresPage onBack={closeOverlay} />
-            </Suspense>
-          )}
+          {overlay === "measures" && <MeasuresPage onBack={closeOverlay} />}
+          </Suspense>
 
           {/* Stays mounted while minimized */}
           {activeWorkout && (
@@ -301,10 +323,12 @@ function AppInner() {
         )}
 
         {showTrainerLinkModal && (
-          <TrainerLinkModal
-            onClose={() => setShowTrainerLinkModal(false)}
-            onLinked={() => setShowTrainerLinkModal(false)}
-          />
+          <Suspense fallback={null}>
+            <TrainerLinkModal
+              onClose={() => setShowTrainerLinkModal(false)}
+              onLinked={() => setShowTrainerLinkModal(false)}
+            />
+          </Suspense>
         )}
 
         {showNav && (
