@@ -3,6 +3,10 @@
   height: 200px;
 }
 
+.eh-chart [tabindex="-1"] {
+  outline: none;
+}
+
 .eh-tip {
   padding: 8px 10px;
   background: var(--bg) !important;
