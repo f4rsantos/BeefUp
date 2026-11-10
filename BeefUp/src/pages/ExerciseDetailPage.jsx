@@ -6,6 +6,7 @@ import { localizedName } from "../lib/localizedName"
 import ConfirmModal from "../components/ConfirmModal";
 import NavHeader from "../components/ui/NavHeader";
 import IconButton from "../components/ui/IconButton";
+import ExerciseHistory from "../components/ExerciseHistory";
 import "./ExerciseDetailPage.css";
 
 export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }) {
@@ -130,6 +131,8 @@ export default function ExerciseDetailPage({ exercise, activeVariantId, onBack }
             </div>
           ))}
         </div>
+
+        <ExerciseHistory exercise={exercise} />
       </div>
       {confirmingDelete && (
         <ConfirmModal

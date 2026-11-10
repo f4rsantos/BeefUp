@@ -1,0 +1,10 @@
+.eh-chart {
+  width: 100%;
+  height: 200px;
+}
+
+.eh-tip {
+  padding: 8px 10px;
+  background: var(--bg) !important;
+  box-shadow: var(--shadow-lg);
+}
