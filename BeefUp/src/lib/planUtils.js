@@ -181,6 +181,12 @@ export function templateItemFromEntry(entry, orig) {
   return item
 }
 
+export function currentExerciseIndex(exercises, focusId) {
+  const open= (e) => e.sets.some((s) => !s.done)
+  const focused= exercises.findIndex((e) => e.id === focusId && open(e))
+  return focused >= 0 ? focused : exercises.findIndex(open)
+}
+
 export function lastUsedChoice(sessions, baseId) {
   let latest = null
   for (const s of sessions) {

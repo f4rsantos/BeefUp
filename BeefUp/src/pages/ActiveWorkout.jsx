@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/useApp";
-import { uid, nowISO, lastCompletedSets, lastSetsOfSameBase, lastExerciseNote, buildExerciseEntry, sessionExerciseFromEntry, templateItemFromEntry, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
+import { uid, nowISO, currentExerciseIndex, lastCompletedSets, lastSetsOfSameBase, lastExerciseNote, buildExerciseEntry, sessionExerciseFromEntry, templateItemFromEntry, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
 import { resolveExercise, normalizeWorkoutExercises, parseExerciseRef, getBaseExercise, isCardioExercise } from "../lib/exerciseTree";
 import { useAudioCues } from "../hooks/useAudioCues";
 import { useWakeLock } from "../hooks/useWakeLock";
@@ -59,8 +59,13 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   }, [exercises]);
 
   // JSON, not a joined string: exercise ids already contain "|".
-  // Top to bottom: the first exercise with a set still to do.
-  const currentExIdx = exercises.findIndex((e) => e.sets.some((s) => !s.done));
+  const [focusId, setFocusId] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    return draft && draft.startedAt === activeWorkout?.startedAt ? draft.focusId ?? null : null;
+  });
+  const activateExercise = useCallback((id) => setFocusId(id), []);
+  // The touched exercise, else the first with a set to do.
+  const currentExIdx = currentExerciseIndex(exercises, focusId);
 
   const exerciseIdsKey = JSON.stringify(exercises.map((e) => e.exerciseId));
   const previousSetsById = useMemo(
@@ -86,11 +91,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   useEffect(() => {
     if (!activeWorkout) return;
     const id = setTimeout(() => {
-      setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer });
+      setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer, focusId });
     }, 300);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt]);
+  }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt, focusId]);
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
@@ -299,6 +304,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     if (!ex) return;
     const entry = buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, pick.barType);
     setExercises((prev) => prev.map((e, i) => (i === exIdx ? entry : e)));
+    setFocusId(entry.id);
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
     setReplacingIdx(null);
   }, [sessions]);
@@ -420,6 +426,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
             previousSets={previousSetsById[ex.exerciseId]}
             similarSets={similarSetsById[ex.exerciseId]}
             isCurrent={exIdx === currentExIdx}
+            onActivate={activateExercise}
             isFirst={exIdx === 0}
             isLast={exIdx === exercises.length - 1}
             onMoveExercise={moveExercise}

@@ -83,6 +83,7 @@ function SetBadge({ set, setIdx, t, onOpenType }) {
     <button
       className="tap flex items-center justify-center ec-tap"
       onClick={onOpenType}
+      aria-haspopup="menu"
       aria-label={`${t.setSingular} ${setIdx + 1}${typed ? `, ${t[`setType_${set.type}`]}` : ""}`}
     >
       <span
@@ -214,6 +215,7 @@ function ExerciseCard({
   previousSets,
   similarSets,
   isCurrent,
+  onActivate,
   isFirst,
   isLast,
   onMoveExercise,
@@ -243,6 +245,10 @@ function ExerciseCard({
   const similarName= similarExercise ? localizedName(similarExercise, lang) : "";
 
   const closeMenu = useCallback(() => setMenu(null), []);
+  // Menu openers wait: the layout shift would close the menu.
+  const activate = (e) => {
+    if (!e.target.closest('[aria-haspopup="menu"]')) onActivate(exercise.id);
+  };
 
   function openMenu(e, kind, setIdx) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -256,6 +262,8 @@ function ExerciseCard({
     <section
       className={`card ec-card${allDone ? " done" : ""}`}
       aria-label={exLabel}
+      onClickCapture={activate}
+      onFocusCapture={activate}
     >
       <div className="flex items-center gap-2">
         <button
