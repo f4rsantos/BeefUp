@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from "react";
 import { Plus } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { uid, nowISO, currentExerciseIndex, lastCompletedSets, lastSetsOfSameBase, lastExerciseNote, buildExerciseEntry, sessionExerciseFromEntry, templateItemFromEntry, sessionVolume, sessionSets, bestE1rmByExercise } from "../lib/planUtils";
@@ -9,7 +9,6 @@ import { getLS, setLS, removeLS } from "../lib/crypto";
 import WorkoutTopBar from "../components/WorkoutTopBar";
 import ExerciseCard from "../components/ExerciseCard";
 import ConfirmModal from "../components/ConfirmModal";
-import OneRMModal from "../components/OneRMModal";
 import RestModal from "../components/RestModal";
 import RestBar from "../components/RestBar";
 import EndWorkoutModal from "../components/EndWorkoutModal";
@@ -17,6 +16,8 @@ import SaveFreeWorkoutModal from "../components/SaveFreeWorkoutModal";
 import ExercisePicker from "../components/ExercisePicker";
 import ExerciseDetailPage from "./ExerciseDetailPage";
 import { localizedName } from "../lib/localizedName"
+
+const CalculatorModal = lazy(() => import("../components/CalculatorModal"));
 
 function timerBelongsTo(timer, exIdx, setIdx) {
   return timer?.exIdx === exIdx && (setIdx === undefined || timer?.setIdx === setIdx);
@@ -66,6 +67,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const activateExercise = useCallback((id) => setFocusId(id), []);
   // The touched exercise, else the first with a set to do.
   const currentExIdx = currentExerciseIndex(exercises, focusId);
+  const nextSet = exercises[currentExIdx]?.sets.find((s) => !s.done);
 
   const exerciseIdsKey = JSON.stringify(exercises.map((e) => e.exerciseId));
   const previousSetsById = useMemo(
@@ -101,7 +103,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [fallbackStart] = useState(() => Date.now());
   const startedAt = activeWorkout?.startedAt ?? fallbackStart;
   const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startedAt) / 1000),);
-  const [showOneRM, setShowOneRM] = useState(false);
+  const [showCalculators, setShowCalculators] = useState(false);
   const [showExPicker, setShowExPicker] = useState(false);
   const [replacingIdx, setReplacingIdx] = useState(null);
   const [showRestModal, setShowRestModal] = useState(false);
@@ -399,7 +401,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       <WorkoutTopBar
         elapsed={elapsed}
         restState={restState}
-        onOneRM={() => setShowOneRM(true)}
+        onCalculators={() => setShowCalculators(true)}
         onRest={() => setShowRestModal(true)}
         onEnd={() => setEndModal("confirm")}
         onMinimize={onMinimize}
@@ -462,7 +464,15 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
         />
       )}
 
-      {showOneRM && <OneRMModal onClose={() => setShowOneRM(false)} />}
+      {showCalculators && (
+        <Suspense fallback={null}>
+          <CalculatorModal
+            initialWeight={nextSet?.weight ?? ""}
+            initialReps={nextSet?.weight ? nextSet.reps ?? "" : ""}
+            onClose={() => setShowCalculators(false)}
+          />
+        </Suspense>
+      )}
       {showRestModal && (
         <RestModal
           restState={restState}
