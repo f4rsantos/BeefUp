@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { X, ScanLine } from "lucide-react";
 import { loadBarcodeDetector } from "../lib/barcodeDetector";
@@ -93,7 +94,7 @@ export default function BarcodeScannerModal({ lang, t, onFound, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
-  return (
+  return createPortal(
     <div role="dialog" aria-modal="true" className="modal-overlay bs-overlay">
       <div className="flex flex-col bs-stage">
         <video
@@ -151,6 +152,7 @@ export default function BarcodeScannerModal({ lang, t, onFound, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.querySelector(".app-shell") ?? document.body
   );
 }

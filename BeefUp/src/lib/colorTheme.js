@@ -80,6 +80,29 @@ function shiftUntilReadable(rgb, toward, against) {
   return out
 }
 
+const GLASS_DARK = {
+  base: { r: 7, g: 8, b: 12 },
+  glass: 0.05,
+  muted: { rgb: { r: 235, g: 235, b: 245 }, alpha: 0.68 },
+  layers: (tint) => [[tint, 0.34], [{ r: 70, g: 100, b: 255 }, 0.24], [tint, 0.22], [{ r: 255, g: 120, b: 60 }, 0.12]],
+}
+
+function mutedContrastOnGlass(tint) {
+  const over = (top, alpha, bottom) => mix(bottom, top, alpha)
+  return Math.min(...GLASS_DARK.layers(tint).map(([rgb, alpha]) => {
+    const card = over(WHITE, GLASS_DARK.glass, over(rgb, alpha, GLASS_DARK.base))
+    return contrast(over(GLASS_DARK.muted.rgb, GLASS_DARK.muted.alpha, card), card)
+  }))
+}
+
+function canvasTint(text) {
+  let out = text
+  for (let t = 0.02; mutedContrastOnGlass(out) < MIN_CONTRAST && t <= 1; t += 0.02) {
+    out = mix(text, BLACK, t)
+  }
+  return out
+}
+
 // Dark mode: text needs a lighter shade, buttons darker.
 function deriveTokens(rgb, mode) {
   const darkSoft = mix(rgb, BG_DARK, 0.75)
@@ -97,6 +120,7 @@ function deriveTokens(rgb, mode) {
   const blur = mode === 'light' ? 28 : 30
   return {
     accent: rgbToHex(text),
+    canvas: mode === 'dark' ? rgbToHex(canvasTint(text)) : undefined,
     soft: rgbToHex(soft),
     gradAccent: `linear-gradient(135deg, ${rgbToHex(button)} 0%, ${rgbToHex(gradTo)} 100%)`,
     gradHero: `linear-gradient(140deg, ${rgbToHex(heroFrom)} 0%, ${rgbToHex(button)} 45%, ${rgbToHex(heroTo)} 100%)`,
@@ -114,7 +138,7 @@ export function deriveAccentTokens(hex) {
 }
 
 function cssVarsBlock(tokens) {
-  return `--accent:${tokens.accent};--accent-soft:${tokens.soft};--success:${tokens.accent};` +
+  return `--accent:${tokens.accent};${tokens.canvas ? `--accent-canvas:${tokens.canvas};` : ''}--accent-soft:${tokens.soft};--success:${tokens.accent};` +
     `--grad-accent:${tokens.gradAccent};--grad-hero:${tokens.gradHero};--shadow-glow:${tokens.glow};`
 }
 

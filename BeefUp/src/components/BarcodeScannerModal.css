@@ -1,4 +1,4 @@
-.bs-overlay { z-index: 60 !important; }
+.bs-overlay { z-index: 110 !important; }
 .bs-stage { position: absolute; inset: 0; background: #000; }
 .bs-video { flex: 1; object-fit: cover; width: 100%; }
 .bs-close {

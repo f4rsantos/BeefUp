@@ -22,7 +22,7 @@ function cards(theme, accent) {
   return theme.layers(accent).map(([rgb, alpha]) => mix(theme.white, theme.glass, mix(rgb, alpha, theme.base)))
 }
 
-const PICKS= ['#109a14', '#101010', '#ff00ff', '#7c4dff']
+const PICKS= ['#109a14', '#101010', '#ff00ff', '#7c4dff', '#ffeb3b', '#00e5ff', '#ff9800', '#ffffff', '#76ff03', '#18ffff', '#ffd600']
 const HEXES= [...PRESET_ACCENTS.map((p) => p.hex), ...PICKS]
 
 for (const hex of HEXES) {
@@ -32,7 +32,7 @@ for (const hex of HEXES) {
       const text= mix(LIGHT_MUTED.rgb, LIGHT_MUTED.alpha, card)
       assert.ok(contrast(text, card) >= 4.5, `light ${hex}`)
     }
-    for (const card of cards(DARK, hexToRgb(dark.accent))) {
+    for (const card of cards(DARK, hexToRgb(dark.canvas ?? dark.accent))) {
       const text= mix(DARK_MUTED.rgb, DARK_MUTED.alpha, card)
       assert.ok(contrast(text, card) >= 4.5, `dark ${hex}`)
     }
@@ -40,6 +40,11 @@ for (const hex of HEXES) {
 }
 
 for (const { id, hex } of PRESET_ACCENTS) {
+  test(`the canvas tint of ${id} is its own accent, unchanged`, () => {
+    const { dark }= deriveAccentTokens(hex)
+    assert.equal(dark.canvas, dark.accent)
+  })
+
   test(`active tab icon stays at 3:1 on glass for ${id}`, () => {
     const { light, dark }= deriveAccentTokens(hex)
     for (const card of cards(LIGHT, hexToRgb(light.accent))) assert.ok(contrast(hexToRgb(light.accent), card) >= 3, `light ${id}`)

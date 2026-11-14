@@ -70,9 +70,9 @@
   color-scheme: dark;
   --bg: #07080c;
   --canvas:
-    radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
+    radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent-canvas, var(--accent)) 34%, transparent), transparent 70%),
     radial-gradient(80% 45% at 100% 24%, rgba(70, 100, 255, 0.24), transparent 70%),
-    radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent-canvas, var(--accent)) 22%, transparent), transparent 70%),
     radial-gradient(70% 40% at 0% 75%, rgba(255, 120, 60, 0.12), transparent 70%),
     #07080c;
   --surface: rgba(255, 255, 255, 0.08);
@@ -108,9 +108,9 @@
     color-scheme: dark;
     --bg: #07080c;
     --canvas:
-      radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
+      radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent-canvas, var(--accent)) 34%, transparent), transparent 70%),
       radial-gradient(80% 45% at 100% 24%, rgba(70, 100, 255, 0.24), transparent 70%),
-      radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+      radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent-canvas, var(--accent)) 22%, transparent), transparent 70%),
       radial-gradient(70% 40% at 0% 75%, rgba(255, 120, 60, 0.12), transparent 70%),
       #07080c;
     --surface: rgba(255, 255, 255, 0.08);
