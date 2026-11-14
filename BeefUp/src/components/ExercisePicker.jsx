@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
-import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2, Sparkles } from "lucide-react";
 import { useApp } from "../context/useApp";
 import {
   listBaseExercises,
@@ -14,11 +14,13 @@ import {
   getBodyPartLabel,
   getMuscleLabel,
   getEquipmentLabel,
+  resolvedExerciseName,
   buildExerciseRef,
   BAR_TYPES,
 } from "../lib/exerciseTree";
 import { localizedName } from "../lib/localizedName";
 import { lastUsedChoice } from "../lib/planUtils";
+import { recommendExercises } from "../lib/recommender";
 import CustomExerciseEditor from "./CustomExerciseEditor";
 import ExerciseFilterModal from "./ExerciseFilterModal";
 
@@ -31,9 +33,19 @@ function ChoiceGroup({ label, children }) {
   );
 }
 
+function suggestReasonText(t, lang, reason) {
+  const template = t[`suggestReason_${reason.type}`] ?? t.suggestReason_any;
+  if (!reason.muscle) return template;
+  const label = reason.type === "focus" || reason.type === "fresh"
+    ? getBodyPartLabel(reason.muscle, lang)
+    : getMuscleLabel(reason.muscle, lang);
+  return template.replace("{muscle}", label.charAt(0).toUpperCase() + label.slice(1));
+}
+
 // `replace` swaps one exercise; the result is a single pick.
-export default function AddExercisesPicker({ onConfirm, onClose, replace = null }) {
-  const { t, lang, sessions } = useApp();
+// `suggestFor` ({ currentRefs, rejectedRefs }) turns on the one-tap suggestion.
+export default function AddExercisesPicker({ onConfirm, onClose, replace = null, suggestFor = null }) {
+  const { t, lang, sessions, workouts } = useApp();
   const [start] = useState(() => {
     if (!replace) return null;
     const { baseId, equipmentId, variantId } = parseExerciseRef(replace.ref);
@@ -64,6 +76,26 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
   useEscapeKey(() => resetCustomize(), !!activeBase);
 
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
+
+  // Queued picks count as "in the workout" so the suggestion doesn't repeat them.
+  const suggestion = useMemo(() => {
+    if (!suggestFor || replace) return null;
+    return recommendExercises({
+      currentRefs: [...suggestFor.currentRefs, ...queue.map((q) => q.ref)],
+      rejectedRefs: suggestFor.rejectedRefs,
+      sessions,
+      workouts,
+      limit: 1,
+    })[0] ?? null;
+  }, [suggestFor, replace, queue, sessions, workouts]);
+
+  function addSuggestion() {
+    if (!suggestion) return;
+    onConfirm([
+      ...queue.map((q) => ({ ref: q.ref, barType: q.barType })),
+      { ref: suggestion.ref, barType: suggestion.barType, suggested: true },
+    ]);
+  }
 
   const sortedExercises = useMemo(
     () => filterAndSortExercises(listBaseExercises(), { query, bodyPart, equipment, lang }),
@@ -210,6 +242,27 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
               {replace ? t.replaceExercise : t.addExercise}
             </h1>
           </div>
+
+          {suggestFor && !replace && (
+            <button
+              className="btn btn-ghost w-full flex items-center gap-3"
+              style={{ justifyContent: "flex-start", textAlign: "left", padding: "12px 14px", marginBottom: 12, borderColor: "var(--accent)" }}
+              onClick={addSuggestion}
+              disabled={!suggestion}
+            >
+              <Sparkles size={20} style={{ color: "var(--accent)", flexShrink: 0 }} />
+              <span style={{ minWidth: 0 }}>
+                <span className="block text-sm" style={{ fontWeight: 700, color: "var(--text)" }}>
+                  {suggestion ? `${t.suggestExercise}: ${resolvedExerciseName(suggestion.ref, lang)}` : t.suggestNone}
+                </span>
+                {suggestion && (
+                  <span className="block text-xs truncate" style={{ color: "var(--muted)", marginTop: 2 }}>
+                    {suggestReasonText(t, lang, suggestion.reason)}
+                  </span>
+                )}
+              </span>
+            </button>
+          )}
 
           <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
               <div className="relative flex items-center flex-1">

@@ -2,7 +2,7 @@ import NumberField from "./NumberField";
 import TimeField from "./TimeField";
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, memo } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, Plus, Check, MoreHorizontal, StickyNote, ArrowLeftRight } from "lucide-react";
+import { Trash2, Plus, Check, MoreHorizontal, StickyNote, ArrowLeftRight, Sparkles } from "lucide-react";
 import { localizedName } from "../lib/localizedName"
 import { repUnitFor, isCardioExercise, getBarTypeLabel } from "../lib/exerciseTree"
 import { formatSet } from "../lib/setFormat"
@@ -315,6 +315,11 @@ function ExerciseCard({
               <span style={{ fontWeight: 500, color: "var(--muted)" }}> ({barTypeLabel})</span>
             )}
           </span>
+          {exercise.suggested && (
+            <span className="flex items-center gap-1" style={{ fontSize: 11, fontWeight: 600, color: "var(--accent)", marginTop: 2 }}>
+              <Sparkles size={11} /> {t.suggested}
+            </span>
+          )}
         </button>
         <span
           className="tabular-nums flex items-center gap-1"
