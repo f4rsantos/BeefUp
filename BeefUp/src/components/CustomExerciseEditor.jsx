@@ -14,6 +14,7 @@ import {
 } from "../lib/exerciseTree";
 import BodyPartFilter from "./BodyPartFilter";
 import NumberField from "./NumberField";
+import "./CustomExerciseEditor.css";
 
 export default function CustomExerciseEditor({ onClose, onCreated }) {
   const { t, lang, saveCustomExercise } = useApp();
@@ -91,25 +92,23 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--canvas, var(--bg))" }} onClick={(e) => e.stopPropagation()}>
+    <div className="canvas-bg ce-root" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-col h-full">
         <div
-          className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
-          style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+          className="flex-1 overflow-y-auto pb-24 scrollbar-hide page-pad"
         >
-          <div className="flex items-center gap-1" style={{ marginBottom: 16 }}>
+          <div className="flex items-center gap-1 ce-head">
             <button className="btn-back" onClick={onClose} aria-label={t.back}>
-              <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+              <ChevronLeft className="text-body" size={24} />
             </button>
-            <h1 className="display" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
+            <h1 className="display text-body ce-title">
               {t.createCustomExercise}
             </h1>
           </div>
-          <div style={{ marginBottom: 20 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.exerciseName}</label>
+          <div className="ce-section">
+            <label className="section-title ce-label">{t.exerciseName}</label>
             <input
-              className="field mt-2 w-full"
-              style={{ fontSize: 16, padding: "13px 14px" }}
+              className="field mt-2 w-full ce-input"
               placeholder={t.exerciseName}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -117,19 +116,18 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
             />
           </div>
 
-          <div style={{ marginBottom: 20 }}>
+          <div className="ce-section">
             <div className="flex items-center justify-between">
-              <label className="section-title" style={{ fontSize: 13, margin: 0 }}>{t.filterBodyPart}</label>
+              <label className="section-title ce-label ce-label-flat">{t.filterBodyPart}</label>
               <button
-                className="btn btn-ghost flex items-center gap-1"
-                style={{ padding: "4px 8px", fontSize: 12, color: "var(--accent)" }}
+                className="btn btn-ghost flex items-center gap-1 ce-body-btn"
                 onClick={() => setShowBodyModal(true)}
               >
                 <PersonStanding size={14} />
                 {t.viewOnBody}
               </button>
             </div>
-            <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+            <div className="flex flex-wrap mt-2 gap-1.5">
               {bodyParts.map((bp) => (
                 <button
                   key={bp}
@@ -143,9 +141,9 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           </div>
 
           {bodyPart && (
-            <div style={{ marginBottom: 20 }}>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.primaryMuscle}</label>
-              <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+            <div className="ce-section">
+              <label className="section-title ce-label">{t.primaryMuscle}</label>
+              <div className="flex flex-wrap mt-2 gap-1.5">
                 {musclesForBodyPart.map((m) => (
                   <button
                     key={m}
@@ -160,9 +158,9 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           )}
 
           {target && (
-            <div style={{ marginBottom: 20 }}>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.secondaryMusclesLabel}</label>
-              <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+            <div className="ce-section">
+              <label className="section-title ce-label">{t.secondaryMusclesLabel}</label>
+              <div className="flex flex-wrap mt-2 gap-1.5">
                 {allMuscles.filter((m) => m !== target).map((m) => (
                   <button
                     key={m}
@@ -176,9 +174,9 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
             </div>
           )}
 
-          <div style={{ marginBottom: 20 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.filterEquipment}</label>
-            <div className="flex flex-wrap mt-2" style={{ gap: 6 }}>
+          <div className="ce-section">
+            <label className="section-title ce-label">{t.filterEquipment}</label>
+            <div className="flex flex-wrap mt-2 gap-1.5">
               {equipmentList.map((eq) => (
                 <button
                   key={eq.id}
@@ -191,8 +189,8 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between" style={{ marginBottom: 20 }}>
-            <label className="section-title" style={{ fontSize: 13, margin: 0 }}>{t.repUnitLabel}</label>
+          <div className="flex items-center justify-between ce-section">
+            <label className="section-title ce-label ce-label-flat">{t.repUnitLabel}</label>
             <div className="pill-toggle">
               <button
                 className={`pill-option ${repUnit === "reps" ? "active" : ""}`}
@@ -210,22 +208,20 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           </div>
 
           {repUnit !== "cardio" && (
-          <div className="grid grid-cols-2 gap-4" style={{ marginBottom: 20 }}>
+          <div className="grid grid-cols-2 gap-4 ce-section">
             <div>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.defaultSetsLabel}</label>
+              <label className="section-title ce-label">{t.defaultSetsLabel}</label>
               <NumberField
-                className="field mt-2 w-full"
-                style={{ fontSize: 16, padding: "13px 14px" }}
+                className="field mt-2 w-full ce-input"
                 allowDecimal={false}
                 value={defaultSets}
                 onChange={(e) => setDefaultSets(e.target.value)}
               />
             </div>
             <div>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.defaultRepsLabel}</label>
+              <label className="section-title ce-label">{t.defaultRepsLabel}</label>
               <NumberField
-                className="field mt-2 w-full"
-                style={{ fontSize: 16, padding: "13px 14px" }}
+                className="field mt-2 w-full ce-input"
                 allowDecimal={false}
                 value={defaultReps}
                 onChange={(e) => setDefaultReps(e.target.value)}
@@ -234,19 +230,17 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
           </div>
           )}
 
-          <div style={{ marginBottom: 24 }}>
-            <label className="section-title" style={{ fontSize: 13 }}>{t.exerciseDescriptionLabel}</label>
+          <div className="ce-section-lg">
+            <label className="section-title ce-label">{t.exerciseDescriptionLabel}</label>
             <textarea
-              className="field mt-2 w-full"
-              style={{ fontSize: 15, padding: "13px 14px", minHeight: 80, resize: "vertical" }}
+              className="field mt-2 w-full ce-textarea"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
           <button
-            className="btn btn-primary w-full py-3.5"
-            style={{ fontSize: 15 }}
+            className="btn btn-primary w-full py-3.5 ce-save"
             disabled={!canSave}
             onClick={handleSave}
           >
@@ -256,10 +250,10 @@ export default function CustomExerciseEditor({ onClose, onCreated }) {
       </div>
 
       {showBodyModal && (
-        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setShowBodyModal(false)}>
-          <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <div role="dialog" aria-modal="true" className="modal-overlay ce-dialog" onClick={() => setShowBodyModal(false)}>
+          <div className="modal-center ce-body-modal" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+              <span className="font-semibold text-base text-body">
                 {t.filterBodyPart}
               </span>
               <button className="btn btn-ghost p-2" onClick={() => setShowBodyModal(false)} aria-label={t.cancel}>

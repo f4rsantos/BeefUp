@@ -1,0 +1,130 @@
+.np-meter {
+  gap: 6px;
+  min-width: 0;
+}
+
+.np-meter-head {
+  font-size: 13px;
+}
+
+.np-meter-value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.np-meal-head {
+  min-height: 56px !important;
+}
+
+.np-meal-icon {
+  --row-icon: var(--accent-2);
+}
+
+.np-meal-title {
+  display: block !important;
+  font-weight: 600 !important;
+}
+
+.np-block {
+  display: block !important;
+}
+
+.np-item {
+  --row-inset: 58px;
+  padding-left: 58px !important;
+}
+
+.np-item-title {
+  display: block !important;
+  font-size: 15px !important;
+}
+
+.np-item-sub {
+  display: block !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.np-item-value {
+  font-size: 15px !important;
+}
+
+.np-icons {
+  flex-wrap: wrap;
+}
+
+.np-summary {
+  gap: 20px !important;
+  padding: 20px !important;
+}
+
+.np-summary-top {
+  gap: 20px;
+}
+
+.np-kcal {
+  font-size: 28px !important;
+  color: var(--text) !important;
+}
+
+.np-kcal.over {
+  color: var(--danger) !important;
+}
+
+.np-kcal-goal {
+  margin-top: 2px !important;
+}
+
+.np-macros {
+  gap: 14px;
+  min-width: 0;
+}
+
+.np-micros {
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+}
+
+.np-more {
+  align-self: center !important;
+  margin-block: -8px !important;
+}
+
+.np-more svg {
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.np-more.open svg {
+  transform: rotate(180deg);
+}
+
+.np-water {
+  gap: 14px !important;
+}
+
+.np-water-orb {
+  --accent: var(--fat);
+  width: 46px !important;
+  height: 46px !important;
+}
+
+.np-water-text {
+  min-width: 0;
+}
+
+.np-water-value {
+  font-size: 22px !important;
+  margin-top: 4px !important;
+}
+
+.np-water-goal {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+.np-meals {
+  gap: 12px;
+}
+
+.np-new-meal {
+  min-height: 48px !important;
+}

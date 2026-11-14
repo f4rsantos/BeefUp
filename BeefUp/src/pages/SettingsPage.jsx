@@ -1,5 +1,5 @@
 import { useBrand } from "../lib/useBrand";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Apple, Check, Dumbbell, Plus, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { buildDemoPreset } from "../lib/demoData";
@@ -11,7 +11,6 @@ import AccentColorModal from "../components/AccentColorModal";
 import { useThemeOptions, useFontScaleOptions, useLanguageOptions } from "../lib/usePreferenceOptions";
 import BackupSection from "../components/BackupSection";
 import ConfirmModal from "../components/ConfirmModal";
-import TrainerLinkModal from "../components/TrainerLinkModal";
 import Screen from "../components/ui/Screen";
 import LargeTitle from "../components/ui/LargeTitle";
 import Segmented from "../components/ui/Segmented";
@@ -20,6 +19,9 @@ import ToggleTile from "../components/ui/ToggleTile";
 import GlassPanel from "../components/ui/GlassPanel";
 import SectionHeader from "../components/ui/SectionHeader";
 import IconButton from "../components/ui/IconButton";
+import "./SettingsPage.css";
+
+const TrainerLinkModal = lazy(() => import("../components/TrainerLinkModal"));
 
 const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
 
@@ -31,7 +33,7 @@ const TILE_COLORS = {
 };
 
 function FieldLabel({ children }) {
-  return <p className="card-meta" style={{ margin: "18px 2px 10px", fontWeight: 600 }}>{children}</p>;
+  return <p className="card-meta sp-label">{children}</p>;
 }
 
 function AccentSwatches({ current, isCustom, customHex, onPreset, onCustom, t }) {
@@ -72,7 +74,7 @@ function FontScaleSegmented({ label }) {
     <Segmented
       {...rest}
       label={label}
-      options={options.map((o) => ({ ...o, content: <span style={{ fontSize: o.size - 2, fontWeight: 700, lineHeight: 1 }}>A</span> }))}
+      options={options.map((o) => ({ ...o, content: <span className="sp-glyph" style={{ fontSize: o.size - 2 }}>A</span> }))}
     />
   );
 }
@@ -204,10 +206,12 @@ export default function SettingsPage() {
       )}
 
       {showTrainerLink && (
-        <TrainerLinkModal
-          onClose={() => setShowTrainerLink(false)}
-          onLinked={(link) => setTrainerLink(link)}
-        />
+        <Suspense fallback={null}>
+          <TrainerLinkModal
+            onClose={() => setShowTrainerLink(false)}
+            onLinked={(link) => setTrainerLink(link)}
+          />
+        </Suspense>
       )}
 
       {showUnlinkConfirm && (
@@ -240,7 +244,7 @@ export default function SettingsPage() {
           t={t}
         />
         {brand?.color && accentChosen && (
-          <button className="text-button" style={{ marginTop: 10 }} onClick={resetAccentToBrand}>
+          <button className="text-button sp-brand-color" onClick={resetAccentToBrand}>
             {brand.name ? t.brandUseColor.replace("{name}", brand.name) : t.brandUseColorNoName}
           </button>
         )}
@@ -298,22 +302,22 @@ export default function SettingsPage() {
 
       <GlassPanel title={t.trainerSectionTitle}>
         {!configured ? (
-          <p className="card-meta" style={{ fontSize: 15, lineHeight: 1.45 }}>{t.trainerUnavailable}</p>
+          <p className="card-meta sp-note">{t.trainerUnavailable}</p>
         ) : !trainerLink ? (
-          <div className="flex flex-col" style={{ gap: 16 }}>
-            <div className="flex items-center" style={{ gap: 14 }}>
-              <span className="feature-card-orb" style={{ width: 48, height: 48 }}><UserCheck size={22} /></span>
-              <p className="card-meta" style={{ fontSize: 15, lineHeight: 1.45 }}>{t.trainerLinkExplain}</p>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3.5">
+              <span className="feature-card-orb sp-orb"><UserCheck size={22} /></span>
+              <p className="card-meta sp-note">{t.trainerLinkExplain}</p>
             </div>
             <button className="btn btn-primary w-full" onClick={() => setShowTrainerLink(true)}>
               {t.trainerLinkButton}
             </button>
           </div>
         ) : (
-          <div className="flex flex-col" style={{ gap: 18 }}>
-            <div className="flex items-center" style={{ gap: 14 }}>
-              <span className="feature-card-orb" style={{ width: 48, height: 48 }}><UserCheck size={22} /></span>
-              <div className="flex-1" style={{ minWidth: 0 }}>
+          <div className="flex flex-col gap-[18px]">
+            <div className="flex items-center gap-3.5">
+              <span className="feature-card-orb sp-orb"><UserCheck size={22} /></span>
+              <div className="flex-1 min-w-0">
                 <p className="card-title truncate">{trainerLink.trainerName}</p>
                 <p className="card-meta truncate">{syncStatusLabel} · {lastSyncedLabel}</p>
               </div>
@@ -326,8 +330,8 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <p className="card-meta" style={{ fontWeight: 600, marginBottom: 10 }}>{t.trainerShareSectionTitle}</p>
-              <div className="flex flex-wrap" style={{ gap: 8 }}>
+              <p className="card-meta sp-share-title">{t.trainerShareSectionTitle}</p>
+              <div className="flex flex-wrap gap-2">
                 {SCOPE_IDS.map((id) => {
                   const on = trainerLink.scopes.includes(id);
                   return (
@@ -345,14 +349,14 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
-              <p className="card-meta" style={{ marginTop: 10, lineHeight: 1.45 }}>{t.trainerScopesNote}</p>
-              {scopeError && <p className="card-meta" style={{ color: "var(--danger)", marginTop: 6 }}>{t.trainerScopeUpdateFailed}</p>}
+              <p className="card-meta sp-scopes-note">{t.trainerScopesNote}</p>
+              {scopeError && <p className="card-meta text-danger sp-scope-error">{t.trainerScopeUpdateFailed}</p>}
             </div>
 
             <button className="btn btn-danger w-full" onClick={() => setShowUnlinkConfirm(true)}>
               {t.trainerUnlinkButton}
             </button>
-            {unlinkError && <p className="card-meta" style={{ color: "var(--danger)" }}>{t.trainerUnlinkFailed}</p>}
+            {unlinkError && <p className="card-meta text-danger">{t.trainerUnlinkFailed}</p>}
           </div>
         )}
       </GlassPanel>

@@ -386,7 +386,6 @@ h1, h2, .display {
   background: radial-gradient(120% 90% at 90% -10%, rgba(255,255,255,0.28), transparent 55%);
   pointer-events: none;
 }
-.hero-energy { background: var(--grad-energy); box-shadow: 0 18px 40px -12px rgba(201,138,31,0.5); }
 
 /* ── Buttons ─────────────────────────────────────────── */
 .btn {
@@ -411,10 +410,8 @@ h1, h2, .display {
 
 .btn-primary { background: var(--grad-accent); color: #fff; }
 .btn-primary:active { box-shadow: var(--shadow-sm); }
-.btn-energy  { background: var(--grad-energy); color: #fff; }
 .btn-ghost   { background: transparent; border: 1px solid var(--border); }
 .btn-icon    { padding: 8px; border-radius: 12px; background: transparent; }
-.btn-danger  { background: var(--danger); color: var(--bg); }
 .btn-back    { background: transparent; border: none; padding: 8px; margin-left: -8px; }
 
 /* Any touch screen gets 44px targets, hybrid laptops included; mouse-only keeps density. */
@@ -424,18 +421,7 @@ h1, h2, .display {
   .btn, .btn-icon, .btn-back, .tap { min-width: 44px; }
 }
 
-.stat-circle {
-  border-radius: 50%;
-  border: 1.5px solid var(--accent);
-  background: var(--accent-soft);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
 .btn:focus-visible,
-.bottom-nav button:focus-visible,
 input.field:focus-visible,
 select.field:focus-visible {
   outline: 2px solid var(--accent);
@@ -459,9 +445,6 @@ input.field:focus, select.field:focus, textarea.field:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
-
-/* ── Divider ─────────────────────────────────────────── */
-.divider { height: 1px; background: var(--border); }
 
 /* ── Modals ──────────────────────────────────────────── */
 /* Focused only to move screen readers inside. */
@@ -515,56 +498,6 @@ input.field:focus, select.field:focus, textarea.field:focus {
   width: 40px; height: 4px; border-radius: 999px;
   background: var(--border); margin: 0 auto 14px;
 }
-
-/* ── Bottom nav (floating w/ center FAB) ─────────────── */
-.bottom-nav {
-  position: relative;
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  background: var(--surface);
-  margin: 14px 12px 12px;
-  padding: 8px 8px max(8px, env(safe-area-inset-bottom));
-  flex-shrink: 0;
-  box-shadow: var(--shadow-md);
-}
-
-.bottom-nav button.nav-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px 0;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  transition: color 0.15s, transform 0.12s;
-}
-.bottom-nav button.nav-tab.active { color: var(--accent); }
-.bottom-nav button.nav-tab.active svg { stroke-width: 2.6px; }
-.bottom-nav button.nav-tab:active { transform: scale(0.9); }
-
-/* center start FAB */
-.nav-fab {
-  flex-shrink: 0;
-  width: 48px; height: 48px;
-  margin: 0 8px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  background: var(--grad-accent);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.14s;
-}
-.nav-fab:active { transform: scale(0.92) translateY(2px); }
 
 /* ── Section header row ──────────────────────────────── */
 .section-header {
@@ -625,31 +558,6 @@ input.field:focus, select.field:focus, textarea.field:focus {
   box-shadow: var(--shadow-sm);
 }
 
-/* simple icon toggle (e.g. sex male/female) */
-.icon-toggle {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-.icon-toggle button {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface2);
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.14s;
-}
-.icon-toggle button.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
 .switch {
   position: relative;
   width: 44px;
@@ -706,8 +614,6 @@ input.field:focus, select.field:focus, textarea.field:focus {
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
-
-@keyframes ringFill { from { stroke-dashoffset: var(--dash-start); } to { stroke-dashoffset: var(--dash-end); } }
 
 @keyframes pulseDot {
   0%, 100% { opacity: 1; transform: scale(1); }

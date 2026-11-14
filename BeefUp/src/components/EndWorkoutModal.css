@@ -1,0 +1,19 @@
+.ew-trophy {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grad-accent);
+  box-shadow: var(--shadow-glow);
+}
+.ew-trophy-icon { color: #fff; }
+.ew-title { font-size: 24px !important; font-weight: 700 !important; }
+.ew-prs { border-radius: 16px; padding: 12px 14px; margin-bottom: 16px; background: var(--grad-energy); color: #fff; }
+.ew-prs-head { font-weight: 800; font-size: 13px; }
+.ew-prs-list { font-size: 12px; opacity: 0.92; margin-top: 4px; line-height: 1.4; }
+.ew-stats { margin-bottom: 10px; }
+.ew-stat { background: var(--surface2); }
+.ew-stat-value { font-size: 18px !important; font-weight: 700 !important; }

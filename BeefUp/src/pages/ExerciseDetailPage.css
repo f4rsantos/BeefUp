@@ -1,0 +1,19 @@
+.ed-badge {
+  pointer-events: none !important;
+}
+
+.ed-media {
+  aspect-ratio: 16 / 9;
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  gap: 8px;
+}
+
+.ed-steps {
+  padding-left: 20px !important;
+  list-style: decimal !important;
+}
+
+.ed-capitalize {
+  text-transform: capitalize !important;
+}

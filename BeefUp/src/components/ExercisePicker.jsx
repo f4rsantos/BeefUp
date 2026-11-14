@@ -21,11 +21,12 @@ import { localizedName } from "../lib/localizedName";
 import { lastUsedChoice } from "../lib/planUtils";
 import CustomExerciseEditor from "./CustomExerciseEditor";
 import ExerciseFilterModal from "./ExerciseFilterModal";
+import "./ExercisePicker.css";
 
 function ChoiceGroup({ label, children }) {
   return (
     <div>
-      <p className="section-title" style={{ marginBottom: 8 }}>{label}</p>
+      <p className="section-title xp-group-label">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -191,32 +192,28 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 100, background: "var(--canvas, var(--bg))" }} onClick={(e) => e.stopPropagation()}>
+    <div className="canvas-bg xp-root" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-col h-full">
         <div
-          className="flex-1 overflow-y-auto scrollbar-hide"
-          style={{ 
-            paddingTop: "var(--page-py-top)", 
-            paddingLeft: "var(--page-px)", 
-            paddingRight: "var(--page-px)",
+          className="flex-1 overflow-y-auto scrollbar-hide page-pad"
+          style={{
             paddingBottom: queue.length > 0 ? (isBottomSheetExpanded ? "45vh" : 140) : 24
           }}
         >
-          <div className="flex items-center gap-1" style={{ marginBottom: 16 }}>
+          <div className="flex items-center gap-1 xp-head">
             <button className="btn-back" onClick={onClose} aria-label={t.back}>
-              <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+              <ChevronLeft className="text-body" size={24} />
             </button>
-            <h1 className="display" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
+            <h1 className="display text-body xp-title">
               {replace ? t.replaceExercise : t.addExercise}
             </h1>
           </div>
 
-          <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+          <div className="flex items-center gap-2 xp-search-row">
               <div className="relative flex items-center flex-1">
-                <Search size={16} style={{ position: "absolute", left: 12, color: "var(--muted)" }} />
+                <Search className="text-muted xp-search-icon" size={16} />
                 <input
-                  className="field w-full"
-                  style={{ paddingLeft: 36 }}
+                  className="field w-full xp-search"
                   placeholder={t.searchExercises}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -224,96 +221,63 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                 />
               </div>
               <button
-                className="btn btn-ghost relative"
-                style={{ padding: 10 }}
+                className="btn btn-ghost relative xp-icon-btn"
                 onClick={() => setShowFilters(true)}
                 aria-label={t.filters}
               >
-                <SlidersHorizontal size={18} style={{ color: "var(--text)" }} />
+                <SlidersHorizontal className="text-body" size={18} />
                 {activeFilterCount > 0 && (
-                  <span
-                    className="flex items-center justify-center"
-                    style={{
-                      position: "absolute",
-                      top: -2,
-                      right: -2,
-                      width: 16,
-                      height: 16,
-                      borderRadius: 999,
-                      background: "var(--accent)",
-                      color: "var(--bg)",
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
-                  >
+                  <span className="flex items-center justify-center xp-badge">
                     {activeFilterCount}
                   </span>
                 )}
               </button>
               <button
-                className="btn btn-ghost"
-                style={{ padding: 10 }}
+                className="btn btn-ghost xp-icon-btn"
                 onClick={() => setViewMode(viewMode === "list" ? "card" : "list")}
                 aria-label={viewMode === "list" ? t.toggleCardView : t.toggleListView}
               >
                 {viewMode === "list" ? (
-                  <LayoutGrid size={18} style={{ color: "var(--text)" }} />
+                  <LayoutGrid className="text-body" size={18} />
                 ) : (
-                  <List size={18} style={{ color: "var(--text)" }} />
+                  <List className="text-body" size={18} />
                 )}
               </button>
             </div>
 
               {sortedExercises.length === 0 ? (
-                <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "40px 0" }}>
+                <p className="text-sm text-center text-muted xp-empty">
                   {t.noResults}
                 </p>
               ) : viewMode === "card" ? (
-                <div className="grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+                <div className="grid xp-grid">
                   {sortedExercises.map((ex) => {
                     const count = queue.filter(q => q.baseId === ex.id).length;
                     return (
                       <button
                         key={ex.id}
                         onClick={() => handleAddClick(ex)}
-                        className="flex flex-col"
-                        style={{
-                          background: "var(--surface)",
-                          border: count > 0 ? "1px solid var(--accent)" : "1px solid var(--border)",
-                          borderRadius: 14,
-                          overflow: "hidden",
-                          textAlign: "left",
-                          position: "relative",
-                        }}
+                        className="flex flex-col xp-card"
+                        style={{ border: count > 0 ? "1px solid var(--accent)" : "1px solid var(--border)" }}
                       >
-                        <div
-                          className="flex items-center justify-center"
-                          style={{
-                            aspectRatio: "1 / 1",
-                            background: "var(--surface2)",
-                            color: "var(--muted)",
-                          }}
-                        >
+                        <div className="flex items-center justify-center text-muted xp-card-art">
                           <ImageIcon size={28} />
                         </div>
-                        <div style={{ padding: "8px 10px 10px" }}>
-                          <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                        <div className="xp-card-body">
+                          <p className="text-sm font-semibold truncate text-body">
                             {localizedName(ex, lang)}
                           </p>
-                          <p
-                            className="text-xs mt-0.5 truncate"
-                            style={{ color: "var(--muted)", textTransform: "capitalize" }}
-                          >
+                          <p className="text-xs mt-0.5 truncate text-muted capitalize">
                             {getMuscleLabel(ex.target, lang)}
                           </p>
                         </div>
-                        <div style={{ position: "absolute", top: 6, right: 6 }}>
+                        <div className="xp-card-corner">
                           {count > 0 ? (
-                            <div className="flex items-center justify-center" style={{ width: 20, height: 20, borderRadius: 999, background: "var(--accent)", color: "var(--bg)", fontSize: 11, fontWeight: 800 }}>
+                            <div className="flex items-center justify-center xp-count">
                               {count}
                             </div>
                           ) : (
-                            <Plus size={20} style={{ color: "var(--border)" }} />
+                            <Plus className="xp-plus" size={20} />
                           )}
                         </div>
                       </button>
@@ -322,17 +286,9 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                 </div>
               ) : (
                 groups.map(({ letter, items }) => (
-                  <div key={letter} className="flex flex-col" style={{ marginBottom: 4 }}>
-                    <div
-                      style={{
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 1,
-                        background: "var(--bar, var(--bg))", backdropFilter: "blur(16px) saturate(180%)", WebkitBackdropFilter: "blur(16px) saturate(180%)",
-                        padding: "10px 4px 6px",
-                      }}
-                    >
-                      <span className="font-bold" style={{ fontSize: 13, color: "var(--accent)" }}>
+                  <div key={letter} className="flex flex-col xp-group">
+                    <div className="xp-letter">
+                      <span className="font-bold xp-letter-label">
                         {letter}
                       </span>
                     </div>
@@ -342,32 +298,23 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                         return (
                           <button
                             key={ex.id}
-                            className="flex items-center gap-3"
+                            className="flex items-center gap-3 xp-row"
                             onClick={() => handleAddClick(ex)}
-                            style={{
-                              padding: "10px 4px",
-                              borderBottom: "1px solid var(--border)",
-                              textAlign: "left",
-                              width: "100%",
-                            }}
                           >
-                            <div className="flex-1" style={{ minWidth: 0 }}>
-                              <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate text-body">
                                 {localizedName(ex, lang)}
                               </p>
-                              <p
-                                className="text-xs mt-0.5 truncate"
-                                style={{ color: "var(--muted)", textTransform: "capitalize" }}
-                              >
+                              <p className="text-xs mt-0.5 truncate text-muted capitalize">
                                 {getBodyPartLabel(ex.bodyPart, lang)}
                               </p>
                             </div>
                             {count > 0 ? (
-                              <div className="flex items-center justify-center flex-shrink-0" style={{ width: 22, height: 22, borderRadius: 999, background: "var(--accent)", color: "var(--bg)", fontSize: 12, fontWeight: 800 }}>
+                              <div className="flex items-center justify-center flex-shrink-0 xp-count xp-count-lg">
                                 {count}
                               </div>
                             ) : (
-                              <Plus size={20} style={{ color: "var(--border)", flexShrink: 0 }} />
+                              <Plus className="xp-plus flex-shrink-0" size={20} />
                             )}
                           </button>
                         );
@@ -377,14 +324,10 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                 ))
               )}
               <button
-                className="flex items-center gap-3"
+                className="flex items-center gap-3 xp-create"
                 onClick={() => setStep("custom")}
-                style={{ padding: "12px 4px", textAlign: "left", width: "100%", color: "var(--accent)" }}
               >
-                <div
-                  className="flex items-center justify-center flex-shrink-0"
-                  style={{ width: 32, height: 32, borderRadius: 999, border: "1px dashed var(--accent)" }}
-                >
+                <div className="flex items-center justify-center flex-shrink-0 xp-create-icon">
                   <Plus size={16} />
                 </div>
                 <span className="text-sm font-semibold">{t.createCustomExercise}</span>
@@ -393,19 +336,19 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
       </div>
 
       {activeBase && (
-        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={resetCustomize}>
+        <div role="dialog" aria-modal="true" className="modal-overlay xp-dialog" onClick={resetCustomize}>
           <div className="modal-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-semibold text-base flex-1" style={{ color: "var(--text)" }}>
+              <span className="font-semibold text-base flex-1 text-body">
                 {localizedName(activeBase, lang)}
               </span>
               <button className="btn btn-ghost p-2" onClick={resetCustomize} aria-label={t.cancel}>
                 <X size={18} />
               </button>
             </div>
-            {replace && <p className="text-sm" style={{ color: "var(--muted)", marginBottom: 16 }}>{t.replaceExerciseNote}</p>}
+            {replace && <p className="text-sm text-muted xp-replace-note">{t.replaceExerciseNote}</p>}
 
-            <div className="flex flex-col" style={{ gap: 16 }}>
+            <div className="flex flex-col gap-4">
               {equipmentOptions.length > 1 && (
                 <ChoiceGroup label={t.filterEquipment}>
                   {equipmentOptions.map((eq) => (
@@ -465,11 +408,11 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
               })}
             </div>
 
-            <button className="btn btn-primary w-full" style={{ marginTop: 20 }} onClick={confirmCustomize}>
+            <button className="btn btn-primary w-full xp-confirm" onClick={confirmCustomize}>
               {replace ? t.replaceExerciseAction : isEditingInstanceId ? t.save : t.add}
             </button>
             {replace && (
-              <button className="btn btn-ghost w-full" style={{ marginTop: 8 }} onClick={resetCustomize}>
+              <button className="btn btn-ghost w-full xp-other" onClick={resetCustomize}>
                 {t.replaceExerciseOther}
               </button>
             )}
@@ -478,52 +421,25 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
       )}
 
       {queue.length > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: "var(--surface)",
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            boxShadow: "0 -4px 16px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            zIndex: 10,
-            paddingBottom: "max(24px, env(safe-area-inset-bottom))",
-          }}
-        >
+        <div className="xp-sheet">
           <div className="flex flex-col w-full">
             <button
-              className="flex items-center justify-between"
-              style={{ padding: "16px 20px" }}
+              className="flex items-center justify-between xp-sheet-toggle"
               onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}
             >
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base" style={{ color: "var(--text)" }}>
+                <span className="font-bold text-base text-body">
                   {t.addedExercises}
                 </span>
-                <span
-                  className="flex items-center justify-center"
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 999,
-                    background: "var(--accent)",
-                    color: "var(--bg)",
-                    fontSize: 11,
-                    fontWeight: 800,
-                  }}
-                >
+                <span className="flex items-center justify-center xp-count">
                   {queue.length}
                 </span>
               </div>
-              {isBottomSheetExpanded ? <ChevronDown size={20} style={{ color: "var(--text)" }} /> : <ChevronUp size={20} style={{ color: "var(--text)" }} />}
+              {isBottomSheetExpanded ? <ChevronDown className="text-body" size={20} /> : <ChevronUp className="text-body" size={20} />}
             </button>
             
             {isBottomSheetExpanded && (
-              <div className="flex flex-col overflow-y-auto" style={{ maxHeight: "40vh" }}>
+              <div className="flex flex-col overflow-y-auto xp-sheet-list">
                 {queue.map((item) => {
                   const base = listBaseExercises().find(ex => ex.id === item.baseId);
                   const equipmentLabel = item.equipmentId && item.equipmentId !== "bodyweight" ? getEquipmentLabel(item.equipmentId, lang) : "";
@@ -535,13 +451,13 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                   if (variantLabel) subtitle.push(variantLabel);
                   
                   return (
-                    <div key={item.instanceId} className="flex items-center justify-between" style={{ padding: "12px 20px", borderTop: "1px solid var(--border)" }}>
-                      <div className="flex flex-col flex-1" style={{ minWidth: 0, paddingRight: 12 }}>
-                        <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                    <div key={item.instanceId} className="flex items-center justify-between xp-queue-row">
+                      <div className="flex flex-col flex-1 xp-queue-text">
+                        <span className="text-sm font-semibold truncate text-body">
                           {base ? localizedName(base, lang) : ""}
                         </span>
                         {subtitle.length > 0 && (
-                          <span className="text-xs truncate" style={{ color: "var(--muted)", marginTop: 2 }}>
+                          <span className="text-xs truncate text-muted xp-queue-sub">
                             {subtitle.join(" • ")}
                           </span>
                         )}
@@ -549,11 +465,11 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {hasChoices(item.baseId) && (
                           <button className="btn btn-ghost p-2" onClick={() => handleEditQueueItem(item)} aria-label={t.edit}>
-                            <Pencil size={18} style={{ color: "var(--text)" }} />
+                            <Pencil className="text-body" size={18} />
                           </button>
                         )}
                         <button className="btn btn-ghost p-2" onClick={() => handleRemoveQueueItem(item.instanceId)} aria-label={t.delete}>
-                          <Trash2 size={18} style={{ color: "var(--danger)" }} />
+                          <Trash2 className="text-danger" size={18} />
                         </button>
                       </div>
                     </div>
@@ -562,7 +478,7 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null 
               </div>
             )}
             
-            <div style={{ padding: "12px 20px 0 20px" }}>
+            <div className="xp-sheet-footer">
               <button
                 className="btn btn-primary w-full py-3"
                 onClick={() => onConfirm(queue.map(q => ({ ref: q.ref, barType: q.barType })))}

@@ -1,0 +1,249 @@
+.hp-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hp-dots.top {
+  padding-top: 10px;
+}
+
+.hp-dots.bottom {
+  padding-bottom: 10px;
+}
+
+.hp-dot {
+  width: 24px !important;
+  height: 4px !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  background: var(--muted) !important;
+  opacity: 0.35 !important;
+  cursor: pointer !important;
+}
+
+.hp-dot.on {
+  background: var(--accent) !important;
+  opacity: 1 !important;
+}
+
+.hp-card {
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.hp-head {
+  padding: 20px 20px 16px;
+  flex-shrink: 0;
+  border-bottom: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.hp-head.open {
+  border-bottom: 1px solid var(--border);
+}
+
+.hp-head-text {
+  min-width: 0;
+}
+
+.hp-name {
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  margin-bottom: 4px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.hp-date {
+  font-size: 14px !important;
+}
+
+.hp-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hp-delete {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  cursor: pointer !important;
+  color: var(--muted) !important;
+  transition: background 0.15s ease !important;
+}
+
+.hp-delete.confirm {
+  background: #ef4444 !important;
+  border: none !important;
+  padding: 6px 10px !important;
+  color: #fff !important;
+}
+
+.hp-delete span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hp-chevron {
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+.hp-chevron.open {
+  transform: rotate(180deg);
+}
+
+.hp-body {
+  position: relative;
+  overflow: hidden;
+}
+
+.hp-edge {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 40px !important;
+  width: 30% !important;
+  background: transparent !important;
+  border: none !important;
+  z-index: 1 !important;
+  cursor: pointer !important;
+}
+
+.hp-edge.prev {
+  left: 0 !important;
+}
+
+.hp-edge.next {
+  right: 0 !important;
+}
+
+.hp-slider {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  height: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hp-slide {
+  min-width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.hp-slide.details {
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.hp-slide.body {
+  background: var(--surface2);
+}
+
+.hp-stats {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.hp-stat {
+  flex: 1;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.hp-stat:last-child {
+  border-right: none;
+}
+
+.hp-stat-label {
+  font-size: 11px !important;
+}
+
+.hp-stat-value {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+.hp-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: none;
+}
+
+.hp-notes {
+  font-size: 13px !important;
+  font-style: italic !important;
+  margin-bottom: 4px !important;
+}
+
+.hp-ex-name {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.hp-ex-sets {
+  font-size: 12px !important;
+  margin-top: 2px !important;
+  line-height: 1.5 !important;
+}
+
+.hp-figures {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  overflow: hidden;
+  flex-wrap: wrap;
+  padding-top: 12px;
+}
+
+.hp-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 45%;
+}
+
+.hp-figure-label {
+  font-size: 11px !important;
+  margin-bottom: 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+}
+
+.hp-figure-body {
+  transform-origin: top center;
+  pointer-events: none;
+  flex-shrink: 0;
+}

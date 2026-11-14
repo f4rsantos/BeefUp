@@ -6,6 +6,7 @@ import { ACTIVITY, OBJECTIVE, calcGoals, activityFromSessions, latestWeight, pic
 import { MICRONUTRIENTS, MICRONUTRIENT_KEYS } from "../lib/foodProvider";
 import { isPrescribed } from "../lib/planUtils";
 import NumberField from "./NumberField";
+import "./MacroGoalModal.css";
 
 export default function MacroGoalModal({ onClose }) {
   useEscapeKey(onClose);
@@ -60,9 +61,9 @@ export default function MacroGoalModal({ onClose }) {
 
   return (
     <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
-      <div className="modal-center fade-in" style={{ padding: 26 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-center fade-in mg-modal" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
-          <span className="font-semibold" style={{ color: "var(--text)", fontSize: 19 }}>
+          <span className="font-semibold text-body mg-title">
             {t.nutritionGoals}
           </span>
           <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
@@ -71,7 +72,7 @@ export default function MacroGoalModal({ onClose }) {
         </div>
 
         {locked && (
-          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--muted)", marginBottom: 22 }}>
+          <p className="text-xs flex items-center gap-1.5 text-muted mg-locked">
             <Lock size={13} /> {t.prescribedLocked}
           </p>
         )}
@@ -95,17 +96,15 @@ export default function MacroGoalModal({ onClose }) {
           </div>
         ) : (
           <>
-        <div className="pill-toggle" style={{ marginBottom: 26 }}>
+        <div className="pill-toggle mg-tabs">
           <button
-            className={`pill-option ${tab === "manual" ? "active" : ""}`}
-            style={{ fontSize: 14, padding: "10px 0" }}
+            className={`pill-option mg-tab ${tab === "manual" ? "active" : ""}`}
             onClick={() => setTab("manual")}
           >
             {t.manual}
           </button>
           <button
-            className={`pill-option ${tab === "calculator" ? "active" : ""}`}
-            style={{ fontSize: 14, padding: "10px 0" }}
+            className={`pill-option mg-tab ${tab === "calculator" ? "active" : ""}`}
             onClick={() => setTab("calculator")}
           >
             {t.calculator}
@@ -120,16 +119,13 @@ export default function MacroGoalModal({ onClose }) {
               <Field label={`${t.carbs} (g)`} value={g.carbs} onChange={(v) => setG({ ...g, carbs: v })} />
               <Field label={`${t.fat} (g)`} value={g.fat} onChange={(v) => setG({ ...g, fat: v })} />
             </div>
-            <p
-              style={{ color: macrosOff ? "var(--warn)" : "var(--muted)", marginTop: -4, fontSize: 13 }}
-            >
+            <p className="mg-hint" style={{ color: macrosOff ? "var(--warn)" : "var(--muted)" }}>
               {t.macrosFromGoal.replace("{kcal}", macroKcal)}
             </p>
             <Field label={`${t.water} (ml)`} value={g.waterMl} onChange={(v) => setG({ ...g, waterMl: v })} />
 
             <button
-              className="flex items-center justify-center gap-1 w-full"
-              style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600 }}
+              className="flex items-center justify-center gap-1 w-full text-muted mg-more"
               onClick={() => setShowMicros((v) => !v)}
             >
               {t.moreDetails}
@@ -144,7 +140,7 @@ export default function MacroGoalModal({ onClose }) {
               </div>
             )}
 
-            <button className="btn btn-primary w-full mt-1 py-3.5" style={{ fontSize: 15 }} onClick={() => saveGoals(g)}>
+            <button className="btn btn-primary w-full mt-1 py-3.5 mg-btn-text" onClick={() => saveGoals(g)}>
               {t.save}
             </button>
           </div>
@@ -157,13 +153,12 @@ export default function MacroGoalModal({ onClose }) {
             </div>
 
             <div>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.sex}</label>
+              <label className="section-title mg-label">{t.sex}</label>
               <div className="flex gap-2 mt-2">
                 {["male", "female"].map((s) => (
                   <button
                     key={s}
-                    className={`chip ${calc.sex === s ? "active" : ""}`}
-                    style={{ flex: 1, justifyContent: "center", padding: 11, fontSize: 14 }}
+                    className={`chip mg-choice ${calc.sex === s ? "active" : ""}`}
                     onClick={() => setCalc({ ...calc, sex: s })}
                   >
                     {t[s]}
@@ -174,21 +169,19 @@ export default function MacroGoalModal({ onClose }) {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="section-title" style={{ fontSize: 13 }}>{t.activity}</label>
+                <label className="section-title mg-label">{t.activity}</label>
                 <button
-                  className="flex items-center gap-1"
-                  style={{ background: "none", border: "none", color: "var(--accent-2)", cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+                  className="flex items-center gap-1 mg-from-workout"
                   onClick={() => setCalc({ ...calc, activity: activityFromSessions(sessions) })}
                 >
                   <Sparkles size={13} /> {t.actFromWorkout}
                 </button>
               </div>
-              <div className="flex gap-2 mt-2" style={{ flexWrap: "wrap" }}>
+              <div className="flex flex-wrap gap-2 mt-2">
                 {ACTIVITY.map((a) => (
                   <button
                     key={a.id}
-                    className={`chip ${calc.activity === a.f ? "active" : ""}`}
-                    style={{ fontSize: 13, padding: "7px 13px" }}
+                    className={`chip mg-activity ${calc.activity === a.f ? "active" : ""}`}
                     onClick={() => setCalc({ ...calc, activity: a.f })}
                   >
                     {t[a.id]}
@@ -198,13 +191,12 @@ export default function MacroGoalModal({ onClose }) {
             </div>
 
             <div>
-              <label className="section-title" style={{ fontSize: 13 }}>{t.goal}</label>
+              <label className="section-title mg-label">{t.goal}</label>
               <div className="flex gap-2 mt-2">
                 {OBJECTIVE.map((o) => (
                   <button
                     key={o.id}
-                    className={`chip ${calc.obj === o.d ? "active" : ""}`}
-                    style={{ flex: 1, justifyContent: "center", padding: 11, fontSize: 14 }}
+                    className={`chip mg-choice ${calc.obj === o.d ? "active" : ""}`}
                     onClick={() => setCalc({ ...calc, obj: o.d })}
                   >
                     {t[o.id]}
@@ -213,7 +205,7 @@ export default function MacroGoalModal({ onClose }) {
               </div>
             </div>
 
-            <button className="btn btn-primary w-full py-3.5" style={{ fontSize: 15 }} onClick={applyCalculated}>
+            <button className="btn btn-primary w-full py-3.5 mg-btn-text" onClick={applyCalculated}>
               {t.calculate}
             </button>
           </div>
@@ -228,8 +220,8 @@ export default function MacroGoalModal({ onClose }) {
 function ReadOnlyField({ label, value }) {
   return (
     <div>
-      <label className="section-title" style={{ fontSize: 13 }}>{label}</label>
-      <p className="field mt-2" style={{ fontSize: 16, padding: "13px 14px", color: "var(--text)", margin: 0 }}>
+      <label className="section-title mg-label">{label}</label>
+      <p className="field mt-2 text-body mg-ro">
         {value}
       </p>
     </div>
@@ -239,10 +231,9 @@ function ReadOnlyField({ label, value }) {
 function Field({ label, value, onChange, allowDecimal }) {
   return (
     <div>
-      <label className="section-title" style={{ fontSize: 13 }}>{label}</label>
+      <label className="section-title mg-label">{label}</label>
       <NumberField
-        className="field mt-2"
-        style={{ fontSize: 16, padding: "13px 14px" }}
+        className="field mt-2 mg-input"
         allowDecimal={allowDecimal}
         value={value}
         onChange={(e) => onChange(e.target.value)}

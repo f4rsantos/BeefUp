@@ -3,6 +3,7 @@ import { useEscapeKey } from "../lib/useEscapeKey";
 import { X } from "lucide-react";
 import { useApp } from "../context/useApp";
 import ProgressRing from "./ProgressRing";
+import "./RestModal.css";
 
 const DRAG_STEP_PX = 18; // px of vertical drag per one step of that column
 const RING_SIZE = 190;
@@ -64,24 +65,22 @@ function OdometerColumn({ value, onChange, min, max, step }) {
 
   return (
     <div
-      className="flex flex-col items-center"
-      style={{ touchAction: "none", cursor: "ns-resize", userSelect: "none", width: 52 }}
+      className="flex flex-col items-center rm-odo"
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      <span className="font-mono" style={{ fontSize: 15, fontWeight: 600, color: "var(--muted)", opacity: 0.35, lineHeight: 1 }}>
+      <span className="font-mono text-muted rm-odo-side">
         {pad(prev)}
       </span>
       <span
-        className="font-mono"
-        style={{ fontSize: 32, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}
+        className="font-mono text-body rm-odo-value"
       >
         {pad(value)}
       </span>
-      <span className="font-mono" style={{ fontSize: 15, fontWeight: 600, color: "var(--muted)", opacity: 0.35, lineHeight: 1 }}>
+      <span className="font-mono text-muted rm-odo-side">
         {pad(next)}
       </span>
     </div>
@@ -127,14 +126,12 @@ export default function RestModal({ restState, setRestState, onClose }) {
   return (
     <div role="dialog" aria-modal="true" className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-center fade-in"
-        style={{ maxWidth: 420 }}
+        className="modal-center fade-in rm-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
           <span
-            className="font-semibold text-base"
-            style={{ color: "var(--text)" }}
+            className="font-semibold text-base text-body"
           >
             {isRunning || isDone
               ? isDone
@@ -147,17 +144,17 @@ export default function RestModal({ restState, setRestState, onClose }) {
           </button>
         </div>
 
-        <div className="flex flex-col items-center" style={{ marginBottom: 24 }}>
+        <div className="flex flex-col items-center rm-body">
           {isIdle ? (
             <>
               <ProgressRing value={pickedSeconds} max={900} size={RING_SIZE} stroke={10} color="var(--accent)">
-                <div className="flex items-center" style={{ gap: 8 }}>
+                <div className="flex items-center gap-2">
                   <OdometerColumn value={mm} onChange={setMm} min={0} max={15} step={1} />
-                  <div style={{ width: 1, height: 68, background: "var(--border)" }} />
+                  <div className="rm-divider" />
                   <OdometerColumn value={ss} onChange={setSs} min={0} max={55} step={5} />
                 </div>
               </ProgressRing>
-              <p className="mt-3" style={{ color: "var(--muted)", fontSize: 9 }}>
+              <p className="mt-3 text-muted rm-hint">
                 {t.dragToAdjust}
               </p>
             </>
@@ -170,8 +167,7 @@ export default function RestModal({ restState, setRestState, onClose }) {
               color="var(--accent)"
             >
               <span
-                className="font-mono"
-                style={{ fontSize: 32, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}
+                className="font-mono text-body rm-clock"
               >
                 {isDone ? "0" : formatClock(remaining)}
               </span>

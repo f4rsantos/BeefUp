@@ -7,6 +7,7 @@ import ExerciseFilterModal from "../components/ExerciseFilterModal";
 import CustomExerciseEditor from "../components/CustomExerciseEditor";
 import { localizedName } from "../lib/localizedName"
 import NavHeader from "../components/ui/NavHeader"
+import "./ExercisesPage.css"
 
 export default function ExercisesPage({ onBack }) {
   const { t, lang } = useApp();
@@ -48,12 +49,11 @@ export default function ExercisesPage({ onBack }) {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-4 scrollbar-hide"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-4 scrollbar-hide page-pad"
       >
-        <div style={{ marginBottom: 16 }}>
+        <div className="ex-head">
           <NavHeader
             title={t.exercisesTitle}
             onBack={onBack}
@@ -61,98 +61,61 @@ export default function ExercisesPage({ onBack }) {
           />
         </div>
 
-        <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+        <div className="flex items-center gap-2 ex-tools">
         <div className="relative flex items-center flex-1">
-          <Search size={16} style={{ position: "absolute", left: 12, color: "var(--muted)" }} />
+          <Search className="text-muted ex-search-icon" size={16} />
           <input
-            className="field w-full"
-            style={{ paddingLeft: 36 }}
+            className="field w-full ex-search"
             placeholder={t.searchExercises}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <button
-          className="btn btn-ghost relative"
-          style={{ padding: 10 }}
+          className="btn btn-ghost relative ex-tool"
           onClick={() => setShowFilters(true)}
           aria-label={t.filters}
         >
-          <SlidersHorizontal size={18} style={{ color: "var(--text)" }} />
+          <SlidersHorizontal className="text-body" size={18} />
           {activeFilterCount > 0 && (
-            <span
-              className="flex items-center justify-center"
-              style={{
-                position: "absolute",
-                top: -2,
-                right: -2,
-                width: 16,
-                height: 16,
-                borderRadius: 999,
-                background: "var(--accent)",
-                color: "var(--bg)",
-                fontSize: 10,
-                fontWeight: 700,
-              }}
-            >
+            <span className="flex items-center justify-center ex-filter-count">
               {activeFilterCount}
             </span>
           )}
         </button>
         <button
-          className="btn btn-ghost"
-          style={{ padding: 10 }}
+          className="btn btn-ghost ex-tool"
           onClick={() => setViewMode(viewMode === "list" ? "card" : "list")}
           aria-label={viewMode === "list" ? t.toggleCardView : t.toggleListView}
         >
           {viewMode === "list" ? (
-            <LayoutGrid size={18} style={{ color: "var(--text)" }} />
+            <LayoutGrid className="text-body" size={18} />
           ) : (
-            <List size={18} style={{ color: "var(--text)" }} />
+            <List className="text-body" size={18} />
           )}
         </button>
       </div>
 
         {sortedExercises.length === 0 ? (
-          <p className="text-sm text-center" style={{ color: "var(--muted)", padding: "40px 0" }}>
+          <p className="text-sm text-center text-muted ex-empty">
             {t.noResults}
           </p>
         ) : viewMode === "card" ? (
-          <div
-            className="grid"
-            style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}
-          >
+          <div className="grid ex-grid">
             {sortedExercises.map((ex) => (
               <button
                 key={ex.id}
                 onClick={() => setSelectedId(ex.id)}
-                className="flex flex-col"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 14,
-                  overflow: "hidden",
-                  textAlign: "left",
-                }}
+                className="flex flex-col ex-tile"
               >
-                <div
-                  className="flex items-center justify-center"
-                  style={{
-                    aspectRatio: "1 / 1",
-                    background: "var(--surface2)",
-                    color: "var(--muted)",
-                  }}
-                >
+                <div className="flex items-center justify-center text-muted ex-tile-art">
                   <ImageIcon size={28} />
                 </div>
-                <div style={{ padding: "8px 10px 10px" }}>
-                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                <div className="ex-tile-text">
+                  <p className="text-sm font-semibold truncate text-body">
                     {localizedName(ex, lang)}
                   </p>
-                  <p
-                    className="text-xs mt-0.5 truncate"
-                    style={{ color: "var(--muted)", textTransform: "capitalize" }}
-                  >
+                  <p className="text-xs mt-0.5 truncate text-muted ex-capitalize">
                     {getMuscleLabel(ex.target, lang)}
                   </p>
                 </div>
@@ -161,20 +124,9 @@ export default function ExercisesPage({ onBack }) {
           </div>
         ) : (
           groups.map(({ letter, items }) => (
-            <div key={letter} className="flex flex-col" style={{ marginBottom: 4 }}>
-              <div
-                style={{
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 1,
-                  background: "var(--bar, var(--bg))", backdropFilter: "blur(16px) saturate(180%)", WebkitBackdropFilter: "blur(16px) saturate(180%)",
-                  padding: "10px 4px 6px",
-                }}
-              >
-                <span
-                  className="font-bold"
-                  style={{ fontSize: 13, color: "var(--accent)" }}
-                >
+            <div key={letter} className="flex flex-col ex-group">
+              <div className="ex-letter-bar">
+                <span className="font-bold ex-letter">
                   {letter}
                 </span>
               </div>
@@ -183,20 +135,13 @@ export default function ExercisesPage({ onBack }) {
                   <div
                     key={ex.id}
                     onClick={() => setSelectedId(ex.id)}
-                    style={{
-                      padding: "10px 4px",
-                      cursor: "pointer",
-                      borderBottom: "1px solid var(--border)",
-                    }}
+                    className="ex-row"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                      <span className="text-sm font-semibold text-body">
                         {localizedName(ex, lang)}
                       </span>
-                      <span
-                        className="text-xs"
-                        style={{ color: "var(--muted)", textTransform: "capitalize" }}
-                      >
+                      <span className="text-xs text-muted ex-capitalize">
                         {getBodyPartLabel(ex.bodyPart, lang)}
                       </span>
                     </div>
@@ -207,13 +152,11 @@ export default function ExercisesPage({ onBack }) {
           ))
         )}
         <button
-          className="flex items-center gap-3"
+          className="flex items-center gap-3 ex-create"
           onClick={() => setCreatingCustom(true)}
-          style={{ padding: "12px 4px", textAlign: "left", width: "100%", color: "var(--accent)" }}
         >
           <div
-            className="flex items-center justify-center flex-shrink-0"
-            style={{ width: 32, height: 32, borderRadius: 999, border: "1px dashed var(--accent)" }}
+            className="flex items-center justify-center flex-shrink-0 ex-create-icon"
           >
             <Plus size={16} />
           </div>

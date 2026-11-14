@@ -16,24 +16,12 @@ import LargeTitle from "../components/ui/LargeTitle";
 import IconButton from "../components/ui/IconButton";
 import SectionHeader from "../components/ui/SectionHeader";
 import EmptyState from "../components/ui/EmptyState";
+import "./WorkoutPage.css";
 
 const MENU_WIDTH = 220;
 const MENU_ITEM_HEIGHT = 44;
 const MENU_DIVIDER = 6;
 
-const MENU_ITEM_STYLE = {
-  width: "100%",
-  minHeight: MENU_ITEM_HEIGHT,
-  padding: "0 16px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 12,
-  border: "none",
-  cursor: "pointer",
-  fontSize: 16,
-  textAlign: "left",
-};
 
 function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete, onEdit, onIcon }) {
   const [open, setOpen] = useState(false);
@@ -106,29 +94,22 @@ function WorkoutCardMenu({ workout, t, onRename, onDuplicate, onShare, onDelete,
         <div
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
-          className="glass-menu fade-in"
+          className="glass-menu fade-in wp-menu"
           style={{
-            position: "fixed",
             top: coords.top,
             left: coords.left,
-            borderRadius: 16,
             width: MENU_WIDTH,
-            zIndex: 1000,
-            overflow: "hidden",
+            "--wp-item-h": `${MENU_ITEM_HEIGHT}px`,
+            "--wp-divider": `${MENU_DIVIDER}px`,
           }}
         >
           {menuItems.map(({ Icon, label, onSelect, danger }) => (
             <button
               key={label}
-              className="glass-menu-item"
+              className={`glass-menu-item wp-menu-item${danger ? " danger" : ""}`}
               onClick={() => {
                 setOpen(false);
                 onSelect();
-              }}
-              style={{
-                ...MENU_ITEM_STYLE,
-                color: danger ? "var(--danger)" : "var(--text)",
-                borderTop: danger ? `${MENU_DIVIDER}px solid var(--fill)` : "none",
               }}
             >
               {label}
@@ -259,17 +240,17 @@ export default function WorkoutPage({
           <span className="feature-card-orb">
             <CalendarRange size={24} strokeWidth={2.2} />
           </span>
-          <span className="flex-1" style={{ minWidth: 0 }}>
-            <span className="feature-card-title" style={{ display: "block" }}>
+          <span className="flex-1 wp-plan-text">
+            <span className="feature-card-title">
               {activePlan ? activePlan.name : t.noActivePlanTap}
             </span>
             {activePlan && (
-              <span className="feature-card-meta" style={{ display: "block" }}>
+              <span className="feature-card-meta">
                 {activePlan.days?.length ?? 0} {t.days}
               </span>
             )}
           </span>
-          <ChevronRight size={20} strokeWidth={2.4} style={{ color: "var(--muted)", flexShrink: 0 }} />
+          <ChevronRight className="text-muted wp-chevron" size={20} strokeWidth={2.4} />
         </button>
       </section>
 
@@ -283,11 +264,11 @@ export default function WorkoutPage({
         {weekSessionCount === 0 ? (
           <EmptyState icon={Activity} text={t.noWorkoutsThisWeek} />
         ) : (
-          <div className="flex justify-center" style={{ gap: 28, overflow: "hidden", paddingTop: 4 }}>
+          <div className="flex justify-center wp-bodies">
             {["front", "back"].map((view) => (
-              <div key={view} className="flex flex-col items-center" style={{ gap: 6 }}>
-                <div style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE, overflow: "hidden" }}>
-                  <div style={{ transform: `scale(${MINI_SCALE})`, transformOrigin: "top left", width: 207, height: 500, pointerEvents: "none" }}>
+              <div key={view} className="flex flex-col items-center wp-body">
+                <div className="wp-body-box" style={{ width: 207 * MINI_SCALE, height: 500 * MINI_SCALE }}>
+                  <div className="wp-body-inner" style={{ transform: `scale(${MINI_SCALE})`, width: 207, height: 500 }}>
                     <HumanBody view={view} highlightedMuscles={weekAreas[view]} />
                   </div>
                 </div>
@@ -321,7 +302,7 @@ export default function WorkoutPage({
             />
           </div>
         ) : (
-          <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="grid wp-grid">
             {workouts.map((w) => {
               const parts = workoutBodyParts(w);
               const colors = workoutColors(parts);

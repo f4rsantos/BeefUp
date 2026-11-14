@@ -7,6 +7,7 @@ import { sessionVolume, sessionSets } from '../lib/planUtils'
 import { localizedName } from '../lib/localizedName'
 import { formatSet } from '../lib/setFormat'
 import NavHeader from '../components/ui/NavHeader'
+import './HistoryPage.css'
 
 function formatDate(iso) {
   const d = new Date(iso)
@@ -24,23 +25,15 @@ const BODY_NATURAL_HEIGHT = 500
 const BODY_NATURAL_WIDTH = 207
 const SCALE = (EXPANDED_HEIGHT - 60) / BODY_NATURAL_HEIGHT
 
-function SlideDots({ activeSlide, onSelect, style }) {
+function SlideDots({ activeSlide, onSelect, edge }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center', flexShrink: 0, ...style }}>
+    <div className={`hp-dots ${edge}`}>
       {[0, 1].map((index) => (
         <button
           key={index}
           type="button"
           onClick={() => onSelect(index)}
-          style={{
-            width: 24,
-            height: 4,
-            borderRadius: 9999,
-            border: 'none',
-            background: activeSlide === index ? 'var(--accent)' : 'var(--muted)',
-            opacity: activeSlide === index ? 1 : 0.35,
-            cursor: 'pointer',
-          }}
+          className={`hp-dot${activeSlide === index ? ' on' : ''}`}
         />
       ))}
     </div>
@@ -125,224 +118,104 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
   }
 
   return (
-    <div
-      className="card overflow-hidden"
-      style={{
-        padding: 0,
-        flexShrink: 0,
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/*  Header fixo: Name + Date (clicável)  */}
-      <div
-        onClick={toggleExpanded}
-        style={{
-          padding: '20px 20px 16px',
-          flexShrink: 0,
-          borderBottom: expanded ? '1px solid var(--border)' : 'none',
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 12,
-          cursor: 'pointer',
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: 20, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    <div className="card overflow-hidden hp-card">
+      <div onClick={toggleExpanded} className={`hp-head${expanded ? ' open' : ''}`}>
+        <div className="hp-head-text">
+          <p className="text-body hp-name">
             {s.workoutName}
           </p>
-          <p style={{ color: 'var(--muted)', fontSize: 14 }}>
+          <p className="text-muted hp-date">
             {formatDate(s.date)}
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="hp-actions">
           <button
             type="button"
             aria-label="delete"
             onClick={handleDeleteClick}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: confirmDelete ? '#ef4444' : 'transparent',
-              border: confirmDelete ? 'none' : '1px solid var(--border)',
-              borderRadius: 8,
-              padding: confirmDelete ? '6px 10px' : 6,
-              cursor: 'pointer',
-              color: confirmDelete ? '#fff' : 'var(--muted)',
-              transition: 'background 0.15s ease',
-            }}
+            className={`hp-delete${confirmDelete ? ' confirm' : ''}`}
           >
             <Trash2 size={16} />
-            {confirmDelete && (
-              <span style={{ fontSize: 12, fontWeight: 600 }}>
-                {t.confirm}
-              </span>
-            )}
+            {confirmDelete && <span>{t.confirm}</span>}
           </button>
 
-          <ChevronDown
-            size={20}
-            style={{
-              color: 'var(--muted)',
-              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
-            }}
-          />
+          <ChevronDown className={`text-muted hp-chevron${expanded ? ' open' : ''}`} size={20} />
         </div>
       </div>
 
-      {/*  Área de swipe (só renderiza quando expandido)  */}
       {expanded && (
-        <div style={{ height: `${EXPANDED_HEIGHT}px`, position: 'relative', overflow: 'hidden' }}>
+        <div className="hp-body" style={{ height: `${EXPANDED_HEIGHT}px` }}>
           {activeSlide === 1 && (
-            <button
-              type="button"
-              aria-label="previous"
-              onClick={() => showSlide(0)}
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 40,
-                width: '30%',
-                background: 'transparent',
-                border: 'none',
-                zIndex: 1,
-                cursor: 'pointer',
-              }}
-            />
+            <button type="button" aria-label="previous" onClick={() => showSlide(0)} className="hp-edge prev" />
           )}
           {activeSlide === 0 && (
-            <button
-              type="button"
-              aria-label="next"
-              onClick={() => showSlide(1)}
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 0,
-                bottom: 40,
-                width: '30%',
-                background: 'transparent',
-                border: 'none',
-                zIndex: 1,
-                cursor: 'pointer',
-              }}
-            />
+            <button type="button" aria-label="next" onClick={() => showSlide(1)} className="hp-edge next" />
           )}
           <div
             ref={sliderRef}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            style={{
-              display: 'flex',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x',
-              height: '100%',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
+            className="hp-slider"
           >
-
-            {/*  Slide 1: Stats / Details  */}
-            <div
-              style={{
-                minWidth: '100%',
-                height: '100%',
-                scrollSnapAlign: 'start',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: 16,
-                flexShrink: 0,
-                boxSizing: 'border-box',
-              }}
-            >
-              {/* Stats row */}
-              <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 12, flexShrink: 0 }}>
+            <div className="hp-slide details">
+              <div className="hp-stats">
                 {[
                   { label: t.volume || 'Volume', value: `${sessionVolume(s).toFixed(0)} kg` },
                   { label: t.sets, value: sessionSets(s) },
                   { label: t.exercises, value: countExercises(s) },
-                ].map((stat, i, arr) => (
-                  <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      textAlign: 'center',
-                      borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                    }}
-                  >
-                    <p style={{ color: 'var(--muted)', fontSize: 11 }}>{stat.label}</p>
-                    <p style={{ color: 'var(--text)', fontSize: 16, fontWeight: 700 }}>{stat.value}</p>
+                ].map((stat, i) => (
+                  <div key={i} className="hp-stat">
+                    <p className="text-muted hp-stat-label">{stat.label}</p>
+                    <p className="text-body hp-stat-value">{stat.value}</p>
                   </div>
                 ))}
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, scrollbarWidth: 'none' }}>
+              <div className="hp-list">
                 {s.notes && (
-                  <p style={{ color: 'var(--muted)', fontSize: 13, fontStyle: 'italic', marginBottom: 4 }}>
+                  <p className="text-muted hp-notes">
                     {s.notes}
                   </p>
                 )}
                 {s.exercises?.map((ex, i) => (
                   <div key={i}>
-                    <p style={{ color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>
+                    <p className="text-body hp-ex-name">
                       {localizedName(ex, lang)}
                     </p>
-                    <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>
+                    <p className="text-muted hp-ex-sets">
                       {ex.sets?.map(set => formatSet(set, ex.exerciseId)).join('    ·    ')}
                     </p>
                   </div>
                 ))}
               </div>
 
-              {/* Dots */}
-              <SlideDots activeSlide={activeSlide} onSelect={showSlide} style={{ paddingTop: 10 }} />
+              <SlideDots activeSlide={activeSlide} onSelect={showSlide} edge="top" />
             </div>
 
-            {/*  Slide 2: Human Body  */}
-            <div
-              style={{
-                minWidth: '100%',
-                height: '100%',
-                scrollSnapAlign: 'start',
-                background: 'var(--surface2)',
-                display: 'flex',
-                flexDirection: 'column',
-                flexShrink: 0,
-              }}
-            >
-              {/* Body figure */}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 16, overflow: 'hidden', flexWrap: 'wrap', paddingTop: 12 }}>
+            <div className="hp-slide body">
+              <div className="hp-figures">
                 {['front', 'back'].map((view) => (
-                  <div key={view} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '45%' }}>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  <div key={view} className="hp-figure">
+                    <div className="text-muted hp-figure-label">
                       {view === 'front' ? t.bodyFront : t.bodyBack}
                     </div>
-                    <div style={{
-                      transform: `scale(${SCALE})`,
-                      transformOrigin: 'top center',
-                      width: `${BODY_NATURAL_WIDTH}px`,
-                      height: `${BODY_NATURAL_HEIGHT}px`,
-                      pointerEvents: 'none',
-                      flexShrink: 0,
-                    }}>
+                    <div
+                      className="hp-figure-body"
+                      style={{
+                        transform: `scale(${SCALE})`,
+                        width: `${BODY_NATURAL_WIDTH}px`,
+                        height: `${BODY_NATURAL_HEIGHT}px`,
+                      }}
+                    >
                       <HumanBody view={view} highlightedMuscles={sessionBodyAreas[view]} />
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Dots */}
-              <SlideDots activeSlide={activeSlide} onSelect={showSlide} style={{ paddingBottom: 10 }} />
+              <SlideDots activeSlide={activeSlide} onSelect={showSlide} edge="bottom" />
             </div>
 
           </div>
@@ -374,10 +247,9 @@ export default function HistoryPage({ onBack }) {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--canvas, var(--bg))' }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-4 flex flex-col gap-3 scrollbar-hide"
-        style={{ paddingTop: 'var(--page-py-top)', paddingLeft: 'var(--page-px)', paddingRight: 'var(--page-px)' }}
+        className="flex-1 overflow-y-auto pb-4 flex flex-col gap-3 scrollbar-hide page-pad"
       >
         <NavHeader
           title={t.history}
@@ -386,8 +258,8 @@ export default function HistoryPage({ onBack }) {
         />
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 py-20">
-            <p className="font-semibold mb-1" style={{ color: 'var(--text)' }}>{t.noHistory}</p>
-            <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.historyEmpty}</p>
+            <p className="font-semibold mb-1 text-body">{t.noHistory}</p>
+            <p className="text-sm text-muted">{t.historyEmpty}</p>
           </div>
         ) : sorted.map(s => {
           const sessionBodyAreas = bodyAreasBySessionId[s.id]
