@@ -5,6 +5,7 @@ import PlanEditor from "../components/PlanEditor";
 import ConfirmModal from "../components/ConfirmModal";
 import { isPrescribed } from "../lib/planUtils";
 import NavHeader from "../components/ui/NavHeader";
+import "./PlanSettings.css";
 
 export default function PlanSettings({ onBack, initialPlanId = null }) {
   const {
@@ -39,10 +40,9 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-3 scrollbar-hide"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-3 scrollbar-hide page-pad"
       >
         <NavHeader
           title={t.settingsTitle}
@@ -52,10 +52,10 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
         {plans.map((plan) => (
           <div key={plan.id} className="card flex flex-col gap-3">
             <div>
-              <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>
+              <p className="font-semibold text-sm text-body">
                 {plan.name}
               </p>
-              <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+              <p className="text-xs mt-1 text-muted">
                 {plan.days?.length ?? 0} {t.days}
                 {isPrescribed(plan) && <> · {t.prescribedBadge}</>}
               </p>
@@ -63,8 +63,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
             <div className="flex items-center justify-between gap-2">
               {activePlanId === plan.id ? (
                 <span
-                  className="text-xs px-2.5 py-1 rounded-lg font-medium"
-                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                  className="text-xs px-2.5 py-1 rounded-lg font-medium ps-active"
                 >
                   {t.activePlan}
                 </span>
@@ -78,7 +77,7 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
               )}
               <div className="flex items-center gap-2">
                 {isPrescribed(plan) ? (
-                  <Lock size={14} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />
+                  <Lock className="text-muted" size={14} aria-label={t.prescribedLocked} />
                 ) : (
                   <>
                     <button
@@ -89,10 +88,10 @@ export default function PlanSettings({ onBack, initialPlanId = null }) {
                       }}
                       aria-label={t.edit}
                     >
-                      <Pencil size={14} style={{ color: "var(--muted)" }} />
+                      <Pencil className="text-muted" size={14} />
                     </button>
                     <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(plan)} aria-label={t.delete}>
-                      <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                      <Trash2 className="text-muted" size={14} />
                     </button>
                   </>
                 )}

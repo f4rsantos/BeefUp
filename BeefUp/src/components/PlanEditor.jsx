@@ -3,6 +3,7 @@ import { ChevronLeft, Plus, Trash2, Dumbbell, Moon, Lock } from "lucide-react";
 import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay, isPrescribed } from "../lib/planUtils";
 import WorkoutEditor from "./WorkoutEditor";
 import ConfirmModal from "./ConfirmModal";
+import "./PlanEditor.css";
 
 export default function PlanEditor({
   plan,
@@ -44,29 +45,28 @@ export default function PlanEditor({
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in page-pad"
       >
         <div className="flex items-center gap-1">
           <button className="btn-back" onClick={onBack} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+            <ChevronLeft className="text-body" size={24} />
           </button>
-          <h1 className="display flex-1" style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>
+          <h1 className="display flex-1 text-body pe-title">
             {plan?.id ? t.editPlan : t.newPlan}
           </h1>
-          {locked && <Lock size={16} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />}
+          {locked && <Lock className="text-muted" size={16} aria-label={t.prescribedLocked} />}
         </div>
         {locked && (
-          <p className="text-xs" style={{ color: "var(--muted)", marginTop: -8 }}>{t.prescribedLocked}</p>
+          <p className="text-xs text-muted pe-locked-note">{t.prescribedLocked}</p>
         )}
         <div className="card">
-          <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
+          <label className="section-title pe-label">
             {t.planName}
           </label>
           {locked ? (
-            <p className="text-sm" style={{ color: "var(--text)" }}>{name}</p>
+            <p className="text-sm text-body">{name}</p>
           ) : (
             <input
               className="field"
@@ -79,10 +79,10 @@ export default function PlanEditor({
 
         <div className="card flex flex-col gap-2">
           <div className="section-header">
-            <p className="section-title" style={{ marginBottom: 0 }}>
+            <p className="section-title pe-days-title">
               {t.daysTitle}
             </p>
-            <span className="chip active" style={{ pointerEvents: "none" }}>{days.length}</span>
+            <span className="chip active pe-count">{days.length}</span>
           </div>
 
           {days.map((day, i) => {
@@ -90,22 +90,14 @@ export default function PlanEditor({
             return (
             <div
               key={day.id}
-              className="flex items-center gap-2 py-2.5 px-2.5 rounded-xl"
-              style={{ background: "var(--surface2)" }}
+              className="flex items-center gap-2 py-2.5 px-2.5 rounded-xl pe-day"
             >
-              <span
-                className="display text-xs w-6 text-center"
-                style={{ color: "var(--muted)", fontWeight: 700 }}
-              >
+              <span className="display text-xs w-6 text-center text-muted pe-day-num">
                 {i + 1}
               </span>
 
               <button
-                className="btn-icon"
-                style={{
-                  background: isWorkout ? "var(--accent-soft)" : "var(--accent-2-soft)",
-                  flexShrink: 0,
-                }}
+                className={`btn-icon pe-day-type${isWorkout ? "" : " rest"}`}
                 onClick={
                   locked
                     ? undefined
@@ -119,24 +111,23 @@ export default function PlanEditor({
                 aria-label={t.toggleDayType}
               >
                 {isWorkout
-                  ? <Dumbbell size={15} style={{ color: "var(--accent)" }} />
-                  : <Moon size={15} style={{ color: "var(--accent-2)" }} />}
+                  ? <Dumbbell size={15} />
+                  : <Moon size={15} />}
               </button>
 
               {isWorkout ? (
                 locked ? (
-                  <span className="text-sm flex-1" style={{ color: "var(--text)" }}>
+                  <span className="text-sm flex-1 text-body">
                     {workouts.find((w) => w.id === day.workoutId)?.name ?? t.selectWorkout}
                   </span>
                 ) : (
                   <select
-                    className="field flex-1"
+                    className="field flex-1 pe-select"
                     value={day.workoutId ?? ""}
                     onChange={(e) => {
                       if (e.target.value === "__new__") setCreatingWorkoutForDay(i);
                       else updateDay(i, { workoutId: e.target.value });
                     }}
-                    style={{ fontSize: 12, padding: "7px 9px" }}
                   >
                     {workouts.length === 0 && <option value="">{t.selectWorkout}</option>}
                     {workouts.map((w) => (
@@ -150,7 +141,7 @@ export default function PlanEditor({
                   </select>
                 )
               ) : (
-                <span className="text-sm flex-1" style={{ color: "var(--muted)" }}>
+                <span className="text-sm flex-1 text-muted">
                   {t.dayRest}
                 </span>
               )}
@@ -161,7 +152,7 @@ export default function PlanEditor({
                   onClick={() => setPendingRemoveDay(i)}
                   aria-label={t.delete}
                 >
-                  <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                  <Trash2 className="text-muted" size={14} />
                 </button>
               )}
             </div>
@@ -171,15 +162,13 @@ export default function PlanEditor({
           {!locked && (
             <div className="flex gap-2 mt-1">
               <button
-                className="btn btn-ghost flex-1 py-2.5 text-xs"
-                style={{ borderStyle: "dashed" }}
+                className="btn btn-ghost flex-1 py-2.5 text-xs pe-add"
                 onClick={() => addDay("workout")}
               >
                 <Plus size={13} /> {t.workoutDay}
               </button>
               <button
-                className="btn btn-ghost flex-1 py-2.5 text-xs"
-                style={{ borderStyle: "dashed" }}
+                className="btn btn-ghost flex-1 py-2.5 text-xs pe-add"
                 onClick={() => addDay("rest")}
               >
                 <Plus size={13} /> {t.dayRest}
@@ -196,7 +185,7 @@ export default function PlanEditor({
       </div>
 
       {creatingWorkoutForDay !== null && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 200, background: "var(--canvas, var(--bg))" }}>
+        <div className="canvas-bg pe-layer">
           <WorkoutEditor
             workout={null}
             lang={lang}

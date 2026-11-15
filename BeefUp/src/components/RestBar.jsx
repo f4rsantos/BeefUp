@@ -22,24 +22,23 @@ export default function RestBar({ remaining, total, onAdjust, onSkip, t }) {
     <div
       role="timer"
       aria-label={t.rest}
+      className="glass-bar"
       style={{
         position: "sticky",
         bottom: 0,
         marginTop: "auto",
         padding: "12px var(--page-px) max(12px, env(safe-area-inset-bottom))",
-        background: "var(--surface)",
-        borderTop: "1px solid var(--border)",
-        boxShadow: "var(--shadow-md)",
+        borderTop: "1px solid var(--separator)",
         zIndex: 5,
       }}
     >
       <div className="flex items-center" style={{ gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="text-xs" style={{ color: "var(--muted)", fontWeight: 600 }}>{t.rest}</p>
+          <p className="text-xs text-muted" style={{ fontWeight: 600 }}>{t.rest}</p>
           <p
-            className="display tabular-nums"
+            className="display tabular-nums text-body"
             aria-live="off"
-            style={{ fontSize: 34, fontWeight: 700, lineHeight: 1, color: "var(--text)" }}
+            style={{ fontSize: 34, fontWeight: 700, lineHeight: 1 }}
           >
             {clock(remaining)}
           </p>

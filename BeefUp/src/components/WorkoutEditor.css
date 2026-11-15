@@ -1,0 +1,10 @@
+.we-dialog { align-items: center !important; }
+.we-root { background: var(--bg); }
+.we-title { font-size: 24px !important; font-weight: 900 !important; }
+.we-name-label { margin-bottom: 6px !important; display: block !important; }
+.we-count-label { margin-bottom: 0 !important; }
+.we-count { pointer-events: none; }
+.we-ex-row { background: var(--surface2); }
+.we-grip { color: var(--border); flex-shrink: 0; }
+.we-empty { padding: 4px 2px; }
+.we-add { border-style: dashed !important; }

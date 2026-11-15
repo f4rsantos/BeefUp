@@ -34,10 +34,9 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))" }}>
+    <div className="flex flex-col h-full canvas-bg">
       <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-3 scrollbar-hide"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-3 scrollbar-hide page-pad"
       >
         <NavHeader
           title={t.settingsTitle}
@@ -47,17 +46,17 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
         {workouts.map((w) => (
           <div key={w.id} className="card flex items-center justify-between gap-3">
             <div>
-              <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>
+              <p className="font-semibold text-sm text-body">
                 {w.name}
               </p>
-              <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+              <p className="text-xs mt-1 text-muted">
                 {w.exercises?.length ?? 0} {t.exercises}
                 {isPrescribed(w) && <> · {t.prescribedBadge}</>}
               </p>
             </div>
             <div className="flex items-center gap-2">
               {isPrescribed(w) ? (
-                <Lock size={14} style={{ color: "var(--muted)" }} aria-label={t.prescribedLocked} />
+                <Lock className="text-muted" size={14} aria-label={t.prescribedLocked} />
               ) : (
                 <>
                   <button
@@ -68,10 +67,10 @@ export default function WorkoutSettings({ onBack, initialView = "main", initialW
                     }}
                     aria-label={t.edit}
                   >
-                    <Pencil size={14} style={{ color: "var(--muted)" }} />
+                    <Pencil className="text-muted" size={14} />
                   </button>
                   <button className="btn btn-ghost p-1.5" onClick={() => setPendingDelete(w)} aria-label={t.delete}>
-                    <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                    <Trash2 className="text-muted" size={14} />
                   </button>
                 </>
               )}

@@ -1,4 +1,4 @@
-import { resolveExercise, getBodyPartLabel, listBodyParts, countsAsReps, parseExerciseRef } from './exerciseTree.js'
+import { resolveExercise, getBodyPartLabel, listBodyParts, countsAsReps, parseExerciseRef, isCardioExercise } from './exerciseTree.js'
 import { localizedName } from './localizedName.js'
 
 // A plan's `days` array cycles: day index = (daysSinceStart % days.length).
@@ -86,8 +86,105 @@ export function lastCompletedSets(sessions, exerciseId) {
   return latestExerciseField(sessions, exerciseId, (e) => (e.sets?.length ? e.sets : undefined)) ?? []
 }
 
+export function lastSetsOfSameBase(sessions, exerciseId) {
+  if (isCardioExercise(exerciseId)) return null
+  const { baseId }= parseExerciseRef(exerciseId)
+  let latest= null
+  for (const s of sessions) {
+    for (const e of s.exercises ?? []) {
+      if (e.exerciseId === exerciseId || !e.sets?.length) continue
+      if (parseExerciseRef(e.exerciseId).baseId !== baseId) continue
+      if (!latest || s.date > latest.date) latest= { date: s.date, ref: e.exerciseId, sets: e.sets }
+    }
+  }
+  return latest ? { ref: latest.ref, sets: latest.sets } : null
+}
+
 export function lastExerciseNote(sessions, exerciseId) {
-  return latestExerciseField(sessions, exerciseId, (e) => e.note) ?? ''
+  let latest= null
+  for (const s of sessions) {
+    const entry= s.exercises?.find((e) => e.exerciseId === exerciseId)
+    if (typeof entry?.note !== 'string') continue
+    if (!latest || s.date > latest.date) latest= { date: s.date, note: entry.note, cleared: entry.clearedNote || '' }
+  }
+  return latest ? { note: latest.note, cleared: latest.cleared } : null
+}
+
+export function startingNote(lastNote, workoutItem) {
+  const templateNote= workoutItem?.note || ''
+  if (lastNote?.note) return lastNote.note
+  return lastNote?.cleared && lastNote.cleared === templateNote ? '' : templateNote
+}
+
+export function buildExerciseEntry(ex, lastSets= [], lastNote= null, workoutItem= null, barType= '') {
+  const note= startingNote(lastNote, workoutItem)
+  return {
+    id: uid(),
+    exerciseId: ex.id,
+    name: ex.name,
+    namePt: ex.namePt,
+    note,
+    startNote: note,
+    barType: barType || workoutItem?.barType || '',
+    sets: Array.from({ length: ex.defaultSets }, (_, i) => {
+      const last= lastSets[Math.min(i, lastSets.length - 1)]
+      const carried= i < lastSets.length && last?.type && last.type !== 'normal' ? { type: last.type } : {}
+      if (isCardioExercise(ex.id)) {
+        return {
+          id: uid(),
+          reps: last ? last.reps ?? '' : workoutItem?.reps || '',
+          time: last ? last.time ?? '' : workoutItem?.time || '',
+          done: false,
+          ...carried,
+        }
+      }
+      const fallbackWeight= workoutItem?.weight || (ex.defaultWeight > 0 ? String(ex.defaultWeight) : '')
+      const fallbackReps= workoutItem?.reps || String(ex.defaultReps)
+      return {
+        id: uid(),
+        weight: last ? last.weight : fallbackWeight,
+        reps: last ? last.reps : fallbackReps,
+        done: false,
+        ...carried,
+      }
+    }),
+  }
+}
+
+export function sessionExerciseFromEntry(entry) {
+  const note= entry.note?.trim() ?? ''
+  const cleared= entry.startNote && !note ? { clearedNote: entry.startNote } : {}
+  return {
+    exerciseId: entry.exerciseId,
+    name: entry.name,
+    namePt: entry.namePt,
+    note,
+    ...cleared,
+    barType: entry.barType ?? '',
+    sets: entry.sets
+      .filter((s) => s.done)
+      .map((s) => (isCardioExercise(entry.exerciseId)
+        ? { reps: s.reps, time: s.time, type: s.type }
+        : { weight: s.weight, reps: s.reps, type: s.type })),
+  }
+}
+
+export function templateItemFromEntry(entry, orig) {
+  const item= { ref: entry.exerciseId }
+  if (orig?.weight) item.weight= orig.weight
+  if (orig?.reps) item.reps= orig.reps
+  if (orig?.time) item.time= orig.time
+  const note= entry.note?.trim()
+  if (note) item.note= note
+  const barType= entry.barType || orig?.barType
+  if (barType) item.barType= barType
+  return item
+}
+
+export function currentExerciseIndex(exercises, focusId) {
+  const open= (e) => e.sets.some((s) => !s.done)
+  const focused= exercises.findIndex((e) => e.id === focusId && open(e))
+  return focused >= 0 ? focused : exercises.findIndex(open)
 }
 
 export function lastUsedChoice(sessions, baseId) {

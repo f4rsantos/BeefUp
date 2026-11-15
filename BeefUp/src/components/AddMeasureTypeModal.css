@@ -1,0 +1,9 @@
+.amt-modal { padding: 26px !important; }
+.amt-title { font-size: 19px; }
+.amt-section { margin-bottom: 16px; }
+.amt-section-lg { margin-bottom: 20px; }
+.amt-label { font-size: 13px !important; }
+.amt-error { margin-top: -8px; margin-bottom: 16px; }
+.amt-list { margin-top: 8px; border-top: 1px solid var(--border); }
+.amt-row { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.amt-delete { display: flex; }

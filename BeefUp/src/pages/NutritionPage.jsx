@@ -17,15 +17,16 @@ import IconButton from "../components/ui/IconButton";
 import SectionHeader from "../components/ui/SectionHeader";
 import Stepper from "../components/ui/Stepper";
 import Meter from "../components/ui/Meter";
+import "./NutritionPage.css";
 
 const GLASS_ML = 250;
 
 function NutrientMeter({ label, value, goal, unit, color }) {
   return (
-    <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
-      <div className="flex items-baseline justify-between gap-2" style={{ fontSize: 13 }}>
-        <span className="font-semibold truncate" style={{ color: "var(--text)" }}>{label}</span>
-        <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+    <div className="flex flex-col np-meter">
+      <div className="flex items-baseline justify-between gap-2 np-meter-head">
+        <span className="font-semibold truncate text-body">{label}</span>
+        <span className="text-muted np-meter-value">
           {value}/{goal}{unit}
         </span>
       </div>
@@ -38,13 +39,13 @@ function MealCard({ icon: Icon, label, items, editing, canDelete, onAdd, onDelet
   const mealKcal = items.reduce((a, e) => a + (e.kcal || 0), 0);
   return (
     <div className="list-group">
-      <div className="list-row" style={{ minHeight: 56 }}>
-        <span className="list-row-icon" style={{ "--row-icon": "var(--accent-2)" }}>
+      <div className="list-row np-meal-head">
+        <span className="list-row-icon np-meal-icon">
           <Icon size={17} strokeWidth={2.2} />
         </span>
         <span className="list-row-body">
-          <span className="list-row-title" style={{ display: "block", fontWeight: 600 }}>{label}</span>
-          <span className="list-row-subtitle" style={{ display: "block" }}>
+          <span className="list-row-title np-meal-title">{label}</span>
+          <span className="list-row-subtitle np-block">
             {items.length > 0 ? `${mealKcal} ${t.kcal}` : t.addFood}
           </span>
         </span>
@@ -55,14 +56,14 @@ function MealCard({ icon: Icon, label, items, editing, canDelete, onAdd, onDelet
         )}
       </div>
       {items.map((e) => (
-        <div key={e.id} className="list-row" style={{ "--row-inset": "58px", paddingLeft: 58 }}>
+        <div key={e.id} className="list-row np-item">
           <span className="list-row-body">
-            <span className="list-row-title" style={{ display: "block", fontSize: 15 }}>{e.name}</span>
-            <span className="list-row-subtitle" style={{ display: "block", fontVariantNumeric: "tabular-nums" }}>
+            <span className="list-row-title np-item-title">{e.name}</span>
+            <span className="list-row-subtitle np-item-sub">
               {e.qty}g · {t.proteinShort}{Math.round(e.protein)} {t.carbsShort}{Math.round(e.carbs)} {t.fatShort}{Math.round(e.fat)}
             </span>
           </span>
-          <span className="list-row-value" style={{ fontSize: 15 }}>{e.kcal}</span>
+          <span className="list-row-value np-item-value">{e.kcal}</span>
           <IconButton icon={Trash2} size="sm" variant="plain" label={t.delete} onClick={() => onDeleteItem(e)} />
         </div>
       ))}
@@ -74,7 +75,7 @@ function NewMealForm({ name, icon, onName, onIcon, onCancel, onSubmit, t }) {
   return (
     <div className="card flex flex-col gap-3">
       <input className="field" placeholder={t.mealName} value={name} autoFocus onChange={(e) => onName(e.target.value)} />
-      <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
+      <div className="flex gap-2 np-icons">
         {MEAL_ICON_KEYS.map((key) => {
           const IconOpt = getMealIcon(key);
           return (
@@ -210,8 +211,8 @@ export default function NutritionPage() {
         }
       />
 
-      <section className="card flex flex-col" style={{ gap: 20, padding: 20 }}>
-        <div className="flex items-center" style={{ gap: 20 }}>
+      <section className="card flex flex-col np-summary">
+        <div className="flex items-center np-summary-top">
           <MacroRing
             value={totals.kcal}
             max={kcalGoal || 1}
@@ -220,12 +221,12 @@ export default function NutritionPage() {
             stroke={12}
             track="var(--ring-track)"
           >
-            <span className="stat-value" style={{ fontSize: 28, color: isOver ? "var(--danger)" : "var(--text)" }}>
+            <span className={`stat-value np-kcal${isOver ? " over" : ""}`}>
               {kcal}
             </span>
-            <span className="card-meta" style={{ marginTop: 2 }}>/ {kcalGoal} {t.kcal}</span>
+            <span className="card-meta np-kcal-goal">/ {kcalGoal} {t.kcal}</span>
           </MacroRing>
-          <div className="flex flex-col flex-1" style={{ gap: 14, minWidth: 0 }}>
+          <div className="flex flex-col flex-1 np-macros">
             {macros.map((m) => (
               <NutrientMeter key={m.key} label={m.label} value={m.value} goal={m.goal} unit={m.unit} color={m.color} />
             ))}
@@ -233,7 +234,7 @@ export default function NutritionPage() {
         </div>
 
         {showMicros && (
-          <div className="grid fade-in" style={{ gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+          <div className="grid fade-in np-micros">
             {micros.map((m) => (
               <NutrientMeter key={m.key} label={m.label} value={m.value} goal={m.goal} unit={m.unit} color={m.color} />
             ))}
@@ -241,25 +242,24 @@ export default function NutritionPage() {
         )}
 
         <button
-          className="text-button"
-          style={{ alignSelf: "center", marginBlock: -8 }}
+          className={`text-button np-more${showMicros ? " open" : ""}`}
           onClick={() => setShowMicros((v) => !v)}
           aria-expanded={showMicros}
         >
           {t.moreDetails}
-          <ChevronDown size={16} style={{ transform: showMicros ? "rotate(180deg)" : "none", transition: "transform 0.3s var(--ease-spring)" }} />
+          <ChevronDown size={16} />
         </button>
       </section>
 
-      <section className="card flex items-center" style={{ gap: 14 }}>
-        <span className="feature-card-orb" style={{ width: 46, height: 46, "--accent": "var(--fat)" }}>
+      <section className="card flex items-center np-water">
+        <span className="feature-card-orb np-water-orb">
           <Droplet size={20} fill="currentColor" strokeWidth={0} />
         </span>
-        <div className="flex-1" style={{ minWidth: 0 }}>
+        <div className="flex-1 np-water-text">
           <p className="card-meta">{t.water} · {waterGlasses}/{goalGlasses} {t.glasses}</p>
-          <p className="stat-value" style={{ fontSize: 22, marginTop: 4 }}>
+          <p className="stat-value np-water-value">
             {(water / 1000).toFixed(2)}
-            <span className="card-meta" style={{ fontSize: 15, fontWeight: 500 }}> / {(waterGoalMl / 1000).toFixed(1)} L</span>
+            <span className="card-meta np-water-goal"> / {(waterGoalMl / 1000).toFixed(1)} L</span>
           </p>
         </div>
         <Stepper
@@ -272,7 +272,7 @@ export default function NutritionPage() {
         />
       </section>
 
-      <section className="flex flex-col" style={{ gap: 12 }}>
+      <section className="flex flex-col np-meals">
         <SectionHeader
           title={t.meals}
           actions={
@@ -313,7 +313,7 @@ export default function NutritionPage() {
               t={t}
             />
           ) : (
-            <button className="btn btn-ghost w-full" style={{ minHeight: 48 }} onClick={() => setCreatingMeal(true)}>
+            <button className="btn btn-ghost w-full np-new-meal" onClick={() => setCreatingMeal(true)}>
               <Plus size={17} /> {t.newMeal}
             </button>
           )

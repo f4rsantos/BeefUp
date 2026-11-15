@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { listEquipmentUsed, getEquipmentLabel } from "../lib/exerciseTree";
 import BodyPartFilter from "./BodyPartFilter";
+import "./ExerciseFilterModal.css";
 
 // One filter for the exercise list and the add-exercise picker.
 export default function ExerciseFilterModal({ bodyPart, setBodyPart, equipment, setEquipment, onClose, lang, t }) {
@@ -12,14 +13,14 @@ export default function ExerciseFilterModal({ bodyPart, setBodyPart, equipment, 
   useEscapeKey(onClose);
 
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay xf-dialog" onClick={onClose}>
       <div
         className="modal-center"
         style={{ maxWidth: tab === "body" ? 420 : 380 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+          <span className="font-semibold text-base text-body">
             {t.filters}
           </span>
           <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
@@ -27,7 +28,7 @@ export default function ExerciseFilterModal({ bodyPart, setBodyPart, equipment, 
           </button>
         </div>
 
-        <div className="pill-toggle" style={{ marginBottom: 16 }}>
+        <div className="pill-toggle xf-tabs">
           <button
             className={`pill-option ${tab === "body" ? "active" : ""}`}
             onClick={() => setTab("body")}
@@ -43,7 +44,7 @@ export default function ExerciseFilterModal({ bodyPart, setBodyPart, equipment, 
         </div>
 
         {tab === "body" ? (
-          <div style={{ marginBottom: 20 }}>
+          <div className="xf-section">
             <BodyPartFilter
               bodyPart={bodyPart}
               setBodyPart={setBodyPart}
@@ -54,8 +55,8 @@ export default function ExerciseFilterModal({ bodyPart, setBodyPart, equipment, 
             />
           </div>
         ) : (
-          <div className="flex flex-col" style={{ gap: 6, marginBottom: 20 }}>
-            <div className="flex flex-wrap" style={{ gap: 6 }}>
+          <div className="flex flex-col gap-1.5 xf-section">
+            <div className="flex flex-wrap gap-1.5">
               <button
                 className={`chip ${equipment === null ? "active" : ""}`}
                 onClick={() => setEquipment(null)}

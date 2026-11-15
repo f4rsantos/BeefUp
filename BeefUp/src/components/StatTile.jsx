@@ -1,18 +1,19 @@
+import "./StatTile.css";
+
 export default function StatTile({ icon: Icon, label, value, unit, accent = "var(--accent)", onClick }) {
   const Comp = onClick ? "button" : "div";
   return (
     <Comp
       onClick={onClick}
-      className="card flex flex-col"
-      style={{ flex: 1, minWidth: 0, textAlign: "left", padding: 14, gap: 10, cursor: onClick ? "pointer" : "default" }}
+      className="card flex flex-col st-tile"
     >
-      <span className="flex items-center gap-1.5 card-meta" style={{ color: accent, fontWeight: 600 }}>
+      <span className="flex items-center gap-1.5 card-meta st-head" style={{ color: accent }}>
         {Icon && <Icon size={14} strokeWidth={2.4} />}
-        <span className="truncate" style={{ color: "var(--muted)", fontWeight: 500 }}>{label}</span>
+        <span className="truncate text-muted st-label">{label}</span>
       </span>
-      <span className="stat-value" style={{ fontSize: 24, color: "var(--text)" }}>
+      <span className="stat-value text-body st-value">
         {value}
-        {unit && <span className="card-meta" style={{ fontSize: 14, fontWeight: 500, marginLeft: 3 }}>{unit}</span>}
+        {unit && <span className="card-meta st-unit">{unit}</span>}
       </span>
     </Comp>
   );

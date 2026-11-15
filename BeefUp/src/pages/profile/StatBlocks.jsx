@@ -8,16 +8,8 @@ import StatTile from '../../components/StatTile'
 import Segmented from '../../components/ui/Segmented'
 import EmptyState from '../../components/ui/EmptyState'
 import { useChartZoom } from './useChartZoom'
+import './StatBlocks.css'
 
-const FATIGUE_COLOR = {
-  fatigued: 'var(--danger)',
-  recovering: 'var(--warn)',
-  fresh: 'var(--success)',
-  none: 'var(--muted)',
-}
-
-const CHART_HEIGHT = 180
-const CALENDAR_CELL = 22
 const AXIS_TICK = { fontSize: 10, fill: 'var(--muted)' }
 
 function EmptyNote({ children }) {
@@ -37,37 +29,30 @@ export function StreakCalendarBlock({ streak, bestStreak, daysInMonth, monthActi
   const { t } = useApp()
   return (
     <div className="card">
-      <div className="grid gap-3 items-center" style={{ gridTemplateColumns: '4fr 8fr' }}>
+      <div className="grid gap-3 items-center sb-streak-grid">
         <div>
-          <span className="stat-value" style={{ fontSize: 40, color: 'var(--accent)' }}>
+          <span className="stat-value sb-streak-value">
             {streak}
           </span>
-          <p className="card-meta" style={{ marginTop: 6 }}>
+          <p className="card-meta sb-streak-label">
             {t.currentStreakShort}
           </p>
-          <p className="card-meta" style={{ marginTop: 8 }}>
-            {t.bestStreak}: <span style={{ color: 'var(--text)', fontWeight: 700 }}>{bestStreak}</span>
+          <p className="card-meta sb-streak-best">
+            {t.bestStreak}: <span className="text-body">{bestStreak}</span>
           </p>
         </div>
 
-        <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridAutoRows: CALENDAR_CELL }}>
+        <div className="grid gap-1 sb-calendar">
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = index + 1
             const { active, isToday } = monthActivity[day] || {}
             return (
               <div
                 key={index}
-                className="flex items-center justify-center"
-                style={{ opacity: isToday ? 1 : 0.6 }}
+                className={`flex items-center justify-center sb-day${isToday ? ' today' : ''}${active ? ' active' : ''}`}
                 title={`${day}`}
               >
-                <Flame
-                  size={13}
-                  style={{
-                    color: active ? 'var(--accent)' : 'var(--fill-strong)',
-                    fill: active ? 'var(--accent)' : 'none',
-                  }}
-                />
+                <Flame size={13} />
               </div>
             )
           })}
@@ -81,17 +66,16 @@ export function StepsBlock({ todaySteps, weekSteps, maxWeekSteps, onOpen }) {
   const { t } = useApp()
   return (
     <button
-      className="card text-left w-full flex items-center justify-between"
+      className="card text-left w-full flex items-center justify-between sb-steps"
       onClick={onOpen}
-      style={{ cursor: 'pointer', height: 84 }}
     >
       <div className="flex items-center gap-3">
-        <span className="list-row-icon" style={{ '--row-icon': 'var(--success)', width: 40, height: 40, borderRadius: 12 }}>
+        <span className="list-row-icon sb-steps-icon">
           <Footprints size={20} strokeWidth={2.2} />
         </span>
         <div>
           <p className="card-meta">{t.stepsToday}</p>
-          <p className="stat-value" style={{ fontSize: 24, marginTop: 4 }}>
+          <p className="stat-value sb-steps-value">
             {todaySteps !== null ? todaySteps.toLocaleString() : '–'}
           </p>
         </div>
@@ -101,14 +85,9 @@ export function StepsBlock({ todaySteps, weekSteps, maxWeekSteps, onOpen }) {
           {weekSteps.map((entry, index) => (
             <div
               key={index}
-              className="rounded-full"
+              className={`rounded-full sb-step-bar${entry.value > 0 ? ' has' : ''}${entry.isToday ? ' today' : ''}`}
               title={`${entry.value.toLocaleString()} ${t.steps}`}
-              style={{
-                width: 6,
-                height: 10 + Math.round((entry.value / maxWeekSteps) * 26),
-                background: entry.value > 0 ? 'var(--success)' : 'var(--fill-strong)',
-                opacity: entry.isToday ? 1 : 0.7,
-              }}
+              style={{ height: 10 + Math.round((entry.value / maxWeekSteps) * 26) }}
             />
           ))}
         </div>
@@ -120,7 +99,7 @@ export function StepsBlock({ todaySteps, weekSteps, maxWeekSteps, onOpen }) {
 
 export function WorkoutSummaryBlock({ tiles }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <div className="sb-tiles">
       {tiles.map((tile, i) => (
         <StatTile key={i} icon={tile.icon} label={tile.label} value={tile.value} unit={tile.unit} />
       ))}
@@ -138,7 +117,7 @@ export function ProgressBlock({ chartData, hasSessions, metric, onMetricChange, 
       {!hasSessions ? (
         <EmptyNote>{t.noSessionsYet}</EmptyNote>
       ) : (
-        <div ref={zoomRef} style={{ width: '100%', height: CHART_HEIGHT, touchAction: 'pan-y' }}>
+        <div ref={zoomRef} className="sb-chart">
           <ResponsiveContainer>
             <LineChart data={chartData}>
               <XAxis dataKey="dateLabel" tick={AXIS_TICK} interval="preserveStartEnd" axisLine={false} tickLine={false} />
@@ -156,7 +135,7 @@ export function ProgressBlock({ chartData, hasSessions, metric, onMetricChange, 
           </ResponsiveContainer>
         </div>
       )}
-      <div style={{ marginTop: 14 }}>
+      <div className="sb-metric">
         <Segmented
           label={t.progress}
           value={metric}
@@ -179,23 +158,19 @@ export function MuscleDistributionBlock({ distribution, maxCount }) {
         <div className="flex flex-col gap-2">
           {distribution.map((entry) => (
             <div key={entry.bodyPart} className="flex items-center gap-3">
-              <span className="text-xs" style={{ color: 'var(--label-2)', width: 72, flexShrink: 0 }}>
+              <span className="text-xs sb-dist-label">
                 {entry.label}
               </span>
-              <div className="flex-1" style={{ background: 'var(--fill)', borderRadius: 6, height: 8 }}>
+              <div className="flex-1 sb-dist-track">
                 <div
+                  className="sb-dist-bar"
                   style={{
                     width: `${(entry.count / maxCount) * 100}%`,
                     background: BODY_PART_ACCENT[entry.bodyPart] ?? 'var(--accent)',
-                    borderRadius: 6,
-                    height: 8,
                   }}
                 />
               </div>
-              <span
-                className="text-xs font-semibold"
-                style={{ color: 'var(--text)', width: 24, textAlign: 'right' }}
-              >
+              <span className="text-xs font-semibold text-body sb-dist-count">
                 {entry.count}
               </span>
             </div>
@@ -215,18 +190,10 @@ export function MuscleFatigueBlock({ fatigue }) {
         {fatigue.map((group) => (
           <div key={group.bodyPart} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: FATIGUE_COLOR[group.level],
-                  flexShrink: 0,
-                }}
-              />
-              <span style={{ color: 'var(--text)' }}>{group.label}</span>
+              <span className={`sb-fatigue-dot ${group.level}`} />
+              <span className="text-body">{group.label}</span>
             </div>
-            <span className="text-xs" style={{ color: 'var(--muted)' }}>
+            <span className="text-xs text-muted">
               {t[`fatigueLevel_${group.level}`]}
               {group.daysSince !== null ? ` · ${t.daysAgo.replace('{n}', group.daysSince)}` : ''}
             </span>
@@ -242,27 +209,19 @@ export function PersonalRecordsBlock({ records, expanded, onToggle }) {
   return (
     <div className="card">
       <button
-        className="tap flex items-center justify-between w-full"
+        className="tap flex items-center justify-between w-full sb-pr-toggle"
         onClick={onToggle}
-        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
         <span className="flex items-baseline gap-2">
           <span className="card-title">{t.personalRecords}</span>
           {records.length > 0 && <span className="card-meta">{records.length}</span>}
         </span>
-        <ChevronDown
-          size={18}
-          style={{
-            color: 'var(--muted)',
-            transform: expanded ? 'rotate(180deg)' : 'none',
-            transition: 'transform 0.15s',
-          }}
-        />
+        <ChevronDown className={`text-muted sb-chevron${expanded ? ' open' : ''}`} size={18} />
       </button>
 
       {expanded && (
         <>
-          <p className="text-xs mt-3" style={{ color: 'var(--muted)' }}>
+          <p className="text-xs mt-3 text-muted">
             {t.personalRecordsLegend}
           </p>
           {records.length === 0 ? (
@@ -272,16 +231,15 @@ export function PersonalRecordsBlock({ records, expanded, onToggle }) {
               {records.map((record) => (
                 <div
                   key={record.exerciseId}
-                  className="flex items-center justify-between text-sm"
-                  style={{ padding: '10px 0', borderTop: '0.5px solid var(--separator)' }}
+                  className="flex items-center justify-between text-sm sb-pr-row"
                 >
                   <div>
-                    <p style={{ color: 'var(--text)', fontWeight: 600 }}>{record.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                    <p className="text-body sb-pr-name">{record.name}</p>
+                    <p className="text-xs text-muted">
                       {record.weight}kg × {record.reps} · {record.date.slice(0, 10)}
                     </p>
                   </div>
-                  <span className="font-bold" style={{ color: 'var(--accent)' }}>
+                  <span className="font-bold sb-pr-value">
                     {Math.round(record.e1rm)}kg
                   </span>
                 </div>
@@ -311,17 +269,17 @@ export function NextAppointmentsBlock({ appointments }) {
             const type = appt.type || 'consulta'
             const typeKey = 'dashAppt' + type.charAt(0).toUpperCase() + type.slice(1)
             return (
-              <div key={appt.id || idx} className="flex items-center justify-between text-sm" style={{ padding: '10px 12px', background: isToday ? 'var(--accent-soft)' : 'var(--fill)', borderRadius: 14 }}>
+              <div key={appt.id || idx} className={`flex items-center justify-between text-sm sb-appt${isToday ? ' today' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <div style={{ background: isToday ? 'var(--accent)' : 'var(--accent-soft)', padding: 8, borderRadius: 10, display: 'flex' }}>
-                    <CalendarDays size={16} style={{ color: isToday ? '#fff' : 'var(--accent)' }} />
+                  <div className="sb-appt-icon">
+                    <CalendarDays size={16} />
                   </div>
                   <div>
-                    <p style={{ color: isToday ? 'var(--accent)' : 'var(--text)', fontWeight: 600 }}>{isToday ? t.dashToday : dateStr}</p>
-                    <p className="text-xs" style={{ color: isToday ? 'var(--accent)' : 'var(--muted)', opacity: isToday ? 0.8 : 1 }}>{t[typeKey] || type}</p>
+                    <p className="sb-appt-date">{isToday ? t.dashToday : dateStr}</p>
+                    <p className="text-xs sb-appt-type">{t[typeKey] || type}</p>
                   </div>
                 </div>
-                <span className="tabular font-bold" style={{ color: isToday ? 'var(--accent)' : 'var(--text)', fontSize: 16 }}>
+                <span className="tabular font-bold sb-appt-time">
                   {appt.time}
                 </span>
               </div>

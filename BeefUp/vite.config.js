@@ -5,6 +5,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: '/BeefUp/',
+  // Own cache per checkout; worktrees share node_modules.
+  cacheDir: '.vite',
+  build: {
+    // foodsBase (lazy food data) is 504 kB; app chunks stay below.
+    chunkSizeWarningLimit: 520,
+  },
   plugins: [
     react(),
     tailwindcss(),

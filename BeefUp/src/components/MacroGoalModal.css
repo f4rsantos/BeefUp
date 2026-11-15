@@ -1,0 +1,14 @@
+.mg-modal { padding: 26px !important; }
+.mg-title { font-size: 19px; }
+.mg-locked { margin-bottom: 22px; }
+.mg-tabs { margin-bottom: 26px !important; }
+.mg-tab { font-size: 14px !important; padding: 10px 0 !important; }
+.mg-hint { margin-top: -4px; font-size: 13px; }
+.mg-more { font-size: 13px; font-weight: 600; }
+.mg-btn-text { font-size: 15px !important; }
+.mg-label { font-size: 13px !important; }
+.mg-choice { flex: 1 !important; justify-content: center !important; padding: 11px !important; font-size: 14px !important; }
+.mg-from-workout { background: none; border: none; color: var(--accent-2); cursor: pointer; font-weight: 600; font-size: 13px; }
+.mg-activity { font-size: 13px !important; padding: 7px 13px !important; }
+.mg-ro { font-size: 16px !important; padding: 13px 14px !important; margin: 0 !important; }
+.mg-input { font-size: 16px !important; padding: 13px 14px !important; }

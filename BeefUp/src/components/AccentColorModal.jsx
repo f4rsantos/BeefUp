@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { X } from "lucide-react";
 import { PRESET_ACCENTS, hexToRgb, rgbToHex, hsvToRgb, rgbToHsv } from "../lib/colorTheme";
+import "./AccentColorModal.css";
 
 const WHEEL_SIZE = 180;
 const RADIUS = WHEEL_SIZE / 2;
@@ -82,10 +83,10 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
   }
 
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
-      <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+    <div role="dialog" aria-modal="true" className="modal-overlay ac-dialog" onClick={onClose}>
+      <div className="modal-center ac-modal" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <span className="font-semibold text-base" style={{ color: "var(--text)" }}>
+          <span className="font-semibold text-base text-body">
             {t.accentColor}
           </span>
           <button className="btn btn-ghost p-2" onClick={onClose} aria-label={t.cancel}>
@@ -94,9 +95,10 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
         </div>
 
         <div className="flex gap-4">
-          <div className="flex flex-col items-center" style={{ flexShrink: 0 }}>
+          <div className="flex flex-col items-center flex-shrink-0">
             <div
-              style={{ position: "relative", width: WHEEL_SIZE, height: WHEEL_SIZE, touchAction: "none" }}
+              className="ac-wheel-box"
+              style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
               onPointerDown={handlePointer}
               onPointerMove={(e) => e.buttons === 1 && handlePointer(e)}
             >
@@ -104,22 +106,9 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
                 ref={canvasRef}
                 width={WHEEL_SIZE}
                 height={WHEEL_SIZE}
-                style={{ borderRadius: "50%", display: "block" }}
+                className="ac-wheel"
               />
-              <div
-                style={{
-                  position: "absolute",
-                  left: marker.x,
-                  top: marker.y,
-                  width: 14,
-                  height: 14,
-                  borderRadius: "50%",
-                  border: "2px solid #fff",
-                  boxShadow: "0 0 0 1px rgba(0,0,0,0.3)",
-                  transform: "translate(-50%, -50%)",
-                  pointerEvents: "none",
-                }}
-              />
+              <div className="ac-marker" style={{ left: marker.x, top: marker.y }} />
             </div>
             <input
               type="range"
@@ -127,30 +116,24 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
               max={100}
               value={Math.round(brightness * 100)}
               onChange={handleBrightness}
-              style={{ width: WHEEL_SIZE, marginTop: 14 }}
+              className="ac-range"
+              style={{ width: WHEEL_SIZE }}
               aria-label={t.accentColor}
             />
           </div>
 
-          <div className="flex flex-col gap-2" style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
             {PRESET_ACCENTS.map(({ id, hex, label }) => (
               <button
                 key={id}
-                className="flex items-center gap-2"
-                style={{ background: "none", border: "none", padding: "4px 2px", cursor: "pointer" }}
+                className="flex items-center gap-2 ac-preset"
                 onClick={() => onSelectPreset(id)}
               >
                 <span
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    background: hex,
-                    flexShrink: 0,
-                    border: value === hex ? "2px solid var(--text)" : "2px solid transparent",
-                  }}
+                  className="ac-swatch"
+                  style={{ background: hex, border: value === hex ? "2px solid var(--text)" : "2px solid transparent" }}
                 />
-                <span className="text-xs truncate" style={{ color: "var(--text)" }}>{t[label]}</span>
+                <span className="text-xs truncate text-body">{t[label]}</span>
               </button>
             ))}
           </div>

@@ -1,0 +1,61 @@
+.pe-title {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+}
+
+.pe-locked-note {
+  margin-top: -8px !important;
+}
+
+.pe-label {
+  display: block !important;
+  margin-bottom: 6px !important;
+}
+
+.pe-days-title {
+  margin-bottom: 0 !important;
+}
+
+.pe-count {
+  pointer-events: none !important;
+}
+
+.pe-day {
+  background: var(--surface2) !important;
+}
+
+.pe-day-num {
+  font-weight: 700 !important;
+}
+
+.pe-day-type {
+  flex-shrink: 0 !important;
+  background: var(--accent-soft) !important;
+}
+
+.pe-day-type svg {
+  color: var(--accent) !important;
+}
+
+.pe-day-type.rest {
+  background: var(--accent-2-soft) !important;
+}
+
+.pe-day-type.rest svg {
+  color: var(--accent-2) !important;
+}
+
+.pe-select {
+  font-size: 12px !important;
+  padding: 7px 9px !important;
+}
+
+.pe-add {
+  border-style: dashed !important;
+}
+
+.pe-layer {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 200 !important;
+}

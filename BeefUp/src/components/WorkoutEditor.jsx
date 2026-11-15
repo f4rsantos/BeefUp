@@ -11,6 +11,7 @@ import NumberField from "./NumberField";
 import TimeField from "./TimeField";
 import ConfirmModal from "./ConfirmModal";
 import { localizedName } from "../lib/localizedName"
+import "./WorkoutEditor.css";
 
 function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   useEscapeKey(onClose);
@@ -21,13 +22,13 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
   const cardio = isCardioExercise(item.ref);
 
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" className="modal-overlay we-dialog" onClick={onClose}>
       <div className="modal-center" onClick={(e) => e.stopPropagation()}>
-        <p className="font-semibold mb-3" style={{ color: "var(--text)" }}>{exerciseLabel}</p>
+        <p className="font-semibold mb-3 text-body">{exerciseLabel}</p>
 
         <div className="flex flex-col gap-3">
           <div>
-            <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.exerciseNote}</label>
+            <label className="text-xs mb-1 block text-muted">{t.exerciseNote}</label>
             <textarea
               className="field w-full"
               rows={2}
@@ -38,7 +39,7 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
           <div className="flex gap-3">
             {!cardio && (
               <div className="flex-1">
-                <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.weight}</label>
+                <label className="text-xs mb-1 block text-muted">{t.weight}</label>
                 <NumberField
                   className="field w-full"
                   value={weight}
@@ -47,7 +48,7 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
               </div>
             )}
             <div className="flex-1">
-              <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{cardio ? t.unitMeters : t.reps}</label>
+              <label className="text-xs mb-1 block text-muted">{cardio ? t.unitMeters : t.reps}</label>
               <NumberField
                 className="field w-full"
                 allowDecimal={false}
@@ -57,7 +58,7 @@ function ExercisePresetModal({ item, exerciseLabel, onSave, onClose, t }) {
             </div>
             {cardio && (
               <div className="flex-1">
-                <label className="text-xs mb-1 block" style={{ color: "var(--muted)" }}>{t.cardioTime} (mm:ss)</label>
+                <label className="text-xs mb-1 block text-muted">{t.cardioTime} (mm:ss)</label>
                 <TimeField
                   className="field w-full"
                   value={time}
@@ -123,22 +124,21 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+    <div className="flex flex-col h-full we-root">
       <div
-        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-6 flex flex-col gap-4 scrollbar-hide fade-in page-pad"
       >
         <div className="flex items-center gap-1">
           <button className="btn-back" onClick={onBack} aria-label={t.back}>
-            <ChevronLeft size={24} style={{ color: "var(--text)" }} />
+            <ChevronLeft className="text-body" size={24} />
           </button>
-          <h1 className="display" style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>
+          <h1 className="display text-body we-title">
             {workout?.id ? t.editWorkout : t.newWorkout}
           </h1>
         </div>
         <div className="card flex flex-col gap-3">
           <div>
-            <label className="section-title" style={{ marginBottom: 6, display: "block" }}>
+            <label className="section-title we-name-label">
               {t.workoutName}
             </label>
             <div className="flex gap-2">
@@ -164,8 +164,7 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
           </div>
           <div>
             <label
-              className="text-xs mb-1 block"
-              style={{ color: "var(--muted)" }}
+              className="text-xs mb-1 block text-muted"
             >
               Tempo entre sets (s)
             </label>
@@ -181,8 +180,8 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
 
         <div className="card flex flex-col gap-2">
           <div className="section-header">
-            <p className="section-title" style={{ marginBottom: 0 }}>{t.exercises}</p>
-            <span className="chip active" style={{ pointerEvents: "none" }}>{exItems.length}</span>
+            <p className="section-title we-count-label">{t.exercises}</p>
+            <span className="chip active we-count">{exItems.length}</span>
           </div>
           {exItems.map((item, i) => {
             const ex = resolveExercise(item.ref);
@@ -190,34 +189,32 @@ export default function WorkoutEditor({ workout, onSave, onBack, lang, t, isActi
             return (
               <div
                 key={`${item.ref}-${i}`}
-                className="flex items-center gap-2 py-2.5 px-3 rounded-xl"
-                style={{ background: "var(--surface2)" }}
+                className="flex items-center gap-2 py-2.5 px-3 rounded-xl we-ex-row"
               >
-                <GripVertical size={15} style={{ color: "var(--border)", flexShrink: 0 }} />
-                <span className="text-sm flex-1 truncate" style={{ color: "var(--text)" }}>
+                <GripVertical className="we-grip" size={15} />
+                <span className="text-sm flex-1 truncate text-body">
                   {localizedName(ex, lang)}
                 </span>
                 <button className="btn-icon p-1" onClick={() => setEditingExIdx(i)} aria-label={t.edit}>
-                  <Pencil size={14} style={{ color: "var(--muted)" }} />
+                  <Pencil className="text-muted" size={14} />
                 </button>
                 <button
                   className="btn-icon p-1"
                   onClick={() => setExItems((prev) => prev.filter((_, j) => j !== i))}
                   aria-label={t.delete}
                 >
-                  <Trash2 size={14} style={{ color: "var(--muted)" }} />
+                  <Trash2 className="text-muted" size={14} />
                 </button>
               </div>
             );
           })}
           {exItems.length === 0 && (
-            <p className="text-xs" style={{ color: "var(--muted)", padding: "4px 2px" }}>
+            <p className="text-xs text-muted we-empty">
               {t.noExercisesYet}
             </p>
           )}
           <button
-            className="btn btn-ghost w-full py-2.5 text-sm mt-1"
-            style={{ borderStyle: "dashed" }}
+            className="btn btn-ghost w-full py-2.5 text-sm mt-1 we-add"
             onClick={() => setShowPicker(true)}
           >
             <Plus size={15} /> {t.addExercise}

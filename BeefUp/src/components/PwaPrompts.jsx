@@ -1,70 +1,37 @@
 import { useApp } from "../context/useApp";
 import usePwa from "../lib/usePwa";
 import { Download, RefreshCw, X } from "lucide-react";
+import "./PwaPrompts.css";
 
 function Banner({ Icon, title, desc, action, onAction, onDismiss, dismissLabel, aboveNav }) {
   return (
     <div
-      className="fade-in glass"
-      style={{
-        position: "absolute",
-        left: 12,
-        right: 12,
-        bottom: aboveNav ? "calc(var(--dock-h, 0px) + 12px)" : "calc(12px + env(safe-area-inset-bottom))",
-        zIndex: 60,
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: 12,
-        borderRadius: 22,
-      }}
+      className="fade-in glass pwa-banner"
+      style={{ bottom: aboveNav ? "calc(var(--dock-h, 0px) + 12px)" : "calc(12px + env(safe-area-inset-bottom))" }}
     >
-      <div
-        style={{
-          display: "grid",
-          placeItems: "center",
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          flexShrink: 0,
-          background: "var(--accent-soft)",
-          color: "var(--accent)",
-        }}
-      >
+      <div className="pwa-icon">
         <Icon size={18} />
       </div>
 
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-body">
           {title}
         </p>
-        <p className="text-xs" style={{ color: "var(--muted)" }}>
+        <p className="text-xs text-muted">
           {desc}
         </p>
       </div>
 
       {action && (
-        <button className="btn btn-primary" style={{ flexShrink: 0 }} onClick={onAction}>
+        <button className="btn btn-primary flex-shrink-0" onClick={onAction}>
           {action}
         </button>
       )}
 
-      <button
+      <button className="text-muted pwa-dismiss"
         aria-label={dismissLabel}
         title={dismissLabel}
         onClick={onDismiss}
-        style={{
-          flexShrink: 0,
-          display: "grid",
-          placeItems: "center",
-          width: 28,
-          height: 28,
-          border: "none",
-          borderRadius: 8,
-          background: "transparent",
-          color: "var(--muted)",
-          cursor: "pointer",
-        }}
       >
         <X size={16} />
       </button>

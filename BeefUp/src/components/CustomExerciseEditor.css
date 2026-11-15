@@ -1,0 +1,13 @@
+.ce-root { position: absolute; inset: 0; z-index: 100; }
+.ce-head { margin-bottom: 16px; }
+.ce-title { font-size: 24px !important; font-weight: 700 !important; }
+.ce-section { margin-bottom: 20px; }
+.ce-section-lg { margin-bottom: 24px; }
+.ce-label { font-size: 13px !important; }
+.ce-label-flat { margin: 0 !important; }
+.ce-input { font-size: 16px !important; padding: 13px 14px !important; }
+.ce-textarea { font-size: 15px !important; padding: 13px 14px !important; min-height: 80px; resize: vertical; }
+.ce-body-btn { padding: 4px 8px !important; font-size: 12px !important; color: var(--accent) !important; }
+.ce-save { font-size: 15px !important; }
+.ce-dialog { align-items: center !important; }
+.ce-body-modal { max-width: 420px !important; }

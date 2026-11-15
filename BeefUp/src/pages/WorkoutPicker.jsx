@@ -3,6 +3,7 @@ import { Star, Search, Play, Dumbbell } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { getPref, setPref } from "../lib/prefs";
 import NavHeader from "../components/ui/NavHeader";
+import "./WorkoutPicker.css";
 
 export default function WorkoutPicker({ onSelect, onBack }) {
   const { t, lang, workouts } = useApp();
@@ -44,10 +45,9 @@ export default function WorkoutPicker({ onSelect, onBack }) {
   }, [workouts, query, favIds]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--canvas, var(--bg))", position: "relative" }}>
+    <div className="flex flex-col h-full canvas-bg wk-root">
       <div
-        className="flex-1 overflow-y-auto pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in"
-        style={{ paddingTop: "var(--page-py-top)", paddingLeft: "var(--page-px)", paddingRight: "var(--page-px)" }}
+        className="flex-1 overflow-y-auto pb-24 flex flex-col gap-2.5 scrollbar-hide fade-in page-pad"
       >
         <NavHeader
           title={t.startAnother}
@@ -55,11 +55,10 @@ export default function WorkoutPicker({ onSelect, onBack }) {
           backLabel={t.back}
         />
 
-        <div style={{ position: "relative" }}>
-          <Search size={16} style={{ position: "absolute", left: 12, top: 13, color: "var(--muted)" }} />
+        <div className="wk-search-box">
+          <Search className="text-muted wk-search-icon" size={16} />
           <input
-            className="field"
-            style={{ paddingLeft: 38 }}
+            className="field wk-search"
             placeholder={t.searchExercises}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -68,36 +67,29 @@ export default function WorkoutPicker({ onSelect, onBack }) {
         </div>
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center flex-1 py-16">
-            <p className="text-sm" style={{ color: "var(--muted)" }}>{t.noResults}</p>
+            <p className="text-sm text-muted">{t.noResults}</p>
           </div>
         ) : (
           filtered.map((w) => {
             const isFav = favIds.includes(w.id);
             const name = w.name;
             return (
-              <div key={w.id} className="card flex items-center gap-3" style={{ padding: 14 }}>
+              <div key={w.id} className="card flex items-center gap-3 wk-row">
                 <button
                   className="p-1"
                   onClick={() => toggleFav(w.id)}
                   aria-label="favourite"
                 >
-                  <Star
-                    size={18}
-                    style={{
-                      color: isFav ? "var(--accent-2)" : "var(--border)",
-                      fill: isFav ? "var(--accent-2)" : "none",
-                    }}
-                  />
+                  <Star size={18} className={`wk-star${isFav ? " on" : ""}`} />
                 </button>
-                <button className="flex-1 text-left" style={{ minWidth: 0 }} onClick={() => onSelect(w)}>
-                  <p className="font-bold text-sm truncate" style={{ color: "var(--text)" }}>{name}</p>
-                  <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--muted)" }}>
+                <button className="flex-1 text-left wk-name" onClick={() => onSelect(w)}>
+                  <p className="font-bold text-sm truncate text-body">{name}</p>
+                  <p className="text-xs mt-0.5 flex items-center gap-1 text-muted">
                     <Dumbbell size={11} /> {w.exercises?.length ?? 0} {t.exercises}
                   </p>
                 </button>
                 <button
-                  className="btn btn-primary"
-                  style={{ padding: "8px 12px" }}
+                  className="btn btn-primary wk-play"
                   onClick={() => onSelect(w)}
                   aria-label={t.startWorkout}
                 >
@@ -110,23 +102,7 @@ export default function WorkoutPicker({ onSelect, onBack }) {
       </div>
 
       <button
-        className="btn btn-primary"
-        style={{
-          position: "absolute",
-          bottom: 32,
-          left: "50%",
-          transform: "translateX(-50%)",
-          padding: "14px 24px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          fontSize: 18,
-          fontWeight: 700,
-          borderRadius: 16,
-          boxShadow: "var(--shadow-glow)",
-          zIndex: 50,
-          whiteSpace: "nowrap"
-        }}
+        className="btn btn-primary wk-free"
         onClick={() => onSelect({ id: null, name: lang === "pt" ? "Treino Livre" : "Empty Workout", exercises: [] })}
       >
         {lang === "pt" ? "Treino Livre" : "Empty Workout"}

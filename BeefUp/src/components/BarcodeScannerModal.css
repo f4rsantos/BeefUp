@@ -1,0 +1,35 @@
+.bs-overlay { z-index: 60 !important; }
+.bs-stage { position: absolute; inset: 0; background: #000; }
+.bs-video { flex: 1; object-fit: cover; width: 100%; }
+.bs-close {
+  position: absolute !important;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 999px !important;
+  padding: 8px !important;
+}
+.bs-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  max-width: 320px;
+  aspect-ratio: 2 / 1;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+}
+.bs-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 20px 32px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+.bs-msg { color: #fff; font-size: 14px; }
+.bs-msg-warn { color: #fbbf24; }
+.bs-msg-error { color: #f87171; }
+.bs-center { text-align: center; }
+.bs-icon { display: inline; vertical-align: -3px; margin-right: 6px; }

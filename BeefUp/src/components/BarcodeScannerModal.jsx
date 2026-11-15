@@ -4,6 +4,7 @@ import { X, ScanLine } from "lucide-react";
 import { loadBarcodeDetector } from "../lib/barcodeDetector";
 import { foodProvider } from "../lib/foodProvider";
 import { RateLimitError } from "../lib/openFoodFacts";
+import "./BarcodeScannerModal.css";
 
 const SCAN_INTERVAL_MS = 300;
 const FORMATS = ["ean_13", "ean_8", "upc_a", "upc_e"];
@@ -93,72 +94,60 @@ export default function BarcodeScannerModal({ lang, t, onFound, onClose }) {
   }, [lang]);
 
   return (
-    <div role="dialog" aria-modal="true" className="modal-overlay" style={{ zIndex: 60 }}>
-      <div className="flex flex-col" style={{ position: "absolute", inset: 0, background: "#000" }}>
+    <div role="dialog" aria-modal="true" className="modal-overlay bs-overlay">
+      <div className="flex flex-col bs-stage">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          style={{ flex: 1, objectFit: "cover", width: "100%" }}
+          className="bs-video"
         />
 
         <button
-          className="btn-icon"
+          className="btn-icon bs-close"
           onClick={onClose}
           aria-label={t.close}
-          style={{
-            position: "absolute", top: 16, right: 16,
-            background: "rgba(0,0,0,0.5)", borderRadius: 999, padding: 8,
-          }}
         >
           <X size={22} color="#fff" />
         </button>
 
         {state === "scanning" && (
-          <div
-            style={{
-              position: "absolute", top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "70%", maxWidth: 320, aspectRatio: "2 / 1",
-              border: "2px solid rgba(255,255,255,0.8)", borderRadius: 12,
-            }}
-          />
+          <div className="bs-frame" />
         )}
 
         <div
-          className="flex flex-col items-center gap-3"
-          style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 20px 32px", background: "linear-gradient(transparent, rgba(0,0,0,0.75))" }}
+          className="flex flex-col items-center gap-3 bs-footer"
         >
           {(state === "starting" || state === "looking") && (
-            <p style={{ color: "#fff", fontSize: 14 }}>
-              <ScanLine size={16} style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />
+            <p className="bs-msg">
+              <ScanLine className="bs-icon" size={16} />
               {state === "starting" ? t.scanPreparingCamera : t.searchingFood}
             </p>
           )}
           {state === "scanning" && (
-            <p style={{ color: "#fff", fontSize: 14 }}>{t.scanAimAtBarcode}</p>
+            <p className="bs-msg">{t.scanAimAtBarcode}</p>
           )}
           {state === "notfound" && (
             <>
-              <p style={{ color: "#fff", fontSize: 14 }}>{t.scanProductNotFound}</p>
+              <p className="bs-msg">{t.scanProductNotFound}</p>
               <button className="btn btn-ghost py-2 px-4 text-sm" onClick={runLoop}>{t.scanTryAgain}</button>
             </>
           )}
           {state === "limited" && (
-            <p style={{ color: "#fbbf24", fontSize: 14 }}>{t.foodSearchLimit.replace("{n}", retryAfter)}</p>
+            <p className="bs-msg bs-msg-warn">{t.foodSearchLimit.replace("{n}", retryAfter)}</p>
           )}
           {state === "error" && (
             <>
-              <p style={{ color: "#f87171", fontSize: 14 }}>{t.foodSearchFailed}</p>
+              <p className="bs-msg bs-msg-error">{t.foodSearchFailed}</p>
               <button className="btn btn-ghost py-2 px-4 text-sm" onClick={runLoop}>{t.retry}</button>
             </>
           )}
           {state === "denied" && (
-            <p style={{ color: "#f87171", fontSize: 14, textAlign: "center" }}>{t.scanCameraDenied}</p>
+            <p className="bs-msg bs-msg-error bs-center">{t.scanCameraDenied}</p>
           )}
           {state === "nocamera" && (
-            <p style={{ color: "#f87171", fontSize: 14, textAlign: "center" }}>{t.scanNoCamera}</p>
+            <p className="bs-msg bs-msg-error bs-center">{t.scanNoCamera}</p>
           )}
         </div>
       </div>
