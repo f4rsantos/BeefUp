@@ -53,6 +53,14 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       );
   });
 
+  // Suggestions the user removed this workout: never offered again, and their
+  // muscles get a penalty. Lives in the draft so it survives minimising.
+  const [rejectedSuggestions, setRejectedSuggestions] = useState(() => {
+    const draft = getLS("activeWorkoutDraft", null);
+    if (draft && draft.startedAt === activeWorkout?.startedAt) return draft.rejectedSuggestions ?? [];
+    return [];
+  });
+
   const exercisesRef = useRef(exercises);
   useEffect(() => {
     exercisesRef.current = exercises;
@@ -66,6 +74,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const activateExercise = useCallback((id) => setFocusId(id), []);
   // The touched exercise, else the first with a set to do.
   const currentExIdx = currentExerciseIndex(exercises, focusId);
+
+  const suggestFor = useMemo(
+    () => ({ currentRefs: exercises.map((e) => e.exerciseId), rejectedRefs: rejectedSuggestions }),
+    [exercises, rejectedSuggestions],
+  );
 
   const exerciseIdsKey = JSON.stringify(exercises.map((e) => e.exerciseId));
   const previousSetsById = useMemo(
@@ -91,11 +104,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   useEffect(() => {
     if (!activeWorkout) return;
     const id = setTimeout(() => {
-      setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer, focusId });
+      setLS("activeWorkoutDraft", { startedAt: activeWorkout.startedAt, exercises, restState, setTimer, rejectedSuggestions, focusId });
     }, 300);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt, focusId]);
+  }, [exercises, activeWorkout, restState?.endsAt, restState?.running, restState?.done, setTimer?.endsAt, rejectedSuggestions, focusId]);
 
   // Shared with MiniWorkoutBar so the clock survives this component being hidden while the workout stays running.
   const [fallbackStart] = useState(() => Date.now());
@@ -277,6 +290,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   }, []);
 
   const removeExercise = useCallback((exIdx) => {
+    const removed = exercisesRef.current[exIdx];
+    if (removed?.suggested) setRejectedSuggestions((prev) => [...prev, removed.exerciseId]);
     setExercises((prev) => prev.filter((_, i) => i !== exIdx));
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
   }, []);
@@ -303,6 +318,8 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
     const ex = resolveExercise(pick.ref);
     if (!ex) return;
     const entry = buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, pick.barType);
+    const replaced = exercisesRef.current[exIdx];
+    if (replaced?.suggested) setRejectedSuggestions((prev) => [...prev, replaced.exerciseId]);
     setExercises((prev) => prev.map((e, i) => (i === exIdx ? entry : e)));
     setFocusId(entry.id);
     setSetTimer((prevTimer) => (timerBelongsTo(prevTimer, exIdx) ? null : prevTimer));
@@ -311,9 +328,11 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
 
   const addExercises = useCallback((picks) => {
     const entries = picks
-      .map(({ ref, barType }) => {
+      .map(({ ref, barType, suggested }) => {
         const ex = resolveExercise(ref);
-        return ex && buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, barType);
+        if (!ex) return null;
+        const entry = buildExerciseEntry(ex, lastCompletedSets(sessions, ex.id), lastExerciseNote(sessions, ex.id), null, barType);
+        return suggested ? { ...entry, suggested: true } : entry;
       })
       .filter(Boolean);
     if (entries.length === 0) return;
@@ -472,6 +491,7 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
       )}
       {showExPicker && (
         <ExercisePicker
+          suggestFor={suggestFor}
           onConfirm={addExercises}
           onClose={() => setShowExPicker(false)}
         />
