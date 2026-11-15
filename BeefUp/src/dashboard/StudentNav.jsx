@@ -71,7 +71,7 @@ export function StudentNavBar({ areas, section, onSelect }) {
 
   return (
     <>
-      <button type="button" className="dash-snav-bar" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <button type="button" className="glass dash-snav-bar" onClick={() => setOpen(true)} aria-haspopup="dialog">
         <area.Icon size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
         <span className="dash-snav-bar-area">{area.label}</span>
         {view && (
@@ -112,8 +112,8 @@ function SwitcherList({ students, currentId, onPick }) {
     <div className="flex flex-col" style={{ gap: 2 }}>
       {students.length > 6 && (
         <label className="dash-search">
-          <Search size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.dashSearchClients} aria-label={t.dashSearchClients} autoFocus />
+          <Search size={16} className="dash-search-icon" aria-hidden="true" />
+          <input className="field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.dashSearchClients} aria-label={t.dashSearchClients} autoFocus />
         </label>
       )}
       {shown.map((s) => (
@@ -164,7 +164,7 @@ export function StudentSwitcher({ current, students, onSwitch }) {
       {open && isDesktop && (
         <>
           <div className="dash-pop-backdrop" onClick={() => setOpen(false)} />
-          <div className="dash-pop">{list}</div>
+          <div className="glass-menu dash-pop">{list}</div>
         </>
       )}
       {open && !isDesktop && (

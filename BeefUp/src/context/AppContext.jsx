@@ -12,6 +12,7 @@ import { useBrand } from '../lib/useBrand'
 import { registerCustomExercises } from '../lib/exerciseTree'
 import { migrateExerciseRefs, canonicalizeList, canonicalSession, canonicalWorkout } from '../lib/refMigration'
 import strings from '../strings'
+import { applyThemeWithReveal } from '../lib/themeTransition'
 
 
 function upsertById(list, item) {
@@ -105,7 +106,11 @@ export function AppProvider({ children }) {
     if (hydrated) setPref('theme', theme)
   }, [theme, hydrated])
 
-  const setTheme = useCallback((v) => setThemeState(v), [])
+  const setTheme = useCallback((v) => {
+    const current = document.documentElement.getAttribute('data-theme')
+    if (v === current) return
+    applyThemeWithReveal(current, v, setThemeState)
+  }, [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-font-scale', fontScale)

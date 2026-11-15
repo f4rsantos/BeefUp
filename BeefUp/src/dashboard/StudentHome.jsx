@@ -4,6 +4,8 @@ import { useApp } from "../context/useApp";
 import { formatDateShort } from "../lib/planUtils";
 import { nextAppointment, pendingCount, weekdayOf } from "./appointments";
 import { Skeleton } from "./parts";
+import { useIsDesktop } from "../lib/useIsDesktop";
+import LargeTitle from "../components/ui/LargeTitle";
 
 const SCOPE_IDS = ["workouts", "nutrition", "measures", "calendar"];
 
@@ -14,7 +16,7 @@ function StudentCard({ student, schedule, onOpen }) {
   const shared = SCOPE_IDS.filter((id) => (student.scopes || []).includes(id)).map((id) => t[id]);
 
   return (
-    <button type="button" className="dash-scard" onClick={onOpen}>
+    <button type="button" className="card dash-scard" onClick={onOpen}>
       <span className="dash-scard-name">{student.name}</span>
       <ChevronRight size={18} className="dash-scard-go" aria-hidden="true" />
       <span className="dash-scard-next">
@@ -32,6 +34,7 @@ function StudentCard({ student, schedule, onOpen }) {
 
 export default function StudentHome({ students, loading, failed, onRetry, onOpen, onInvite }) {
   const { t, clients: annotations } = useApp();
+  const isDesktop = useIsDesktop();
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const shown = q ? students.filter((s) => s.name.toLowerCase().includes(q)) : students;
@@ -39,36 +42,44 @@ export default function StudentHome({ students, loading, failed, onRetry, onOpen
   return (
     <div className="dash-home">
       <div className="dash-home-inner">
-        <div className="dash-home-head">
-          <h1 className="dash-home-title">
-            {t.dashClients}
-            {students.length > 0 && <span className="dash-home-count tabular">{students.length}</span>}
-          </h1>
-          {students.length > 3 && (
-            <label className="dash-search">
-              <Search size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t.dashSearchClients}
-                aria-label={t.dashSearchClients}
-              />
-            </label>
-          )}
-          <button className="btn btn-primary flex items-center justify-center gap-2" onClick={onInvite}>
+        {isDesktop && (
+          <LargeTitle
+            title={t.dashClients}
+            actions={
+              <button className="btn btn-primary flex items-center justify-center gap-2" onClick={onInvite}>
+                <Plus size={16} /> {t.dashInviteClient}
+              </button>
+            }
+          />
+        )}
+        {!isDesktop && (
+          <button className="btn btn-primary w-full flex items-center justify-center gap-2" onClick={onInvite}>
             <Plus size={16} /> {t.dashInviteClient}
           </button>
-        </div>
+        )}
+        {students.length > 3 && (
+          <label className="dash-search">
+            <Search size={16} className="dash-search-icon" aria-hidden="true" />
+            <input
+              className="field"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t.dashSearchClients}
+              aria-label={t.dashSearchClients}
+            />
+          </label>
+        )}
 
         {loading && <Skeleton rows={3} />}
         {failed && (
-          <div className="dash-panel">
+          <div className="card dash-panel">
             <p className="text-sm" style={{ color: "var(--danger)" }}>{t.dashClientsLoadFailed}</p>
             <button className="btn btn-ghost mt-2" onClick={onRetry}>{t.retry}</button>
           </div>
         )}
         {!loading && !failed && students.length === 0 && (
-          <div className="dash-panel">
+          <div className="card dash-panel">
             <p className="dash-empty">{t.dashNoClients}</p>
           </div>
         )}

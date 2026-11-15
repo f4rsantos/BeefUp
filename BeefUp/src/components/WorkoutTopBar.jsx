@@ -23,22 +23,20 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
         </IconButton>
       </div>
 
-      <div
-        className="flex items-center gap-2"
-        style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          pointerEvents: "none",
-          background: "var(--fill)",
-          borderRadius: 999,
-          padding: "7px 14px",
-        }}
-      >
-        <span className="workout-timer-dot" />
-        <span className="stat-value text-body" style={{ fontSize: 17 }}>
-          {formatElapsedClock(elapsed)}
-        </span>
+      <div className="flex justify-center" style={{ flex: 1, minWidth: 0, pointerEvents: "none" }}>
+        <div
+          className="flex items-center gap-2"
+          style={{
+            background: "var(--fill)",
+            borderRadius: 999,
+            padding: "7px 14px",
+          }}
+        >
+          <span className="workout-timer-dot" />
+          <span className="stat-value text-body" style={{ fontSize: 17 }}>
+            {formatElapsedClock(elapsed)}
+          </span>
+        </div>
       </div>
 
       <IconButton variant="danger" label={t.end} onClick={onEnd}>

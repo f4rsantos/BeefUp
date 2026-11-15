@@ -1,20 +1,16 @@
 import { useBrand } from "../lib/useBrand";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Apple, Check, Dumbbell, Plus, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
+import { Apple, Check, Dumbbell, RefreshCw, Smartphone, Sparkles, UserCheck, Volume2 } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { buildDemoPreset } from "../lib/demoData";
-import { accentHexOf, PRESET_ACCENTS } from "../lib/colorTheme";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { getLink, setScopes as applyScopes, unlink } from "../lib/sync/link";
 import { useSync } from "../lib/sync/useSync";
-import AccentColorModal from "../components/AccentColorModal";
-import { useThemeOptions, useFontScaleOptions, useLanguageOptions } from "../lib/usePreferenceOptions";
+import AppearancePanel from "../components/AppearancePanel";
 import BackupSection from "../components/BackupSection";
 import ConfirmModal from "../components/ConfirmModal";
 import Screen from "../components/ui/Screen";
 import LargeTitle from "../components/ui/LargeTitle";
-import Segmented from "../components/ui/Segmented";
-import ChoiceTiles from "../components/ui/ChoiceTiles";
 import ToggleTile from "../components/ui/ToggleTile";
 import GlassPanel from "../components/ui/GlassPanel";
 import SectionHeader from "../components/ui/SectionHeader";
@@ -32,53 +28,6 @@ const TILE_COLORS = {
   nutrition: "#30c25a",
 };
 
-function FieldLabel({ children }) {
-  return <p className="card-meta sp-label">{children}</p>;
-}
-
-function AccentSwatches({ current, isCustom, customHex, onPreset, onCustom, t }) {
-  return (
-    <div className="swatches" role="radiogroup" aria-label={t.accentColor}>
-      {PRESET_ACCENTS.map(({ id, hex, label }) => (
-        <button
-          key={id}
-          type="button"
-          role="radio"
-          aria-checked={current === id}
-          aria-label={t[label]}
-          title={t[label]}
-          className={`swatch ${current === id ? "on" : ""}`}
-          style={{ "--swatch": hex }}
-          onClick={() => onPreset(id)}
-        >
-          {current === id && <Check size={18} strokeWidth={3} color="#fff" />}
-        </button>
-      ))}
-      <button
-        type="button"
-        aria-label={t.accentColor}
-        title={t.accentColor}
-        className={`swatch more ${isCustom ? "on" : ""}`}
-        style={{ "--swatch": isCustom ? customHex : "transparent" }}
-        onClick={onCustom}
-      >
-        {isCustom ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
-      </button>
-    </div>
-  );
-}
-
-function FontScaleSegmented({ label }) {
-  const { options, ...rest } = useFontScaleOptions();
-  return (
-    <Segmented
-      {...rest}
-      label={label}
-      options={options.map((o) => ({ ...o, content: <span className="sp-glyph" style={{ fontSize: o.size - 2 }}>A</span> }))}
-    />
-  );
-}
-
 export default function SettingsPage() {
   const {
     t,
@@ -87,22 +36,14 @@ export default function SettingsPage() {
     setSoundEnabled,
     keepAwake,
     setKeepAwake,
-    setAccentColor,
-    effectiveAccent,
-    accentChosen,
-    resetAccentToBrand,
-    setCustomAccentColor,
     savePlan,
     saveWorkout,
     setActivePlan,
     sectionPrefs,
     setSectionPrefs,
   } = useApp();
-  const themeOptions = useThemeOptions();
-  const languageOptions = useLanguageOptions();
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [showTrainerLink, setShowTrainerLink] = useState(false);
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [trainerLink, setTrainerLink] = useState(null);
@@ -170,7 +111,6 @@ export default function SettingsPage() {
     { id: "nutrition", Icon: Apple, label: t.nutrition },
   ];
 
-  const currentAccentHex = accentHexOf(effectiveAccent.accentColor, effectiveAccent.customAccentHex);
 
   async function loadDemoPreset() {
     setLoadingDemo(true);
@@ -195,16 +135,6 @@ export default function SettingsPage() {
 
   const modals = (
     <>
-      {showColorPicker && (
-        <AccentColorModal
-          value={currentAccentHex}
-          t={t}
-          onSelectPreset={(id) => { setAccentColor(id); setShowColorPicker(false); }}
-          onPickCustom={setCustomAccentColor}
-          onClose={() => setShowColorPicker(false)}
-        />
-      )}
-
       {showTrainerLink && (
         <Suspense fallback={null}>
           <TrainerLinkModal
@@ -231,30 +161,7 @@ export default function SettingsPage() {
     <Screen gap={28} after={modals}>
       <LargeTitle title={t.settingsTitle} />
 
-      <GlassPanel title={t.theme}>
-        <ChoiceTiles {...themeOptions} label={t.theme} />
-
-        <FieldLabel>{t.accentColor}</FieldLabel>
-        <AccentSwatches
-          current={effectiveAccent.accentColor}
-          isCustom={effectiveAccent.accentColor === "custom"}
-          customHex={effectiveAccent.customAccentHex}
-          onPreset={setAccentColor}
-          onCustom={() => setShowColorPicker(true)}
-          t={t}
-        />
-        {brand?.color && accentChosen && (
-          <button className="text-button sp-brand-color" onClick={resetAccentToBrand}>
-            {brand.name ? t.brandUseColor.replace("{name}", brand.name) : t.brandUseColorNoName}
-          </button>
-        )}
-
-        <FieldLabel>{t.fontSize}</FieldLabel>
-        <FontScaleSegmented label={t.fontSize} />
-
-        <FieldLabel>{t.language}</FieldLabel>
-        <Segmented {...languageOptions} label={t.language} />
-      </GlassPanel>
+      <AppearancePanel />
 
       <section>
         <SectionHeader title={t.sound} />

@@ -700,3 +700,10 @@ input.field:focus, select.field:focus, textarea.field:focus {
 }
 .workout-icon-option.on { border-color: var(--art-color); }
 .workout-icon-check { position: absolute; top: 4px; right: 4px; }
+
+/* Theme switch: circle reveal from the press point (see lib/themeTransition.js). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

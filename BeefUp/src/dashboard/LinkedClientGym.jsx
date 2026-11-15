@@ -8,12 +8,14 @@ import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { friendlyError } from "../lib/friendlyError";
 import { isPrescribed, uid, todayISO, addPlanDay, updatePlanDay, removePlanDay } from "../lib/planUtils";
 import { STORES } from "../lib/stores";
+import Segmented from "../components/ui/Segmented";
+import Select from "../components/ui/Select";
 
 // Prescribed workouts as cards, the student's own below.
 function WorkoutCard({ workout, mine, lang, t, busy, onEdit, onDelete }) {
   const items = normalizeWorkoutExercises(workout.exercises);
   return (
-    <div className={`dash-workcard ${mine ? "is-mine" : ""}`}>
+    <div className={`card dash-workcard ${mine ? "is-mine" : ""}`}>
       <div className="dash-workcard-top">
         <div style={{ minWidth: 0 }}>
           <div className="dash-workcard-name truncate">{workout.name}</div>
@@ -258,7 +260,7 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t, onDirtyCh
             const Icon = isWorkout ? Dumbbell : Moon;
             return (
               <div key={day.id} className="dash-dayslot" role="listitem">
-                <div className={`dash-daycard ${isWorkout ? "workout" : "rest"}`}>
+                <div className={`card dash-daycard ${isWorkout ? "workout" : "rest"}`}>
                   <Icon className="dash-daycard-icon" size={72} strokeWidth={1.5} aria-hidden="true" />
                   <div className="dash-daycard-top">
                     <span className="dash-daycard-num tabular">{t.dashDayN.replace("{n}", i + 1)}</span>
@@ -273,23 +275,25 @@ export function LinkedPlan({ client, plans: initialPlans, workouts, t, onDirtyCh
                   </div>
                   {isWorkout ? (
                     workouts.length > 0 ? (
-                      <select
-                        className="field"
-                        aria-label={t.workouts}
+                      <Select
+                        options={workouts.map((w) => ({ id: w.id, label: w.name }))}
                         value={day.workoutId ?? ""}
-                        onChange={(e) => edit({ ...plan, days: updatePlanDay(plan.days, i, { workoutId: e.target.value }) })}
-                      >
-                        {workouts.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-                      </select>
+                        onChange={(workoutId) => edit({ ...plan, days: updatePlanDay(plan.days, i, { workoutId }) })}
+                        label={t.workouts}
+                      />
                     ) : (
                       <span className="dash-daycard-rest">{t.newWorkout}</span>
                     )
                   ) : (
                     <span className="dash-daycard-rest">{t.dayRest}</span>
                   )}
-                  <div className="dash-seg" role="group" aria-label={t.toggleDayType}>
-                    <button type="button" className={isWorkout ? "on" : ""} aria-pressed={isWorkout} onClick={() => !isWorkout && setType(i, "workout")}>{t.workoutDay}</button>
-                    <button type="button" className={isWorkout ? "" : "on"} aria-pressed={!isWorkout} onClick={() => isWorkout && setType(i, "rest")}>{t.dayRest}</button>
+                  <div className="dash-daycard-type">
+                    <Segmented
+                      options={[{ id: "workout", label: t.workoutDay }, { id: "rest", label: t.dayRest }]}
+                      value={isWorkout ? "workout" : "rest"}
+                      onChange={(type) => type !== (isWorkout ? "workout" : "rest") && setType(i, type)}
+                      label={t.toggleDayType}
+                    />
                   </div>
                 </div>
               </div>

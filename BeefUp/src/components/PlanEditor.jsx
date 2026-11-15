@@ -4,6 +4,7 @@ import { uid, todayISO, addPlanDay, updatePlanDay, removePlanDay, isPrescribed }
 import WorkoutEditor from "./WorkoutEditor";
 import ConfirmModal from "./ConfirmModal";
 import "./PlanEditor.css";
+import Select from "./ui/Select";
 
 export default function PlanEditor({
   plan,
@@ -121,24 +122,22 @@ export default function PlanEditor({
                     {workouts.find((w) => w.id === day.workoutId)?.name ?? t.selectWorkout}
                   </span>
                 ) : (
-                  <select
-                    className="field flex-1 pe-select"
-                    value={day.workoutId ?? ""}
-                    onChange={(e) => {
-                      if (e.target.value === "__new__") setCreatingWorkoutForDay(i);
-                      else updateDay(i, { workoutId: e.target.value });
-                    }}
-                  >
-                    {workouts.length === 0 && <option value="">{t.selectWorkout}</option>}
-                    {workouts.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                    <option value="__new__">
-                      {t.createNewWorkout}
-                    </option>
-                  </select>
+                  <div className="flex-1" style={{ minWidth: 0 }}>
+                    <Select
+                      className="pe-select"
+                      options={[
+                        ...workouts.map((w) => ({ id: w.id, label: w.name })),
+                        { id: "__new__", label: t.createNewWorkout },
+                      ]}
+                      value={day.workoutId ?? ""}
+                      placeholder={t.selectWorkout}
+                      onChange={(id) => {
+                        if (id === "__new__") setCreatingWorkoutForDay(i);
+                        else updateDay(i, { workoutId: id });
+                      }}
+                      label={t.selectWorkout}
+                    />
+                  </div>
                 )
               ) : (
                 <span className="text-sm flex-1 text-muted">

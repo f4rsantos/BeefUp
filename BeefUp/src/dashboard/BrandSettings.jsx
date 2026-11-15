@@ -86,7 +86,7 @@ export default function BrandSettings() {
   const status = dirty ? t.brandUnsaved : justSaved ? t.brandSaved : "";
 
   return (
-    <section className="dash-panel">
+    <section className="card dash-panel">
       <PanelHead
         title={t.brandTitle}
         desc={t.brandDesc}
@@ -164,7 +164,7 @@ export default function BrandSettings() {
           </div>
         </div>
 
-        <div className="dash-brand-preview" aria-label={t.brandPreview}>
+        <div className="card dash-brand-preview" aria-label={t.brandPreview}>
           <div className="dash-brand-preview-bar">
             {form.logo && <img src={form.logo} alt="" width={28} height={28} className="brand-logo" />}
             <span className="brand-mark-name">{form.name.trim() || t.brandNamePlaceholder}</span>
