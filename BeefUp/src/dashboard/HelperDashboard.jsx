@@ -13,6 +13,10 @@ import SchemaUpdateBanner from "./SchemaUpdateBanner";
 import BrandNotice from "./BrandNotice";
 import BrandMark from "../components/BrandMark";
 import StudentHome from "./StudentHome";
+import TabBar from "../components/ui/TabBar";
+import Segmented from "../components/ui/Segmented";
+import IconButton from "../components/ui/IconButton";
+import LargeTitle from "../components/ui/LargeTitle";
 import "./dashboard.css";
 
 export default function HelperDashboard() {
@@ -82,42 +86,49 @@ export default function HelperDashboard() {
     if (id === "clients") setSelectedId(null);
   }
 
+  const tabs = destinations.map(({ id, Icon, label }) => ({ id, Icon, label }));
+
   return (
-    <div className="dash-root">
+    <div className={`dash-root app-shell ${isDesktop ? "" : "has-dock"}`}>
       <div className="dash-top">
       <header className="dash-header">
         {isDesktop ? (
           <>
             <BrandMark fallback="BeefUp" className="dash-brand" />
             <div className="dash-tabs">
-              <button className={`dash-tab ${tab === "clients" ? "active" : ""}`} onClick={() => go("clients")}>{t.dashClients}</button>
-              <button className={`dash-tab ${tab === "calendar" ? "active" : ""}`} onClick={() => setTab("calendar")}>{t.dashCalendar}</button>
+              <Segmented
+                options={[
+                  { id: "clients", label: t.dashClients },
+                  { id: "calendar", label: t.dashCalendar },
+                ]}
+                value={tab === "calendar" ? "calendar" : tab === "clients" ? "clients" : null}
+                onChange={go}
+                label={t.dashSections}
+              />
             </div>
             <div style={{ flex: 1 }} />
             {/* Account lives here rather than as a third tab: it is a destination
                 you visit rarely, not a peer of the two you work in daily. */}
             <button
-              className={`dash-account ${tab === "sync" ? "active" : ""}`}
+              className={`btn dash-account ${tab === "sync" ? "active" : ""}`}
               onClick={() => setTab("sync")}
             >
               <span className={`dash-dot ${configured ? "on" : ""}`} />
               {configured ? t.dashConnected : t.dashAccount}
             </button>
-            <button
-              className={`dash-icon-tab ${tab === "settings" ? "active" : ""}`}
+            <IconButton
+              icon={Settings}
+              label={t.settingsTitle}
+              variant={tab === "settings" ? "tint" : ""}
               onClick={() => setTab("settings")}
-              aria-label={t.settingsTitle}
-              title={t.settingsTitle}
-            >
-              <Settings size={17} />
-            </button>
+            />
           </>
         ) : tab === "clients" && selected ? (
-          <button type="button" className="dash-back" onClick={() => setSelectedId(null)}>
-            <ChevronLeft size={18} /> {t.dashClients}
+          <button type="button" className="nav-back" onClick={() => setSelectedId(null)} aria-label={t.dashClients} title={t.dashClients}>
+            <ChevronLeft size={24} strokeWidth={2.4} style={{ marginLeft: -2 }} />
           </button>
         ) : (
-          <span className="dash-brand">{current.label}</span>
+          <LargeTitle title={current.label} />
         )}
       </header>
       {remote && <SchemaUpdateBanner />}
@@ -153,19 +164,11 @@ export default function HelperDashboard() {
       </div>
 
       {!isDesktop && (
-        <nav className="dash-nav">
-          {destinations.map(({ id, Icon, label }) => (
-            <button
-              key={id}
-              className={`dash-nav-tab ${tab === id ? "active" : ""}`}
-              onClick={() => go(id)}
-              aria-current={tab === id ? "page" : undefined}
-            >
-              <Icon size={20} />
-              {label}
-            </button>
-          ))}
-        </nav>
+        <div className="tab-dock">
+          <div className="tab-dock-row">
+            <TabBar tabs={tabs} active={tab} onSelect={go} label={t.dashSections} />
+          </div>
+        </div>
       )}
     </div>
   );

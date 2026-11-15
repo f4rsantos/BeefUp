@@ -16,6 +16,7 @@ import { useModalFocus } from "./lib/useModalFocus";
 import { useState, useEffect, lazy, Suspense } from "react";
 import ProfileSkeleton from "./pages/ProfileSkeleton";
 import { DockContext } from "./components/ui/DockContext";
+import TabBar from "./components/ui/TabBar";
 
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const MeasuresPage = lazy(() => import("./pages/MeasuresPage"));
@@ -52,19 +53,6 @@ const DOCK_HEIGHT = {
   tabs: "calc(64px + max(14px, env(safe-area-inset-bottom)))",
   tabsWithPlayer: "calc(130px + max(14px, env(safe-area-inset-bottom)))",
 };
-
-function NavTabButton({ Icon, label, active, onClick }) {
-  return (
-    <button
-      className={`tab-bar-item ${active ? "active" : ""}`}
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-    >
-      <Icon size={22} strokeWidth={active ? 2.4 : 2} />
-      <span>{label}</span>
-    </button>
-  );
-}
 
 function AppInner() {
   const [tab, setTab] = useState("home"); // bottom nav tab
@@ -193,7 +181,6 @@ function AppInner() {
   const showMiniPlayer = activeWorkout !== null && workoutMinimized && overlay === null;
   const dockHeight = !showNav ? DOCK_HEIGHT.hidden : showMiniPlayer ? DOCK_HEIGHT.tabsWithPlayer : DOCK_HEIGHT.tabs;
   const visibleTabs = TABS.filter(({ id }) => (id === "home" ? showGym : id === "nutrition" ? showNutrition : true));
-  const activeTabIndex = Math.max(0, visibleTabs.findIndex(({ id }) => id === tab2));
 
   function selectTab(id) {
     setDockCompact(false);
@@ -342,18 +329,11 @@ function AppInner() {
               />
             )}
             <div className="tab-dock-row">
-              <nav className="tab-bar glass" style={{ "--count": visibleTabs.length, "--index": activeTabIndex }}>
-                <span className="tab-bar-lens" aria-hidden="true" />
-                {visibleTabs.map(({ id, Icon, tKey }) => (
-                  <NavTabButton
-                    key={id}
-                    Icon={Icon}
-                    label={t[tKey]}
-                    active={tab2 === id}
-                    onClick={() => selectTab(id)}
-                  />
-                ))}
-              </nav>
+              <TabBar
+                tabs={visibleTabs.map(({ id, Icon, tKey }) => ({ id, Icon, label: t[tKey] }))}
+                active={tab2}
+                onSelect={selectTab}
+              />
               {showGym && !activeWorkout && (
                 <button className="tab-action" onClick={handleStart} aria-label={t.startWorkoutAria}>
                   <Play size={24} fill="currentColor" strokeWidth={0} />

@@ -5,10 +5,15 @@ import { useEscapeKey } from "../lib/useEscapeKey";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { formatDateShort, todayISO, isFutureAppt } from "../lib/planUtils";
 import ConfirmModal from "../components/ConfirmModal";
+import Modal from "../components/ui/Modal";
+import Field from "../components/ui/Field";
+import ActionRow from "../components/ui/ActionRow";
+import IconButton from "../components/ui/IconButton";
 import { PanelHead } from "./parts";
 import { prescribeRow, unprescribeRow } from "../lib/trainerData";
 import { STORES } from "../lib/stores";
 import { weekdayOf, needsConfirmation } from "./appointments";
+import Select from "../components/ui/Select";
 
 function localizedDow(lang) {
   const locale = lang === "pt" ? "pt-PT" : undefined;
@@ -65,7 +70,10 @@ function ApptRow({ client, entry, onRemove, onResend, onOutcome }) {
     <div className={`dash-day ${entry.done || entry.missed ? "is-closed" : ""} ${past ? "has-actions" : ""}`}>
       <Icon size={14} style={{ color: "var(--muted)", flexShrink: 0 }} aria-label={label(t)} />
       <span className="dash-day-num tabular" style={{ width: 44 }}>{entry.time}</span>
-      <span className="flex-1 truncate dash-appt-name">{client.name}</span>
+      <span className="dash-appt-body">
+        <span className="truncate dash-appt-name">{client.name}</span>
+        {!past && entry.unsynced && <span className="dash-appt-status">{status}</span>}
+      </span>
       {past && (
         <span className="dash-appt-actions">
           {!entry.missed && (
@@ -88,11 +96,6 @@ function ApptRow({ client, entry, onRemove, onResend, onOutcome }) {
               {entry.missed ? <><X size={13} /> {t.dashApptMissed}</> : t.dashApptMissed}
             </button>
           )}
-        </span>
-      )}
-      {!past && entry.unsynced && (
-        <span style={{ fontSize: "var(--d-label)", fontWeight: "var(--d-w-em)", color: "var(--danger)", flexShrink: 0 }}>
-          {status}
         </span>
       )}
       {canResend && (
@@ -158,7 +161,7 @@ function DialFace({ mode, hour, minute, onPick, onRelease }) {
       onPointerUp={(e) => { onMove(e); onRelease(); }}
       style={{
         position: "relative", width: DIAL_SIZE, height: DIAL_SIZE, borderRadius: "50%",
-        background: "var(--surface2)", margin: "0 auto", touchAction: "none", userSelect: "none", cursor: "pointer",
+        background: "var(--fill)", margin: "0 auto", touchAction: "none", userSelect: "none", cursor: "pointer",
       }}
     >
       <span style={{ position: "absolute", left: DIAL_CENTER - 3, top: DIAL_CENTER - 3, width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} />
@@ -168,7 +171,7 @@ function DialFace({ mode, hour, minute, onPick, onRelease }) {
       <span
         style={{
           position: "absolute", left: hand.x - 16, top: hand.y - 16, width: 32, height: 32, borderRadius: "50%",
-          background: "var(--grad-accent)", pointerEvents: "none",
+          background: "var(--accent)", pointerEvents: "none",
         }}
       />
       {(mode === "hour" ? Array.from({ length: 12 }, (_, i) => i) : Array.from({ length: 12 }, (_, i) => i * 5)).map((n, i) => {
@@ -238,11 +241,8 @@ function TimePicker({ value, onChange }) {
     <div style={{ position: "relative" }}>
       <button
         type="button"
-        className="flex items-center justify-between"
-        style={{
-          width: "100%", background: "var(--surface)", border: "1px solid var(--border)",
-          borderRadius: 12, color: "var(--text)", padding: "10px 12px", fontSize: 14, cursor: "pointer", minHeight: 44,
-        }}
+        className="field flex items-center justify-between"
+        style={{ width: "100%", cursor: "pointer", minHeight: 44 }}
         onClick={launch}
       >
         <span className="tabular">{value}</span>
@@ -260,8 +260,8 @@ function TimePicker({ value, onChange }) {
                   className="tabular text-center"
                   inputMode="numeric"
                   style={{
-                    width: 76, height: 60, borderRadius: 8, border: "none",
-                    fontSize: 32, fontWeight: 700, background: "var(--surface2)", color: "var(--text)",
+                    width: 76, height: 60, borderRadius: 16, border: "none",
+                    fontSize: 32, fontWeight: 700, background: "var(--fill)", color: "var(--text)",
                   }}
                   value={String(hour).padStart(2, "0")}
                   onChange={(e) => setHour(Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)))}
@@ -271,9 +271,9 @@ function TimePicker({ value, onChange }) {
                   type="button"
                   className="tabular"
                   style={{
-                    width: 76, height: 60, borderRadius: 8, border: "none", cursor: "pointer",
+                    width: 76, height: 60, borderRadius: 16, border: "none", cursor: "pointer",
                     fontSize: 32, fontWeight: 700,
-                    background: mode === "hour" ? "var(--accent-soft)" : "var(--surface2)",
+                    background: mode === "hour" ? "var(--glass-tint)" : "var(--fill)",
                     color: mode === "hour" ? "var(--accent)" : "var(--text)",
                   }}
                   onClick={() => setMode("hour")}
@@ -287,8 +287,8 @@ function TimePicker({ value, onChange }) {
                   className="tabular text-center"
                   inputMode="numeric"
                   style={{
-                    width: 76, height: 60, borderRadius: 8, border: "none",
-                    fontSize: 32, fontWeight: 700, background: "var(--surface2)", color: "var(--text)",
+                    width: 76, height: 60, borderRadius: 16, border: "none",
+                    fontSize: 32, fontWeight: 700, background: "var(--fill)", color: "var(--text)",
                   }}
                   value={String(minute).padStart(2, "0")}
                   onChange={(e) => setMinute(Math.max(0, Math.min(59, parseInt(e.target.value, 10) || 0)))}
@@ -298,9 +298,9 @@ function TimePicker({ value, onChange }) {
                   type="button"
                   className="tabular"
                   style={{
-                    width: 76, height: 60, borderRadius: 8, border: "none", cursor: "pointer",
+                    width: 76, height: 60, borderRadius: 16, border: "none", cursor: "pointer",
                     fontSize: 32, fontWeight: 700,
-                    background: mode === "minute" ? "var(--accent-soft)" : "var(--surface2)",
+                    background: mode === "minute" ? "var(--glass-tint)" : "var(--fill)",
                     color: mode === "minute" ? "var(--accent)" : "var(--text)",
                   }}
                   onClick={() => setMode("minute")}
@@ -382,15 +382,13 @@ export default function CalendarView({ students = [] }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
-  const [assignFor, setAssignFor] = useState(null);
-  useEscapeKey(() => setAssignFor(null), !!assignFor);
   const [time, setTime] = useState("18:00");
   const [apptType, setApptType] = useState(APPT_TYPES[0].id);
   const [pendingRemove, setPendingRemove] = useState(null);
   const [filterClient, setFilterClient] = useState("");
-  // Phone only: a 45px cell has no room for name chips, so tapping a day
-  // opens its list under the grid instead of going straight to the modal.
+  // The day whose modal is open; `assigning` swaps its list for the form.
   const [openDay, setOpenDay] = useState(null);
+  const [assigning, setAssigning] = useState(false);
 
   const first = new Date(year, month, 1);
   const startPad = (first.getDay() + 6) % 7;
@@ -450,10 +448,10 @@ export default function CalendarView({ students = [] }) {
   async function addAppointment() {
     const c = clients.find((x) => x.id === pickClient);
     if (!c) return;
-    const sameSlot = (e) => e.date === assignFor && e.time === time;
+    const sameSlot = (e) => e.date === openDay && e.time === time;
     for (const old of c.schedule.filter(sameSlot)) await unsync(c.id, old);
 
-    const newEntry = { id: crypto.randomUUID(), date: assignFor, time, type: apptType };
+    const newEntry = { id: crypto.randomUUID(), date: openDay, time, type: apptType };
     let unsynced = !sharesCalendar(c);
     if (!unsynced) {
       try {
@@ -466,7 +464,7 @@ export default function CalendarView({ students = [] }) {
 
     const saved = unsynced ? { ...newEntry, unsynced: true } : newEntry;
     await saveSchedule(c.id, [...c.schedule.filter((e) => !sameSlot(e)), saved]);
-    setAssignFor(null);
+    setAssigning(false);
   }
 
   async function resendAppointment(client, entry) {
@@ -497,106 +495,101 @@ export default function CalendarView({ students = [] }) {
     await saveSchedule(client.id, client.schedule.filter((e) => !same(e)));
   }
 
-  function openAssign(iso) {
-    setAssignFor(iso);
+  function openDayModal(iso) {
+    setOpenDay(iso);
+    setAssigning(false);
+  }
+
+  function closeDay() {
+    setOpenDay(null);
+    setAssigning(false);
+  }
+
+  function startAssign() {
     setPickClient(clients[0]?.id || "");
     setApptType(APPT_TYPES[0].id);
+    setAssigning(true);
+  }
+
+  function goToday() {
+    setYear(today.getFullYear());
+    setMonth(today.getMonth());
   }
 
   const label = first.toLocaleString(lang === "pt" ? "pt-PT" : undefined, { month: "long", year: "numeric" });
 
+  const locale = lang === "pt" ? "pt-PT" : undefined;
+  const dayTitle = (iso) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
+  };
+  const viewingThisMonth = year === today.getFullYear() && month === today.getMonth();
+
+  const dayEntries = openDay ? entriesOn(openDay) : [];
+
   return (
     <div className="dash-cal">
-      <div className="flex items-center gap-3 mb-4">
-        <button className="btn-icon" onClick={prev} aria-label={t.previousMonth}><ChevronLeft size={18} /></button>
-        <h2 style={{ fontSize: "var(--d-title)", fontWeight: "var(--d-w-num)", color: "var(--text)", minWidth: 160 }}>{label}</h2>
-        <button className="btn-icon" onClick={nextM} aria-label={t.nextMonth}><ChevronRight size={18} /></button>
-      </div>
+      <div className="dash-cal-layout">
+      <section className="dash-cal-main">
+        <div className="dash-cal-nav">
+          <IconButton icon={ChevronLeft} label={t.previousMonth} onClick={prev} size="sm" />
+          <h2 className="dash-cal-month">{label}</h2>
+          <IconButton icon={ChevronRight} label={t.nextMonth} onClick={nextM} size="sm" />
+          {!viewingThisMonth && (
+            <button type="button" className="text-button" onClick={goToday}>{t.dashToday}</button>
+          )}
+        </div>
 
-      <div className="dash-cal-head">
-        {dow.map((d, i) => <div key={i}>{d}</div>)}
-      </div>
-      <div className="dash-cal-grid">
-        {cells.map((d, i) => {
-          if (d === null) return <div key={i} className="dash-cal-cell muted" />;
-          const iso = isoOf(year, month, d);
-          const dayEntries = entriesOn(iso);
-          const isToday = iso === todayISO();
-          return (
-            <button
-              key={i}
-              type="button"
-              className={`dash-cal-cell ${openDay === iso ? "open" : ""} ${isToday ? "today" : ""}`}
-              onClick={() => setOpenDay(iso)}
-            >
-              <span className="dash-cal-daynum">{d}</span>
-              {isDesktop
-                ? dayEntries.map(({ client, entry }, k) => {
-                    const { Icon } = apptTypeMeta(entry.type);
-                    const state = apptState(entry);
-                    return (
-                      <span key={client.id + k} className={`dash-cal-chip ${state} flex items-center gap-1`}>
-                        {state === "done" ? <Check size={10} style={{ flexShrink: 0 }} /> : state === "missed" ? <X size={10} style={{ flexShrink: 0 }} /> : <Icon size={10} style={{ flexShrink: 0 }} />}
-                        {entry.time ? `${entry.time} ` : ""}{client.name}
+        <div className="dash-cal-head">
+          {dow.map((d, i) => <div key={i}>{d}</div>)}
+        </div>
+        <div className="dash-cal-grid">
+          {cells.map((d, i) => {
+            if (d === null) return <div key={i} className="dash-cal-cell muted" />;
+            const iso = isoOf(year, month, d);
+            const dayEntries = entriesOn(iso);
+            const isToday = iso === todayISO();
+            return (
+              <button
+                key={i}
+                type="button"
+                className={`card dash-cal-cell ${openDay === iso ? "open" : ""} ${isToday ? "today" : ""}`}
+                aria-pressed={openDay === iso}
+                aria-label={dayTitle(iso)}
+                onClick={() => openDayModal(iso)}
+              >
+                <span className="dash-cal-daynum">{d}</span>
+                {isDesktop
+                  ? dayEntries.map(({ client, entry }, k) => {
+                      const { Icon } = apptTypeMeta(entry.type);
+                      const state = apptState(entry);
+                      return (
+                        <span key={client.id + k} className={`dash-cal-chip ${state} flex items-center gap-1`}>
+                          {state === "done" ? <Check size={10} style={{ flexShrink: 0 }} /> : state === "missed" ? <X size={10} style={{ flexShrink: 0 }} /> : <Icon size={10} style={{ flexShrink: 0 }} />}
+                          <span className="truncate">{entry.time ? `${entry.time} ` : ""}{client.name}</span>
+                        </span>
+                      );
+                    })
+                  : dayEntries.length > 0 && (
+                      <span className="dash-cal-dots">
+                        {dayEntries.slice(0, 3).map(({ entry }, k) => <span key={k} className={`dash-cal-dot ${apptState(entry)}`} />)}
+                        {dayEntries.length > 3 && <span className="dash-cal-more">+{dayEntries.length - 3}</span>}
                       </span>
-                    );
-                  })
-                : dayEntries.length > 0 && (
-                    <span className="dash-cal-dots">
-                      {dayEntries.slice(0, 3).map(({ entry }, k) => <span key={k} className={`dash-cal-dot ${apptState(entry)}`} />)}
-                      {dayEntries.length > 3 && <span className="dash-cal-more">+{dayEntries.length - 3}</span>}
-                    </span>
-                  )}
-            </button>
-          );
-        })}
-      </div>
+                    )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-      {openDay && (
-        <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
-          <div className="dash-panel-head">
-            <h3 className="dash-card-title">{formatDateShort(openDay)}</h3>
-            <button className="btn-icon" onClick={() => setOpenDay(null)} aria-label={t.close}>
-              <X size={16} style={{ color: "var(--muted)" }} />
-            </button>
-          </div>
-
-          {entriesOn(openDay).length === 0 ? (
-            <p className="dash-empty">{t.dashNoAppointment}</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {entriesOn(openDay).map(({ client, entry }, k) => (
-                <ApptRow
-                  key={entry.id || client.id + k}
-                  client={client}
-                  entry={entry}
-                  onRemove={() => setPendingRemove({ client, entry })}
-                  onResend={() => resendAppointment(client, entry)}
-                  onOutcome={(o) => setOutcome(client, entry, o)}
-                />
-              ))}
-            </div>
-          )}
-
-          {openDay >= todayISO() && (
-            <button
-              className="btn btn-primary w-full flex items-center justify-center gap-2"
-              style={{ marginTop: "var(--d-3)" }}
-              onClick={() => openAssign(openDay)}
-            >
-              <Plus size={16} /> {t.dashAssign}
-            </button>
-          )}
-        </section>
-      )}
-
-      {!openDay && toConfirm.length > 0 && (
-        <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
+      <aside className="dash-cal-side">
+      {toConfirm.length > 0 && (
+        <section className="card dash-panel">
           <PanelHead title={t.dashToConfirm} desc={t.dashToConfirmDesc} />
           <ApptGroups
             groups={toConfirm}
             lang={lang}
-            onDay={goToMonthOf}
+            onDay={(iso) => { goToMonthOf(iso); openDayModal(iso); }}
             renderRow={({ client, entry }, k) => (
               <ApptRow
                 key={entry.id || client.id + k}
@@ -610,99 +603,122 @@ export default function CalendarView({ students = [] }) {
         </section>
       )}
 
-      {!openDay && (
-        <section className="dash-panel" style={{ marginTop: "var(--d-4)" }}>
-          <div className="dash-panel-head">
-            <h3 className="dash-card-title">{t.dashUpcoming}</h3>
-            <select
-              className="field"
-              style={{ width: "auto", maxWidth: 180 }}
+      <section className="card dash-panel">
+        <div className="dash-panel-head">
+          <h3 className="dash-card-title">{t.dashUpcoming}</h3>
+          <div className="dash-filter">
+            <Select
+              options={[{ id: "", label: t.dashFilterAll }, ...clients.map((c) => ({ id: c.id, label: c.name }))]}
               value={filterClient}
-              onChange={(e) => setFilterClient(e.target.value)}
-              aria-label={t.dashClients}
-            >
-              <option value="">{t.dashFilterAll}</option>
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-
-          {upcoming.length === 0 ? (
-            <p className="dash-empty">
-              {filterClient
-                ? t.dashNoUpcomingFor.replace("{name}", clients.find((c) => c.id === filterClient)?.name || "")
-                : t.dashNoUpcoming}
-            </p>
-          ) : (
-            <ApptGroups
-              groups={upcoming}
-              lang={lang}
-              onDay={goToMonthOf}
-              renderRow={({ client, entry }, k) => (
-                <ApptRow
-                  key={entry.id || client.id + k}
-                  client={client}
-                  entry={entry}
-                  onRemove={() => setPendingRemove({ client, entry })}
-                  onResend={() => resendAppointment(client, entry)}
-                />
-              )}
+              onChange={setFilterClient}
+              label={t.dashClients}
             />
-          )}
-        </section>
-      )}
-
-      {assignFor && (
-        <div role="dialog" aria-modal="true" className="modal-overlay" style={{ alignItems: "center" }} onClick={() => setAssignFor(null)}>
-          <div className="modal-center" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-            <h3 className="display" style={{ fontSize: "var(--d-title)", fontWeight: "var(--d-w-num)", color: "var(--text)", marginBottom: 20 }}>{formatDateShort(assignFor)}</h3>
-
-            {clients.length === 0 ? (
-              <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dashNoClients}</p>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label className="section-title">{t.dashClients}</label>
-                  <select className="field mt-2" value={pickClient} onChange={(e) => setPickClient(e.target.value)}>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  {picked && !sharesCalendar(picked) && (
-                    <p className="dash-empty" style={{ marginTop: "var(--d-2)" }}>
-                      {t.dashApptNoCalendar.replace("{name}", picked.name)}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="section-title">{t.dashApptType}</label>
-                  <div className="flex gap-2 flex-wrap mt-2">
-                    {APPT_TYPES.map(({ id, Icon, label }) => (
-                      <button
-                        key={id}
-                        type="button"
-                        className={`chip flex items-center gap-1 ${apptType === id ? "active" : ""}`}
-                        onClick={() => setApptType(id)}
-                      >
-                        <Icon size={13} /> {label(t)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="section-title">{t.dashTime}</label>
-                  <div className="mt-2">
-                    <TimePicker value={time} onChange={setTime} />
-                  </div>
-                </div>
-                <div>
-                  <button className="btn btn-primary w-full py-3 mt-1" onClick={addAppointment} disabled={!isFutureAppt(assignFor, time)}>{t.dashAssign}</button>
-                  {!isFutureAppt(assignFor, time) && (
-                    <p className="dash-empty text-center" style={{ marginTop: "var(--d-2)" }}>{t.dashPastTime}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
           </div>
         </div>
+
+        {upcoming.length === 0 ? (
+          <p className="dash-empty">
+            {filterClient
+              ? t.dashNoUpcomingFor.replace("{name}", clients.find((c) => c.id === filterClient)?.name || "")
+              : t.dashNoUpcoming}
+          </p>
+        ) : (
+          <ApptGroups
+            groups={upcoming}
+            lang={lang}
+            onDay={(iso) => { goToMonthOf(iso); openDayModal(iso); }}
+            renderRow={({ client, entry }, k) => (
+              <ApptRow
+                key={entry.id || client.id + k}
+                client={client}
+                entry={entry}
+                onRemove={() => setPendingRemove({ client, entry })}
+                onResend={() => resendAppointment(client, entry)}
+              />
+            )}
+          />
+        )}
+      </section>
+      </aside>
+      </div>
+
+      {openDay && (
+        <Modal
+          title={dayTitle(openDay)}
+          onClose={() => { if (!pendingRemove) closeDay(); }}
+          closeLabel={t.close}
+          dismissOnBackdrop
+          variant={isDesktop ? "center" : "sheet"}
+        >
+          {!assigning ? (
+            <div className="modal-stack">
+              {dayEntries.length === 0 ? (
+                <p className="modal-text" style={{ marginBottom: 0 }}>{t.dashNoAppointment}</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {dayEntries.map(({ client, entry }, k) => (
+                    <ApptRow
+                      key={entry.id || client.id + k}
+                      client={client}
+                      entry={entry}
+                      onRemove={() => setPendingRemove({ client, entry })}
+                      onResend={() => resendAppointment(client, entry)}
+                      onOutcome={(o) => setOutcome(client, entry, o)}
+                    />
+                  ))}
+                </div>
+              )}
+              {openDay >= todayISO() && (
+                <button
+                  className="btn btn-primary w-full flex items-center justify-center gap-2"
+                  onClick={startAssign}
+                  disabled={clients.length === 0}
+                >
+                  <Plus size={16} /> {t.dashAssign}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="modal-stack">
+              <Field label={t.dashClients} htmlFor="dash-appt-client">
+                <Select
+                  id="dash-appt-client"
+                  options={clients.map((c) => ({ id: c.id, label: c.name }))}
+                  value={pickClient}
+                  onChange={setPickClient}
+                  label={t.dashClients}
+                />
+                {picked && !sharesCalendar(picked) && (
+                  <p className="dash-empty">{t.dashApptNoCalendar.replace("{name}", picked.name)}</p>
+                )}
+              </Field>
+              <Field label={t.dashApptType}>
+                <div className="flex gap-2 flex-wrap">
+                  {APPT_TYPES.map(({ id, Icon, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`chip flex items-center gap-1 ${apptType === id ? "active" : ""}`}
+                      onClick={() => setApptType(id)}
+                    >
+                      <Icon size={13} /> {label(t)}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label={t.dashTime}>
+                <TimePicker value={time} onChange={setTime} />
+              </Field>
+              {!isFutureAppt(openDay, time) && (
+                <p className="dash-empty">{t.dashPastTime}</p>
+              )}
+              <ActionRow>
+                <button type="button" className="btn" onClick={() => setAssigning(false)}>{t.back}</button>
+                <button type="button" className="btn btn-primary" onClick={addAppointment} disabled={!isFutureAppt(openDay, time)}>{t.dashAssign}</button>
+              </ActionRow>
+            </div>
+          )}
+        </Modal>
       )}
 
       {pendingRemove && (

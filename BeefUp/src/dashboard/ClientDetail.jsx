@@ -25,6 +25,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { Empty, Skeleton, PanelHead } from "./parts";
 import NumberField from "../components/NumberField";
 import MacroRing from "../components/MacroRing";
+import Meter from "../components/ui/Meter";
 
 const MAX_MEASURE_VALUE = 1000;
 
@@ -64,7 +65,7 @@ function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, save
   }
 
   return (
-    <div className="dash-panel flex flex-col gap-3">
+    <div className="card dash-panel flex flex-col gap-3">
       {onSave && (
         <div className="flex gap-3 items-center">
           <div style={{ position: "relative", flex: "0 1 280px" }}>
@@ -120,7 +121,7 @@ function MeasureCard({ t, chartData, history, unit, goal, onDelete, onSave, save
       )}
 
       {history.length > 0 && (
-        <div className="flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="flex flex-col" style={{ borderTop: "1px solid var(--separator)" }}>
           {history.map((m) => (
             <div key={m.id} className="flex items-center justify-between text-sm" style={{ padding: "8px 0" }}>
               <span style={{ color: "var(--muted)" }}>{m.dateLabel}</span>
@@ -221,7 +222,7 @@ function Notes({ client, saveClient, t }) {
 
   return (
     <div className="dash-notes">
-      <div className="dash-panel mb-5">
+      <div className="card dash-panel mb-5">
         <textarea
           className="field"
           style={{ minHeight: 120, resize: "vertical", lineHeight: 1.5 }}
@@ -233,7 +234,7 @@ function Notes({ client, saveClient, t }) {
       </div>
       <div className="flex flex-col gap-4">
         {(client.notes || []).slice().reverse().map((n) => (
-          <div key={n.id} className="dash-panel flex items-start justify-between gap-4">
+          <div key={n.id} className="card dash-panel flex items-start justify-between gap-4">
             <div style={{ flex: 1 }}>
               <span style={{ color: "var(--muted)", fontSize: 12 }}>{n.date}</span>
               <p className="text-sm mt-1" style={{ color: "var(--text)", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{n.text}</p>
@@ -363,8 +364,8 @@ export default function ClientDetail({ client, students, onSwitch, nav, onNav, o
   const identity = (
     <>
       {isDesktop && (
-        <button type="button" className="dash-back" onClick={() => guard(onBack)}>
-          <ChevronLeft size={16} /> {t.dashClients}
+        <button type="button" className="text-button dash-rail-back" onClick={() => guard(onBack)}>
+          <ChevronLeft size={18} strokeWidth={2.4} /> {t.dashClients}
         </button>
       )}
       <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
@@ -389,7 +390,7 @@ export default function ClientDetail({ client, students, onSwitch, nav, onNav, o
   return (
     <div className="dash-student">
       {isDesktop && (
-        <aside className="dash-rail">
+        <aside className="glass dash-rail">
           <div className="dash-student-id">{identity}</div>
           <StudentNav areas={areas} section={section} onSelect={select} />
           <div className="dash-rail-foot">{unlinkButton}</div>
@@ -511,7 +512,7 @@ export default function ClientDetail({ client, students, onSwitch, nav, onNav, o
 
 function ScopeNotShared({ label, t }) {
   return (
-    <section className="dash-panel">
+    <section className="card dash-panel">
       <PanelHead title={label} desc={t.dashScopeNotShared} />
     </section>
   );
@@ -519,7 +520,7 @@ function ScopeNotShared({ label, t }) {
 
 function OverviewCard({ label, children }) {
   return (
-    <div className="dash-panel">
+    <div className="card dash-panel">
       <p className="section-title mb-3">{label}</p>
       {children}
     </div>
@@ -597,17 +598,7 @@ function LinkedOverview({ data, annotations, hasWorkouts, hasNutrition, hasMeasu
                 {!g.progress.hasData ? (
                   <p className="text-xs" style={{ color: "var(--muted)", margin: 0 }}>{t.dashMeasureGoalNoData}</p>
                 ) : (
-                  <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
-                    <div
-                      style={{
-                        height: "100%",
-                        borderRadius: 999,
-                        width: `${g.progress.percent}%`,
-                        background: g.progress.reached ? "var(--success)" : "var(--accent)",
-                        transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
-                      }}
-                    />
-                  </div>
+                  <Meter value={g.progress.percent} max={100} color={g.progress.reached ? "var(--success)" : undefined} />
                 )}
               </div>
             ))}
@@ -683,7 +674,7 @@ function LinkedSessions({ sessions, lang, t }) {
     <div className="flex flex-col gap-3">
       {recent.length === 0 && <Empty>{t.dashNoSessions}</Empty>}
       {recent.map((s) => (
-        <div key={s.id} className="dash-panel">
+        <div key={s.id} className="card dash-panel">
           <div className="flex items-baseline justify-between gap-3 mb-2">
             <span style={{ fontWeight: 700, color: "var(--text)" }}>{formatDateTimeShort(s.date)}</span>
             <span className="text-sm tabular" style={{ color: "var(--muted)" }}>{Math.round(sessionVolume(s))} kg · {sessionSets(s)} {t.sets.toLowerCase()}</span>
@@ -711,7 +702,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
 
   if (days.length === 0) {
     return (
-      <section className="dash-panel">
+      <section className="card dash-panel">
         <PanelHead title={t.dashNutrition} desc={t.dashNoNutritionData} />
       </section>
     );
@@ -745,7 +736,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
   }
 
   return (
-    <section className="dash-panel">
+    <section className="card dash-panel">
       <PanelHead
         title={t.dashNutrition}
         actions={
@@ -804,17 +795,7 @@ function LinkedNutrition({ foodLog, goals, t }) {
                 <span className="font-semibold" style={{ color: "var(--text)" }}>{m.label}</span>
                 <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{m.val} / {m.goal}{m.unit}</span>
               </div>
-              <div style={{ height: 6, borderRadius: 999, background: "var(--surface2)", overflow: "hidden" }}>
-                <div
-                  style={{
-                    height: "100%",
-                    borderRadius: 999,
-                    width: `${Math.min(100, (m.val / m.goal) * 100)}%`,
-                    background: m.color,
-                    transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
-                  }}
-                />
-              </div>
+              <Meter value={m.val} max={m.goal} color={m.color} />
             </div>
           ))}
         </div>
@@ -1028,7 +1009,7 @@ function LinkedMeasureGoals({ client, measurements, customTypes, goals: initialG
   }
 
   return (
-    <section className="dash-panel">
+    <section className="card dash-panel">
       <PanelHead title={t.dashMeasuresGoalsTab} desc={t.dashMeasureGoalsDesc} />
       {error && <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>}
 
