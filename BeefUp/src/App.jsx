@@ -271,6 +271,7 @@ function AppInner() {
                 goActive({
                   workoutId: w.id,
                   workoutName: w.name,
+                  ...(w.id ? {} : { exercises: w.exercises }),
                 })
               }
               onBack={closeOverlay}

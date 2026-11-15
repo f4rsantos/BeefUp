@@ -1,9 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
-import { Star, Search, Play, Dumbbell } from "lucide-react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { Star, Search, Play, Dumbbell, Sparkles } from "lucide-react";
 import { useApp } from "../context/useApp";
 import { getPref, setPref } from "../lib/prefs";
 import NavHeader from "../components/ui/NavHeader";
 import "./WorkoutPicker.css";
+
+const SuggestWorkoutModal = lazy(() => import("../components/SuggestWorkoutModal"));
 
 export default function WorkoutPicker({ onSelect, onBack }) {
   const { t, lang, workouts } = useApp();
@@ -11,6 +13,7 @@ export default function WorkoutPicker({ onSelect, onBack }) {
   // Favourites come from IndexedDB, so the list renders unsorted for the first
   // frame and re-sorts once they arrive.
   const [favIds, setFavIds] = useState([]);
+  const [suggesting, setSuggesting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,13 +104,25 @@ export default function WorkoutPicker({ onSelect, onBack }) {
         )}
       </div>
 
-      <button
-        className="btn btn-primary wk-free"
-        onClick={() => onSelect({ id: null, name: lang === "pt" ? "Treino Livre" : "Empty Workout", exercises: [] })}
-      >
-        {lang === "pt" ? "Treino Livre" : "Empty Workout"}
-        <Play size={24} fill="currentColor" />
-      </button>
+      <div className="wk-actions">
+        <button className="btn wk-suggest" onClick={() => setSuggesting(true)}>
+          <Sparkles size={18} />
+          {t.suggestWorkout}
+        </button>
+        <button
+          className="btn btn-primary wk-free"
+          onClick={() => onSelect({ id: null, name: lang === "pt" ? "Treino Livre" : "Empty Workout", exercises: [] })}
+        >
+          {lang === "pt" ? "Treino Livre" : "Empty Workout"}
+          <Play size={20} fill="currentColor" />
+        </button>
+      </div>
+
+      {suggesting && (
+        <Suspense fallback={null}>
+          <SuggestWorkoutModal onStart={onSelect} onClose={() => setSuggesting(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

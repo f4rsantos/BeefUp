@@ -45,8 +45,9 @@ export default function ActiveWorkout({ onEnd, onMinimize }) {
   const [exercises, setExercises] = useState(() => {
     const draft = getLS("activeWorkoutDraft", null);
     if (draft && draft.startedAt === activeWorkout?.startedAt) return draft.exercises;
-    if (!sourceWorkout) return [];
-    return normalizeWorkoutExercises(sourceWorkout.exercises)
+    const seed= sourceWorkout?.exercises ?? activeWorkout?.exercises;
+    if (!seed) return [];
+    return normalizeWorkoutExercises(seed)
       .map((item) => ({ item, ex: resolveExercise(item.ref) }))
       .filter(({ ex }) => ex)
       .map(({ item, ex }) =>
