@@ -51,11 +51,9 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollTo({
-        left: activeSlide * sliderRef.current.offsetWidth,
-        behavior: 'smooth',
-      })
+    const slide = sliderRef.current?.children[activeSlide]
+    if (slide) {
+      sliderRef.current.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' })
     }
   }, [activeSlide, expanded])
 
@@ -203,11 +201,7 @@ function SwipeableCard({ s, t, lang, sessionBodyAreas, onDelete }) {
                     </div>
                     <div
                       className="hp-figure-body"
-                      style={{
-                        transform: `scale(${SCALE})`,
-                        width: `${BODY_NATURAL_WIDTH}px`,
-                        height: `${BODY_NATURAL_HEIGHT}px`,
-                      }}
+                      style={{ maxWidth: `${BODY_NATURAL_WIDTH * SCALE}px`, height: `${BODY_NATURAL_HEIGHT * SCALE}px` }}
                     >
                       <HumanBody view={view} highlightedMuscles={sessionBodyAreas[view]} />
                     </div>

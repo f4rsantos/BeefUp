@@ -13,7 +13,7 @@ import { decodeTrainerInvite } from "./lib/trainerInvite";
 import { useSync } from "./lib/sync/useSync";
 import { getPref, setPref } from "./lib/prefs";
 import { useModalFocus } from "./lib/useModalFocus";
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, startTransition } from "react";
 import ProfileSkeleton from "./pages/ProfileSkeleton";
 import { DockContext } from "./components/ui/DockContext";
 import TabBar from "./components/ui/TabBar";
@@ -37,8 +37,9 @@ const Onboarding = lazy(() => import("./onboarding/Onboarding"));
 const TrainerLinkModal = lazy(() => import("./components/TrainerLinkModal"));
 const IDLE_PRELOADS = [loadNutrition, loadSettings, loadHistory, loadExercises, loadPlanSettings, loadWorkoutSettings];
 
+// Transparent so the app canvas shows through instead of a flat (white) fill.
 function PageFallback() {
-  return <div style={{ height: "100%", background: "var(--bg)" }} />;
+  return <div style={{ height: "100%" }} />;
 }
 
 const TABS = [
@@ -55,8 +56,12 @@ const DOCK_HEIGHT = {
 };
 
 function AppInner() {
-  const [tab, setTab] = useState("home"); // bottom nav tab
-  const [overlay, setOverlay] = useState(null); // 'pickWorkout' | 'planSettings' | ... | null
+  const [tab, setTabNow] = useState("home"); // bottom nav tab
+  const [overlay, setOverlayNow] = useState(null); // 'pickWorkout' | 'planSettings' | ... | null
+  // Navigation runs as a transition: while a lazy page chunk loads, React
+  // keeps the current screen up instead of flashing the Suspense fallback.
+  const setTab = (v) => startTransition(() => setTabNow(v));
+  const setOverlay = (v) => startTransition(() => setOverlayNow(v));
   const [workoutMinimized, setWorkoutMinimized] = useState(false);
   const [planSettingsPlanId, setPlanSettingsPlanId] = useState(null);
   const [workoutSettingsView, setWorkoutSettingsView] = useState("main");
