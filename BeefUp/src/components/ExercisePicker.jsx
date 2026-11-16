@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
-import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2, Sparkles } from "lucide-react";
+import { ChevronLeft, Search, SlidersHorizontal, X, LayoutGrid, List, Image as ImageIcon, Plus, ChevronUp, ChevronDown, Pencil, Trash2, Sparkles, RefreshCw } from "lucide-react";
 import { useApp } from "../context/useApp";
 import {
   listBaseExercises,
@@ -73,22 +73,42 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null,
   const [queue, setQueue] = useState([]); // Array of { instanceId, baseId, equipmentId, variantId, barType, ref }
   const [isEditingInstanceId, setIsEditingInstanceId] = useState(null);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
+  // Hidden until the picker is closed and reopened (state resets on remount).
+  const [suggestionHidden, setSuggestionHidden] = useState(false);
+  const [skippedRefs, setSkippedRefs] = useState([]);
   useEscapeKey(onClose);
   useEscapeKey(() => resetCustomize(), !!activeBase);
 
   const activeFilterCount = (bodyPart ? 1 : 0) + (equipment ? 1 : 0);
 
   // Queued picks count as "in the workout" so the suggestion doesn't repeat them.
-  const suggestion = useMemo(() => {
+  // Skipped suggestions count as rejections, but only while this picker is open.
+  function recommendNext(skips) {
     if (!suggestFor || replace) return null;
     return recommendExercises({
       currentRefs: [...suggestFor.currentRefs, ...queue.map((q) => q.ref)],
-      rejectedRefs: suggestFor.rejectedRefs,
+      rejectedRefs: [...suggestFor.rejectedRefs, ...skips],
       sessions,
       workouts,
       limit: 1,
     })[0] ?? null;
-  }, [suggestFor, replace, queue, sessions, workouts]);
+  }
+
+  // Falls back to no skips if they've excluded everything left.
+  const suggestion = useMemo(
+    () => recommendNext(skippedRefs) ?? (skippedRefs.length ? recommendNext([]) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [suggestFor, replace, queue, sessions, workouts, skippedRefs],
+  );
+
+  // Skip the current pick; once nothing is left, start over from the top.
+  function regenerateSuggestion() {
+    if (!suggestion) return;
+    const next = [...skippedRefs, suggestion.ref];
+    setSkippedRefs(recommendNext(next) ? next : []);
+  }
+
+  const showSuggestion = !!suggestion && !suggestionHidden;
 
   function addSuggestion() {
     if (!suggestion) return;
@@ -229,7 +249,7 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null,
         <div
           className="flex-1 overflow-y-auto scrollbar-hide page-pad"
           style={{
-            paddingBottom: queue.length > 0 ? (isBottomSheetExpanded ? "45vh" : 140) : 24
+            paddingBottom: `calc(${queue.length > 0 ? (isBottomSheetExpanded ? "45vh" : "140px") : "24px"} + ${showSuggestion ? "88px" : "0px"})`
           }}
         >
           <div className="flex items-center gap-1 xp-head">
@@ -240,27 +260,6 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null,
               {replace ? t.replaceExercise : t.addExercise}
             </h1>
           </div>
-
-          {suggestFor && !replace && (
-            <button
-              className="btn btn-ghost w-full flex items-center gap-3"
-              style={{ justifyContent: "flex-start", textAlign: "left", padding: "12px 14px", marginBottom: 12, borderColor: "var(--accent)" }}
-              onClick={addSuggestion}
-              disabled={!suggestion}
-            >
-              <Sparkles size={20} style={{ color: "var(--accent)", flexShrink: 0 }} />
-              <span style={{ minWidth: 0 }}>
-                <span className="block text-sm" style={{ fontWeight: 700, color: "var(--text)" }}>
-                  {suggestion ? `${t.suggestExercise}: ${resolvedExerciseName(suggestion.ref, lang)}` : t.suggestNone}
-                </span>
-                {suggestion && (
-                  <span className="block text-xs truncate" style={{ color: "var(--muted)", marginTop: 2 }}>
-                    {suggestReasonText(t, lang, suggestion.reason)}
-                  </span>
-                )}
-              </span>
-            </button>
-          )}
 
           <div className="flex items-center gap-2 xp-search-row">
               <div className="relative flex items-center flex-1">
@@ -473,6 +472,29 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null,
         </div>
       )}
 
+      <div className="xp-bottom">
+      {showSuggestion && (
+        <div className={`flex items-center xp-suggest${queue.length === 0 ? " xp-suggest-alone" : ""}`}>
+          <button className="flex items-center gap-3 flex-1 xp-suggest-main" onClick={addSuggestion}>
+            <Sparkles size={20} className="xp-suggest-icon" />
+            <span className="min-w-0">
+              <span className="block text-sm truncate xp-suggest-title">
+                {`${t.suggestExercise}: ${resolvedExerciseName(suggestion.ref, lang)}`}
+              </span>
+              <span className="block text-xs truncate xp-suggest-reason">
+                {suggestReasonText(t, lang, suggestion.reason)}
+              </span>
+            </span>
+          </button>
+          <button className="btn-back flex-shrink-0 xp-suggest-close" onClick={regenerateSuggestion} aria-label={t.anotherSuggestion} title={t.anotherSuggestion}>
+            <RefreshCw size={18} />
+          </button>
+          <button className="btn-back flex-shrink-0 xp-suggest-close" onClick={() => setSuggestionHidden(true)} aria-label={t.close}>
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
       {queue.length > 0 && (
         <div className="xp-sheet">
           <div className="flex flex-col w-full">
@@ -542,6 +564,7 @@ export default function AddExercisesPicker({ onConfirm, onClose, replace = null,
           </div>
         </div>
       )}
+      </div>
 
       {showFilters && (
         <ExerciseFilterModal

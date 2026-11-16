@@ -49,18 +49,47 @@
 .xp-group-label { margin-bottom: 8px !important; }
 .xp-confirm { margin-top: 20px !important; }
 .xp-other { margin-top: 8px !important; }
-.xp-sheet {
+.xp-bottom {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+.xp-bottom > * { pointer-events: auto; }
+/* Frosted glass card, solid base, accent tint fading across it. */
+.xp-suggest {
+  margin: 0 16px 12px;
+  padding: 4px 4px 4px 0;
+  background:
+    linear-gradient(120deg,
+      color-mix(in srgb, var(--accent) 38%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 14%, transparent) 55%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 100%),
+    var(--glass-fill-strong, var(--surface));
+  border: 1px solid var(--glass-rim, var(--border));
+  border-radius: 18px;
+  box-shadow: var(--glass-specular, none), var(--glass-shadow-float, var(--shadow-lg));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  backdrop-filter: var(--glass-blur, blur(16px));
+}
+.xp-suggest-alone { margin-bottom: max(16px, env(safe-area-inset-bottom)); }
+.xp-suggest-main { min-width: 0; padding: 10px 4px 10px 14px; text-align: left; }
+.xp-suggest-icon { color: var(--accent); flex-shrink: 0; }
+.xp-suggest-title { font-weight: 700; color: var(--text); }
+.xp-suggest-reason { margin-top: 2px; color: var(--muted); }
+.xp-suggest-close { padding: 8px; color: var(--muted); }
+.xp-sheet {
+  position: relative;
   background: var(--surface);
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  z-index: 10;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
 }
 .xp-sheet-toggle { padding: 16px 20px; }
