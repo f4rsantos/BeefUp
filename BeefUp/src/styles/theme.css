@@ -1,12 +1,28 @@
+/* Background blobs follow the accent: two neighbouring hues either side of
+ * it, so any accent (preset or custom) gets a canvas that belongs to it.
+ * Chroma is floored for muted accents but capped at 4x the accent's own, so
+ * a white/grey/black accent gives a neutral canvas with no invented colour.
+ * Older engines without relative colours keep the fixed blue/orange pair. */
+.app-shell {
+  --canvas-a: rgb(88, 132, 255);
+  --canvas-b: rgb(255, 160, 80);
+}
+@supports (color: oklch(from red l c h)) {
+  .app-shell {
+    --canvas-a: oklch(from var(--accent) 0.7 min(max(c, 0.13), c * 4) calc(h + 50));
+    --canvas-b: oklch(from var(--accent) 0.78 min(max(c, 0.11), c * 4) calc(h - 40));
+  }
+}
+
 .app-shell {
   color-scheme: light;
   --bg: #eef0f5;
   --canvas:
     radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
-    radial-gradient(80% 45% at 100% 22%, rgba(88, 132, 255, 0.2), transparent 70%),
+    radial-gradient(80% 45% at 100% 22%, color-mix(in srgb, var(--canvas-a) 22%, transparent), transparent 70%),
     radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
-    radial-gradient(70% 40% at 0% 75%, rgba(255, 170, 90, 0.14), transparent 70%),
-    #eef0f5;
+    radial-gradient(70% 40% at 0% 75%, color-mix(in srgb, var(--canvas-b) 16%, transparent), transparent 70%),
+    color-mix(in oklab, var(--accent) 4%, #eef0f5);
   --surface: rgba(255, 255, 255, 0.66);
   --surface2: rgba(255, 255, 255, 0.42);
   --fill: rgba(120, 120, 135, 0.12);
@@ -71,10 +87,10 @@
   --bg: #07080c;
   --canvas:
     radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
-    radial-gradient(80% 45% at 100% 24%, rgba(70, 100, 255, 0.24), transparent 70%),
+    radial-gradient(80% 45% at 100% 24%, color-mix(in srgb, var(--canvas-a) 24%, transparent), transparent 70%),
     radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
-    radial-gradient(70% 40% at 0% 75%, rgba(255, 120, 60, 0.12), transparent 70%),
-    #07080c;
+    radial-gradient(70% 40% at 0% 75%, color-mix(in srgb, var(--canvas-b) 14%, transparent), transparent 70%),
+    color-mix(in oklab, var(--accent) 5%, #07080c);
   --surface: rgba(255, 255, 255, 0.08);
   --surface2: rgba(255, 255, 255, 0.05);
   --fill: rgba(255, 255, 255, 0.1);
@@ -109,10 +125,10 @@
     --bg: #07080c;
     --canvas:
       radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
-      radial-gradient(80% 45% at 100% 24%, rgba(70, 100, 255, 0.24), transparent 70%),
+      radial-gradient(80% 45% at 100% 24%, color-mix(in srgb, var(--canvas-a) 24%, transparent), transparent 70%),
       radial-gradient(90% 50% at 85% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
-      radial-gradient(70% 40% at 0% 75%, rgba(255, 120, 60, 0.12), transparent 70%),
-      #07080c;
+      radial-gradient(70% 40% at 0% 75%, color-mix(in srgb, var(--canvas-b) 14%, transparent), transparent 70%),
+      color-mix(in oklab, var(--accent) 5%, #07080c);
     --surface: rgba(255, 255, 255, 0.08);
     --surface2: rgba(255, 255, 255, 0.05);
     --fill: rgba(255, 255, 255, 0.1);
@@ -204,6 +220,51 @@
 .glass-menu-item:focus-visible { background: var(--fill); outline: none; }
 .glass-menu-item:active { background: color-mix(in srgb, var(--text) 14%, transparent); }
 
+/* Select (components/ui/Select.jsx): field trigger + glass listbox. */
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-value.placeholder { color: var(--muted); }
+.select-chevron { flex-shrink: 0; color: var(--muted); transition: transform 0.35s var(--ease-spring); }
+.select-chevron.open { transform: rotate(180deg); }
+.select-menu {
+  position: fixed;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 20px;
+  scrollbar-width: none;
+}
+.select-menu::-webkit-scrollbar { display: none; }
+.select-option {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+.select-option.active { background: var(--fill); }
+.select-option[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+.select-check { flex-shrink: 0; }
+
 .app-shell .card { border-radius: var(--radius-card); padding: 18px; }
 .app-shell .hero { border-radius: var(--radius-card); color: var(--text); }
 .app-shell .card-elevated { box-shadow: var(--glass-specular), var(--glass-shadow); }
@@ -240,6 +301,7 @@
 
 .app-shell input.field,
 .app-shell select.field,
+.app-shell button.field,
 .app-shell textarea.field {
   background: var(--fill);
   border: 1px solid transparent;
@@ -252,6 +314,7 @@
 .app-shell textarea.field::placeholder { color: var(--muted); }
 .app-shell input.field:focus,
 .app-shell select.field:focus,
+.app-shell button.field[aria-expanded="true"],
 .app-shell textarea.field:focus {
   border-color: transparent;
   background: var(--surface);

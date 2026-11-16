@@ -90,7 +90,7 @@ export default function InviteCodes() {
   }
 
   return (
-    <div className="dash-panel mb-5" style={{ maxWidth: 720 }}>
+    <div className="card dash-panel mb-5" style={{ maxWidth: 720 }}>
       <h3 className="dash-card-title">{t.dashInvites}</h3>
       <p className="text-sm mb-4" style={{ color: "var(--muted)", lineHeight: 1.6 }}>{t.dashInvitesDesc}</p>
 
@@ -105,7 +105,7 @@ export default function InviteCodes() {
       ) : (
         <div className="flex flex-col gap-3">
           {invites.map((inv) => (
-            <div key={inv.code} className="dash-panel" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div key={inv.code} className="card dash-panel" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               {/* The link is what the client needs; a bare code cannot reach this project. */}
               <div
                 style={{

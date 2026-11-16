@@ -146,13 +146,19 @@
   -ms-overflow-style: none;
 }
 
+/* Exactly one card wide — min-width alone lets content widen a slide,
+   which makes snapping land off-center. */
 .hp-slide {
-  min-width: 100%;
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   height: 100%;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
 }
 
 .hp-slide.details {
@@ -242,8 +248,13 @@
   letter-spacing: 0.6px !important;
 }
 
+/* Figure fills its column; the SVG scales itself via its viewBox. */
 .hp-figure-body {
-  transform-origin: top center;
+  width: 100%;
   pointer-events: none;
-  flex-shrink: 0;
+}
+
+.hp-figure-body .human-body {
+  width: 100%;
+  height: 100%;
 }

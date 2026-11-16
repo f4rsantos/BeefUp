@@ -73,7 +73,7 @@ export default function SyncView() {
   if (editingConfig) {
     return (
       <div className="dash-sync">
-        <div className="dash-panel mb-5" style={{ maxWidth: 640 }}>
+        <div className="card dash-panel mb-5" style={{ maxWidth: 640 }}>
           <TrainerSetup
             onCancel={() => setEditingConfig(false)}
             onDone={() => { setEditingConfig(false); refreshSession(); }}
@@ -86,7 +86,7 @@ export default function SyncView() {
   if (!configured) {
     return (
       <div className="dash-sync">
-        <div className="dash-panel mb-5" style={{ maxWidth: 640 }}>
+        <div className="card dash-panel mb-5" style={{ maxWidth: 640 }}>
           <TrainerSetup />
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function SyncView() {
   if (!session) {
     return (
       <div className="dash-sync">
-        <div className="dash-panel mb-5" style={{ maxWidth: 420 }}>
+        <div className="card dash-panel mb-5" style={{ maxWidth: 420 }}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <h3 className="dash-card-title">{mode === "signIn" ? t.dashSignIn : t.dashSignUp}</h3>
             <button className="btn btn-ghost text-xs flex items-center gap-1" onClick={() => setEditingConfig(true)}>
@@ -144,7 +144,7 @@ export default function SyncView() {
 
   return (
     <div className="dash-sync" style={{ justifyContent: "flex-start", paddingTop: 24 }}>
-      <div className="dash-panel mb-5" style={{ maxWidth: 720 }}>
+      <div className="card dash-panel mb-5" style={{ maxWidth: 720 }}>
         <div className="flex flex-wrap justify-between gap-4">
           <div style={{ minWidth: 0, flex: "1 1 200px" }}>
             <h3 className="dash-card-title" style={{ overflowWrap: "anywhere" }}>

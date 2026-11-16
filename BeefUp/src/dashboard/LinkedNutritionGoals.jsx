@@ -59,7 +59,7 @@ export default function LinkedNutritionGoals({ client, goals: initialGoals, t })
   }
 
   return (
-    <section className="dash-panel">
+    <section className="card dash-panel">
       <PanelHead
         title={t.nutritionGoals}
         desc={t.dashPrescribeGoalsDesc}
@@ -154,15 +154,15 @@ function GoalsSummary({ goals, t }) {
   const definedMicros = MICRONUTRIENTS.filter((m) => goals[m.key] != null);
   return (
     <div className="flex flex-col gap-2 dash-narrow">
-      <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+      <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: "1px solid var(--separator)" }}>
         <span style={{ color: "var(--muted)" }}>{t.calories}</span>
         <span style={{ color: "var(--text)", fontWeight: 700 }}>{goals.kcal} {t.kcal}</span>
       </div>
-      <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+      <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: "1px solid var(--separator)" }}>
         <span style={{ color: "var(--muted)" }}>{t.protein}/{t.carbs}/{t.fat}</span>
         <span style={{ color: "var(--text)", fontWeight: 700 }}>{goals.protein}g / {goals.carbs}g / {goals.fat}g</span>
       </div>
-      <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: definedMicros.length > 0 ? "1px solid var(--border)" : "none" }}>
+      <div className="flex items-center justify-between text-sm" style={{ padding: "8px 0", borderBottom: definedMicros.length > 0 ? "1px solid var(--separator)" : "none" }}>
         <span style={{ color: "var(--muted)" }}>{t.water}</span>
         <span style={{ color: "var(--text)", fontWeight: 700 }}>{goals.waterMl} ml</span>
       </div>

@@ -1,11 +1,9 @@
-import { useState } from "react";
 import { useApp } from "../context/useApp";
-import AccentColorModal from "../components/AccentColorModal";
-import { ThemeButtons, FontScaleButtons, LanguageButtons } from "../components/PreferenceControls";
-import { accentHexOf } from "../lib/colorTheme";
 import { useIsDesktop } from "../lib/useIsDesktop";
 import { useSupabaseConfigured } from "../lib/useSupabaseConfig";
 import { useBrand } from "../lib/useBrand";
+import AppearancePanel from "../components/AppearancePanel";
+import LargeTitle from "../components/ui/LargeTitle";
 import BrandSettings from "./BrandSettings";
 
 // The appearance preferences a trainer can actually use. Sound (there are no
@@ -13,9 +11,7 @@ import BrandSettings from "./BrandSettings";
 // trainer (they are one) and the demo plan (it seeds a solo user's own
 // workouts) all belong to the phone app, so they are deliberately absent.
 export default function DashboardSettings() {
-  const { t, effectiveAccent, setAccentColor, setCustomAccentColor } = useApp();
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const accentHex = accentHexOf(effectiveAccent.accentColor, effectiveAccent.customAccentHex);
+  const { t } = useApp();
   const configured = useSupabaseConfigured();
   const brand = useBrand();
   // Phone header already shows this title.
@@ -23,58 +19,12 @@ export default function DashboardSettings() {
 
   return (
     <div className="dash-cal">
-      <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        {isDesktop && <h2 className="dash-card-title" style={{ marginBottom: "var(--d-5)" }}>{t.settingsTitle}</h2>}
-
+      <div className="dash-settings">
+        {isDesktop && <LargeTitle title={t.settingsTitle} />}
         {configured && <BrandSettings />}
-
-        <section className="dash-panel">
-          <p className="section-title mb-3">{t.theme}</p>
-          <div className="flex gap-2"><ThemeButtons /></div>
-        </section>
-
-        <section className="dash-panel">
-          <button
-            className="flex items-center justify-between w-full"
-            style={{ background: "none", border: "none", textAlign: "left", cursor: "pointer", minHeight: 44 }}
-            onClick={() => setShowColorPicker(true)}
-          >
-            <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{t.accentColor}</span>
-            <span
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                background: accentHex,
-                border: "1px solid var(--border)",
-                flexShrink: 0,
-              }}
-            />
-          </button>
-        </section>
-
-        <section className="dash-panel">
-          <p className="section-title mb-3">{t.fontSize}</p>
-          <div className="flex gap-2"><FontScaleButtons /></div>
-        </section>
-
-        <section className="dash-panel">
-          <p className="section-title mb-3">{t.language}</p>
-          <div className="flex gap-2"><LanguageButtons /></div>
-        </section>
-
+        <AppearancePanel />
         {brand && <p className="brand-credit">{t.brandCredit}</p>}
       </div>
-
-      {showColorPicker && (
-        <AccentColorModal
-          value={accentHex}
-          t={t}
-          onSelectPreset={(id) => { setAccentColor(id); setShowColorPicker(false); }}
-          onPickCustom={setCustomAccentColor}
-          onClose={() => setShowColorPicker(false)}
-        />
-      )}
     </div>
   );
 }

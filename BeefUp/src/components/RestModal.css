@@ -1,6 +1,20 @@
-.rm-odo { touch-action: none; cursor: ns-resize; user-select: none; width: 52px; }
-.rm-odo-side { font-size: 15px; font-weight: 600; opacity: 0.35; line-height: 1; }
-.rm-odo-value { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.3; }
+/* Reel: 3 rows visible (prev / value / next). Row height (34px) must match
+   ITEM_H in RestModal.jsx; spacers = 1 row so every value can reach center. */
+.rm-odo {
+  width: 52px; height: 102px; overflow-y: scroll;
+  scroll-snap-type: y mandatory; overscroll-behavior: contain;
+  scrollbar-width: none; touch-action: pan-y; user-select: none; cursor: ns-resize;
+  perspective: 300px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+}
+.rm-odo::-webkit-scrollbar { display: none; }
+.rm-odo-spacer { height: 34px; }
+.rm-odo-item {
+  height: 34px; display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
+  scroll-snap-align: center; backface-visibility: hidden; will-change: transform, opacity;
+}
 .rm-modal { max-width: 420px !important; }
 .rm-body { margin-bottom: 24px; }
 .rm-divider { width: 1px; height: 68px; background: var(--border); }

@@ -1,91 +1,139 @@
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useEscapeKey } from "../lib/useEscapeKey";
 import { X } from "lucide-react";
 import { useApp } from "../context/useApp";
 import ProgressRing from "./ProgressRing";
 import "./RestModal.css";
 
-const DRAG_STEP_PX = 18; // px of vertical drag per one step of that column
 const RING_SIZE = 190;
+const ITEM_H = 34; // px per reel row — keep in sync with RestModal.css
+const LOOPS = 5; // values are repeated so the reel can spin past the ends
+const WHEEL_STEP = 40; // accumulated wheel delta per one row
 
-// Wraps instead of clamping: past the top it comes back to min, past the
-// bottom it jumps to max — like a real odometer reel, no dead end at 00.
-function wrap(n, min, max) {
-  if (n > max) return min;
-  if (n < min) return max;
-  return n;
-}
+// One independent reel (minutes or seconds). Native scroll-snap gives the
+// iOS feel (fling, momentum, snap); rows scale, tilt and fade as they roll
+// away from the center. The values are repeated LOOPS times and the reel is
+// silently re-centered on the middle copy when it settles, so it wraps like
+// an odometer — no dead end at 00.
+function OdometerColumn({ values, value, onChange }) {
+  const ref = useRef(null);
+  const dragRef = useRef(null); // { y, top, moved } while a mouse drag is active
+  const settleRef = useRef(null);
+  const len = values.length;
+  const mid = Math.floor(LOOPS / 2) * len;
+  const [scrollTop, setScrollTop] = useState(() => (mid + Math.max(0, values.indexOf(value))) * ITEM_H);
 
-// One independent reel (minutes or seconds): shows the value above and below
-// the current one, dimmed, like an odometer — drag/scroll it on its own,
-// the other column doesn't move.
-function OdometerColumn({ value, onChange, min, max, step }) {
-  const dragRef = useRef(null); // { lastY, accum } while a pointer drag is active
+  useLayoutEffect(() => {
+    ref.current.scrollTop = scrollTop;
+    // Only position on mount; afterwards the reel is the source of truth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function adjust(direction) {
-    onChange(wrap(value + direction * step, min, max));
+  // Mouse wheel: one row per notch (React's onWheel is passive, so bind here).
+  useEffect(() => {
+    const el = ref.current;
+    let accum = 0;
+    function onWheel(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      accum += e.deltaY;
+      if (Math.abs(accum) < WHEEL_STEP) return;
+      const dir = Math.sign(accum);
+      accum = 0;
+      const row = Math.round(el.scrollTop / ITEM_H) - dir; // wheel up = increase
+      el.scrollTo({ top: row * ITEM_H, behavior: "smooth" });
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  function recenter() {
+    const el = ref.current;
+    if (!el || dragRef.current) return;
+    const row = Math.round(el.scrollTop / ITEM_H);
+    const target = mid + (((row % len) + len) % len);
+    if (row !== target) el.scrollTop = target * ITEM_H; // same value, invisible jump
   }
 
-  function handleWheel(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    adjust(e.deltaY < 0 ? 1 : -1);
+  function handleScroll(e) {
+    const top = e.currentTarget.scrollTop;
+    setScrollTop(top);
+    const row = Math.round(top / ITEM_H);
+    const v = values[((row % len) + len) % len];
+    if (v !== value) onChange(v);
+    clearTimeout(settleRef.current);
+    settleRef.current = setTimeout(recenter, 150);
   }
 
+  function snapToRow(row) {
+    ref.current.scrollTo({ top: row * ITEM_H, behavior: "smooth" });
+  }
+
+  // Touch/pen scroll natively; a mouse can't drag-scroll, so emulate it.
   function handlePointerDown(e) {
     e.stopPropagation();
+    if (e.pointerType !== "mouse") return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { lastY: e.clientY, accum: 0 };
+    e.currentTarget.style.scrollSnapType = "none";
+    dragRef.current = { y: e.clientY, top: e.currentTarget.scrollTop, moved: false };
   }
 
   function handlePointerMove(e) {
     if (!dragRef.current) return;
     e.stopPropagation();
-    const delta = dragRef.current.lastY - e.clientY; // up = positive = increase
-    dragRef.current.lastY = e.clientY;
-    dragRef.current.accum += delta;
-    while (dragRef.current.accum >= DRAG_STEP_PX) {
-      adjust(1);
-      dragRef.current.accum -= DRAG_STEP_PX;
-    }
-    while (dragRef.current.accum <= -DRAG_STEP_PX) {
-      adjust(-1);
-      dragRef.current.accum += DRAG_STEP_PX;
-    }
+    const dy = e.clientY - dragRef.current.y;
+    if (Math.abs(dy) > 3) dragRef.current.moved = true;
+    e.currentTarget.scrollTop = dragRef.current.top - dy;
   }
 
   function handlePointerUp(e) {
     e.stopPropagation();
+    if (!dragRef.current) return;
+    const moved = dragRef.current.moved;
     dragRef.current = null;
+    e.currentTarget.style.scrollSnapType = "";
+    if (moved) snapToRow(Math.round(e.currentTarget.scrollTop / ITEM_H));
   }
 
-  const prev = wrap(value - step, min, max);
-  const next = wrap(value + step, min, max);
   const pad = (n) => String(n).padStart(2, "0");
+  const rows = Array.from({ length: LOOPS * len }, (_, i) => i);
 
   return (
     <div
-      className="flex flex-col items-center rm-odo"
-      onWheel={handleWheel}
+      ref={ref}
+      className="rm-odo"
+      onScroll={handleScroll}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      <span className="font-mono text-muted rm-odo-side">
-        {pad(prev)}
-      </span>
-      <span
-        className="font-mono text-body rm-odo-value"
-      >
-        {pad(value)}
-      </span>
-      <span className="font-mono text-muted rm-odo-side">
-        {pad(next)}
-      </span>
+      <div className="rm-odo-spacer" />
+      {rows.map((i) => {
+        const offset = (i * ITEM_H - scrollTop) / ITEM_H;
+        const dist = Math.abs(offset);
+        if (dist > 2.5) return <div key={i} className="rm-odo-item" />; // off-screen
+        return (
+          <div
+            key={i}
+            className={`rm-odo-item font-mono ${dist < 0.5 ? "text-body" : "text-muted"}`}
+            onClick={() => snapToRow(i)}
+            style={{
+              transform: `rotateX(${Math.max(-70, Math.min(70, offset * -35))}deg) scale(${1 - Math.min(dist, 1.5) * 0.4})`,
+              opacity: Math.max(0.15, 1 - dist * 0.65),
+            }}
+          >
+            {pad(values[i % len])}
+          </div>
+        );
+      })}
+      <div className="rm-odo-spacer" />
     </div>
   );
 }
+
+const MINUTES = Array.from({ length: 16 }, (_, i) => i); // 0–15
+const SECONDS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55, step 5
 
 function formatClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -149,9 +197,9 @@ export default function RestModal({ restState, setRestState, onClose }) {
             <>
               <ProgressRing value={pickedSeconds} max={900} size={RING_SIZE} stroke={10} color="var(--accent)">
                 <div className="flex items-center gap-2">
-                  <OdometerColumn value={mm} onChange={setMm} min={0} max={15} step={1} />
+                  <OdometerColumn values={MINUTES} value={mm} onChange={setMm} />
                   <div className="rm-divider" />
-                  <OdometerColumn value={ss} onChange={setSs} min={0} max={55} step={5} />
+                  <OdometerColumn values={SECONDS} value={ss} onChange={setSs} />
                 </div>
               </ProgressRing>
               <p className="mt-3 text-muted rm-hint">

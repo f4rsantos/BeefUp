@@ -13,6 +13,20 @@ function cartesianToHue(dx, dy) {
   return hue;
 }
 
+// "#abc", "abc", "#aabbcc" or "aabbcc" -> "#aabbcc"; anything else -> null.
+function parseHex(input) {
+  const h = input.trim().replace(/^#/, "").toLowerCase();
+  if (/^[0-9a-f]{6}$/.test(h)) return `#${h}`;
+  if (/^[0-9a-f]{3}$/.test(h)) return `#${h.split("").map((c) => c + c).join("")}`;
+  return null;
+}
+
+function markerFor({ h, s }) {
+  const r = s * RADIUS;
+  const angle = (h * Math.PI) / 180;
+  return { x: RADIUS + r * Math.cos(angle), y: RADIUS + r * Math.sin(angle) };
+}
+
 function drawWheel(canvas, value) {
   const ctx = canvas.getContext("2d");
   const image = ctx.createImageData(WHEEL_SIZE, WHEEL_SIZE);
@@ -43,11 +57,26 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
   const canvasRef = useRef(null);
   const initialHsv = rgbToHsv(hexToRgb(value));
   const [brightness, setBrightness] = useState(initialHsv.v);
-  const [marker, setMarker] = useState(() => {
-    const r = initialHsv.s * RADIUS;
-    const angle = (initialHsv.h * Math.PI) / 180;
-    return { x: RADIUS + r * Math.cos(angle), y: RADIUS + r * Math.sin(angle) };
-  });
+  const [marker, setMarker] = useState(() => markerFor(initialHsv));
+  const [hexDraft, setHexDraft] = useState(value.toUpperCase());
+  const hexValid = parseHex(hexDraft) !== null;
+
+  // Wheel and brightness write the field; a valid field moves the wheel.
+  function pickFromWheel(hex) {
+    setHexDraft(hex.toUpperCase());
+    onPickCustom(hex);
+  }
+
+  function handleHexInput(e) {
+    const text = e.target.value;
+    setHexDraft(text);
+    const hex = parseHex(text);
+    if (!hex) return;
+    const hsv = rgbToHsv(hexToRgb(hex));
+    setBrightness(hsv.v);
+    setMarker(markerFor(hsv));
+    onPickCustom(hex);
+  }
 
   useEffect(() => {
     if (canvasRef.current) drawWheel(canvasRef.current, brightness);
@@ -64,7 +93,7 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
     const sat = dist / RADIUS;
     const angle = (hue * Math.PI) / 180;
     setMarker({ x: RADIUS + dist * Math.cos(angle), y: RADIUS + dist * Math.sin(angle) });
-    onPickCustom(rgbToHex(hsvToRgb(hue, sat, brightness)));
+    pickFromWheel(rgbToHex(hsvToRgb(hue, sat, brightness)));
   }
 
   function handlePointer(e) {
@@ -79,7 +108,7 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
     const dy = marker.y - RADIUS;
     const dist = Math.min(RADIUS, Math.sqrt(dx * dx + dy * dy));
     const hue = cartesianToHue(dx, dy);
-    onPickCustom(rgbToHex(hsvToRgb(hue, dist / RADIUS, v)));
+    pickFromWheel(rgbToHex(hsvToRgb(hue, dist / RADIUS, v)));
   }
 
   return (
@@ -120,6 +149,23 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
               style={{ width: WHEEL_SIZE }}
               aria-label={t.accentColor}
             />
+            <label className="ac-hex" style={{ width: WHEEL_SIZE }}>
+              <span className="ac-hex-swatch" style={{ background: hexValid ? parseHex(hexDraft) : "transparent" }} aria-hidden="true" />
+              <input
+                className="field ac-hex-input"
+                value={hexDraft}
+                onChange={handleHexInput}
+                onBlur={() => !hexValid && setHexDraft(value.toUpperCase())}
+                onFocus={(e) => e.target.select()}
+                maxLength={7}
+                spellCheck={false}
+                autoCapitalize="characters"
+                autoComplete="off"
+                aria-label={t.hexColor}
+                aria-invalid={!hexValid}
+                placeholder="#RRGGBB"
+              />
+            </label>
           </div>
 
           <div className="flex flex-col gap-2 flex-1 min-w-0">
@@ -127,7 +173,13 @@ export default function AccentColorModal({ value, onSelectPreset, onPickCustom, 
               <button
                 key={id}
                 className="flex items-center gap-2 ac-preset"
-                onClick={() => onSelectPreset(id)}
+                onClick={() => {
+                  const hsv = rgbToHsv(hexToRgb(hex));
+                  setHexDraft(hex.toUpperCase());
+                  setBrightness(hsv.v);
+                  setMarker(markerFor(hsv));
+                  onSelectPreset(id);
+                }}
               >
                 <span
                   className="ac-swatch"
