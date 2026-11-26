@@ -1,9 +1,9 @@
-import { ChevronDown, Dumbbell, Square, Timer as TimerIcon } from "lucide-react";
+import { Calculator, ChevronDown, Square, Timer as TimerIcon } from "lucide-react";
 import { formatElapsedClock } from "../lib/planUtils";
 import ProgressRing from "./ProgressRing";
 import IconButton from "./ui/IconButton";
 
-export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onEnd, onMinimize, minimizeLabel, t }) {
+export default function WorkoutTopBar({ elapsed, restState, onCalculators, onRest, onEnd, onMinimize, minimizeLabel, t }) {
   const restRunning = restState?.running ?? false;
   const restRemaining = restRunning ? Math.max(0, restState.duration - restState.elapsed) : 0;
 
@@ -11,7 +11,7 @@ export default function WorkoutTopBar({ elapsed, restState, onOneRM, onRest, onE
     <div className="workout-topbar">
       <div className="flex gap-2">
         <IconButton icon={ChevronDown} label={minimizeLabel} onClick={onMinimize} />
-        <IconButton icon={Dumbbell} label={t.oneRM} onClick={onOneRM} />
+        <IconButton icon={Calculator} label={t.calculators} onClick={onCalculators} />
         <IconButton label={t.rest} onClick={onRest} icon={restRunning ? null : TimerIcon}>
           {restRunning && (
             <ProgressRing value={restRemaining} max={restState.duration} size={30} stroke={3} color="var(--accent)">

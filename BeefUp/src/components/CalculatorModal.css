@@ -1,0 +1,45 @@
+.calc-result {
+  text-align: center;
+}
+
+.calc-big {
+  font-size: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-big span {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.calc-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 15px;
+  border-top: 0.5px solid var(--separator, var(--border));
+}
+
+.calc-row:first-child {
+  border-top: none;
+}
+
+.calc-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-formula {
+  padding-top: 10px;
+  border-top: 0.5px solid var(--separator, var(--border));
+  font-size: 12px;
+  line-height: 1.45;
+}

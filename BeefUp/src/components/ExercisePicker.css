@@ -54,7 +54,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--surface);
+  background: var(--bg);
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
