@@ -1,0 +1,53 @@
+.sw-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sw-why {
+  font-size: 13px;
+}
+
+.sw-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.sw-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 0.5px solid var(--separator, var(--border));
+}
+
+.sw-row:first-child {
+  border-top: none;
+}
+
+.sw-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sw-row-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sw-row-last {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-remove {
+  padding: 8px !important;
+  flex-shrink: 0;
+}

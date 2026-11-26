@@ -100,7 +100,7 @@ function NewMealForm({ name, icon, onName, onIcon, onCancel, onSubmit, t }) {
 export default function NutritionPage() {
   const { t, foodLog, deleteFoodLog, effectiveNutritionGoals: nutritionGoals, prescribedGoals, waterMap, setWaterToday, mealTypes, setMealTypes } = useApp();
   const today = todayISO();
-  const [foodDraft] = useState(() => getLS("foodEntryDraft", null));
+  const [foodDraft, setFoodDraft] = useState(() => getLS("foodEntryDraft", null));
   const [addMeal, setAddMeal] = useState(() => foodDraft?.meal ?? null);
   const [showGoals, setShowGoals] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
@@ -167,6 +167,7 @@ export default function NutritionPage() {
           initialDraft={foodDraft?.meal === addMeal ? foodDraft : null}
           onClose={() => {
             removeLS("foodEntryDraft");
+            setFoodDraft(null);
             setAddMeal(null);
           }}
         />
